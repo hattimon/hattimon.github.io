@@ -381,6 +381,11 @@ function toggleTheme(){
   }
 }
 
+// === Eventy przycisków głównych (DODANE) ===
+document.getElementById("connect-wallet-btn").addEventListener("click", connectWallet);
+document.getElementById("btn-swap").addEventListener("click", handleSwap);
+document.querySelector(".theme-toggle").addEventListener("click", toggleTheme);
+
 // === Auto update on load & on wallet change ===
 window.ethereum?.on('accountsChanged', (accounts) => {
   if(accounts.length > 0){
@@ -416,4 +421,3 @@ window.ethereum?.on('chainChanged', (chainId) => {
     } catch {}
   }
 })();
-
