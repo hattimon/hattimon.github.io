@@ -1,4 +1,3 @@
-
 let provider, signer;
 
 async function connectWallet() {
@@ -30,9 +29,9 @@ async function loadContractUI() {
 
     const div = document.createElement("div");
     div.innerHTML = `<h2>${contract.name}</h2>`;
-
+    
     abi.forEach(fn => {
-      if (fn.type === "function") {
+      if (fn.type === "function" && fn.stateMutability !== "view") {  // Only non-view functions
         const btn = document.createElement("button");
         btn.innerText = fn.name;
         btn.onclick = async () => {
