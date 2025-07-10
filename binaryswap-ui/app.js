@@ -230,3 +230,24 @@ function showError(message) {
   errorText.textContent = message;
   errorContainer.style.display = 'block';
 }
+
+// === Obsługa UI dla LP ===
+document.getElementById("btn-add-liquidity").addEventListener("click", async () => {
+  const val = parseInt(document.getElementById("input-add-liquidity-percent").value);
+  if (isNaN(val) || val < 1 || val > 100) return showError("Procent 1–100!");
+  try {
+    await addLiquidity(val);
+  } catch (e) {
+    showError("Błąd przy dodawaniu płynności: " + e.message);
+  }
+});
+
+document.getElementById("btn-remove-liquidity").addEventListener("click", async () => {
+  const val = parseInt(document.getElementById("input-remove-liquidity-percent").value);
+  if (isNaN(val) || val < 1 || val > 100) return showError("Procent 1–100!");
+  try {
+    await removeLiquidity(val);
+  } catch (e) {
+    showError("Błąd przy usuwaniu płynności: " + e.message);
+  }
+});
