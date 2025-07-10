@@ -27,7 +27,7 @@ const MASTER = [
 // === Swap ===
 async function handleSwap(){
   const pc = parseInt(swapPercent.value);
-  if(isNaN(pc) || pc < 1 || pc > 100) return alert("Procent 1–100!");
+  if(isNaN(pc) || pc < 1 || pc > 100) return showError("Procent 1–100!");
 
   const slippage = parseInt(swapSlippage.value) || 1; // Domyślnie 1% slippage
   const slippageAdjusted = Math.max(slippage, 1);  // Minimum 1% slippage
@@ -60,7 +60,7 @@ async function swapBNBto0101(pc, slippage, deadline){
     await tx.wait(); // Wait for transaction to be mined
     updateBalances();
   } catch (error) {
-    alert("Błąd przy swapie: " + error.message);
+    showError("Błąd przy swapie (BNB → 0101): " + error.message);
   }
 }
 
@@ -85,7 +85,7 @@ async function swap0101toBNB(pc, slippage, deadline){
     await tx.wait(); // Wait for transaction to be mined
     updateBalances();
   } catch (error) {
-    alert("Błąd przy swapie: " + error.message);
+    showError("Błąd przy swapie (0101 → BNB): " + error.message);
   }
 }
 
@@ -112,7 +112,7 @@ async function removeLiquidity(pc){
 
 // === Wallet ===
 async function connectWallet(){
-  if(!window.ethereum) return alert("Zainstaluj MetaMask!");
+  if(!window.ethereum) return showError("Zainstaluj MetaMask!");
   provider = new ethers.BrowserProvider(window.ethereum);
   await provider.send("eth_requestAccounts", []);
   signer = await provider.getSigner();
@@ -148,3 +148,11 @@ function toggleTheme(){
   document.documentElement.setAttribute("data-theme", th || "");
   document.querySelector(".theme-toggle").innerText = th?"🌙 Tryb ciemny":"🌞 Tryb jasny";
 })();
+
+// === Error Handling ===
+function showError(message) {
+  const errorContainer = document.getElementById('error-container');
+  const errorText = document.getElementById('error-text');
+  errorText.textContent = message;
+  errorContainer.style.display = 'block';
+}
