@@ -35,10 +35,11 @@
     <div class="section">
       <p><strong>Portfel:</strong> <span id="wallet-address">Niepołączony</span></p>
       <button onclick="connectWallet()"><i class="fab fa-ethereum"></i> Połącz MetaMask</button>
-      <button onclick="switchToOpBNB()"><i class="fas fa-network-wired"></i> Przełącz na opBNB</button>
+      ###<button onclick="switchToOpBNB()"><i class="fas fa-network-wired"></i> Przełącz na opBNB</button>###
     </div>
 
     <div class="section">
+      <h3>Zawartość Portfela</h3>
       <p>0101: <span id="balance-0101">–</span></p>
       <p>BNB: <span id="balance-bnb">–</span></p>
       <p>LP (0101/BNB): <span id="balance-lp">–</span></p>
@@ -48,10 +49,12 @@
       <h3>Swap</h3>
       <input type="number" id="swapPercent" placeholder="% (1–100)">
       <select id="swapDirection">
+      <h2>Zamiana</h2>
         <option value="toToken">BNB → 0101</option>
         <option value="toBNB">0101 → BNB</option>
       </select>
       <select id="swapSlippage">
+        <h2>Poślizg</h2>
         <option value="1">1%</option>
         <option value="3">3%</option>
         <option value="5">5%</option>
