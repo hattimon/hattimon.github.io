@@ -1,40 +1,45 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interakcja z kontraktami</title>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.0.0/dist/ethers.min.js"></script> <!-- Ethers.js -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BinarySwap</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.6.9/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-    <h1>Witaj w aplikacji Web3</h1>
-    
-    <!-- Informacje o portfelu -->
-    <div id="wallet-info">
-        <button onclick="connectWallet()">Połącz z MetaMask</button>
-        <button onclick="disconnectWallet()">Odłącz portfel</button>
-        <p id="wallet-address">Portfel odłączony</p>
-    </div>
+  <div class="header">
+    <h1>BinarySwap</h1>
+    <p>Swap, add liquidity, and more</p>
+  </div>
 
-    <!-- Tokeny -->
-    <div id="token-balances">
-        <h2>Twoje tokeny</h2>
-        <!-- Tokeny będą tutaj wyświetlane -->
-    </div>
+  <div class="wallet-info">
+    <p id="wallet-address">Portfel odłączony</p>
+    <button id="connect-btn">Połącz z MetaMask</button>
+    <button id="disconnect-btn" style="display:none;">Odłącz portfel</button>
+  </div>
 
-    <!-- Interfejs kontraktów -->
-    <div id="contract-ui">
-        <!-- Funkcje kontraktów będą tutaj wyświetlane -->
-    </div>
+  <div id="token-balances">
+    <h2>Twoje tokeny</h2>
+    <div id="balances-list"></div>
+  </div>
 
-    <!-- Formularz swap -->
+  <div id="swap-ui">
+    <h2>Swap Tokenów</h2>
+    <input type="number" id="swap-amount" placeholder="Wpisz ilość do swapu" />
+    <button id="swap-btn">Swap</button>
+  </div>
+
+  <div id="lp-ui">
+    <h2>Dodaj / Usuń LP</h2>
     <div>
-        <h2>Swap Tokenów</h2>
-        <input type="text" id="swap-amount" placeholder="Wpisz ilość do swapu">
-        <button onclick="swapTokens()">Swap</button>
+      <input type="number" id="lp-amount-a" placeholder="Ilość tokena A" />
+      <input type="number" id="lp-amount-b" placeholder="Ilość tokena B" />
+      <button id="add-lp-btn">Dodaj LP</button>
+      <button id="remove-lp-btn">Usuń LP</button>
     </div>
+  </div>
 
-    <!-- Link do załadowania skryptu JS -->
-    <script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
