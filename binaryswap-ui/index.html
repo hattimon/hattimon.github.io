@@ -102,53 +102,72 @@
 const originalTexts = new Map();
 let currentLang = 'en';
 
-// Lista tłumaczeń – rozbuduj, jeśli chcesz
+// Rozszerzalna baza tłumaczeń
 const translations = [
-  { pl: "📘 Dokumentacja BinarySwap", en: "📘 BinarySwap Docs" },
-  { pl: "📊 Aktualna cena BinarySwap i wielkość puli 0101/WBNB BinarySwap", en: "📊 0101/WBNB Pool & Price" },
-  { pl: "🌉 Błyskawiczny i tani Swap oraz Most opBNB <=FDUSD=> BSC", en: "🌉 Fast Bridge opBNB ⇄ FDUSD" },
-  { pl: "🌉 Oficjalny droższy (Wolny 7 dni) Most opBNB <=BNB=> BSC \n Oraz Third Party Bridge", en: "🌉 Official (7-day) opBNB ⇄ BNB + Third Party Bridge" },
+  { pl: "📘 Dokumentacja", en: "📘 Docs" },
+  { pl: "📊 Kurs 0101/WBNB", en: "📊 0101/WBNB Price" },
+  { pl: "🌉 Szybki Most opBNB ⇄ FDUSD", en: "🌉 Fast Bridge opBNB ⇄ FDUSD" },
+  { pl: "🌉 Oficjalny Most opBNB ⇄ BNB (7 dni)", en: "🌉 Official opBNB ⇄ BNB Bridge (7d)" },
   { pl: "Połącz MetaMask", en: "Connect MetaMask" },
   { pl: "Przełącz na opBNB", en: "Switch to opBNB" },
   { pl: "Zawartość Portfela", en: "Wallet Balances" },
   { pl: "Portfel:", en: "Wallet:" },
-  { pl: "Zamiana", en: "Swap Direction" },
+  { pl: "Niepołączony", en: "Not Connected" },
+  { pl: "BNB → 0101", en: "BNB → 0101" },
+  { pl: "0101 → BNB", en: "0101 → BNB" },
+  { pl: "Zamiana", en: "Swap" },
   { pl: "Poślizg", en: "Slippage" },
   { pl: "Dodaj LP", en: "Add LP" },
   { pl: "Usuń LP", en: "Remove LP" },
-  { pl: "Twoje pule (Więcej funkcji jak odstakowanie LP dodam wkrótce)", en: "Your Pools (More LP features coming soon)" },
+  { pl: "MasterChef – Twoje pule (Więcej funkcji jak odstakowanie LP dodam wkrótce)", en: "MasterChef – Your Pools (More features like LP unstake coming soon)" },
   { pl: "🌞 Tryb jasny", en: "🌞 Light Mode" },
-  { pl: "Polski", en: "Polski" }, // button label
-  { pl: "English", en: "English" }, // button label
+  { pl: "Tryb Awaryjny BinarySwap", en: "BinarySwap Emergency Mode" },
+  { pl: "Klikając SWAP lub Dodaj/Usuń LP", en: "By clicking SWAP or Add/Remove LP" },
+  { pl: "Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.", en: "This is a secure (SSL) backup GUI using BinarySwap contract functions." },
+  { pl: "Polecam portfel", en: "Recommended wallet:" },
+  { pl: "Do podglądu historii transakcji polecam", en: "For transaction history tracking, use" },
+  { pl: "ilość w (1–100) %", en: "amount in (1–100)%" },
+  { pl: "Błąd:", en: "Error:" }
 ];
 
 function translateTo(lang) {
   currentLang = lang;
+
   document.querySelectorAll('body *').forEach(el => {
-    if (!originalTexts.has(el)) originalTexts.set(el, el.innerHTML);
+    // Zapamiętaj oryginał
+    if (!originalTexts.has(el)) originalTexts.set(el, {
+      html: el.innerHTML,
+      placeholder: el.placeholder,
+      value: el.value
+    });
 
     translations.forEach(({ pl, en }) => {
       const from = lang === 'pl' ? en : pl;
       const to = lang === 'pl' ? pl : en;
 
-      if (el.innerHTML.trim() === from) {
-        el.innerHTML = to;
-      }
+      // Tłumaczenie innerHTML
+      if (el.innerHTML.trim() === from) el.innerHTML = to;
+
+      // Tłumaczenie placeholderów
+      if (el.placeholder && el.placeholder.trim() === from) el.placeholder = to;
+
+      // Tłumaczenie przycisków (np. <button>value</button>)
+      if (el.value && el.value.trim() === from) el.value = to;
     });
   });
 }
 
-// Automatyczne wykrycie języka
+// Wykrycie języka
 (function autoDetectLanguage() {
   const browserLang = navigator.language || navigator.userLanguage;
-  if (browserLang.startsWith("pl")) {
+  if (browserLang.startsWith('pl')) {
     translateTo('pl');
   } else {
     translateTo('en');
   }
 })();
 
-// Funkcje do ręcznego przełączania
+// Przełączniki ręczne
 function translateToEnglish() {
   translateTo('en');
 }
