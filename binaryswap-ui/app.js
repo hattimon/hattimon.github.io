@@ -4,20 +4,20 @@ const addr0101 = "0xa41b3067ec694dbec668c389550ba8fc589e5797";
 const addrLP = "0x506b8322e1159d06e493ebe7ffa41a24291e7ae3";
 const routerAddr = "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b";
 const masterAddr = "0x39a786421889EB581bd105508a0D2Dc03523B903";
-
-// Adres WBNB (Wrapped BNB)
 const wbnbAddress = "0x4200000000000000000000000000000000000006";
 
 const ERC20 = [
   "function balanceOf(address) view returns(uint256)",
-  "function approve(address,uint256) returns(bool)"
+  "function approve(address,uint256) returns(bool)",
+  "function allowance(address,address) view returns(uint256)"
 ];
 
 const ROUTER = [
+  "function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)",
   "function addLiquidityETH(address,uint,uint,uint,address,uint) payable returns(uint,uint,uint)",
   "function removeLiquidityETH(address,uint,uint,uint,address,uint) returns(uint,uint)",
-  "function swapExactETHForTokensSupportingFeeOnTransferTokens(uint,address[],address,uint) payable",
-  "function swapExactTokensForETHSupportingFeeOnTransferTokens(uint,uint,address[],address,uint)"
+  "function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) payable returns (uint[] memory amounts)",
+  "function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) returns (uint[] memory amounts)"
 ];
 
 const MASTER = [
@@ -27,72 +27,78 @@ const MASTER = [
   "function emergencyWithdraw(uint256)"
 ];
 
-// === Swap ===
+// === Swap Handler ===
 async function handleSwap(){
   const pc = parseInt(swapPercent.value);
   if(isNaN(pc) || pc < 1 || pc > 100) return showError("Procent 1–100!");
 
-  const slippage = parseInt(swapSlippage.value) || 1; // Domyślnie 1% slippage
-  const slippageAdjusted = Math.max(slippage, 1);  // Minimum 1% slippage
-
-  const deadline = Math.floor(Date.now()/1000) + 300; // 5 minut
+  const slippage = parseInt(swapSlippage.value) || 1;
+  const deadline = Math.floor(Date.now()/1000) + 300;
 
   if (swapDirection.value === "toToken") {
-    swapBNBto0101(pc, slippageAdjusted, deadline);
+    swapBNBto0101(pc, slippage, deadline);
   } else {
-    swap0101toBNB(pc, slippageAdjusted, deadline);
+    swap0101toBNB(pc, slippage, deadline);
   }
 }
 
+// === Swap: BNB → 0101 ===
 async function swapBNBto0101(pc, slippage, deadline){
-  const r = new ethers.Contract(routerAddr, ROUTER, signer);
-  const bal = await provider.getBalance(account);
-  const v = bal * BigInt(pc) / 100n;
-
-  // Adjusting for slippage
-  const minAmountOut = v * BigInt(100 + slippage) / 100n;
+  const router = new ethers.Contract(routerAddr, ROUTER, signer);
+  const balance = await provider.getBalance(account);
+  const amountIn = balance * BigInt(pc) / 100n;
 
   try {
-    const tx = await r.swapExactETHForTokensSupportingFeeOnTransferTokens(
-      minAmountOut, 
-      [wbnbAddress, addr0101], // Zamieniamy ZeroAddress na wbnbAddress
-      account, 
-      deadline, 
-      { value: v }
+    const path = [wbnbAddress, addr0101];
+    const amounts = await router.getAmountsOut(amountIn, path);
+    const amountOutMin = amounts[1] * BigInt(100 - slippage) / 100n;
+
+    const tx = await router.swapExactETHForTokens(
+      amountOutMin,
+      path,
+      account,
+      deadline,
+      { value: amountIn }
     );
-    await tx.wait(); // Wait for transaction to be mined
+    await tx.wait();
     updateBalances();
   } catch (error) {
     showError("Błąd przy swapie (BNB → 0101): " + error.message);
   }
 }
 
+// === Swap: 0101 → BNB ===
 async function swap0101toBNB(pc, slippage, deadline){
-  const t = new ethers.Contract(addr0101, ERC20, signer);
-  const r = new ethers.Contract(routerAddr, ROUTER, signer);
-  const bal = await t.balanceOf(account);
-  const v = bal * BigInt(pc) / 100n;
-
-  // Adjusting for slippage
-  const minAmountOut = v * BigInt(100 + slippage) / 100n;
+  const token = new ethers.Contract(addr0101, ERC20, signer);
+  const router = new ethers.Contract(routerAddr, ROUTER, signer);
+  const balance = await token.balanceOf(account);
+  const amountIn = balance * BigInt(pc) / 100n;
 
   try {
-    await t.approve(routerAddr, v);
-    const tx = await r.swapExactTokensForETHSupportingFeeOnTransferTokens(
-      v, 
-      minAmountOut, 
-      [addr0101, wbnbAddress], // Zamieniamy ZeroAddress na wbnbAddress
-      account, 
+    const path = [addr0101, wbnbAddress];
+    const amounts = await router.getAmountsOut(amountIn, path);
+    const amountOutMin = amounts[1] * BigInt(100 - slippage) / 100n;
+
+    const allowance = await token.allowance(account, routerAddr);
+    if (allowance < amountIn) {
+      await token.approve(routerAddr, amountIn);
+    }
+
+    const tx = await router.swapExactTokensForETH(
+      amountIn,
+      amountOutMin,
+      path,
+      account,
       deadline
     );
-    await tx.wait(); // Wait for transaction to be mined
+    await tx.wait();
     updateBalances();
   } catch (error) {
     showError("Błąd przy swapie (0101 → BNB): " + error.message);
   }
 }
 
-// === LP ===
+// === LP Functions ===
 async function addLiquidity(pc){
   const t = new ethers.Contract(addr0101, ERC20, signer);
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
@@ -113,7 +119,7 @@ async function removeLiquidity(pc){
   updateBalances();
 }
 
-// === Wallet ===
+// === Wallet Functions ===
 async function connectWallet(){
   if(!window.ethereum) return showError("Zainstaluj MetaMask!");
   provider = new ethers.BrowserProvider(window.ethereum);
@@ -122,7 +128,7 @@ async function connectWallet(){
   account = await signer.getAddress();
   document.getElementById("wallet-address").innerText = account;
   updateBalances();
-  fetchLPInfo();
+  fetchLPInfo?.();
 }
 
 async function updateBalances(){
