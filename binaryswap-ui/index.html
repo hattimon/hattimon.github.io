@@ -47,13 +47,13 @@
 
     <div class="section">
       <h3>Swap</h3>
-      <input type="number" id="swapPercent" placeholder="% (1–100)">
-      <h2>Zamiana</h2>
+      <input type="number" id="swapPercent" placeholder="ilość w (1–100) %">
+      <h4>Zamiana</h4>
       <select id="swapDirection">
         <option value="toToken">BNB → 0101</option>
         <option value="toBNB">0101 → BNB</option>
       </select>
-      <h2>Poślizg</h2>
+      <h4>Poślizg</h4>
       <select id="swapSlippage">
         <option value="1">1%</option>
         <option value="3">3%</option>
@@ -69,7 +69,7 @@
 
     <div class="section">
       <h3>Pula Płynności</h3>
-      <input type="number" id="lpPercent" placeholder="% (1–100)">
+      <input type="number" id="lpPercent" placeholder="ilość w (1–100) %">
       <button onclick="addLiquidity(parseInt(lpPercent.value))"><i class="fas fa-plus-circle"></i> Dodaj LP</button>
       <button onclick="removeLiquidity(parseInt(lpPercent.value))"><i class="fas fa-minus-circle"></i> Usuń LP</button>
     </div>
