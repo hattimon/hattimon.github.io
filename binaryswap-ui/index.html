@@ -105,110 +105,77 @@
 
   <script src="app.js"></script>
 <script>
-const originalTexts = new Map();
-let currentLang = 'en';
+  const translations = {
+    en: {
+      connectWallet: "Connect Wallet",
+      switchNetwork: "Switch to opBNB",
+      addLiquidity: "Add LP",
+      removeLiquidity: "Remove LP",
+      liquidityPool: "Liquidity Pool",
+      tokenBalance: "Token Balance",
+      lpBalance: "LP Balance",
+      bnbBalance: "BNB Balance",
+      selectSlippage: "Select slippage:",
+      swap: "Swap",
+      enterAmount: "Enter amount",
+      max: "Max",
+      pendingReward: "Pending Reward",
+      emergencyWithdraw: "Emergency Withdraw",
+      depositLP: "Deposit LP",
+      withdrawLP: "Withdraw LP",
+      binaryswapEmergencyMode: "BinarySwap Emergency Mode",
+      binaryswapEmergencyModeDescription: "(By clicking SWAP or Add/Remove LP, multiple confirmations are required to approve interaction with the contract for the specified amount — such as approving the Swap contract and confirming the Swap itself.)",
+      binaryswapGuiNote: "This is a secure (SSL) alternative GUI that uses the original BinarySwap contract functions.",
+      rabbyRecommendation: "We recommend the Rabby.io wallet, where you can also revoke permissions.",
+      debankRecommendation: "For viewing transaction history, we recommend DeBank.com."
+    },
+    pl: {
+      connectWallet: "Połącz MetaMask",
+      switchNetwork: "Przełącz na opBNB",
+      addLiquidity: "Dodaj LP",
+      removeLiquidity: "Usuń LP",
+      liquidityPool: "Pula Płynności",
+      tokenBalance: "Saldo tokena",
+      lpBalance: "Saldo LP",
+      bnbBalance: "Saldo BNB",
+      selectSlippage: "Wybierz poślizg:",
+      swap: "Zamień",
+      enterAmount: "Wpisz kwotę",
+      max: "Max",
+      pendingReward: "Oczekująca nagroda",
+      emergencyWithdraw: "Awaryjna wypłata",
+      depositLP: "Zdeponuj LP",
+      withdrawLP: "Wypłać LP",
+      binaryswapEmergencyMode: "Tryb Awaryjny BinarySwap",
+      binaryswapEmergencyModeDescription: "(Kliknięcie Zamień lub Dodaj/Usuń LP wymaga kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)",
+      binaryswapGuiNote: "Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.",
+      rabbyRecommendation: "Polecam portfel Rabby.io, gdzie również cofniesz uprawnienia.",
+      debankRecommendation: "Do podglądu historii transakcji polecam DeBank.com."
+    }
+  };
 
-const translations = [
-  // Statyczne UI
-  { pl: "📘 Dokumentacja", en: "📘 Docs" },
-  { pl: "📊 Kurs 0101/WBNB", en: "📊 0101/WBNB Price" },
-  { pl: "🌉 Szybki Most opBNB ⇄ FDUSD", en: "🌉 Fast Bridge opBNB ⇄ FDUSD" },
-  { pl: "🌉 Oficjalny Most opBNB ⇄ BNB (7 dni)", en: "🌉 Official opBNB ⇄ BNB Bridge (7d)" },
-  { pl: "Połącz MetaMask", en: "Connect MetaMask" },
-  { pl: "Przełącz na opBNB", en: "Switch to opBNB" },
-  { pl: "Zawartość Portfela", en: "Wallet Balances" },
-  { pl: "Portfel:", en: "Wallet:" },
-  { pl: "Niepołączony", en: "Not Connected" },
-  { pl: "BNB → 0101", en: "BNB → 0101" },
-  { pl: "0101 → BNB", en: "0101 → BNB" },
-  { pl: "Zamiana", en: "Swap" },
-  { pl: "Poślizg", en: "Slippage" },
-  { pl: "Dodaj LP", en: "Add LP" },
-  { pl: "Usuń LP", en: "Remove LP" },
-  { pl: "🌞 Tryb jasny", en: "🌞 Light Mode" },
-  { pl: "Tryb Awaryjny BinarySwap", en: "BinarySwap Emergency Mode" },
-  { pl: "MasterChef – Twoje pule (Więcej funkcji jak odstakowanie LP dodam wkrótce)", en: "MasterChef – Your Pools (More features like LP unstake coming soon)" },
-  { pl: "Klikając SWAP lub Dodaj/Usuń LP", en: "By clicking SWAP or Add/Remove LP" },
-  { pl: "Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.", en: "This is a secure (SSL) backup GUI using BinarySwap contract functions." },
-  { pl: "Polecam portfel", en: "Recommended wallet:" },
-  { pl: "Do podglądu historii transakcji polecam", en: "For transaction history tracking, use" },
-  { pl: "ilość w (1–100) %", en: "amount in (1–100)%" },
-  { pl: "Błąd:", en: "Error:" },
+  let currentLang = 'pl'; // domyślny język
 
-  // Komunikaty błędów z app.js
-  { pl: "Zainstaluj MetaMask!", en: "Install MetaMask!" },
-  { pl: "Nie można przełączyć sieci", en: "Unable to switch network" },
-  { pl: "Błąd połączenia z portfelem:", en: "Wallet connection error:" },
-  { pl: "Błąd przy swapie (BNB → 0101):", en: "Swap error (BNB → 0101):" },
-  { pl: "Błąd przy swapie (0101 → BNB):", en: "Swap error (0101 → BNB):" },
-  { pl: "Procent 1–100!", en: "Percentage 1–100!" },
-  { pl: "Nieprawidłowe saldo LP lub 0101", en: "Invalid LP or 0101 balance" },
-  { pl: "Nieprawidłowe saldo LP", en: "Invalid LP balance" },
-  { pl: "Wystąpił błąd:", en: "An error occurred:" },
-  { pl: "Nieznany błąd:", en: "Unknown error:" },
-  { pl: "Brak adresu portfela!", en: "No wallet address!" },
-  { pl: "Brak aktywnego połączenia!", en: "No active connection!" },
-  { pl: "Nie wykryto Web3!", en: "Web3 not detected!" },
-  { pl: "Błąd pobierania salda:", en: "Balance fetch error:" },
-  { pl: "Błąd pobierania danych z MasterChef:", en: "Error fetching MasterChef data:" },
-  { pl: "Podano 0 LP – nic nie do wypłaty", en: "0 LP provided – nothing to withdraw" },
-  { pl: "Zbyt duży poślizg – anulowano", en: "Slippage too high – cancelled" },
-
-  // Placeholdery (jeśli są używane)
-  { pl: "Wpisz ilość", en: "Enter amount" },
-  { pl: "Wpisz wartość LP", en: "Enter LP value" }
-];
-
-function translateTo(lang) {
-  currentLang = lang;
-
-  document.querySelectorAll('body *').forEach(el => {
-    // Zapamiętaj oryginał tylko raz
-    if (!originalTexts.has(el)) originalTexts.set(el, {
-      html: el.innerHTML,
-      placeholder: el.placeholder,
-      value: el.value
-    });
-
-    translations.forEach(({ pl, en }) => {
-      const from = lang === 'pl' ? en : pl;
-      const to = lang === 'pl' ? pl : en;
-
-      // Tłumaczenie innerHTML
-      if (el.innerHTML && el.innerHTML.trim() === from) {
-        el.innerHTML = to;
-      }
-
-      // Placeholdery
-      if (el.placeholder && el.placeholder.trim() === from) {
-        el.placeholder = to;
-      }
-
-      // Value (np. <input type="submit">)
-      if (el.value && el.value.trim() === from) {
-        el.value = to;
+  function updateTranslations() {
+    document.querySelectorAll('[data-translate]').forEach(el => {
+      const key = el.getAttribute('data-translate');
+      if (translations[currentLang] && translations[currentLang][key]) {
+        el.innerText = translations[currentLang][key];
       }
     });
-  });
-}
-
-// Wykrywanie języka przy starcie
-(function autoDetectLanguage() {
-  const browserLang = navigator.language || navigator.userLanguage;
-  if (browserLang.startsWith('pl')) {
-    translateTo('pl');
-  } else {
-    translateTo('en');
   }
-})();
 
-// Przełączniki ręczne
-function translateToEnglish() {
-  translateTo('en');
-}
-function translateToPolish() {
-  translateTo('pl');
-}
+  function switchLanguage(lang) {
+    if (translations[lang]) {
+      currentLang = lang;
+      updateTranslations();
+    }
+  }
+
+  // Uruchom tłumaczenia po załadowaniu
+  document.addEventListener('DOMContentLoaded', () => {
+    updateTranslations();
+  });
 </script>
 
 </body>
