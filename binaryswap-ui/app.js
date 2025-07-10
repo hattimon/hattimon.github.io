@@ -5,27 +5,7 @@ const addrLP = "0x506b8322e1159d06e493ebe7ffa41a24291e7ae3";
 const routerAddr = "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b";
 const masterAddr = "0x39a786421889EB581bd105508a0D2Dc03523B903";
 const wbnbAddress = "0x4200000000000000000000000000000000000006";
-
-const ERC20 = [
-  "function balanceOf(address) view returns(uint256)",
-  "function approve(address,uint256) returns(bool)",
-  "function allowance(address,address) view returns(uint256)"
-];
-
-const ROUTER = [
-  "function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)",
-  "function addLiquidityETH(address,uint,uint,uint,address,uint) payable returns(uint,uint,uint)",
-  "function removeLiquidityETH(address,uint,uint,uint,address,uint) returns(uint,uint)",
-  "function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) payable returns (uint[] memory amounts)",
-  "function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) returns (uint[] memory amounts)"
-];
-
-const MASTER = [
-  "function poolLength() view returns(uint256)",
-  "function userInfo(uint256,address) view returns(uint256,uint256)",
-  "function pendingCub(uint256,address) view returns(uint256)",
-  "function emergencyWithdraw(uint256)"
-];
+const opBNBChainId = 0xA4;  // opBNB chainId (w razie potrzeby możesz sprawdzić dokładny numer)
 
 // === Swap Handler ===
 async function handleSwap(){
@@ -131,10 +111,46 @@ async function connectWallet(){
   fetchLPInfo?.();
 }
 
+async function switchNetwork(){
+  if (window.ethereum) {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: `0x${opBNBChainId.toString(16)}` }],
+      });
+      console.log("Zmieniono sieć na opBNB");
+    } catch (error) {
+      console.error("Błąd podczas przełączania sieci", error);
+    }
+  }
+}
+
+async function addNetwork(){
+  if (window.ethereum) {
+    try {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: `0x${opBNBChainId.toString(16)}`,
+            chainName: 'opBNB',
+            nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+            rpcUrls: ['https://opbnb-rpc-url.com'], // Tutaj wstaw RPC URL
+            blockExplorerUrls: ['https://opbnb-block-explorer.com'], // Tu wstaw Explorer URL
+          },
+        ],
+      });
+    } catch (error) {
+      console.error("Błąd podczas dodawania sieci", error);
+    }
+  }
+}
+
+// === Balance Update ===
 async function updateBalances(){
   const t = new ethers.Contract(addr0101, ERC20, provider);
   const l = new ethers.Contract(addrLP, ERC20, provider);
-  const [b0101, bLP, bBNB] = await Promise.all([
+  const [b0101, bLP, bBNB] = await Promise.all([  
     t.balanceOf(account),
     l.balanceOf(account),
     provider.getBalance(account)
