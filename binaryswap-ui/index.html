@@ -177,6 +177,64 @@
     updateTranslations();
   });
 </script>
+<script>
+const originalTexts = new Map();
+let currentLang = 'en';
+
+// Lista tłumaczeń – rozbuduj, jeśli chcesz
+const translations = [
+  { pl: "📘 Dokumentacja BinarySwap", en: "📘 BinarySwap Docs" },
+  { pl: "📊 Aktualna cena BinarySwap i wielkość puli 0101/WBNB BinarySwap", en: "📊 0101/WBNB Pool & Price" },
+  { pl: "🌉 Błyskawiczny i tani Swap oraz Most opBNB <=FDUSD=> BSC", en: "🌉 Fast Bridge opBNB ⇄ FDUSD" },
+  { pl: "🌉 Oficjalny droższy (Wolny 7 dni) Most opBNB <=BNB=> BSC \n Oraz Third Party Bridge", en: "🌉 Official (7-day) opBNB ⇄ BNB + Third Party Bridge" },
+  { pl: "Połącz MetaMask", en: "Connect MetaMask" },
+  { pl: "Przełącz na opBNB", en: "Switch to opBNB" },
+  { pl: "Zawartość Portfela", en: "Wallet Balances" },
+  { pl: "Portfel:", en: "Wallet:" },
+  { pl: "Zamiana", en: "Swap Direction" },
+  { pl: "Poślizg", en: "Slippage" },
+  { pl: "Dodaj LP", en: "Add LP" },
+  { pl: "Usuń LP", en: "Remove LP" },
+  { pl: "Twoje pule (Więcej funkcji jak odstakowanie LP dodam wkrótce)", en: "Your Pools (More LP features coming soon)" },
+  { pl: "🌞 Tryb jasny", en: "🌞 Light Mode" },
+  { pl: "Polski", en: "Polski" }, // button label
+  { pl: "English", en: "English" }, // button label
+];
+
+function translateTo(lang) {
+  currentLang = lang;
+  document.querySelectorAll('body *').forEach(el => {
+    if (!originalTexts.has(el)) originalTexts.set(el, el.innerHTML);
+
+    translations.forEach(({ pl, en }) => {
+      const from = lang === 'pl' ? en : pl;
+      const to = lang === 'pl' ? pl : en;
+
+      if (el.innerHTML.trim() === from) {
+        el.innerHTML = to;
+      }
+    });
+  });
+}
+
+// Automatyczne wykrycie języka
+(function autoDetectLanguage() {
+  const browserLang = navigator.language || navigator.userLanguage;
+  if (browserLang.startsWith("pl")) {
+    translateTo('pl');
+  } else {
+    translateTo('en');
+  }
+})();
+
+// Funkcje do ręcznego przełączania
+function translateToEnglish() {
+  translateTo('en');
+}
+function translateToPolish() {
+  translateTo('pl');
+}
+</script>
 
 </body>
 </html>
