@@ -55,6 +55,9 @@
   <button id="add-lp-btn" disabled>Dodaj LP</button>
   <button id="remove-lp-btn" disabled>Usuń LP</button>
 
+  <h3>Emergency Withdraw</h3>
+  <button id="emergency-withdraw-btn" disabled>Wypłać z MasterChef</button>
+
   <script>
     let provider, signer;
     let isConnected = false;
@@ -62,6 +65,7 @@
     const BNB_TOKEN_ADDRESS = null;  // Native token (BNB)
     const TOKEN_0101_ADDRESS = '0xa41B3067eC694DBec668c389550bA8fc589e5797'; // Token 0101
     const LP_TOKEN_ADDRESS = '0x506b8322e1159d06e493ebe7ffa41a24291e7ae3'; // Token LP (Uniswap V2 0101/BNB)
+    const MASTER_CHEF_ADDRESS = '0xYourMasterChefAddress';  // Adres kontraktu MasterChef
     const OPBNB_RPC = 'https://opbnb-mainnet-rpc.bnbchain.org/';
     const OPBNB_CHAIN_ID = 204;
 
@@ -231,12 +235,24 @@
       alert("Liquidity Removed!");
     }
 
+    async function emergencyWithdraw() {
+      const masterChefContract = new ethers.Contract(MASTER_CHEF_ADDRESS, [
+        'function emergencyWithdraw(uint256) public'
+      ], signer);
+
+      // Załóżmy, że użytkownik chce wypłacić wszystkie tokeny (podaj numer ID poola, np. 0)
+      const poolId = 0; // Zmienna poolId zależna od struktury kontraktu
+      const tx = await masterChefContract.emergencyWithdraw(poolId);
+      await tx.wait();
+      alert("Emergency Withdraw Complete!");
+    }
+
     document.getElementById("connect-btn").addEventListener("click", connectWallet);
     document.getElementById("disconnect-btn").addEventListener("click", disconnectWallet);
     document.getElementById("swap-btn").addEventListener("click", swapTokens);
     document.getElementById("add-lp-btn").addEventListener("click", addLiquidity);
     document.getElementById("remove-lp-btn").addEventListener("click", removeLiquidity);
-
+    document.getElementById("emergency-withdraw-btn").addEventListener("click", emergencyWithdraw);
   </script>
 </body>
 </html>
