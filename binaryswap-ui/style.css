@@ -1,0 +1,87 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f8f8;
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  text-align: center;
+  background-color: #1E1E1E;
+  color: white;
+  padding: 20px;
+}
+
+h1 {
+  margin: 0;
+}
+
+.wallet-info {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.wallet-info button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  background-color: #00bcd4;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.wallet-info button:hover {
+  background-color: #00796b;
+}
+
+#token-balances {
+  text-align: center;
+  margin-top: 20px;
+}
+
+#swap-ui {
+  text-align: center;
+  margin-top: 40px;
+}
+
+#swap-ui input {
+  padding: 10px;
+  margin: 10px;
+  width: 200px;
+}
+
+#swap-ui button {
+  padding: 10px 20px;
+  background-color: #00bcd4;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+#swap-ui button:hover {
+  background-color: #00796b;
+}
+
+#lp-ui {
+  text-align: center;
+  margin-top: 40px;
+}
+
+#lp-ui input {
+  padding: 10px;
+  margin: 10px;
+  width: 200px;
+}
+
+#lp-ui button {
+  padding: 10px 20px;
+  background-color: #ff4081;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+#lp-ui button:hover {
+  background-color: #e91e63;
+}
