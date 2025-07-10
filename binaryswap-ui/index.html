@@ -99,7 +99,52 @@
 
   <div class="center-title">Tryb Awaryjny BinarySwap</div>
 
-  <div id="app-root"></div>
+  <!-- Nowe sekcje z funkcjami -->
+  <div id="app-root">
+    <!-- Sekcja portfela -->
+    <div class="section">
+      <p><strong>Portfel:</strong> <span id="wallet-address">Niepołączony</span></p>
+      <button onclick="connectWallet()"><i class="fab fa-ethereum"></i> Połącz MetaMask</button>
+      <button onclick="addNetwork()">Dodaj przełącz opBNB</button>
+    </div>
+
+    <!-- Salda tokenów -->
+    <div class="section">
+      <p>0101: <span id="balance-0101">–</span></p>
+      <p>BNB: <span id="balance-bnb">–</span></p>
+      <p>LP (0101/BNB): <span id="balance-lp">–</span></p>
+    </div>
+
+    <!-- Swap Tokenów -->
+    <div class="section">
+      <h3>Swap</h3>
+      <input type="number" id="swapPercent" placeholder="Procent salda (0‑100%)">
+      <select id="swapDirection">
+        <option value="toToken">BNB → 0101</option>
+        <option value="toBNB">0101 → BNB</option>
+      </select>
+      <select id="swapSlippage">
+        <option>1%</option>
+        <option>3%</option>
+        <option>5%</option>
+      </select>
+      <button onclick="handleSwap()"><i class="fas fa-exchange-alt"></i> Swap</button>
+    </div>
+
+    <!-- Dodaj / Usuń LP -->
+    <div class="section">
+      <h3>Pula Płynności</h3>
+      <input type="number" id="lpPercent" placeholder="Procent salda (0‑100%)">
+      <button onclick="addLiquidity(parseInt(document.getElementById('lpPercent').value))"><i class="fas fa-plus-circle"></i> Dodaj LP</button>
+      <button onclick="removeLiquidity(parseInt(document.getElementById('lpPercent').value))"><i class="fas fa-minus-circle"></i> Usuń LP</button>
+    </div>
+
+    <!-- MasterChef: Emergency Withdraw -->
+    <div class="section" id="lp-info">
+      <h3>MasterChef — Twoje pule</h3>
+      <!-- dynamicznie wygenerowane pule z przyciskami 🔥 -->
+    </div>
+  </div>
 
   <script>
     function toggleTheme() {
