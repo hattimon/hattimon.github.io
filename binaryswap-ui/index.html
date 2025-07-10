@@ -6,6 +6,7 @@
   <title>BinarySwap</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root { --bg:#1d1d1d; --text:#1db954; --card:#2a2a2a; --btn:#3a3a3a; --link:#a0ffcc; }
     [data-theme="light"] { --bg:#fff; --text:#000; --card:#f0f0f0; --btn:#e0e0e0; --link:#007acc; }
@@ -21,40 +22,28 @@
     .error-message{margin-top:20px;padding:10px;background-color:#f8d7da;border:1px solid #f5c6cb;border-radius:5px;color:#721c24;}
     #error-text{white-space: pre-wrap; word-wrap: break-word;}
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  
-<style>
-  #logo {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-  }
+  <style>
+    #logo { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+    body, html { margin: 0; padding: 0; }
+  </style>
 
-  /* Opcjonalnie: dla lepszego dopasowania do ekranu pełnej szerokości */
-  body, html {
-    margin: 0;
-    padding: 0;
-  }
-</style>
+  <img id="logo" src="logo.png" alt="BinarySwap logo">
 
-<img id="logo" src="logo.png" alt="BinarySwap logo">
-  
-<div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja</a></div>
-<div class="top-links"><a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 Kurs 0101/WBNB</a></div>
-<div class="top-links"><a href="https://pancakeswap.finance/bridge" target="_blank">🌉 Szybki Most opBNB ⇄ FDUSD</a></div>
-<div class="top-links"><a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">🌉 Oficjalny Most opBNB ⇄ BNB (7 dni)</a></div>
+  <div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja</a></div>
+  <div class="top-links"><a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 Kurs 0101/WBNB</a></div>
+  <div class="top-links"><a href="https://pancakeswap.finance/bridge" target="_blank">🌉 Szybki Most opBNB ⇄ FDUSD</a></div>
+  <div class="top-links"><a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">🌉 Oficjalny Most opBNB ⇄ BNB (7 dni)</a></div>
 
   <button class="theme-toggle" onclick="toggleTheme()">🌞 Tryb jasny</button>
   <div class="center-title" style="text-align: center; color: red; font-weight: bold;">Tryb Awaryjny BinarySwap</div>
- <p style="text-align: center;">
-  (<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)<br>
-  Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br>
-   <font color="orange" size="small">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia. <br>
-   Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>
-</p>
+  <p style="text-align: center;">
+    (<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)<br>
+    Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br>
+    <font color="orange" size="small">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia. <br>
+    Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>
+  </p>
 
   <div id="app-root">
     <div class="section">
@@ -101,9 +90,16 @@
 
     <div class="section" id="lp-info">
       <h3>MasterChef – Twoje pule (Więcej funkcji jak odstakowanie LP dodam wkrótce)</h3>
+      <p><strong>Pending CUB:</strong> <span id="pending-cub">–</span></p>
+      <p><strong>Stakowane LP:</strong> <span id="user-staked">–</span></p>
+      <p><strong>Opłata depozytowa:</strong> <span id="user-deposit-fee">–</span></p>
+      <p><strong>Reward Debt:</strong> <span id="user-reward-debt">–</span></p>
+      <p><strong>Balans LP w portfelu:</strong> <span id="user-lp-balance">–</span></p>
+      <p><strong>Allowance LP:</strong> <span id="user-allowance">–</span></p>
+      <button id="approve-lp-btn"><i class="fas fa-unlock-alt"></i> Zatwierdź LP</button>
+      <button id="deposit-lp-btn"><i class="fas fa-sign-in-alt"></i> Wpłać LP</button>
     </div>
 
-    <!-- Error Message Section -->
     <div class="error-message" id="error-container" style="display:none;">
       <strong>Błąd:</strong>
       <pre id="error-text"></pre>
