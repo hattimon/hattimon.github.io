@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -98,52 +98,62 @@
   </div>
 
   <script src="app.js"></script>
-  <script>
+<script>
+const originalTexts = new Map();
+let currentLang = 'en';
+
+// Lista tłumaczeń – rozbuduj, jeśli chcesz
+const translations = [
+  { pl: "📘 Dokumentacja BinarySwap", en: "📘 BinarySwap Docs" },
+  { pl: "📊 Aktualna cena BinarySwap i wielkość puli 0101/WBNB BinarySwap", en: "📊 0101/WBNB Pool & Price" },
+  { pl: "🌉 Błyskawiczny i tani Swap oraz Most opBNB <=FDUSD=> BSC", en: "🌉 Fast Bridge opBNB ⇄ FDUSD" },
+  { pl: "🌉 Oficjalny droższy (Wolny 7 dni) Most opBNB <=BNB=> BSC \n Oraz Third Party Bridge", en: "🌉 Official (7-day) opBNB ⇄ BNB + Third Party Bridge" },
+  { pl: "Połącz MetaMask", en: "Connect MetaMask" },
+  { pl: "Przełącz na opBNB", en: "Switch to opBNB" },
+  { pl: "Zawartość Portfela", en: "Wallet Balances" },
+  { pl: "Portfel:", en: "Wallet:" },
+  { pl: "Zamiana", en: "Swap Direction" },
+  { pl: "Poślizg", en: "Slippage" },
+  { pl: "Dodaj LP", en: "Add LP" },
+  { pl: "Usuń LP", en: "Remove LP" },
+  { pl: "Twoje pule (Więcej funkcji jak odstakowanie LP dodam wkrótce)", en: "Your Pools (More LP features coming soon)" },
+  { pl: "🌞 Tryb jasny", en: "🌞 Light Mode" },
+  { pl: "Polski", en: "Polski" }, // button label
+  { pl: "English", en: "English" }, // button label
+];
+
+function translateTo(lang) {
+  currentLang = lang;
+  document.querySelectorAll('body *').forEach(el => {
+    if (!originalTexts.has(el)) originalTexts.set(el, el.innerHTML);
+
+    translations.forEach(({ pl, en }) => {
+      const from = lang === 'pl' ? en : pl;
+      const to = lang === 'pl' ? pl : en;
+
+      if (el.innerHTML.trim() === from) {
+        el.innerHTML = to;
+      }
+    });
+  });
+}
+
+// Automatyczne wykrycie języka
+(function autoDetectLanguage() {
+  const browserLang = navigator.language || navigator.userLanguage;
+  if (browserLang.startsWith("pl")) {
+    translateTo('pl');
+  } else {
+    translateTo('en');
+  }
+})();
+
+// Funkcje do ręcznego przełączania
 function translateToEnglish() {
-  document.querySelector(".center-title").innerText = "BinarySwap Emergency Mode";
-  document.querySelector("title").innerText = "BinarySwap";
-  document.getElementById("wallet-address").innerText = "Disconnected";
-
-  // Top links
-  document.querySelectorAll(".top-links a")[0].innerHTML = "📘 BinarySwap Documentation";
-  document.querySelectorAll(".top-links a")[1].innerHTML = "📊 Live BinarySwap 0101/WBNB Pool Price";
-  document.querySelectorAll(".top-links a")[2].innerHTML = "🌉 Fast & Cheap opBNB ⇔ FDUSD Bridge";
-  document.querySelectorAll(".top-links a")[3].innerHTML = "🌉 Official 7-Day opBNB ⇔ BNB Bridge <br> And Third Party Bridges";
-
-  // Wallet section
-  document.querySelectorAll(".section")[0].querySelector("p").innerHTML = "<strong>Wallet:</strong> <span id='wallet-address'>Disconnected</span>";
-  document.querySelectorAll(".section")[0].querySelectorAll("button")[0].innerHTML = "<i class='fab fa-ethereum'></i> Connect MetaMask";
-  document.querySelectorAll(".section")[0].querySelectorAll("button")[1].innerHTML = "<i class='fas fa-network-wired'></i> Switch to opBNB";
-
-  // Balances
-  document.querySelectorAll(".section")[1].querySelector("h3").innerText = "Wallet Balances";
-  document.getElementById("balance-0101").previousSibling.textContent = "0101: ";
-  document.getElementById("balance-bnb").previousSibling.textContent = "BNB: ";
-  document.getElementById("balance-lp").previousSibling.textContent = "LP (0101/BNB): ";
-
-  // Swap section
-  document.querySelectorAll(".section")[2].querySelector("h3").innerText = "Swap";
-  document.getElementById("swapPercent").placeholder = "amount in (1–100)%";
-  document.querySelector("#swapDirection").options[0].text = "BNB → 0101";
-  document.querySelector("#swapDirection").options[1].text = "0101 → BNB";
-  document.querySelectorAll(".section")[2].querySelectorAll("h4")[0].innerText = "Direction";
-  document.querySelectorAll(".section")[2].querySelectorAll("h4")[1].innerText = "Slippage";
-  document.querySelectorAll(".section")[2].querySelector("button").innerHTML = "<i class='fas fa-exchange-alt'></i> Swap";
-
-  // LP section
-  document.querySelectorAll(".section")[3].querySelector("h3").innerText = "Liquidity Pool";
-  document.getElementById("lpPercent").placeholder = "amount in (1–100)%";
-  document.querySelectorAll(".section")[3].querySelectorAll("button")[0].innerHTML = "<i class='fas fa-plus-circle'></i> Add LP";
-  document.querySelectorAll(".section")[3].querySelectorAll("button")[1].innerHTML = "<i class='fas fa-minus-circle'></i> Remove LP";
-
-  // MasterChef section
-  document.getElementById("lp-info").querySelector("h3").innerText = "MasterChef – Your Pools (Unstaking coming soon)";
-
-  // Paragraph
-  document.querySelector("p").innerHTML = `(<b>Clicking SWAP or Add/Remove LP</b> may require multiple confirmations for interacting with the contracts for the given amount – such as Swap approval and confirmation.)<br>
-  This is a secure (SSL) alternative GUI using original BinarySwap contract functions.<br>
-  <font color="yellow" size="small">We recommend the <a href="https://rabby.io/" target="_blank">Rabby.io</a> wallet which also allows revoking approvals.<br>
-  For transaction history, use <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>`;
+  translateTo('en');
+}
+function translateToPolish() {
+  translateTo('pl');
 }
 </script>
 
