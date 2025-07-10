@@ -5,6 +5,9 @@ const addrLP = "0x506b8322e1159d06e493ebe7ffa41a24291e7ae3";
 const routerAddr = "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b";
 const masterAddr = "0x39a786421889EB581bd105508a0D2Dc03523B903";
 
+// Adres WBNB (Wrapped BNB)
+const wbnbAddress = "0x4200000000000000000000000000000000000006";
+
 const ERC20 = [
   "function balanceOf(address) view returns(uint256)",
   "function approve(address,uint256) returns(bool)"
@@ -52,7 +55,7 @@ async function swapBNBto0101(pc, slippage, deadline){
   try {
     const tx = await r.swapExactETHForTokensSupportingFeeOnTransferTokens(
       minAmountOut, 
-      [ethers.ZeroAddress, addr0101], 
+      [wbnbAddress, addr0101], // Zamieniamy ZeroAddress na wbnbAddress
       account, 
       deadline, 
       { value: v }
@@ -78,7 +81,7 @@ async function swap0101toBNB(pc, slippage, deadline){
     const tx = await r.swapExactTokensForETHSupportingFeeOnTransferTokens(
       v, 
       minAmountOut, 
-      [addr0101, ethers.ZeroAddress], 
+      [addr0101, wbnbAddress], // Zamieniamy ZeroAddress na wbnbAddress
       account, 
       deadline
     );
