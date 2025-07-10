@@ -6,6 +6,18 @@ const routerAddr = "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b";
 const masterAddr = "0x39a786421889EB581bd105508a0D2Dc03523B903";
 const wbnbAddress = "0x4200000000000000000000000000000000000006";
 
+const opBNB = {
+  chainId: "0xcc", // 204 dec
+  chainName: "opBNB",
+  nativeCurrency: {
+    name: "BNB",
+    symbol: "BNB",
+    decimals: 18
+  },
+  rpcUrls: ["https://opbnb-mainnet-rpc.bnbchain.org/"],
+  blockExplorerUrls: ["https://mainnet.opbnbscan.com/"]
+};
+
 const ERC20 = [
   "function balanceOf(address) view returns(uint256)",
   "function approve(address,uint256) returns(bool)",
@@ -121,14 +133,42 @@ async function removeLiquidity(pc){
 
 // === Wallet Functions ===
 async function connectWallet(){
-  if(!window.ethereum) return showError("Zainstaluj MetaMask!");
-  provider = new ethers.BrowserProvider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  signer = await provider.getSigner();
-  account = await signer.getAddress();
-  document.getElementById("wallet-address").innerText = account;
-  updateBalances();
-  fetchLPInfo?.();
+  if (!window.ethereum) return showError("Zainstaluj MetaMask!");
+
+  try {
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+    if (currentChainId !== opBNB.chainId) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: opBNB.chainId }]
+        });
+      } catch (switchError) {
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [opBNB]
+            });
+          } catch (addError) {
+            return showError("Nie można dodać sieci opBNB: " + addError.message);
+          }
+        } else {
+          return showError("Nie można przełączyć sieci: " + switchError.message);
+        }
+      }
+    }
+
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = await provider.getSigner();
+    account = await signer.getAddress();
+    document.getElementById("wallet-address").innerText = account;
+    updateBalances();
+    fetchLPInfo?.();
+  } catch (err) {
+    showError("Błąd połączenia z portfelem: " + err.message);
+  }
 }
 
 async function updateBalances(){
