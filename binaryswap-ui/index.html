@@ -99,8 +99,19 @@
     </div>
 
     <div class="section" id="lp-info">
-      <h3>MasterChef – Twoje pule (Więcej funkcji jak odstakowanie LP dodam wkrótce)</h3>
+      <h3>MasterChef – Twoje pule (Więcej funkcji jak odstakowanie LP dodam wkrótce)</h3>  
     </div>
+
+    <div>
+     <input type="number" id="stakePercent" placeholder="%" min="1" max="100" />
+     <button onclick="stakeLP(parseInt(document.getElementById('stakePercent').value))">Stake LP</button>
+     <button onclick="unstakeLP(parseInt(document.getElementById('stakePercent').value))">Unstake LP</button>
+    </div>
+   <div>
+     <span>Stakowane LP: <span id="staked-lp">0.00</span></span><br />
+     <span>Pending Reward: <span id="pending-cub">0.00</span></span>
+   </div>
+    
 
     <!-- Error Message Section -->
     <div class="error-message" id="error-container" style="display:none;">
