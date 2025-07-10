@@ -5,72 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BinarySwap</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <style>
     :root { --bg:#1d1d1d; --text:#1db954; --card:#2a2a2a; --btn:#3a3a3a; --link:#a0ffcc; }
     [data-theme="light"] { --bg:#fff; --text:#000; --card:#f0f0f0; --btn:#e0e0e0; --link:#007acc; }
-    body { margin:0; padding:20px; font-family:Arial; background:var(--bg); color:var(--text); transition:0.3s; }
-    a { color:var(--link); text-decoration:none; }
-    button {
-      margin:5px; padding:10px 15px; border:none; border-radius:5px;
-      background:var(--btn); color:var(--text); cursor:pointer;
-      display:inline-flex; align-items:center; gap:6px;
-    }
-    input, select {
-      margin:5px; padding:8px; border:1px solid #555; border-radius:5px;
-      background:var(--card); color:var(--text);
-    }
-    .section {
-      margin-top:20px; padding:15px; border:1px solid #444; border-radius:10px;
-      background:var(--card);
-    }
-    #logo {
-      max-width:500px; display:block; margin:0 auto;
-      max-width: 100%;
-      height: auto;
-    }
-    .top-links {
-      text-align:center; margin-bottom:20px;
-    }
-    .theme-toggle {
-      position:fixed; top:10px; right:10px; padding:8px 12px; border-radius:5px;
-      z-index:1000; background:var(--btn); color:var(--text);
-      border:none; cursor:pointer;
-    }
-    .center-title {
-      text-align:center; font-size:24px; margin-top:10px; color: red; font-weight: bold;
-    }
-    .error-message {
-      margin-top:20px; padding:10px;
-      background-color:#f8d7da; border:1px solid #f5c6cb;
-      border-radius:5px; color:#721c24;
-    }
-    #error-text {
-      white-space: pre-wrap; word-wrap: break-word;
-    }
+    body { margin:0;padding:20px;font-family:Arial;background:var(--bg);color:var(--text);transition:0.3s; }
+    a{color:var(--link);text-decoration:none;}
+    button{margin:5px;padding:10px 15px;border:none;border-radius:5px;background:var(--btn);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+    input,select{margin:5px;padding:8px;border:1px solid #555;border-radius:5px;background:var(--card);color:var(--text);}
+    .section{margin-top:20px;padding:15px;border:1px solid #444;border-radius:10px;background:var(--card); }
+    #logo{max-width:500px;display:block;margin:0 auto;}
+    .top-links{text-align:center;margin-bottom:20px;}
+    .theme-toggle{position:fixed;top:10px;right:10px;padding:8px 12px;border-radius:5px;z-index:1000;background:var(--btn);color:var(--text);border:none;cursor:pointer;}
+    .center-title{text-align:center;font-size:24px;margin-top:10px;}
+    .error-message{margin-top:20px;padding:10px;background-color:#f8d7da;border:1px solid #f5c6cb;border-radius:5px;color:#721c24;}
+    #error-text{white-space: pre-wrap; word-wrap: break-word;}
   </style>
 </head>
 <body>
+  
+<style>
+  #logo {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
 
-  <img id="logo" src="logo.png" alt="BinarySwap logo" />
+  /* Opcjonalnie: dla lepszego dopasowania do ekranu pełnej szerokości */
+  body, html {
+    margin: 0;
+    padding: 0;
+  }
+</style>
 
-  <div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja</a></div>
-  <div class="top-links"><a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 Kurs 0101/WBNB</a></div>
-  <div class="top-links"><a href="https://pancakeswap.finance/bridge" target="_blank">🌉 Szybki Most opBNB ⇄ FDUSD</a></div>
-  <div class="top-links"><a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">🌉 Oficjalny Most opBNB ⇄ BNB (7 dni)</a></div>
+<img id="logo" src="logo.png" alt="BinarySwap logo">
+  
+<div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja</a></div>
+<div class="top-links"><a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 Kurs 0101/WBNB</a></div>
+<div class="top-links"><a href="https://pancakeswap.finance/bridge" target="_blank">🌉 Szybki Most opBNB ⇄ FDUSD</a></div>
+<div class="top-links"><a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">🌉 Oficjalny Most opBNB ⇄ BNB (7 dni)</a></div>
 
   <button class="theme-toggle" onclick="toggleTheme()">🌞 Tryb jasny</button>
-
-  <div class="center-title">Tryb Awaryjny BinarySwap</div>
-
-  <p style="text-align: center;">
-    (<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)<br />
-    Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br />
-    <font color="orange" size="small">
-      Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia. <br />
-      Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.
-    </font>
-  </p>
+  <div class="center-title" style="text-align: center; color: red; font-weight: bold;">Tryb Awaryjny BinarySwap</div>
+ <p style="text-align: center;">
+  (<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)<br>
+  Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br>
+   <font color="orange" size="small">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia. <br>
+   Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>
+</p>
 
   <div id="app-root">
     <div class="section">
@@ -88,7 +71,7 @@
 
     <div class="section">
       <h3>Swap</h3>
-      <input type="number" id="swapPercent" placeholder="ilość w (1–100) %" min="1" max="100" />
+      <input type="number" id="swapPercent" placeholder="ilość w (1–100) %">
       <h4>Zamiana</h4>
       <select id="swapDirection">
         <option value="toToken">BNB → 0101</option>
@@ -110,27 +93,14 @@
 
     <div class="section">
       <h3>Pula Płynności</h3>
-      <input type="number" id="lpPercent" placeholder="ilość w (1–100) %" min="1" max="100" />
-      <button onclick="addLiquidity(parseInt(document.getElementById('lpPercent').value))"><i class="fas fa-plus-circle"></i> Dodaj LP</button>
-      <button onclick="removeLiquidity(parseInt(document.getElementById('lpPercent').value))"><i class="fas fa-minus-circle"></i> Usuń LP</button>
+      <input type="number" id="lpPercent" placeholder="ilość w (1–100) %">
+      <button onclick="addLiquidity(parseInt(lpPercent.value))"><i class="fas fa-plus-circle"></i> Dodaj LP</button>
+      <button onclick="removeLiquidity(parseInt(lpPercent.value))"><i class="fas fa-minus-circle"></i> Usuń LP</button>
     </div>
 
     <div class="section" id="lp-info">
       <h3>MasterChef – Twoje pule (Więcej funkcji jak odstakowanie LP dodam wkrótce)</h3>
     </div>
-
-    <div>
-      <input type="number" id="stakePercent" placeholder="%" min="1" max="100" />
-      <button onclick="stakeLP(parseInt(document.getElementById('stakePercent').value))">Stake LP</button>
-      <button onclick="unstakeLP(parseInt(document.getElementById('stakePercent').value))">Unstake LP</button>
-    </div>
-
-    <div>
-      <span>Stakowane LP: <span id="staked-lp">0.00</span></span><br />
-      <span>Pending Reward: <span id="pending-cub">0.00</span></span>
-    </div>
-
-    <button onclick="harvest()">🎁 Odbierz nagrodę</button>
 
     <!-- Error Message Section -->
     <div class="error-message" id="error-container" style="display:none;">
