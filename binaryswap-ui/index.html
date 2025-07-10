@@ -22,15 +22,12 @@
 
     <div id="pool-info-section">
         <h3>Informacje o puli</h3>
-        <label for="pool-id">Pool ID:</label>
-        <input type="number" id="pool-id" placeholder="Wpisz ID puli">
-        <button id="get-pool-info-btn">Pobierz informacje o puli</button>
+        <p id="pool-id-label">Ładowanie domyślnego Pool ID...</p>
         <div id="pool-info"></div>
     </div>
 
     <div id="pending-cub-section">
         <h3>Pending Cub</h3>
-        <button id="get-pending-cub-btn">Pobierz Pending Cub</button>
         <div id="pending-cub"></div>
     </div>
 
@@ -54,6 +51,8 @@
                 document.getElementById("disconnect-btn").style.display = "block";
                 isConnected = true;
                 loadTokenBalances();
+                loadDefaultPoolInfo();
+                loadPendingCub();
             } else {
                 alert("Zainstaluj MetaMask!");
             }
@@ -70,6 +69,7 @@
             document.getElementById("balances-list").innerHTML = "";
             document.getElementById("pending-cub").innerHTML = "";
             document.getElementById("pool-info").innerHTML = "";
+            document.getElementById("pool-id-label").innerText = "Pool ID: Wpisz ID puli";
         }
 
         // Ładowanie sald tokenów
@@ -107,59 +107,52 @@
             });
         }
 
-        // Pobieranie informacji o puli
-        async function getPoolInfo() {
-            const poolId = document.getElementById("pool-id").value;
-            if (!poolId) {
-                alert("Proszę podać Pool ID!");
-                return;
-            }
-
+        // Pobieranie domyślnych informacji o puli
+        async function loadDefaultPoolInfo() {
             const masterChefContract = new ethers.Contract(MASTER_CHEF_ADDRESS, [
                 'function poolInfo(uint256) view returns (address lpToken, uint256 allocPoint, uint256 lastRewardBlock, uint256 accCubPerShare, uint16 depositFeeBP)',
+                'function poolLength() view returns (uint256)',
             ], provider);
 
             try {
-                const poolData = await masterChefContract.poolInfo(poolId);
-                document.getElementById("pool-info").innerHTML = `
-                    LP Token: ${poolData[0]}<br>
-                    Alokacja punktów: ${poolData[1]}<br>
-                    Ostatni blok nagród: ${poolData[2]}<br>
-                    Acc Cub per Share: ${poolData[3]}<br>
-                    Opłata depozytowa (Basis Points): ${poolData[4]}
-                `;
+                const poolLength = await masterChefContract.poolLength();
+                if (poolLength > 0) {
+                    const poolData = await masterChefContract.poolInfo(0); // Pobieramy informacje dla pool ID = 0
+                    document.getElementById("pool-id-label").innerText = `Pool ID: 0`;
+                    document.getElementById("pool-info").innerHTML = `
+                        LP Token: ${poolData[0]}<br>
+                        Alokacja punktów: ${poolData[1]}<br>
+                        Ostatni blok nagród: ${poolData[2]}<br>
+                        Acc Cub per Share: ${poolData[3]}<br>
+                        Opłata depozytowa (Basis Points): ${poolData[4]}
+                    `;
+                } else {
+                    document.getElementById("pool-id-label").innerText = "Brak dostępnych pul";
+                }
             } catch (error) {
                 console.error("Błąd pobierania informacji o puli:", error);
-                alert("Wystąpił błąd!");
+                alert("Wystąpił błąd przy ładowaniu puli!");
             }
         }
 
         // Pobieranie Pending Cub
-        async function getPendingCub() {
-            const poolId = document.getElementById("pool-id").value;
-            if (!poolId) {
-                alert("Proszę podać Pool ID!");
-                return;
-            }
-
+        async function loadPendingCub() {
             const masterChefContract = new ethers.Contract(MASTER_CHEF_ADDRESS, [
                 'function pendingCub(uint256, address) view returns (uint256)',
             ], provider);
 
             try {
-                const pendingAmount = await masterChefContract.pendingCub(poolId, await signer.getAddress());
+                const pendingAmount = await masterChefContract.pendingCub(0, await signer.getAddress());
                 document.getElementById("pending-cub").innerHTML = `Pending Cub: ${ethers.formatUnits(pendingAmount, 18)}`;
             } catch (error) {
                 console.error("Błąd pobierania pendingCub:", error);
-                alert("Wystąpił błąd!");
+                alert("Wystąpił błąd przy ładowaniu Pending Cub!");
             }
         }
 
         // Event listeners
         document.getElementById("connect-btn").addEventListener("click", connectWallet);
         document.getElementById("disconnect-btn").addEventListener("click", disconnectWallet);
-        document.getElementById("get-pool-info-btn").addEventListener("click", getPoolInfo);
-        document.getElementById("get-pending-cub-btn").addEventListener("click", getPendingCub);
 
         window.onload = () => {
             document.getElementById("disconnect-btn").style.display = "none"; // Hide disconnect initially
