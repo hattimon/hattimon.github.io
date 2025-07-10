@@ -23,7 +23,7 @@
   </style>
 </head>
 <body>
-  <img id="logo" src="https://binaryswap.gitbook.io/binaryswap/~gitbook/image?url=https%3A%2F%2F2482429338-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FPnPFfp8a9uwxin5LSued%252Fuploads%252F7Nz5XlN4pQI7ftMofUz2%252Fbinaryswapbanner.png%3Falt%3Dmedia%26token%3Dd44d453a-40b2-473b-9951-0b3ec49ac320&width=1248&dpr=4&quality=100&sign=f88a1d88&sv=2" alt="BinarySwap logo">
+  <img id="logo" src="https://binaryswap.gitbook.io/binaryswap/~gitbook/image?url=https%3A%2F%2F2482429338-files.gitbook.io%2F%7E%2Ffiles%252Fv0%252Fb%252Fgitbook-x-prod.appspot.com%252Fo%252Fspaces%252FPnPFfp8a9uwxin5LSued%252Fuploads%252F7Nz5XlN4pQI7ftMofUz2%252Fbinaryswapbanner.png%3Falt%3Dmedia%26token%3Dd44d453a-40b2-473b-9951-0b3ec49ac320&width=1248&dpr=4&quality=100&sign=f88a1d88&sv=2" alt="BinarySwap logo">
   
   <div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja BinarySwap</a></div>
   <button class="theme-toggle" onclick="toggleTheme()">🌞 Tryb jasny</button>
@@ -33,7 +33,7 @@
     <div class="section">
       <p><strong>Portfel:</strong> <span id="wallet-address">Niepołączony</span></p>
       <button onclick="connectWallet()"><i class="fab fa-ethereum"></i> Połącz MetaMask</button>
-      <button onclick="addNetwork()"><i class="fas fa-network-wired"></i> Przełącz na opBNB</button>
+      <button onclick="switchToOpBNB()"><i class="fas fa-network-wired"></i> Przełącz na opBNB</button>
     </div>
 
     <div class="section">
@@ -57,7 +57,7 @@
         <option value="20">20%</option>
         <option value="30">30%</option>
         <option value="50">50%</option>
-        <option value="50">100%</option>
+        <option value="100">100%</option>
       </select>
       <button onclick="handleSwap()"><i class="fas fa-exchange-alt"></i> Swap</button>
     </div>
