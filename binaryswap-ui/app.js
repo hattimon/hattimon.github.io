@@ -1,3 +1,17 @@
+Dobra, przejrzałem dokładnie Twój oryginalny plik i to, co przesłałem — faktycznie uciąłem się na końcu przy sekcji WALLET (początek `switchToOpBNB` i dalej).
+
+Pełna zawartość pliku **powinna zawierać wszystkie Twoje funkcje**, w tym:
+
+* Wallet (connectWallet, switchToOpBNB)
+* updateBalances
+* toggleTheme
+* showError
+
+---
+
+### Teraz pełny, poprawiony i kompletny `app.js` z Twojego oryginału + poprawkami:
+
+```js
 // === Web3 Config ===
 let provider, signer, account;
 const addr0101 = "0xa41b3067ec694dbec668c389550ba8fc589e5797";
@@ -8,10 +22,11 @@ const wbnbAddress = "0x4200000000000000000000000000000000000006";
 
 // === MasterChef Setup ===
 const pidLP = 0;
-const masterLP = new ethers.Interface([
+const masterLPABI = [
   "function deposit(uint256 _pid, uint256 _amount) external",
-  "function withdraw(uint256 _pid, uint256 _amount) external"
-]);
+  "function withdraw(uint256 _pid, uint256 _amount) external",
+  "function userInfo(uint256,address) view returns (uint256 amount, uint256 rewardDebt)"
+];
 
 // === Chain Info ===
 const opBNB = {
@@ -46,9 +61,9 @@ async function handleSwap(){
   const deadline = Math.floor(Date.now()/1000) + 300;
 
   if (swapDirection.value === "toToken") {
-    swapBNBto0101(pc, slippage, deadline);
+    await swapBNBto0101(pc, slippage, deadline);
   } else {
-    swap0101toBNB(pc, slippage, deadline);
+    await swap0101toBNB(pc, slippage, deadline);
   }
 }
 
@@ -70,7 +85,7 @@ async function swapBNBto0101(pc, slippage, deadline){
       { value: amountIn }
     );
     await tx.wait();
-    updateBalances();
+    await updateBalances();
   } catch (error) {
     showError("Błąd przy swapie (BNB → 0101): " + error.message);
   }
@@ -100,7 +115,7 @@ async function swap0101toBNB(pc, slippage, deadline){
       deadline
     );
     await tx.wait();
-    updateBalances();
+    await updateBalances();
   } catch (error) {
     showError("Błąd przy swapie (0101 → BNB): " + error.message);
   }
@@ -110,11 +125,19 @@ async function swap0101toBNB(pc, slippage, deadline){
 async function addLiquidity(pc){
   const t = new ethers.Contract(addr0101, ERC20, signer);
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
-  const bB = await provider.getBalance(account), bT = await t.balanceOf(account);
-  const vB = bB * BigInt(pc) / 100n, vT = bT * BigInt(pc) / 100n;
-  await t.approve(routerAddr, vT);
-  await r.addLiquidityETH(addr0101, vT, 0, 0, account, Math.floor(Date.now()/1e3)+300, {value: vB});
-  updateBalances();
+  const bB = await provider.getBalance(account);
+  const bT = await t.balanceOf(account);
+  const vB = bB * BigInt(pc) / 100n;
+  const vT = bT * BigInt(pc) / 100n;
+
+  try {
+    await t.approve(routerAddr, vT);
+    const tx = await r.addLiquidityETH(addr0101, vT, 0, 0, account, Math.floor(Date.now()/1e3)+300, {value: vB});
+    await tx.wait();
+    await updateBalances();
+  } catch (err) {
+    showError("Błąd przy dodawaniu płynności: " + err.message);
+  }
 }
 
 async function removeLiquidity(pc){
@@ -122,15 +145,21 @@ async function removeLiquidity(pc){
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
   const bal = await l.balanceOf(account);
   const v = bal * BigInt(pc) / 100n;
-  await l.approve(routerAddr, v);
-  await r.removeLiquidityETH(addr0101, v, 0, 0, account, Math.floor(Date.now()/1e3)+300);
-  updateBalances();
+
+  try {
+    await l.approve(routerAddr, v);
+    const tx = await r.removeLiquidityETH(addr0101, v, 0, 0, account, Math.floor(Date.now()/1e3)+300);
+    await tx.wait();
+    await updateBalances();
+  } catch (err) {
+    showError("Błąd przy usuwaniu płynności: " + err.message);
+  }
 }
 
 // === STAKING MASTER ===
 async function stakeLP(pc){
   const lp = new ethers.Contract(addrLP, ERC20, signer);
-  const master = new ethers.Contract(masterAddr, masterLP, signer);
+  const master = new ethers.Contract(masterAddr, masterLPABI, signer);
   const balance = await lp.balanceOf(account);
   const amount = balance * BigInt(pc) / 100n;
 
@@ -141,33 +170,33 @@ async function stakeLP(pc){
     }
     const tx = await master.deposit(pidLP, amount);
     await tx.wait();
-    updateBalances();
+    await updateBalances();
   } catch (err) {
     showError("Błąd przy stake LP: " + err.message);
   }
 }
 
 async function unstakeLP(pc){
-  const master = new ethers.Contract(masterAddr, masterLP, signer);
-  const lpInfo = await master["userInfo"](pidLP, account);
-  const staked = lpInfo[0];
+  const master = new ethers.Contract(masterAddr, masterLPABI, signer);
+  const lpInfo = await master.userInfo(pidLP, account);
+  const staked = lpInfo.amount;
   const amount = staked * BigInt(pc) / 100n;
 
   try {
     const tx = await master.withdraw(pidLP, amount);
     await tx.wait();
-    updateBalances();
+    await updateBalances();
   } catch (err) {
     showError("Błąd przy unstake LP: " + err.message);
   }
 }
 
 async function harvest() {
-  const master = new ethers.Contract(masterAddr, masterLP, signer);
+  const master = new ethers.Contract(masterAddr, masterLPABI, signer);
   try {
     const tx = await master.deposit(pidLP, 0);
     await tx.wait();
-    updateBalances();
+    await updateBalances();
   } catch (err) {
     showError("Błąd przy odbieraniu nagrody: " + err.message);
   }
@@ -212,7 +241,7 @@ async function connectWallet(){
     signer = await provider.getSigner();
     account = await signer.getAddress();
     document.getElementById("wallet-address").innerText = account;
-    updateBalances();
+    await updateBalances();
   } catch (err) {
     showError("Błąd połączenia z portfelem: " + err.message);
   }
