@@ -5,50 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BinarySwap</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <style>
+    :root {
+      --bg-color: #1d1d1d;
+      --text-color: #d1e7dd;
+      --card-bg: #2a2a2a;
+      --button-bg: #3a3a3a;
+      --link-color: #a0ffcc;
+    }
+
+    [data-theme="light"] {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --card-bg: #f0f0f0;
+      --button-bg: #e0e0e0;
+      --link-color: #007acc;
+    }
+
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
       margin: 0;
-      background: #2c1f17;
-      color: #f8f4f0;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background 0.3s, color 0.3s;
     }
-    h2, h3, p, label { 
-      color: #f8f4f0; 
-    }
-    a { 
-      color: #ffcc66; 
-      text-decoration: none; 
-    }
+    h2, h3, p, label { color: var(--text-color); }
+    a { color: var(--link-color); text-decoration: none; }
     button {
       margin: 5px;
       padding: 10px 15px;
       cursor: pointer;
-      background: #6c4f3d;
-      color: white;
+      background: var(--button-bg);
+      color: var(--text-color);
       border: none;
       border-radius: 5px;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
+      gap: 5px;
     }
-    button i {
-      margin-right: 8px;
-    }
-    input {
+    input, select {
       padding: 8px;
       margin: 5px;
       border: 1px solid #555;
       border-radius: 5px;
-      background: #3b2a21;
-      color: white;
+      background: var(--card-bg);
+      color: var(--text-color);
     }
     .section {
       border: 1px solid #444;
       padding: 15px;
       margin-top: 20px;
-      background: #3b2a21;
+      background: var(--card-bg);
       border-radius: 10px;
     }
     #logo {
@@ -61,151 +69,54 @@
       text-align: center;
       margin-bottom: 20px;
     }
-    .switch-container {
+    .theme-toggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: var(--button-bg);
+      color: var(--text-color);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+    .center-title {
       text-align: center;
-      margin-top: 20px;
-    }
-    .switch-label {
-      color: #f8f4f0;
-    }
-    .dark-mode {
-      background: #2c1f17;
-      color: #f8f4f0;
-    }
-    .light-mode {
-      background: #f8f4f0;
-      color: #2c1f17;
-    }
-    .light-mode button {
-      background: #4b8d6b;
-    }
-    .light-mode .section {
-      background: #4b8d6b;
-      border: 1px solid #3a6a53;
+      font-size: 24px;
+      margin-top: 10px;
     }
   </style>
 </head>
-<body class="dark-mode">
+<body>
   <img id="logo" src="https://binaryswap.gitbook.io/binaryswap/~gitbook/image?url=https%3A%2F%2F2482429338-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FPnPFfp8a9uwxin5LSued%252Fuploads%252F7Nz5XlN4pQI7ftMofUz2%252Fbinaryswapbanner.png%3Falt%3Dmedia%26token%3Dd44d453a-40b2-473b-9951-0b3ec49ac320&width=1248&dpr=4&quality=100&sign=f88a1d88&sv=2" alt="BinarySwap logo">
+
   <div class="top-links">
     <a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja BinarySwap</a>
   </div>
 
-  <h2>BinarySwap</h2>
+  <button class="theme-toggle" onclick="toggleTheme()">🌞 Tryb jasny</button>
 
-  <!-- Dark Mode Switch -->
-  <div class="switch-container">
-    <label class="switch-label" for="darkModeToggle">Tryb ciemny / jasny</label>
-    <button id="darkModeToggle" onclick="toggleDarkMode()"><i class="fas fa-adjust"></i> Zmień tryb</button>
-  </div>
+  <div class="center-title">Tryb Awaryjny BinarySwap</div>
 
-  <!-- MetaMask Connection -->
-  <div class="section" id="metaMaskConnection">
-    <button onclick="connectMetaMask()"><i class="fab fa-ethereum"></i> Połącz z MetaMask</button>
-    <p id="walletAddress"></p>
-  </div>
-
-  <!-- Swap Section -->
-  <div class="section" id="swapSection">
-    <h3>Swap Tokenów</h3>
-    <div>
-      <input type="text" id="swapAmount" placeholder="Ilość do swapu" />
-      <input type="number" id="slippage" value="1" min="0" max="50" step="1" placeholder="Slippage (%)" />
-    </div>
-    <button onclick="swapTokens()"><i class="fas fa-exchange-alt"></i> Swap</button>
-  </div>
-
-  <!-- Add/Remove Liquidity Section -->
-  <div class="section" id="liquiditySection">
-    <h3>Dodaj / Usuń LP</h3>
-    <div>
-      <label for="addLiquidityAmount">Dodaj LP (50/50 balans):</label>
-      <input type="number" id="addLiquidityAmount" placeholder="Ilość tokenów do dodania" />
-      <button onclick="addLiquidity()"><i class="fas fa-plus-circle"></i> Dodaj LP</button>
-    </div>
-    <div>
-      <label for="removeLiquidityAmount">Usuń LP:</label>
-      <input type="number" id="removeLiquidityAmount" placeholder="Ilość LP do usunięcia" />
-      <button onclick="removeLiquidity()"><i class="fas fa-minus-circle"></i> Usuń LP</button>
-    </div>
-  </div>
+  <!-- Tutaj będą dodane funkcje: saldo, swap, LP, MasterChef -->
 
   <script>
-    const darkModeToggle = document.getElementById("darkModeToggle");
-    const body = document.body;
-
-    // Dark mode toggle function
-    function toggleDarkMode() {
-      if (body.classList.contains("dark-mode")) {
-        body.classList.remove("dark-mode");
-        body.classList.add("light-mode");
-        localStorage.setItem("darkMode", "disabled");
-      } else {
-        body.classList.remove("light-mode");
-        body.classList.add("dark-mode");
-        localStorage.setItem("darkMode", "enabled");
-      }
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute("data-theme") !== "light";
+      html.setAttribute("data-theme", isDark ? "light" : "dark");
+      document.querySelector('.theme-toggle').textContent = isDark ? '🌙 Tryb ciemny' : '🌞 Tryb jasny';
+      localStorage.setItem('theme', isDark ? 'light' : 'dark');
     }
 
-    // Automatically apply dark mode based on localStorage
-    window.onload = () => {
-      if (localStorage.getItem("darkMode") === "enabled") {
-        body.classList.add("dark-mode");
-        body.classList.remove("light-mode");
-      } else {
-        body.classList.add("light-mode");
-        body.classList.remove("dark-mode");
-      }
-    };
-
-    // Connect MetaMask
-    async function connectMetaMask() {
-      if (typeof window.ethereum !== "undefined") {
-        const provider = new ethers.BrowserProvider(window.ethereum);
-        const accounts = await provider.send("eth_requestAccounts", []);
-        document.getElementById("walletAddress").innerText = `Połączono z: ${accounts[0]}`;
-      } else {
-        alert("Zainstaluj MetaMask!");
-      }
-    }
-
-    // Swap Tokens Function
-    async function swapTokens() {
-      const swapAmount = document.getElementById("swapAmount").value;
-      const slippage = document.getElementById("slippage").value;
-
-      if (!swapAmount) {
-        alert("Wprowadź ilość tokenów do swapu.");
-        return;
-      }
-
-      // Integracja z kontraktami swap (zaktualizuj odpowiednio ABI i kontrakty)
-      console.log(`Swap ${swapAmount} tokenów z slippage: ${slippage}%`);
-    }
-
-    // Add Liquidity Function
-    async function addLiquidity() {
-      const addLiquidityAmount = document.getElementById("addLiquidityAmount").value;
-      if (!addLiquidityAmount) {
-        alert("Wprowadź ilość tokenów do dodania do puli.");
-        return;
-      }
-
-      // Integracja z kontraktami dodawania LP
-      console.log(`Dodaj ${addLiquidityAmount} tokenów do puli LP`);
-    }
-
-    // Remove Liquidity Function
-    async function removeLiquidity() {
-      const removeLiquidityAmount = document.getElementById("removeLiquidityAmount").value;
-      if (!removeLiquidityAmount) {
-        alert("Wprowadź ilość LP do usunięcia.");
-        return;
-      }
-
-      // Integracja z kontraktami usuwania LP
-      console.log(`Usuń ${removeLiquidityAmount} LP z puli`);
-    }
+    (function () {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const theme = saved || (prefersDark ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+      document.querySelector('.theme-toggle').textContent = theme === 'dark' ? '🌞 Tryb jasny' : '🌙 Tryb ciemny';
+    })();
   </script>
 </body>
 </html>
