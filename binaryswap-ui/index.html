@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>BinarySwap GUI</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
+  <script src="app.js"></script>
+</head>
+<body>
+  <h1>BinarySwap Smart Contract GUI</h1>
+  <button onclick="connectWallet()">🔗 Połącz z MetaMask</button>
+  <p id="wallet-address"></p>
+
+  <!-- Contract Interaction UI -->
+  <div id="contract-ui"></div>
+
+  <!-- Network Details Section -->
+  <h2>Sieć OpBNB Mainnet</h2>
+  <ul>
+    <li><strong>RPC:</strong> <a href="https://opbnb-mainnet-rpc.bnbchain.org/" target="_blank">https://opbnb-mainnet-rpc.bnbchain.org/</a></li>
+    <li><strong>Chain ID:</strong> 204</li>
+    <li><strong>Currency Symbol:</strong> BNB</li>
+    <li><strong>Explorer:</strong> <a href="https://mainnet.opbnbscan.com/" target="_blank">OpBNB Explorer</a></li>
+    <li><strong>Bridge:</strong> <a href="https://opbnb-bridge.bnbchain.org/deposit" target="_blank">OpBNB Bridge</a></li>
+  </ul>
+
+  <!-- Curiosity Section: Init Code Hash -->
+  <h3>Ciekawostka: Init Code Hash</h3>
+  <p>Init Code Hash używany przez kontrakt Factory: <strong>0x5ef9d9226744e2d0335d11ea48193e4ccd224fb01d8557c9db762f93cfe52881</strong></p>
+
+  <!-- Link to BinarySwap Contracts Documentation -->
+  <h3>Więcej informacji</h3>
+  <ul>
+    <li><a href="https://binaryswap.gitbook.io/binaryswap/contracts" target="_blank">Dokumentacja kontraktów BinarySwap</a></li>
+    <li><a href="https://binaryswap.gitbook.io/binaryswap/network-details" target="_blank">Szczegóły sieci OpBNB</a></li>
+  </ul>
+</body>
+</html>
