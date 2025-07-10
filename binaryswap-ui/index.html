@@ -1,258 +1,169 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BinarySwap</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.6.9/dist/ethers.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f9;
-      padding: 20px;
-      text-align: center;
-    }
-    button {
-      background-color: #1e90ff;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      cursor: pointer;
-      margin: 10px;
-    }
-    button:disabled {
-      background-color: #cccccc;
-    }
-    input {
-      padding: 10px;
-      margin: 10px;
-    }
-    #wallet-address {
-      font-weight: bold;
-    }
-    .balances {
-      text-align: left;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BinarySwap</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
-  <h1>BinarySwap</h1>
-  <h2>Swap, add liquidity, and more</h2>
+    <h1>BinarySwap - Swap, Add Liquidity i więcej</h1>
 
-  <div id="wallet-address">Portfel odłączony</div>
-  <button id="connect-btn">Połącz z MetaMask</button>
-  <button id="disconnect-btn" style="display:none;">Odłącz portfel</button>
+    <div id="wallet-status">
+        <p id="wallet-address">Portfel odłączony</p>
+        <button id="connect-btn">Połącz z MetaMask</button>
+        <button id="disconnect-btn" style="display:none;">Odłącz portfel</button>
+    </div>
 
-  <div id="balances" class="balances"></div>
+    <div id="balances">
+        <h3>Twoje tokeny</h3>
+        <div id="balances-list"></div>
+    </div>
 
-  <h3>Swap Tokenów</h3>
-  <input type="text" id="swap-amount" placeholder="Wpisz ilość do swapu">
-  <button id="swap-btn" disabled>Swap</button>
+    <div id="pool-info-section">
+        <h3>Informacje o puli</h3>
+        <label for="pool-id">Pool ID:</label>
+        <input type="number" id="pool-id" placeholder="Wpisz ID puli">
+        <button id="get-pool-info-btn">Pobierz informacje o puli</button>
+        <div id="pool-info"></div>
+    </div>
 
-  <h3>Dodaj / Usuń LP</h3>
-  <input type="text" id="lp-amount-a" placeholder="Ilość tokena A">
-  <input type="text" id="lp-amount-b" placeholder="Ilość tokena B">
-  <button id="add-lp-btn" disabled>Dodaj LP</button>
-  <button id="remove-lp-btn" disabled>Usuń LP</button>
+    <div id="pending-cub-section">
+        <h3>Pending Cub</h3>
+        <button id="get-pending-cub-btn">Pobierz Pending Cub</button>
+        <div id="pending-cub"></div>
+    </div>
 
-  <h3>Emergency Withdraw</h3>
-  <button id="emergency-withdraw-btn" disabled>Wypłać z MasterChef</button>
+    <script>
+        // Kontrakt MasterChef
+        const MASTER_CHEF_ADDRESS = '0x39a786421889EB581bd105508a0D2Dc03523B903';
+        const TOKEN_0101_ADDRESS = '0xa41B3067eC694DBec668c389550bA8fc589e5797'; // Adres tokena 0101
 
-  <script>
-    let provider, signer;
-    let isConnected = false;
+        let provider, signer;
+        let isConnected = false;
 
-    const BNB_TOKEN_ADDRESS = null;  // Native token (BNB)
-    const TOKEN_0101_ADDRESS = '0xa41B3067eC694DBec668c389550bA8fc589e5797'; // Token 0101
-    const LP_TOKEN_ADDRESS = '0x506b8322e1159d06e493ebe7ffa41a24291e7ae3'; // Token LP (Uniswap V2 0101/BNB)
-    const MASTER_CHEF_ADDRESS = '0xYourMasterChefAddress';  // Adres kontraktu MasterChef
-    const OPBNB_RPC = 'https://opbnb-mainnet-rpc.bnbchain.org/';
-    const OPBNB_CHAIN_ID = 204;
-
-    async function connectWallet() {
-      if (window.ethereum) {
-        // Prośba o połączenie z MetaMask
-        await ethereum.request({ method: 'eth_requestAccounts' });
-        provider = new ethers.BrowserProvider(window.ethereum);
-        signer = await provider.getSigner();
-        const address = await signer.getAddress();
-        document.getElementById("wallet-address").innerText = `Połączono: ${address}`;
-        document.getElementById("connect-btn").style.display = "none";
-        document.getElementById("disconnect-btn").style.display = "block";
-
-        isConnected = true;
-        loadTokenBalances(); // Załaduj salda po połączeniu portfela
-        checkNetwork();
-      } else {
-        alert("Zainstaluj MetaMask!");
-      }
-    }
-
-    async function disconnectWallet() {
-      signer = null;
-      provider = null;
-      isConnected = false;
-
-      // Resetowanie UI
-      document.getElementById("wallet-address").innerText = "Portfel odłączony";
-      document.getElementById("connect-btn").style.display = "block";
-      document.getElementById("disconnect-btn").style.display = "none";
-      document.getElementById("balances").innerHTML = "";
-      document.getElementById("swap-amount").value = '';
-    }
-
-    async function checkNetwork() {
-      const currentNetwork = await provider.getNetwork();
-      if (currentNetwork.chainId !== OPBNB_CHAIN_ID) {
-        alert("Przełączam na opBNB Mainnet...");
-        try {
-          await ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: ethers.hexValue(OPBNB_CHAIN_ID),
-              chainName: 'OpBNB Mainnet',
-              rpcUrls: [OPBNB_RPC],
-              nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
-              blockExplorerUrls: ['https://mainnet.opbnbscan.com/']
-            }]
-          });
-        } catch (error) {
-          console.error("Nie udało się dodać sieci:", error);
+        // Połączenie z MetaMask
+        async function connectWallet() {
+            if (window.ethereum) {
+                await ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                const address = await signer.getAddress();
+                document.getElementById("wallet-address").innerText = `Połączono: ${address}`;
+                document.getElementById("connect-btn").style.display = "none";
+                document.getElementById("disconnect-btn").style.display = "block";
+                isConnected = true;
+                loadTokenBalances();
+            } else {
+                alert("Zainstaluj MetaMask!");
+            }
         }
-      }
-    }
 
-    async function loadTokenBalances() {
-      const balances = [];
+        // Odłączenie portfela
+        async function disconnectWallet() {
+            signer = null;
+            provider = null;
+            isConnected = false;
+            document.getElementById("wallet-address").innerText = "Portfel odłączony";
+            document.getElementById("connect-btn").style.display = "block";
+            document.getElementById("disconnect-btn").style.display = "none";
+            document.getElementById("balances-list").innerHTML = "";
+            document.getElementById("pending-cub").innerHTML = "";
+            document.getElementById("pool-info").innerHTML = "";
+        }
 
-      try {
-        const bnbBalance = await provider.getBalance(await signer.getAddress());
-        balances.push({ symbol: 'BNB', amount: ethers.formatUnits(bnbBalance, 18) });
-      } catch (error) {
-        console.error("Błąd pobierania salda BNB:", error);
-      }
+        // Ładowanie sald tokenów
+        async function loadTokenBalances() {
+            const balances = [];
 
-      try {
-        const token0101Contract = new ethers.Contract(TOKEN_0101_ADDRESS, ['function balanceOf(address) view returns (uint256)'], signer);
-        const token0101Balance = await token0101Contract.balanceOf(await signer.getAddress());
-        balances.push({ symbol: '0101', amount: ethers.formatUnits(token0101Balance, 18) });
-      } catch (error) {
-        console.error("Błąd pobierania salda 0101:", error);
-      }
+            // BNB Balance
+            try {
+                const bnbBalance = await provider.getBalance(await signer.getAddress());
+                balances.push({ symbol: 'BNB', amount: ethers.formatUnits(bnbBalance, 18) });
+            } catch (error) {
+                console.error("Błąd pobierania salda BNB:", error);
+            }
 
-      try {
-        const lpTokenContract = new ethers.Contract(LP_TOKEN_ADDRESS, ['function balanceOf(address) view returns (uint256)'], signer);
-        const lpTokenBalance = await lpTokenContract.balanceOf(await signer.getAddress());
-        balances.push({ symbol: 'LP Token', amount: ethers.formatUnits(lpTokenBalance, 18) });
-      } catch (error) {
-        console.error("Błąd pobierania salda LP:", error);
-      }
+            // Token 0101 Balance
+            try {
+                const token0101Contract = new ethers.Contract(TOKEN_0101_ADDRESS, ['function balanceOf(address) view returns (uint256)'], signer);
+                const token0101Balance = await token0101Contract.balanceOf(await signer.getAddress());
+                balances.push({ symbol: '0101', amount: ethers.formatUnits(token0101Balance, 18) });
+            } catch (error) {
+                console.error("Błąd pobierania salda 0101:", error);
+            }
 
-      updateTokenBalances(balances);
-    }
+            updateTokenBalances(balances);
+        }
 
-    function updateTokenBalances(balances) {
-      const balanceList = document.getElementById('balances');
-      balanceList.innerHTML = '';
-      balances.forEach(balance => {
-        const balanceElement = document.createElement('p');
-        balanceElement.innerText = `${balance.symbol}: ${balance.amount}`;
-        balanceList.appendChild(balanceElement);
-      });
-    }
+        // Wyświetlanie sald tokenów
+        function updateTokenBalances(balances) {
+            const balanceList = document.getElementById('balances-list');
+            balanceList.innerHTML = '';
+            balances.forEach(balance => {
+                const balanceElement = document.createElement('p');
+                balanceElement.innerText = `${balance.symbol}: ${balance.amount}`;
+                balanceList.appendChild(balanceElement);
+            });
+        }
 
-    async function swapTokens() {
-      const amount = document.getElementById("swap-amount").value;
-      const maxAmount = ethers.parseUnits(amount, 18);
+        // Pobieranie informacji o puli
+        async function getPoolInfo() {
+            const poolId = document.getElementById("pool-id").value;
+            if (!poolId) {
+                alert("Proszę podać Pool ID!");
+                return;
+            }
 
-      const routerContract = new ethers.Contract(
-        "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b", // Router address
-        ["function swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"],
-        signer
-      );
+            const masterChefContract = new ethers.Contract(MASTER_CHEF_ADDRESS, [
+                'function poolInfo(uint256) view returns (address lpToken, uint256 allocPoint, uint256 lastRewardBlock, uint256 accCubPerShare, uint16 depositFeeBP)',
+            ], provider);
 
-      const path = [TOKEN_0101_ADDRESS, BNB_TOKEN_ADDRESS];
-      const to = await signer.getAddress();
-      const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+            try {
+                const poolData = await masterChefContract.poolInfo(poolId);
+                document.getElementById("pool-info").innerHTML = `
+                    LP Token: ${poolData[0]}<br>
+                    Alokacja punktów: ${poolData[1]}<br>
+                    Ostatni blok nagród: ${poolData[2]}<br>
+                    Acc Cub per Share: ${poolData[3]}<br>
+                    Opłata depozytowa (Basis Points): ${poolData[4]}
+                `;
+            } catch (error) {
+                console.error("Błąd pobierania informacji o puli:", error);
+                alert("Wystąpił błąd!");
+            }
+        }
 
-      const tx = await routerContract.swapExactTokensForTokens(
-        maxAmount,
-        0,
-        path,
-        to,
-        deadline
-      );
+        // Pobieranie Pending Cub
+        async function getPendingCub() {
+            const poolId = document.getElementById("pool-id").value;
+            if (!poolId) {
+                alert("Proszę podać Pool ID!");
+                return;
+            }
 
-      await tx.wait();
-      alert("Swap completed!");
-    }
+            const masterChefContract = new ethers.Contract(MASTER_CHEF_ADDRESS, [
+                'function pendingCub(uint256, address) view returns (uint256)',
+            ], provider);
 
-    async function addLiquidity() {
-      const amountA = document.getElementById("lp-amount-a").value;
-      const amountB = document.getElementById("lp-amount-b").value;
+            try {
+                const pendingAmount = await masterChefContract.pendingCub(poolId, await signer.getAddress());
+                document.getElementById("pending-cub").innerHTML = `Pending Cub: ${ethers.formatUnits(pendingAmount, 18)}`;
+            } catch (error) {
+                console.error("Błąd pobierania pendingCub:", error);
+                alert("Wystąpił błąd!");
+            }
+        }
 
-      const routerContract = new ethers.Contract(
-        "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b", // Router address
-        ["function addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)"],
-        signer
-      );
+        // Event listeners
+        document.getElementById("connect-btn").addEventListener("click", connectWallet);
+        document.getElementById("disconnect-btn").addEventListener("click", disconnectWallet);
+        document.getElementById("get-pool-info-btn").addEventListener("click", getPoolInfo);
+        document.getElementById("get-pending-cub-btn").addEventListener("click", getPendingCub);
 
-      const tx = await routerContract.addLiquidity(
-        TOKEN_0101_ADDRESS,
-        BNB_TOKEN_ADDRESS,
-        ethers.parseUnits(amountA, 18),
-        ethers.parseUnits(amountB, 18),
-        0,
-        0,
-        await signer.getAddress(),
-        Math.floor(Date.now() / 1000) + 60 * 20
-      );
-
-      await tx.wait();
-      alert("Liquidity Added!");
-    }
-
-    async function removeLiquidity() {
-      const amount = document.getElementById("lp-amount-a").value;
-
-      const routerContract = new ethers.Contract(
-        "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b", // Router address
-        ["function removeLiquidity(address,address,uint256,uint256,uint256,address,uint256)"],
-        signer
-      );
-
-      const tx = await routerContract.removeLiquidity(
-        TOKEN_0101_ADDRESS,
-        BNB_TOKEN_ADDRESS,
-        ethers.parseUnits(amount, 18),
-        0,
-        0,
-        await signer.getAddress(),
-        Math.floor(Date.now() / 1000) + 60 * 20
-      );
-
-      await tx.wait();
-      alert("Liquidity Removed!");
-    }
-
-    async function emergencyWithdraw() {
-      const masterChefContract = new ethers.Contract(MASTER_CHEF_ADDRESS, [
-        'function emergencyWithdraw(uint256) public'
-      ], signer);
-
-      // Załóżmy, że użytkownik chce wypłacić wszystkie tokeny (podaj numer ID poola, np. 0)
-      const poolId = 0; // Zmienna poolId zależna od struktury kontraktu
-      const tx = await masterChefContract.emergencyWithdraw(poolId);
-      await tx.wait();
-      alert("Emergency Withdraw Complete!");
-    }
-
-    document.getElementById("connect-btn").addEventListener("click", connectWallet);
-    document.getElementById("disconnect-btn").addEventListener("click", disconnectWallet);
-    document.getElementById("swap-btn").addEventListener("click", swapTokens);
-    document.getElementById("add-lp-btn").addEventListener("click", addLiquidity);
-    document.getElementById("remove-lp-btn").addEventListener("click", removeLiquidity);
-    document.getElementById("emergency-withdraw-btn").addEventListener("click", emergencyWithdraw);
-  </script>
+        window.onload = () => {
+            document.getElementById("disconnect-btn").style.display = "none"; // Hide disconnect initially
+        };
+    </script>
 </body>
 </html>
