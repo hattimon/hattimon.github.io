@@ -132,6 +132,44 @@ async function removeLiquidity(pc){
 }
 
 // === Wallet Functions ===
+const opBNB = {
+  chainId: '0x15eb', // 5615 w hex
+  chainName: 'opBNB Testnet',
+  nativeCurrency: {
+    name: 'BNB',
+    symbol: 'tBNB',
+    decimals: 18,
+  },
+  rpcUrls: ['https://opbnb-testnet-rpc.bnbchain.org'],
+  blockExplorerUrls: ['https://opbnbscan.com'],
+};
+
+
+async function switchToOpBNB() {
+  if (!window.ethereum) return showError("Zainstaluj MetaMask!");
+
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: opBNB.chainId }]
+    });
+  } catch (switchError) {
+    if (switchError.code === 4902) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [opBNB]
+        });
+      } catch (addError) {
+        return showError("Nie można dodać sieci opBNB: " + addError.message);
+      }
+    } else {
+      return showError("Nie można przełączyć sieci: " + switchError.message);
+    }
+  }
+}
+
+
 async function connectWallet(){
   if (!window.ethereum) return showError("Zainstaluj MetaMask!");
 
