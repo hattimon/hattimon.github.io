@@ -5,6 +5,8 @@ let contractInstances = {}; // To store contract instances
 // MetaMask connect and disconnect functions
 async function connectWallet() {
   if (window.ethereum) {
+    // Sprawdzenie, czy MetaMask jest zainstalowany
+    console.log('MetaMask zainstalowany:', window.ethereum);
     await ethereum.request({ method: 'eth_requestAccounts' });
     provider = new ethers.BrowserProvider(window.ethereum);
     signer = await provider.getSigner();
