@@ -1,167 +1,81 @@
-let provider, signer;
-let isConnected = false;
+// Placeholder for updated app.js implementing:
+// - Swapy w obie strony (0101 ↔ BNB)
+// - Obsługa LP (dodawanie/usuwanie procentowe)
+// - Pokazanie salda tokenów (0101, BNB, LP)
+// - Emergency Withdraw z MasterChef
+// - Slippage
 
-const BNB_TOKEN_ADDRESS = null;  // Native token (BNB)
-const TOKEN_0101_ADDRESS = '0xa41B3067eC694DBec668c389550bA8fc589e5797'; // Token 0101
-const LP_TOKEN_ADDRESS = '0x506b8322e1159d06e493ebe7ffa41a24291e7ae3'; // Token LP (Uniswap V2 0101/BNB)
+import { ethers } from "ethers";
 
-async function connectWallet() {
+// 📅 Konfiguracja
+const token0101 = "0xa41b3067ec694dbec668c389550ba8fc589e5797";
+const routerAddress = "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b";
+const lpTokenAddress = "0x506b8322e1159d06e493ebe7ffa41a24291e7ae3";
+const masterChefAddress = "0x..."; // uzupełnij
+
+let provider;
+let signer;
+let walletAddress;
+
+// 🚀 Inicjalizacja
+window.onload = async () => {
   if (window.ethereum) {
-    // Prośba o połączenie z MetaMask
-    await ethereum.request({ method: 'eth_requestAccounts' });
     provider = new ethers.BrowserProvider(window.ethereum);
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
     signer = await provider.getSigner();
-    const address = await signer.getAddress();
+    walletAddress = accounts[0];
 
-    // Wyświetlanie adresu portfela
-    document.getElementById("wallet-address").innerText = `Połączono: ${address}`;
-    document.getElementById("connect-btn").style.display = "none";
-    document.getElementById("disconnect-btn").style.display = "block";
-
-    isConnected = true;
-    loadTokenBalances(); // Załaduj salda po połączeniu portfela
+    // TODO: render balances & GUI
+    console.log("Połączono z:", walletAddress);
   } else {
     alert("Zainstaluj MetaMask!");
   }
-}
-
-async function disconnectWallet() {
-  signer = null;
-  provider = null;
-  isConnected = false;
-
-  // Resetowanie UI
-  document.getElementById("wallet-address").innerText = "Portfel odłączony";
-  document.getElementById("connect-btn").style.display = "block";
-  document.getElementById("disconnect-btn").style.display = "none";
-  document.getElementById("balances-list").innerHTML = "";
-  document.getElementById("swap-amount").value = '';
-}
-
-async function loadTokenBalances() {
-  const balances = [];
-
-  // 1. BNB Balance
-  try {
-    const bnbBalance = await provider.getBalance(await signer.getAddress());
-    balances.push({ symbol: 'BNB', amount: ethers.formatUnits(bnbBalance, 18) });
-  } catch (error) {
-    console.error("Błąd pobierania salda BNB:", error);
-  }
-
-  // 2. Token 0101 Balance
-  try {
-    const token0101Contract = new ethers.Contract(TOKEN_0101_ADDRESS, ['function balanceOf(address) view returns (uint256)'], signer);
-    const token0101Balance = await token0101Contract.balanceOf(await signer.getAddress());
-    balances.push({ symbol: '0101', amount: ethers.formatUnits(token0101Balance, 18) });
-  } catch (error) {
-    console.error("Błąd pobierania salda 0101:", error);
-  }
-
-  // 3. LP Token Balance
-  try {
-    const lpTokenContract = new ethers.Contract(LP_TOKEN_ADDRESS, ['function balanceOf(address) view returns (uint256)'], signer);
-    const lpTokenBalance = await lpTokenContract.balanceOf(await signer.getAddress());
-    balances.push({ symbol: 'LP Token', amount: ethers.formatUnits(lpTokenBalance, 18) });
-  } catch (error) {
-    console.error("Błąd pobierania salda LP:", error);
-  }
-
-  updateTokenBalances(balances); // Aktualizowanie UI z saldami
-}
-
-function updateTokenBalances(balances) {
-  const balanceList = document.getElementById('balances-list');
-  balanceList.innerHTML = '';
-  balances.forEach(balance => {
-    const balanceElement = document.createElement('p');
-    balanceElement.innerText = `${balance.symbol}: ${balance.amount}`;
-    balanceList.appendChild(balanceElement);
-  });
-}
-
-async function swapTokens() {
-  const amount = document.getElementById("swap-amount").value;
-  const maxAmount = ethers.parseUnits(amount, 18);
-
-  const routerContract = new ethers.Contract(
-    "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b", // Router address
-    ["function swapExactTokensForTokens(uint256,uint256,address[],address,uint256)"],
-    signer
-  );
-
-  const path = [TOKEN_0101_ADDRESS, BNB_TOKEN_ADDRESS]; // Ścieżka: 0101 → BNB
-  const to = await signer.getAddress();
-  const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
-
-  const tx = await routerContract.swapExactTokensForTokens(
-    maxAmount,
-    0,
-    path,
-    to,
-    deadline
-  );
-
-  await tx.wait();
-  alert("Swap completed!");
-}
-
-// Add and remove LP
-async function addLiquidity() {
-  const amountA = document.getElementById("lp-amount-a").value;
-  const amountB = document.getElementById("lp-amount-b").value;
-
-  const routerContract = new ethers.Contract(
-    "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b", // Router address
-    ["function addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256)"],
-    signer
-  );
-
-  const tx = await routerContract.addLiquidity(
-    TOKEN_0101_ADDRESS,
-    BNB_TOKEN_ADDRESS, // If BNB is being added
-    ethers.parseUnits(amountA, 18),
-    ethers.parseUnits(amountB, 18),
-    0,
-    0,
-    await signer.getAddress(),
-    Math.floor(Date.now() / 1000) + 60 * 20
-  );
-
-  await tx.wait();
-  alert("Liquidity Added!");
-}
-
-async function removeLiquidity() {
-  const amount = document.getElementById("lp-amount-a").value; // LP token amount to remove
-
-  const routerContract = new ethers.Contract(
-    "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b", // Router address
-    ["function removeLiquidity(address,address,uint256,uint256,uint256,address,uint256)"],
-    signer
-  );
-
-  const tx = await routerContract.removeLiquidity(
-    TOKEN_0101_ADDRESS,
-    BNB_TOKEN_ADDRESS, // If BNB is being removed
-    ethers.parseUnits(amount, 18),
-    0,
-    0,
-    await signer.getAddress(),
-    Math.floor(Date.now() / 1000) + 60 * 20
-  );
-
-  await tx.wait();
-  alert("Liquidity Removed!");
-}
-
-// Event listeners
-document.getElementById("connect-btn").addEventListener("click", connectWallet);
-document.getElementById("disconnect-btn").addEventListener("click", disconnectWallet);
-document.getElementById("swap-btn").addEventListener("click", swapTokens);
-document.getElementById("add-lp-btn").addEventListener("click", addLiquidity);
-document.getElementById("remove-lp-btn").addEventListener("click", removeLiquidity);
-
-window.onload = () => {
-  document.getElementById("disconnect-btn").style.display = "none"; // Hide disconnect initially
 };
+
+// 🔄 Pobieranie sald
+async function getBalances() {
+  const token = new ethers.Contract(token0101, ERC20_ABI, provider);
+  const lp = new ethers.Contract(lpTokenAddress, ERC20_ABI, provider);
+
+  const [balance0101, balanceBNB, balanceLP] = await Promise.all([
+    token.balanceOf(walletAddress),
+    provider.getBalance(walletAddress),
+    lp.balanceOf(walletAddress),
+  ]);
+
+  return {
+    token0101: ethers.formatUnits(balance0101, 18),
+    bnb: ethers.formatUnits(balanceBNB, 18),
+    lp: ethers.formatUnits(balanceLP, 18)
+  };
+}
+
+// 🥜 Swap 0101 → BNB
+async function swapTokenToBNB(amount, slippage) {
+  // TODO
+}
+
+// ⚡ Swap BNB → 0101
+async function swapBNBToToken(amountInEth, slippage) {
+  // TODO
+}
+
+// 🌌 Add LP procentowo
+async function addLiquidity(percent) {
+  // TODO: pobierz saldo 0101 i BNB, przelicz wartości na 50/50 i dodaj LP
+}
+
+// 🔄 Remove LP procentowo
+async function removeLiquidity(percent) {
+  // TODO: pobierz saldo LP i usuń część tokenów
+}
+
+// ❌ Emergency Withdraw
+async function emergencyWithdraw(poolId) {
+  const masterChef = new ethers.Contract(masterChefAddress, MASTER_CHEF_ABI, signer);
+  const tx = await masterChef.emergencyWithdraw(poolId);
+  await tx.wait();
+  alert("Emergency Withdraw wykonane!");
+}
+
+// Użyj tych funkcji i GUI (HTML) do wywołania operacji przez przyciski
