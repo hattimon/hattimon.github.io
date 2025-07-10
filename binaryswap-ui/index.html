@@ -48,7 +48,7 @@
   <div id="app-root">
     <div class="section">
       <p><strong>Portfel:</strong> <span id="wallet-address">Niepołączony</span></p>
-      <button onclick="connectWallet()"><i class="fab fa-ethereum"></i> Połącz/Odświerz Portfel</button>
+      <button id="connect-wallet-btn"><i class="fab fa-ethereum"></i> Połącz/Odświerz Portfel</button>
       <button onclick="switchToOpBNB()"><i class="fas fa-network-wired"></i> Przełącz na opBNB</button>
     </div>
 
@@ -78,7 +78,7 @@
         <option value="50">50%</option>
         <option value="100">100%</option>
       </select>
-      <button onclick="handleSwap()"><i class="fas fa-exchange-alt"></i> Swap</button>
+      <button id="btn-swap"><i class="fas fa-exchange-alt"></i> Swap</button>
     </div>
 
     <div class="section">
