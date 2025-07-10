@@ -165,7 +165,7 @@ async function connectWallet(){
     account = await signer.getAddress();
     document.getElementById("wallet-address").innerText = account;
     updateBalances();
-    fetchLPInfo?.();
+    // fetchLPInfo?.();
   } catch (err) {
     showError("Błąd połączenia z portfelem: " + err.message);
   }
