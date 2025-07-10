@@ -162,6 +162,17 @@ async function unstakeLP(pc){
   }
 }
 
+async function harvest() {
+  const master = new ethers.Contract(masterAddr, masterLP, signer);
+  try {
+    const tx = await master.deposit(pidLP, 0);
+    await tx.wait();
+    updateBalances();
+  } catch (err) {
+    showError("Błąd przy odbieraniu nagrody: " + err.message);
+  }
+}
+
 // === WALLET ===
 async function switchToOpBNB() {
   if (!window.ethereum) return showError("Zainstaluj MetaMask!");
