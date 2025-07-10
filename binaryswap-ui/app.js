@@ -1,5 +1,5 @@
 let provider, signer;
-let isConnected = false; // Flaga do śledzenia stanu połączenia
+let isConnected = false;
 
 const BNB_TOKEN_ADDRESS = null;  // Native token (BNB)
 const TOKEN_0101_ADDRESS = '0xa41B3067eC694DBec668c389550bA8fc589e5797'; // Token 0101
@@ -7,17 +7,19 @@ const LP_TOKEN_ADDRESS = '0x506b8322e1159d06e493ebe7ffa41a24291e7ae3'; // Token 
 
 async function connectWallet() {
   if (window.ethereum) {
+    // Prośba o połączenie z MetaMask
     await ethereum.request({ method: 'eth_requestAccounts' });
     provider = new ethers.BrowserProvider(window.ethereum);
     signer = await provider.getSigner();
     const address = await signer.getAddress();
 
+    // Wyświetlanie adresu portfela
     document.getElementById("wallet-address").innerText = `Połączono: ${address}`;
     document.getElementById("connect-btn").style.display = "none";
     document.getElementById("disconnect-btn").style.display = "block";
 
     isConnected = true;
-    loadTokenBalances();
+    loadTokenBalances(); // Załaduj salda po połączeniu portfela
   } else {
     alert("Zainstaluj MetaMask!");
   }
@@ -28,6 +30,7 @@ async function disconnectWallet() {
   provider = null;
   isConnected = false;
 
+  // Resetowanie UI
   document.getElementById("wallet-address").innerText = "Portfel odłączony";
   document.getElementById("connect-btn").style.display = "block";
   document.getElementById("disconnect-btn").style.display = "none";
@@ -38,21 +41,33 @@ async function disconnectWallet() {
 async function loadTokenBalances() {
   const balances = [];
 
-  // BNB Balance
-  const bnbBalance = await provider.getBalance(await signer.getAddress());
-  balances.push({ symbol: 'BNB', amount: ethers.formatUnits(bnbBalance, 18) });
+  // 1. BNB Balance
+  try {
+    const bnbBalance = await provider.getBalance(await signer.getAddress());
+    balances.push({ symbol: 'BNB', amount: ethers.formatUnits(bnbBalance, 18) });
+  } catch (error) {
+    console.error("Błąd pobierania salda BNB:", error);
+  }
 
-  // Token 0101 Balance
-  const token0101Contract = new ethers.Contract(TOKEN_0101_ADDRESS, ['function balanceOf(address) view returns (uint256)'], signer);
-  const token0101Balance = await token0101Contract.balanceOf(await signer.getAddress());
-  balances.push({ symbol: '0101', amount: ethers.formatUnits(token0101Balance, 18) });
+  // 2. Token 0101 Balance
+  try {
+    const token0101Contract = new ethers.Contract(TOKEN_0101_ADDRESS, ['function balanceOf(address) view returns (uint256)'], signer);
+    const token0101Balance = await token0101Contract.balanceOf(await signer.getAddress());
+    balances.push({ symbol: '0101', amount: ethers.formatUnits(token0101Balance, 18) });
+  } catch (error) {
+    console.error("Błąd pobierania salda 0101:", error);
+  }
 
-  // LP Token Balance
-  const lpTokenContract = new ethers.Contract(LP_TOKEN_ADDRESS, ['function balanceOf(address) view returns (uint256)'], signer);
-  const lpTokenBalance = await lpTokenContract.balanceOf(await signer.getAddress());
-  balances.push({ symbol: 'LP Token', amount: ethers.formatUnits(lpTokenBalance, 18) });
+  // 3. LP Token Balance
+  try {
+    const lpTokenContract = new ethers.Contract(LP_TOKEN_ADDRESS, ['function balanceOf(address) view returns (uint256)'], signer);
+    const lpTokenBalance = await lpTokenContract.balanceOf(await signer.getAddress());
+    balances.push({ symbol: 'LP Token', amount: ethers.formatUnits(lpTokenBalance, 18) });
+  } catch (error) {
+    console.error("Błąd pobierania salda LP:", error);
+  }
 
-  updateTokenBalances(balances);
+  updateTokenBalances(balances); // Aktualizowanie UI z saldami
 }
 
 function updateTokenBalances(balances) {
@@ -75,7 +90,7 @@ async function swapTokens() {
     signer
   );
 
-  const path = [TOKEN_0101_ADDRESS, "0xbbbbb...."]; // Replace with correct path
+  const path = [TOKEN_0101_ADDRESS, BNB_TOKEN_ADDRESS]; // Ścieżka: 0101 → BNB
   const to = await signer.getAddress();
   const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
 
