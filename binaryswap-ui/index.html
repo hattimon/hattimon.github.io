@@ -6,148 +6,161 @@
   <title>BinarySwap</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
   <style>
-    body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 2rem; }
-    button, input { margin: 0.5rem 0; padding: 0.5rem; width: 100%; }
-    section { margin-bottom: 2rem; border-bottom: 1px solid #ccc; padding-bottom: 1rem; }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f2f5; }
+    h2 { color: #333; }
+    button { margin: 5px; padding: 10px 15px; cursor: pointer; }
+    input { padding: 8px; margin: 5px; }
+    .section { border: 1px solid #ccc; padding: 15px; margin-top: 20px; background: white; border-radius: 10px; }
   </style>
 </head>
 <body>
-  <h1>BinarySwap - Swap, Add/Remove LP, MasterChef</h1>
+  <h2>BinarySwap</h2>
 
-  <section>
-    <h2>Portfel</h2>
+  <div class="section">
+    <p>Status portfela: <span id="wallet-status">Niepołączony</span></p>
     <button onclick="connectWallet()">Połącz z MetaMask</button>
-    <p id="walletAddress">Portfel odłączony</p>
     <button onclick="addOpBNBNetwork()">Dodaj sieć opBNB</button>
-  </section>
+  </div>
 
-  <section>
-    <h2>Informacje o Puli (MasterChef)</h2>
-    <input type="number" id="poolId" placeholder="Wpisz Pool ID">
-    <button onclick="loadPoolData()">Pobierz dane o puli</button>
-    <pre id="poolData"></pre>
+  <div class="section">
+    <h3>Twoje tokeny</h3>
+    <p>0101: <span id="bal0101">?</span></p>
+    <p>BNB: <span id="balBNB">?</span></p>
+    <p>LP UNI-V2: <span id="balLP">?</span></p>
+  </div>
+
+  <div class="section">
+    <h3>Swap</h3>
+    <input type="text" id="swapAmount" placeholder="Ilość do swapu">
+    <button onclick="swap0101ToBNB()">Swap 0101 → BNB</button>
+    <button onclick="swapBNBTo0101()">Swap BNB → 0101</button>
+  </div>
+
+  <div class="section">
+    <h3>Dodaj / Usuń LP</h3>
+    <input type="text" id="removeLPAmount" placeholder="Ilość LP">
+    <button onclick="removeLiquidity(true)">Usuń LP</button>
+    <button onclick="removeLiquidity(false)">Usuń Max LP</button>
+  </div>
+
+  <div class="section">
+    <h3>MasterChef</h3>
+    <input type="text" id="pid" placeholder="ID Puli">
+    <button onclick="getPendingCub()">Pobierz Pending Cub</button>
+    <p>Pending CUB: <span id="pendingCub">?</span></p>
     <button onclick="emergencyWithdraw()">Emergency Withdraw</button>
-  </section>
-
-  <section>
-    <h2>Dodaj LP</h2>
-    <input type="text" id="amountTokenA" placeholder="Ilość tokena 0101">
-    <input type="text" id="amountBNB" placeholder="Ilość BNB">
-    <button onclick="addLiquidity()">Dodaj LP</button>
-  </section>
-
-  <section>
-    <h2>Usuń LP</h2>
-    <button onclick="removeLiquidity()">Usuń LP</button>
-  </section>
-
-  <section>
-    <h2>Swap Token 0101 → BNB</h2>
-    <button onclick="swapTokenToBNB()">Wykonaj swap</button>
-  </section>
+  </div>
 
   <script>
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    let signer, address;
-
-    const tokenA = "0xa41b3067ec694dbec668c389550ba8fc589e5797"; // 0101
-    const wbnb = "0x4200000000000000000000000000000000000006";
+    const token0101 = "0xa41B3067eC694DBec668c389550bA8fc589e5797";
     const lpToken = "0x506b8322e1159d06e493ebe7ffa41a24291e7ae3";
     const routerAddr = "0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b";
-    const masterChef = "0x39a786421889EB581bd105508a0D2Dc03523B903";
+    const masterChefAddr = "0x39a786421889EB581bd105508a0D2Dc03523B903";
 
-    const tokenAbi = ["function approve(address spender, uint256 amount) returns (bool)", "function balanceOf(address) view returns (uint256)", "function decimals() view returns (uint8)"];
-    const lpAbi = ["function balanceOf(address) view returns (uint256)", "function approve(address spender, uint256 amount) returns (bool)"];
-    const routerAbi = [
-      "function addLiquidityETH(address token,uint amountTokenDesired,uint amountTokenMin,uint amountETHMin,address to,uint deadline) payable returns (uint amountToken, uint amountETH, uint liquidity)",
-      "function removeLiquidityETH(address token,uint liquidity,uint amountTokenMin,uint amountETHMin,address to,uint deadline) returns (uint amountToken, uint amountETH)",
-      "function swapExactTokensForETH(uint amountIn,uint amountOutMin,address[] calldata path,address to,uint deadline) returns (uint[] memory amounts)",
-      "function getAmountsOut(uint amountIn, address[] calldata path) view returns (uint[] memory amounts)"
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    let signer, userAddr;
+
+    const erc20ABI = [
+      "function balanceOf(address owner) view returns (uint256)",
+      "function approve(address spender, uint256 amount) returns (bool)",
+      "function decimals() view returns (uint8)"
     ];
-    const masterChefAbi = [
-      "function emergencyWithdraw(uint pid)",
-      "function pendingCub(uint pid, address user) view returns (uint)",
-      "function userInfo(uint pid, address user) view returns (uint amount, uint rewardDebt)",
-      "function poolInfo(uint pid) view returns (address lpToken, uint allocPoint, uint lastRewardBlock, uint accCubPerShare, uint depositFeeBP)"
+
+    const routerABI = [
+      "function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) returns (uint[] memory amounts)",
+      "function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) payable returns (uint[] memory amounts)",
+      "function removeLiquidityETH(address token, uint liquidity, uint amountTokenMin, uint amountETHMin, address to, uint deadline) returns (uint amountToken, uint amountETH)"
+    ];
+
+    const masterChefABI = [
+      "function pendingCub(uint256,address) view returns (uint256)",
+      "function emergencyWithdraw(uint256)"
     ];
 
     async function connectWallet() {
-      await provider.send("eth_requestAccounts", []);
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       signer = await provider.getSigner();
-      address = await signer.getAddress();
-      document.getElementById("walletAddress").textContent = `Połączono: ${address}`;
+      userAddr = accounts[0];
+      document.getElementById("wallet-status").textContent = userAddr;
+      getBalances();
     }
 
     async function addOpBNBNetwork() {
-      try {
-        await window.ethereum.request({
-          method: "wallet_addEthereumChain",
-          params: [{
-            chainId: "0xcc",
-            chainName: "opBNB Mainnet",
-            rpcUrls: ["https://opbnb-mainnet-rpc.bnbchain.org/"],
-            nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
-            blockExplorerUrls: ["https://mainnet.opbnbscan.com/"]
-          }]
-        });
-        alert("Sieć opBNB dodana");
-      } catch (e) {
-        alert("Błąd przy dodawaniu sieci: " + e.message);
-      }
+      await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{
+        chainId: '0xcc',
+        chainName: 'OpBNB Mainnet',
+        rpcUrls: ['https://opbnb-mainnet-rpc.bnbchain.org/'],
+        nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+        blockExplorerUrls: ['https://mainnet.opbnbscan.com/']
+      }]});
     }
 
-    async function loadPoolData() {
-      const pid = document.getElementById("poolId").value;
-      const contract = new ethers.Contract(masterChef, masterChefAbi, provider);
-      const [pending, user, pool] = await Promise.all([
-        contract.pendingCub(pid, address),
-        contract.userInfo(pid, address),
-        contract.poolInfo(pid)
-      ]);
-      document.getElementById("poolData").textContent =
-        `Pending Cub: ${ethers.formatUnits(pending, 18)}\n` +
-        `User amount: ${ethers.formatUnits(user.amount, 18)}\nReward debt: ${ethers.formatUnits(user.rewardDebt, 18)}\n` +
-        `LP token: ${pool.lpToken}\nFee: ${pool.depositFeeBP}bps`;
+    async function getBalances() {
+      const token = new ethers.Contract(token0101, erc20ABI, provider);
+      const lp = new ethers.Contract(lpToken, erc20ABI, provider);
+      const bnb = await provider.getBalance(userAddr);
+
+      const bal0101 = await token.balanceOf(userAddr);
+      const balLP = await lp.balanceOf(userAddr);
+
+      document.getElementById("bal0101").textContent = ethers.formatUnits(bal0101, 18);
+      document.getElementById("balBNB").textContent = ethers.formatEther(bnb);
+      document.getElementById("balLP").textContent = ethers.formatUnits(balLP, 18);
+    }
+
+    async function swap0101ToBNB() {
+      const router = new ethers.Contract(routerAddr, routerABI, signer);
+      const token = new ethers.Contract(token0101, erc20ABI, signer);
+      const amount = ethers.parseUnits(document.getElementById("swapAmount").value, 18);
+      const path = [token0101, "0x4200000000000000000000000000000000000006"];
+
+      await token.approve(routerAddr, amount);
+      const tx = await router.swapExactTokensForETH(
+        amount, 0, path, userAddr, Math.floor(Date.now() / 1000) + 600
+      );
+      await tx.wait();
+      getBalances();
+    }
+
+    async function swapBNBTo0101() {
+      const router = new ethers.Contract(routerAddr, routerABI, signer);
+      const amount = ethers.parseEther(document.getElementById("swapAmount").value);
+      const path = ["0x4200000000000000000000000000000000000006", token0101];
+
+      const tx = await router.swapExactETHForTokens(
+        0, path, userAddr, Math.floor(Date.now() / 1000) + 600, { value: amount }
+      );
+      await tx.wait();
+      getBalances();
+    }
+
+    async function removeLiquidity(useInput) {
+      const lp = new ethers.Contract(lpToken, erc20ABI, signer);
+      const router = new ethers.Contract(routerAddr, routerABI, signer);
+      let amount = await lp.balanceOf(userAddr);
+      if (useInput) {
+        const val = document.getElementById("removeLPAmount").value;
+        if (val) amount = ethers.parseUnits(val, 18);
+      }
+      await lp.approve(routerAddr, amount);
+      const tx = await router.removeLiquidityETH(token0101, amount, 0, 0, userAddr, Math.floor(Date.now() / 1000) + 600);
+      await tx.wait();
+      getBalances();
+    }
+
+    async function getPendingCub() {
+      const pid = document.getElementById("pid").value;
+      const mc = new ethers.Contract(masterChefAddr, masterChefABI, provider);
+      const pending = await mc.pendingCub(pid, userAddr);
+      document.getElementById("pendingCub").textContent = ethers.formatUnits(pending, 18);
     }
 
     async function emergencyWithdraw() {
-      const pid = document.getElementById("poolId").value;
-      const contract = new ethers.Contract(masterChef, masterChefAbi, signer);
-      const tx = await contract.emergencyWithdraw(pid);
-      alert("TX hash: " + tx.hash);
-    }
-
-    async function addLiquidity() {
-      const token = new ethers.Contract(tokenA, tokenAbi, signer);
-      const router = new ethers.Contract(routerAddr, routerAbi, signer);
-      const amountToken = ethers.parseUnits(document.getElementById("amountTokenA").value, 18);
-      const amountBNB = ethers.parseUnits(document.getElementById("amountBNB").value, 18);
-      await token.approve(routerAddr, amountToken);
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
-      const tx = await router.addLiquidityETH(tokenA, amountToken, 0, 0, address, deadline, { value: amountBNB });
-      alert("Dodano LP: " + tx.hash);
-    }
-
-    async function removeLiquidity() {
-      const lp = new ethers.Contract(lpToken, lpAbi, signer);
-      const router = new ethers.Contract(routerAddr, routerAbi, signer);
-      const balance = await lp.balanceOf(address);
-      await lp.approve(routerAddr, balance);
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
-      const tx = await router.removeLiquidityETH(tokenA, balance, 0, 0, address, deadline);
-      alert("Usunięto LP: " + tx.hash);
-    }
-
-    async function swapTokenToBNB() {
-      const token = new ethers.Contract(tokenA, tokenAbi, signer);
-      const router = new ethers.Contract(routerAddr, routerAbi, signer);
-      const balance = await token.balanceOf(address);
-      await token.approve(routerAddr, balance);
-      const path = [tokenA, wbnb];
-      const amounts = await router.getAmountsOut(balance, path);
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
-      const tx = await router.swapExactTokensForETH(balance, amounts[1] * 95n / 100n, path, address, deadline);
-      alert("Swap zakończony: " + tx.hash);
+      const pid = document.getElementById("pid").value;
+      const mc = new ethers.Contract(masterChefAddr, masterChefABI, signer);
+      const tx = await mc.emergencyWithdraw(pid);
+      await tx.wait();
+      getBalances();
     }
   </script>
 </body>
