@@ -1,17 +1,3 @@
-// === Theme Toggle ===
-function toggleTheme(){
-  const html = document.documentElement;
-  const light = html.getAttribute("data-theme")==="light";
-  html.setAttribute("data-theme", light?"":"light");
-  document.querySelector(".theme-toggle").innerText = light?"🌞 Tryb jasny":"🌙 Tryb ciemny";
-  localStorage.theme = light?"":"light";
-}
-(() => {
-  const th = localStorage.theme;
-  document.documentElement.setAttribute("data-theme", th || "");
-  document.querySelector(".theme-toggle").innerText = th?"🌙 Tryb ciemny":"🌞 Tryb jasny";
-})();
-
 // === Web3 Config ===
 let provider, signer, account;
 const addr0101 = "0xa41b3067ec694dbec668c389550ba8fc589e5797";
@@ -38,6 +24,92 @@ const MASTER = [
   "function emergencyWithdraw(uint256)"
 ];
 
+// === Swap ===
+async function handleSwap(){
+  const pc = parseInt(swapPercent.value);
+  if(isNaN(pc) || pc < 1 || pc > 100) return alert("Procent 1–100!");
+
+  const slippage = parseInt(swapSlippage.value) || 1; // Domyślnie 1% slippage
+  const slippageAdjusted = Math.max(slippage, 1);  // Minimum 1% slippage
+
+  const deadline = Math.floor(Date.now()/1000) + 300; // 5 minut
+
+  if (swapDirection.value === "toToken") {
+    swapBNBto0101(pc, slippageAdjusted, deadline);
+  } else {
+    swap0101toBNB(pc, slippageAdjusted, deadline);
+  }
+}
+
+async function swapBNBto0101(pc, slippage, deadline){
+  const r = new ethers.Contract(routerAddr, ROUTER, signer);
+  const bal = await provider.getBalance(account);
+  const v = bal * BigInt(pc) / 100n;
+
+  // Adjusting for slippage
+  const minAmountOut = v * BigInt(100 + slippage) / 100n;
+
+  try {
+    const tx = await r.swapExactETHForTokensSupportingFeeOnTransferTokens(
+      minAmountOut, 
+      [ethers.ZeroAddress, addr0101], 
+      account, 
+      deadline, 
+      { value: v }
+    );
+    await tx.wait(); // Wait for transaction to be mined
+    updateBalances();
+  } catch (error) {
+    alert("Błąd przy swapie: " + error.message);
+  }
+}
+
+async function swap0101toBNB(pc, slippage, deadline){
+  const t = new ethers.Contract(addr0101, ERC20, signer);
+  const r = new ethers.Contract(routerAddr, ROUTER, signer);
+  const bal = await t.balanceOf(account);
+  const v = bal * BigInt(pc) / 100n;
+
+  // Adjusting for slippage
+  const minAmountOut = v * BigInt(100 + slippage) / 100n;
+
+  try {
+    await t.approve(routerAddr, v);
+    const tx = await r.swapExactTokensForETHSupportingFeeOnTransferTokens(
+      v, 
+      minAmountOut, 
+      [addr0101, ethers.ZeroAddress], 
+      account, 
+      deadline
+    );
+    await tx.wait(); // Wait for transaction to be mined
+    updateBalances();
+  } catch (error) {
+    alert("Błąd przy swapie: " + error.message);
+  }
+}
+
+// === LP ===
+async function addLiquidity(pc){
+  const t = new ethers.Contract(addr0101, ERC20, signer);
+  const r = new ethers.Contract(routerAddr, ROUTER, signer);
+  const bB = await provider.getBalance(account), bT = await t.balanceOf(account);
+  const vB = bB * BigInt(pc) / 100n, vT = bT * BigInt(pc) / 100n;
+  await t.approve(routerAddr, vT);
+  await r.addLiquidityETH(addr0101, vT, 0, 0, account, Math.floor(Date.now()/1e3)+300, {value: vB});
+  updateBalances();
+}
+
+async function removeLiquidity(pc){
+  const l = new ethers.Contract(addrLP, ERC20, signer);
+  const r = new ethers.Contract(routerAddr, ROUTER, signer);
+  const bal = await l.balanceOf(account);
+  const v = bal * BigInt(pc) / 100n;
+  await l.approve(routerAddr, v);
+  await r.removeLiquidityETH(addr0101, v, 0, 0, account, Math.floor(Date.now()/1e3)+300);
+  updateBalances();
+}
+
 // === Wallet ===
 async function connectWallet(){
   if(!window.ethereum) return alert("Zainstaluj MetaMask!");
@@ -63,86 +135,16 @@ async function updateBalances(){
   document.getElementById("balance-lp").innerText = parseFloat(ethers.formatUnits(bLP,18)).toFixed(8);
 }
 
-async function addNetwork(){
-  try {
-    await window.ethereum.request({ method:"wallet_addEthereumChain", params:[{
-      chainId: "0xcc",
-      chainName: "opBNB Mainnet",
-      nativeCurrency: { name:"BNB", symbol:"BNB", decimals:18 },
-      rpcUrls: ["https://opbnb-mainnet-rpc.bnbchain.org/"],
-      blockExplorerUrls: ["https://mainnet.opbnbscan.com/"]
-    }]});
-  } catch (e) {
-    alert("Błąd dodawania sieci: " + e.message);
-  }
+// === Theme Toggle ===
+function toggleTheme(){
+  const html = document.documentElement;
+  const light = html.getAttribute("data-theme")==="light";
+  html.setAttribute("data-theme", light?"":"light");
+  document.querySelector(".theme-toggle").innerText = light?"🌞 Tryb jasny":"🌙 Tryb ciemny";
+  localStorage.theme = light?"":"light";
 }
-
-// === Swap ===
-async function handleSwap(){
-  const pc = parseInt(swapPercent.value);
-  if(isNaN(pc) || pc < 1 || pc > 100) return alert("Procent 1–100!");
-  swapDirection.value === "toToken" ? swapBNBto0101(pc) : swap0101toBNB(pc);
-}
-
-async function swapBNBto0101(pc){
-  const r = new ethers.Contract(routerAddr, ROUTER, signer);
-  const bal = await provider.getBalance(account);
-  const v = bal * BigInt(pc) / 100n;
-  await r.swapExactETHForTokensSupportingFeeOnTransferTokens(0, [ethers.ZeroAddress, addr0101], account, Math.floor(Date.now()/1e3)+300, {value: v});
-  updateBalances();
-}
-
-async function swap0101toBNB(pc){
-  const t = new ethers.Contract(addr0101, ERC20, signer);
-  const r = new ethers.Contract(routerAddr, ROUTER, signer);
-  const bal = await t.balanceOf(account);
-  const v = bal * BigInt(pc) / 100n;
-  await t.approve(routerAddr, v);
-  await r.swapExactTokensForETHSupportingFeeOnTransferTokens(v, 0, [addr0101, ethers.ZeroAddress], account, Math.floor(Date.now()/1e3)+300);
-  updateBalances();
-}
-
-// === LP ===
-async function addLiquidity(pc){
-  const t = new ethers.Contract(addr0101, ERC20, signer);
-  const r = new ethers.Contract(routerAddr, ROUTER, signer);
-  const bB = await provider.getBalance(account), bT = await t.balanceOf(account);
-  const vB = bB * BigInt(pc) / 100n, vT = bT * BigInt(pc) / 100n;
-  await t.approve(routerAddr, vT);
-  await r.addLiquidityETH(addr0101, vT, 0, 0, account, Math.floor(Date.now()/1e3)+300, {value: vB});
-  updateBalances();
-}
-
-async function removeLiquidity(pc){
-  const l = new ethers.Contract(addrLP, ERC20, signer);
-  const r = new ethers.Contract(routerAddr, ROUTER, signer);
-  const bal = await l.balanceOf(account);
-  const v = bal * BigInt(pc) / 100n;
-  await l.approve(routerAddr, v);
-  await r.removeLiquidityETH(addr0101, v, 0, 0, account, Math.floor(Date.now()/1e3)+300);
-  updateBalances();
-}
-
-// === MasterChef ===
-async function fetchLPInfo(){
-  const m = new ethers.Contract(masterAddr, MASTER, provider);
-  const len = Number(await m.poolLength());
-  const root = document.getElementById("lp-info");
-  root.innerHTML = "<h3>MasterChef – Twoje pule</h3>";
-  for(let i=0;i<len;i++){
-    const u = await m.userInfo(i, account), p = await m.pendingCub(i, account);
-    if(u[0]>0n || p>0n){
-      const el = document.createElement("p");
-      el.innerHTML = `Pool ${i}: LP=${parseFloat(ethers.formatUnits(u[0],18)).toFixed(8)}, Pending=${parseFloat(ethers.formatUnits(p,18)).toFixed(8)} 
-        <button onclick="emergencyWithdraw(${i})">🚨 Emergency</button>`;
-      root.appendChild(el);
-    }
-  }
-}
-
-async function emergencyWithdraw(i){
-  const m = new ethers.Contract(masterAddr, MASTER, signer);
-  await m.emergencyWithdraw(i);
-  fetchLPInfo();
-  updateBalances();
-}
+(() => {
+  const th = localStorage.theme;
+  document.documentElement.setAttribute("data-theme", th || "");
+  document.querySelector(".theme-toggle").innerText = th?"🌙 Tryb ciemny":"🌞 Tryb jasny";
+})();
