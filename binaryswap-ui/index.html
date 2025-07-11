@@ -40,6 +40,9 @@
 </style>
 
 <img id="logo" src="logo.png" alt="BinarySwap logo">
+
+<!-- Google Translate -->
+<div id="google_translate_element" style="position: absolute; top: 20px; left: 20px;"></div>
   
 <div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja</a></div>
 <div class="top-links"><a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 Kurs 0101/WBNB</a></div>
@@ -110,5 +113,18 @@
   </div>
 
   <script src="app.js"></script>
+
+  <!-- Google Translate -->
+<script type="text/javascript">
+  function googleTranslateElementInit() {
+    new google.translate.TranslateElement({
+      pageLanguage: 'en', // domyślnie angielski
+      includedLanguages: 'en,pl,de,fr,es,ru,uk,zh-CN,ja', // dodaj języki jakie chcesz
+      layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+    }, 'google_translate_element');
+  }
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  
 </body>
 </html>
