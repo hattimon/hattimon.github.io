@@ -37,8 +37,8 @@
     <div id="app-root">
       <div class="section wallet-section">
         <p><strong data-i18n="wallet_label">Wallet:</strong> <span id="wallet-address" data-i18n="disconnected">Disconnected</span></p>
-        <button class="uniswap-btn" onclick="connectWallet()"><i class="fab fa-ethereum"></i> <span data-i18n="connect">Connect/Refresh Wallet</span></button>
-        <button class="uniswap-btn" onclick="switchToOpBNB()"><i class="fas fa-network-wired"></i> <span data-i18n="switch">Switch to opBNB</span></button>
+        <button class="uniswap-btn" onclick="connectWallet()"><i class="fas fa-ethereum"></i> <span data-i18n="connect">Connect/Refresh Wallet</span></button>
+        <button class="uniswap-btn" onclick="switchToOpBN` href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank"><i class="fas fa-exchange-alt"></i> <span data-i18n="official_bridge">Official Bridge opBNB ⇄ BNB (7 days)</span></a>
       </div>
 
       <div class="section wallet-content-section">
@@ -52,9 +52,11 @@
         <h3 data-i18n="swap">Swap</h3>
         <div class="swap-card">
           <div class="token-select">
-            <input type="text" id="fromToken" value="0101" readonly data-value="0101">
+            <span id="fromTokenDisplay">0101</span>
+            <input type="hidden" id="fromToken" value="0101">
             <button class="swap-arrow" onclick="swapTokens()">↔</button>
-            <input type="text" id="toToken" value="BNB" readonly data-value="BNB">
+            <span id="toTokenDisplay">BNB</span>
+            <input type="hidden" id="toToken" value="BNB">
           </div>
           <div class="swap-input">
             <input type="number" id="swapPercent" placeholder="Enter amount (1–100) %" data-i18n-placeholder="enter_amount">
