@@ -18,6 +18,7 @@
   --link: #5a8c4a;
   --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
   --border: #a9c9a0;
+  --toast-bg: #ffcccb;
 }
 
 [data-theme="dark"] {
@@ -29,6 +30,7 @@
   --link: #8ac784;
   --shadow: 0 4px 12px rgba(30, 42, 22, 0.3);
   --border: #7a9c70;
+  --toast-bg: #f8b0b0;
 }
 
 [data-theme="dark"] input,
@@ -347,19 +349,20 @@ input:focus, select:focus {
 
 #toast-container {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 2000;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3000;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
 .toast {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--toast-bg);
+  border: 2px solid #c62828;
   border-radius: 8px;
-  padding: 10px 15px;
+  padding: 15px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -368,18 +371,18 @@ input:focus, select:focus {
   font-size: 0.9rem;
   max-width: 400px;
   opacity: 0;
-  transform: translateY(20px);
+  transform: scale(0.8);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .toast.show {
   opacity: 1;
-  transform: translateY(0);
+  transform: scale(1);
 }
 
 .toast.hide {
   opacity: 0;
-  transform: translateY(20px);
+  transform: scale(0.8);
 }
 
 .toast-message {
@@ -388,13 +391,16 @@ input:focus, select:focus {
 }
 
 .toast-copy, .toast-close {
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 12px;
   font-size: 0.8rem;
   background: var(--btn);
   color: #fff;
   border: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .toast-copy:hover, .toast-close:hover {
@@ -403,16 +409,17 @@ input:focus, select:focus {
 
 .toast-close {
   font-weight: bold;
+  padding: 6px 10px;
 }
 
 @keyframes toastShow {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 @keyframes toastHide {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(20px); }
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.8); }
 }
 
 @media (max-width: 480px) {
@@ -461,9 +468,8 @@ input:focus, select:focus {
     font-size: 0.8rem;
   }
   #toast-container {
-    bottom: 10px;
-    right: 10px;
     width: calc(100% - 20px);
+    padding: 0 10px;
   }
   .toast {
     max-width: 100%;
