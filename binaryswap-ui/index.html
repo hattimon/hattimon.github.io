@@ -52,9 +52,9 @@
         <h3 data-i18n="swap">Swap</h3>
         <div class="swap-card">
           <div class="token-select">
-            <span id="fromToken">0101</span>
+            <input type="text" id="fromToken" readonly value="0101">
             <button class="swap-arrow" onclick="swapTokens()">↔</button>
-            <span id="toToken">BNB</span>
+            <input type="text" id="toToken" readonly value="BNB">
           </div>
           <div class="swap-input">
             <input type="number" id="swapPercent" placeholder="Enter amount (1–100) %" data-i18n-placeholder="enter_amount">
