@@ -1,7 +1,7 @@
 :root {
   --bg: #f7f8fa;
   --text: #1a1a1a;
-  --card: #ffffff;
+  --card: rgba(255, 255, 255, 0.9);
   --btn: #ff007a;
   --btn-hover: #d60067;
   --link: #2172e5;
@@ -12,7 +12,7 @@
 [data-theme="light"] {
   --bg: #f7f8fa;
   --text: #1a1a1a;
-  --card: #ffffff;
+  --card: rgba(255, 255, 255, 0.9);
   --btn: #ff007a;
   --btn-hover: #d60067;
   --link: #2172e5;
@@ -23,7 +23,7 @@
 [data-theme="dark"] {
   --bg: #1a1a1a;
   --text: #ffffff;
-  --card: #2d2d2d;
+  --card: rgba(45, 45, 45, 0.9);
   --btn: #ff007a;
   --btn-hover: #d60067;
   --link: #4dabf7;
@@ -42,12 +42,14 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  overflow-x: hidden;
 }
 
 .container {
   max-width: 480px;
   width: 100%;
   padding: 0 15px;
+  text-align: center;
 }
 
 a {
@@ -55,7 +57,7 @@ a {
   text-decoration: none;
   transition: color 0.3s ease;
   word-break: break-all;
-  display: block;
+  display: inline-block;
   text-align: justify;
 }
 
@@ -142,11 +144,6 @@ input:focus, select:focus {
   margin: 0 auto 20px;
   border-radius: 10px;
   box-shadow: var(--shadow);
-  transition: transform 0.3s ease;
-}
-
-#logo:hover {
-  transform: scale(1.05);
 }
 
 .top-links {
@@ -213,11 +210,35 @@ input:focus, select:focus {
 .swap-section .swap-card, .liquidity-section .liquidity-card {
   padding: 20px;
   border-radius: 20px;
-  background: var(--card);
+  background: rgba(255, 255, 255, 0.7);
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   align-items: center;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+}
+
+.swap-section .swap-card:hover, .liquidity-section .liquidity-card:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.token-select {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.token-select select {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 1rem;
+  width: 100px;
 }
 
 .swap-input, .liquidity-input {
@@ -344,8 +365,12 @@ input:focus, select:focus {
     padding: 10px;
     font-size: 1rem;
   }
-  .swap-input, .liquidity-input {
+  .token-select {
+    flex-direction: column;
     gap: 8px;
+  }
+  .token-select select {
+    width: 100%;
   }
   .liquidity-actions {
     flex-direction: column;
