@@ -54,6 +54,9 @@ a {
   color: var(--link);
   text-decoration: none;
   transition: color 0.3s ease;
+  word-break: break-all;
+  display: block;
+  text-align: justify;
 }
 
 a:hover {
@@ -212,6 +215,9 @@ input:focus, select:focus {
   border-radius: 20px;
   background: var(--card);
   box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .swap-input, .liquidity-input {
@@ -219,16 +225,26 @@ input:focus, select:focus {
   flex-direction: column;
   gap: 10px;
   margin-bottom: 15px;
+  width: 100%;
 }
 
 .swap-settings {
   margin-bottom: 15px;
+  width: 100%;
+}
+
+.swap-settings label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+  color: #666;
 }
 
 .liquidity-actions {
   display: flex;
   gap: 10px;
   justify-content: center;
+  width: 100%;
 }
 
 .lp-info-section .masterchef-instructions {
@@ -243,6 +259,12 @@ input:focus, select:focus {
   background: var(--card);
   border-left: 4px solid #ff007a;
   border-radius: 5px;
+  text-align: left;
+}
+
+.lp-info-section .masterchef-instructions a {
+  word-break: break-all;
+  text-align: justify;
 }
 
 .lp-info-section .masterchef-instructions i {
@@ -261,6 +283,12 @@ input:focus, select:focus {
   background: var(--card);
   border-left: 4px solid #d60067;
   border-radius: 5px;
+  text-align: left;
+}
+
+.lp-info-section .contracts-list a {
+  word-break: break-all;
+  text-align: justify;
 }
 
 .lp-info-section .contracts-list i {
