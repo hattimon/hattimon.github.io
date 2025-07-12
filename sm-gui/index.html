@@ -40,7 +40,7 @@
         desktopView: 'Desktop View',
         copy: 'Copy',
         revokePermissions: 'Revoke Permissions',
-        noPermissions: 'You can check your signed permissions on Revoke Permissions or Rabby Wallet.',
+        noPermissions: 'You can check your signed permissions on revoke.cash or Rabby Wallet.',
         wallet: 'Wallet',
         network: 'Network',
         settings: 'Settings',
@@ -69,12 +69,12 @@
         selectNetwork: 'Wybrana sieć: ',
         searchNetwork: 'Szukaj sieci...',
         addNetwork: 'Nie znaleziono sieci? Dodaj ją przez ',
-        safetyNote: 'Uwaga o bezpieczeństwie: Zawsze weryfikuj adres kontraktu i ABI. Użyj DeBank, Rabby.io oraz ScamSniffer, aby sprawdzić bezpieczeństwo transakcji.',
+        safetyNote: 'Uwaga o bezpieczeństwie: Zawsze weryfikuj adres kontraktu i ABI. Użyj <a href="https://debank.com" target="_blank">DeBank</a>, <a href="https://rabby.io" target="_blank">Rabby.io</a> oraz <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a>, aby sprawdzić bezpieczeństwo transakcji.',
         mobileView: 'Wersja mobilna',
         desktopView: 'Wersja PC',
         copy: 'Kopiuj',
         revokePermissions: 'Cofnij uprawnienia',
-        noPermissions: 'Możesz sprawdzić swoje podpisane uprawnienia na Cofnij uprawnienia lub Rabby Wallet.',
+        noPermissions: 'Możesz sprawdzić swoje podpisane uprawnienia na revoke.cash lub Rabby Wallet.',
         wallet: 'Portfel',
         network: 'Sieć',
         settings: 'Ustawienia',
@@ -663,8 +663,8 @@
               ? translations[language].readContract
               : translations[language].writeContract}
           </p>
-          <p className="text-sm text-gray-200 mb-2 bg-green-900 p-3 rounded flex items-center"><i className="fas fa-user-graduate mr-2"></i>{translations[language].assistant}{functionDescriptions[func.name]?.description[language] || 'Custom function. Follow contract documentation.'}</p>
-          <p className="text-sm text-yellow-500 mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{functionDescriptions[func.name]?.safety[language] || 'Verify function and contract. Check with ScamSniffer and Rabby.io.'}</p>
+          <p className="text-sm text-gray-200 mb-2 bg-green-900 p-3 rounded flex items-center"><i className="fas fa-user-graduate mr-2"></i>{translations[language].assistant}{functionDescriptions[func.name]?.description[language] || (language === 'en' ? 'Custom function. Follow contract documentation.' : 'Funkcja niestandardowa. Postępuj zgodnie z dokumentacją kontraktu.')}</p>
+          <p className="text-sm text-yellow-500 mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{functionDescriptions[func.name]?.safety[language] || (language === 'en' ? 'Verify function and contract. Check with ScamSniffer and Rabby.io.' : 'Zweryfikuj funkcję i kontrakt. Sprawdź z ScamSniffer i Rabby.io.')}</p>
           {func.inputs.map((input, index) => (
             <div key={index} className="mb-3">
               <label className="block text-sm font-medium mb-1 text-yellow-400 flex items-center"><i className="fas fa-keyboard mr-2"></i>{input.name} ({input.type})</label>
