@@ -184,9 +184,9 @@ async function handleSwap() {
   }
 
   if (fromToken === "BNB" && toToken === "0101") {
-    swapBNBto0101(pc, slippage, deadline);
+    await swapBNBto0101(pc, slippage, deadline);
   } else if (fromToken === "0101" && toToken === "BNB") {
-    swap0101toBNB(pc, slippage, deadline);
+    await swap0101toBNB(pc, slippage, deadline);
   }
 }
 
@@ -400,6 +400,7 @@ function swapTokens() {
   const temp = fromToken.value;
   fromToken.value = toToken.value === "0101" ? "BNB" : "0101";
   toToken.value = temp === "0101" ? "BNB" : "0101";
+  console.log("Swapped: ", fromToken.value, "→", toToken.value); // Debug
 }
 
 // === Error Handling ===
@@ -416,13 +417,9 @@ function showError(message) {
   `;
   toastContainer.appendChild(toast);
 
-  // Animate toast appearance
   setTimeout(() => toast.classList.add("show"), 100);
-
-  // Auto-remove after 7 seconds
   const timeout = setTimeout(() => removeToast(toast), 7000);
 
-  // Copy button functionality
   toast.querySelector(".toast-copy").addEventListener("click", () => {
     copyToClipboard(message);
     toast.querySelector(".toast-copy span").innerHTML = translations[lang].copied;
@@ -431,7 +428,6 @@ function showError(message) {
     }, 2000);
   });
 
-  // Close button functionality
   toast.querySelector(".toast-close").addEventListener("click", () => {
     clearTimeout(timeout);
     removeToast(toast);
@@ -457,7 +453,7 @@ function copyToClipboard(text) {
 
 // === Initialization ===
 (() => {
-  const th = localStorage.theme || "dark"; // Default to dark mode
+  const th = localStorage.theme || "dark";
   document.documentElement.setAttribute("data-theme", th);
   
   const lang = localStorage.language || "en";
