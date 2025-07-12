@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,7 +14,7 @@
     <img id="logo" src="logo.png" alt="BinarySwap logo">
 
     <div class="button-group">
-      <button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-sun"></i> <span data-i18n="theme_light">Light Mode</span></button>
+      <button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-moon"></i> <span data-i18n="theme_dark">Dark Mode</span></button>
       <button class="lang-toggle" onclick="toggleLanguage()"><i class="fas fa-globe"></i> <span data-i18n="language">English</span></button>
       <button class="music-toggle" onclick="toggleMusic()"><i class="fas fa-music"></i> <span data-i18n="music_on">Music: On</span></button>
     </div>
@@ -52,12 +52,9 @@
         <h3 data-i18n="swap">Swap</h3>
         <div class="swap-card">
           <div class="token-select">
-            <select id="fromToken" onchange="syncToken()">
-              <option value="BNB">BNB</option>
-              <option value="0101">0101</option>
-            </select>
+            <span id="fromToken">0101</span>
             <button class="swap-arrow" onclick="swapTokens()">↔</button>
-            <span id="toToken"></span>
+            <span id="toToken">BNB</span>
           </div>
           <div class="swap-input">
             <input type="number" id="swapPercent" placeholder="Enter amount (1–100) %" data-i18n-placeholder="enter_amount">
