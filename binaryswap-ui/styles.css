@@ -33,7 +33,7 @@
   --shadow: 0 4px 12px rgba(30, 42, 22, 0.3);
   --border: #7a9c70;
   --toast-bg: #f8b0b0;
-  --toast-text: #1e2a16; /* Ciemna czcionka dla toastów w trybie ciemnym */
+  --toast-text: #1e2a16;
 }
 
 [data-theme="dark"] input,
@@ -146,8 +146,8 @@ input, select {
 }
 
 [data-theme="dark"] .swap-section select {
-  background: #2a3d1e; /* Ciemne tło dla select w trybie ciemnym */
-  color: #d0e0c0; /* Jasna czcionka dla kontrastu */
+  background: #2a3d1e;
+  color: #d0e0c0;
 }
 
 input:focus, select:focus {
@@ -366,7 +366,7 @@ input:focus, select:focus {
   align-items: center;
   gap: 10px;
   box-shadow: var(--shadow);
-  color: var(--toast-text); /* Ciemna czcionka w trybie ciemnym */
+  color: var(--toast-text);
   font-size: 0.9rem;
   max-width: 400px;
   opacity: 0;
@@ -387,6 +387,7 @@ input:focus, select:focus {
 .toast-message {
   flex-grow: 1;
   word-break: break-word;
+  color: #ff0000; /* Stały czerwony kolor tekstu w toastach */
 }
 
 .toast-copy, .toast-close {
