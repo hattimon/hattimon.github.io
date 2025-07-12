@@ -42,7 +42,8 @@
   background: #2a3d1e;
 }
 
-[data-theme="dark"] input::placeholder {
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] select option {
   color: #a0b090;
 }
 
@@ -144,6 +145,11 @@ input, select {
   width: 100%;
   box-sizing: border-box;
   transition: all 0.3s ease;
+}
+
+select option {
+  background: var(--card);
+  color: var(--text);
 }
 
 #slippage {
@@ -267,18 +273,6 @@ input[readonly] {
   gap: 10px;
   margin-bottom: 15px;
   width: 100%;
-}
-
-.token-select span {
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--card);
-  color: var(--text);
-  font-size: 1rem;
-  width: 100%;
-  text-align: center;
-  box-sizing: border-box;
 }
 
 .swap-input, .liquidity-input {
@@ -470,7 +464,7 @@ input[readonly] {
     flex-direction: column;
     gap: 8px;
   }
-  .token-select span {
+  .token-select select {
     width: 100%;
   }
   .swap-arrow {
