@@ -242,15 +242,35 @@ body {
   }
 }
 
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
 .toast {
+  background: var(--error-bg);
+  color: var(--error-text);
+  padding: 10px 20px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 400px;
   opacity: 0;
-  transition: opacity 0.3s ease-in-out;
+  transform: translateY(-10px);
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
 .toast.show {
   opacity: 1;
+  transform: translateY(0);
 }
 
 .toast.hide {
   opacity: 0;
+  transform: translateY(-10px);
 }
