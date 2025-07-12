@@ -67,7 +67,7 @@ a:hover {
 
 button {
   margin: 5px 0;
-  padding: 12px;
+  padding: 8px 12px; /* Reduced padding for smaller size */
   border: none;
   border-radius: 20px;
   background: var(--btn);
@@ -76,8 +76,7 @@ button {
   font-weight: 500;
   box-shadow: var(--shadow);
   transition: all 0.3s ease;
-  width: 100%;
-  font-size: 1.1rem;
+  font-size: 0.9rem; /* Smaller font size */
 }
 
 button:hover {
@@ -89,8 +88,8 @@ button:hover {
 .uniswap-btn {
   background: linear-gradient(90deg, #4a7c3e, #5a8c4a);
   border-radius: 20px;
-  padding: 14px;
-  font-size: 1.1rem;
+  padding: 10px; /* Adjusted padding */
+  font-size: 1rem;
 }
 
 .uniswap-btn:hover {
@@ -155,31 +154,18 @@ input:focus, select:focus {
   flex-wrap: wrap;
 }
 
-.theme-toggle, .lang-toggle, .music-toggle {
+.button-group {
   position: fixed;
   top: 10px;
-  padding: 10px 20px;
-  border-radius: 20px;
-  z-index: 1000;
-  background: var(--btn);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  box-shadow: var(--shadow);
-  transition: all 0.3s ease;
-}
-
-.theme-toggle {
   right: 10px;
+  display: flex;
+  gap: 10px;
+  z-index: 1000;
 }
 
-.lang-toggle {
-  right: 130px;
-}
-
-.music-toggle {
-  right: 250px;
+.theme-toggle, .lang-toggle, .music-toggle {
+  padding: 6px 12px; /* Smaller padding */
+  font-size: 0.85rem; /* Smaller font */
 }
 
 .theme-toggle:hover, .lang-toggle:hover, .music-toggle:hover {
@@ -355,15 +341,13 @@ input:focus, select:focus {
     flex-direction: column;
     gap: 10px;
   }
-  .theme-toggle, .lang-toggle, .music-toggle {
+  .button-group {
     top: 60px;
+    flex-direction: column;
     right: 10px;
   }
-  .lang-toggle {
-    right: 130px;
-  }
-  .music-toggle {
-    right: 250px;
+  .button-group button {
+    margin: 5px 0;
   }
   .center-title {
     font-size: 1.5rem;
