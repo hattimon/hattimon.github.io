@@ -173,6 +173,87 @@ const translations = {
   }
 };
 
+async function connectWallet() {
+  if (!window.ethereum) return showError(translations[localStorage.language || "en"].error_no_metamask);
+
+  try {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = await provider.getSigner();
+    account = await signer.getAddress();
+
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+    if (currentChainId !== opBNB.chainId) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: opBNB.chainId }]
+        });
+      } catch (switchError) {
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [opBNB]
+            });
+          } catch (addError) {
+            return showError(translations[localStorage.language || "en"].error_add_network + " " + addError.message);
+          }
+        } else {
+          return showError(translations[localStorage.language || "en"].error_switch_network + " " + switchError.message);
+        }
+      }
+    }
+
+    document.getElementById("wallet-address").textContent = account.slice(0, 6) + "..." + account.slice(-4);
+    updateBalances();
+  } catch (err) {
+    showError(translations[localStorage.language || "en"].error_connect_wallet + " " + err.message);
+  }
+}
+
+async function switchToOpBNB() {
+  if (!window.ethereum) return showError(translations[localStorage.language || "en"].error_no_metamask);
+
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: opBNB.chainId }]
+    });
+  } catch (switchError) {
+    if (switchError.code === 4902) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [opBNB]
+        });
+      } catch (addError) {
+        return showError(translations[localStorage.language || "en"].error_add_network + " " + addError.message);
+      }
+    } else {
+      return showError(translations[localStorage.language || "en"].error_switch_network + " " + switchError.message);
+    }
+  }
+}
+
+async function updateBalances() {
+  if (!signer || !provider) return;
+  try {
+    const t = new ethers.Contract(addr0101, ERC20, provider);
+    const l = new ethers.Contract(addrLP, ERC20, provider);
+    const [b0101, bLP, bBNB] = await Promise.all([
+      t.balanceOf(account),
+      l.balanceOf(account),
+      provider.getBalance(account)
+    ]);
+    document.getElementById("balance-0101").textContent = parseFloat(ethers.formatUnits(b0101, 18)).toFixed(8);
+    document.getElementById("balance-bnb").textContent = parseFloat(ethers.formatUnits(bBNB, 18)).toFixed(8);
+    document.getElementById("balance-lp").textContent = parseFloat(ethers.formatUnits(bLP, 18)).toFixed(8);
+  } catch (error) {
+    console.error("Error updating balances:", error);
+  }
+}
+
 async function handleSwap() {
   if (!signer || !provider) {
     return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
@@ -379,86 +460,6 @@ async function removeLiquidity(pc) {
   }
 }
 
-async function switchToOpBNB() {
-  if (!window.ethereum) return showError(translations[localStorage.language || "en"].error_no_metamask);
-
-  try {
-    await window.ethereum.request({
-      method: 'wallet_switchEthereumChain',
-      params: [{ chainId: opBNB.chainId }]
-    });
-  } catch (switchError) {
-    if (switchError.code === 4902) {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [opBNB]
-        });
-      } catch (addError) {
-        return showError(translations[localStorage.language || "en"].error_add_network + " " + addError.message);
-      }
-    } else {
-      return showError(translations[localStorage.language || "en"].error_switch_network + " " + switchError.message);
-    }
-  }
-}
-
-async function connectWallet() {
-  if (!window.ethereum) return showError(translations[localStorage.language || "en"].error_no_metamask);
-
-  try {
-    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-    if (currentChainId !== opBNB.chainId) {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: opBNB.chainId }]
-        });
-      } catch (switchError) {
-        if (switchError.code === 4902) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [opBNB]
-            });
-          } catch (addError) {
-            return showError(translations[localStorage.language || "en"].error_add_network + " " + addError.message);
-          }
-        } else {
-          return showError(translations[localStorage.language || "en"].error_switch_network + " " + switchError.message);
-        }
-      }
-    }
-
-    provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    signer = await provider.getSigner();
-    account = await signer.getAddress();
-    document.getElementById("wallet-address").textContent = account.slice(0, 6) + "..." + account.slice(-4);
-    updateBalances();
-  } catch (err) {
-    showError(translations[localStorage.language || "en"].error_connect_wallet + " " + err.message);
-  }
-}
-
-async function updateBalances() {
-  if (!signer || !provider) return;
-  try {
-    const t = new ethers.Contract(addr0101, ERC20, provider);
-    const l = new ethers.Contract(addrLP, ERC20, provider);
-    const [b0101, bLP, bBNB] = await Promise.all([
-      t.balanceOf(account),
-      l.balanceOf(account),
-      provider.getBalance(account)
-    ]);
-    document.getElementById("balance-0101").textContent = parseFloat(ethers.formatUnits(b0101, 18)).toFixed(8);
-    document.getElementById("balance-bnb").textContent = parseFloat(ethers.formatUnits(bBNB, 18)).toFixed(8);
-    document.getElementById("balance-lp").textContent = parseFloat(ethers.formatUnits(bLP, 18)).toFixed(8);
-  } catch (error) {
-    console.error("Error updating balances:", error);
-  }
-}
-
 function toggleTheme() {
   const html = document.documentElement;
   const isLight = html.getAttribute("data-theme") === "light";
@@ -511,7 +512,6 @@ function swapTokens() {
   fromToken.value = toToken.value === "0101" ? "BNB" : "0101";
   toToken.value = temp === "BNB" ? "0101" : "BNB";
   fromToken.dispatchEvent(new Event('change'));
-  console.log("Swapped: ", fromToken.value, "→", toToken.value);
 }
 
 function showError(message) {
