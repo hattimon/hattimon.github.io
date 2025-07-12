@@ -44,13 +44,17 @@ async function handleSwap() {
   const pc = parseInt(document.getElementById("swapPercent").value);
   if (isNaN(pc) || pc < 1 || pc > 100) return showError("Percentage must be 1–100!");
 
-  const slippage = parseInt(document.getElementById("swapSlippage").value) || 1;
+  const slippage = 1; // Fixed slippage for simplicity
   const deadline = Math.floor(Date.now() / 1000) + 300;
+  const fromToken = document.getElementById("fromToken").value;
+  const toToken = document.getElementById("toToken").value;
 
-  if (document.getElementById("swapDirection").value === "toToken") {
+  if (fromToken === "BNB" && toToken === "0101") {
     swapBNBto0101(pc, slippage, deadline);
-  } else {
+  } else if (fromToken === "0101" && toToken === "BNB") {
     swap0101toBNB(pc, slippage, deadline);
+  } else {
+    showError("Only BNB ↔ 0101 swaps are supported!");
   }
 }
 
