@@ -35,14 +35,15 @@
         selectNetwork: 'Select Network',
         searchNetwork: 'Search Network...',
         addNetwork: 'Network not found? Add it via ',
-        safetyNote: 'Safety Note: Always verify the contract address and ABI. Use <a href="https://debank.com" target="_blank" class="underline">DeBank</a>, <a href="https://rabby.io" target="_blank" class="underline">Rabby</a>, and <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a> to check transaction safety.',
+        safetyNote: 'Safety Note: Always verify the contract address and ABI. Use DeBank, Rabby.io, and ScamSniffer to check transaction safety.',
         mobileView: 'Mobile View',
         desktopView: 'Desktop View',
         copy: 'Copy',
         revokePermissions: 'Revoke Permissions',
-        noPermissions: 'You currently have no signed permissions with this contract.',
-        revokeNote: 'This applies to the currently selected network. If the network is not implemented, enter a blockchain explorer URL (e.g., Etherscan) or add the network via ',
-        revokeCash: ' You can also revoke interactions at '
+        noPermissions: 'You can check your signed permissions on revoke.cash or Rabby Wallet.',
+        revokeNote: '',
+        revokeCash: '',
+        disclaimer: 'Disclaimer: This site is a graphical overlay for original contract functions to ease usage. I am not responsible for any losses incurred due to contract usage. All responsibility lies with the contract creator.'
       },
       pl: {
         title: 'Interfejs kontraktów inteligentnych',
@@ -62,14 +63,15 @@
         selectNetwork: 'Wybierz sieć',
         searchNetwork: 'Szukaj sieci...',
         addNetwork: 'Nie znaleziono sieci? Dodaj ją przez ',
-        safetyNote: 'Uwaga o bezpieczeństwie: Zawsze weryfikuj adres kontraktu i ABI. Użyj <a href="https://debank.com" target="_blank" class="underline">DeBank</a>, <a href="https://rabby.io" target="_blank" class="underline">Rabby</a> oraz <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>, aby sprawdzić bezpieczeństwo transakcji.',
+        safetyNote: 'Uwaga o bezpieczeństwie: Zawsze weryfikuj adres kontraktu i ABI. Użyj DeBank, Rabby.io oraz ScamSniffer, aby sprawdzić bezpieczeństwo transakcji.',
         mobileView: 'Wersja mobilna',
         desktopView: 'Wersja PC',
         copy: 'Kopiuj',
         revokePermissions: 'Cofnij uprawnienia',
-        noPermissions: 'Aktualnie nie masz żadnych uprawnień podpisanych z tym kontraktem.',
-        revokeNote: 'Dotyczy to aktualnie wybranej sieci. Jeśli sieć nie jest zaimplementowana, wpisz URL eksploratora blockchain (np. Etherscan) lub dodaj sieć przez ',
-        revokeCash: ' Możesz również cofnąć interakcje na '
+        noPermissions: 'Możesz sprawdzić swoje podpisane uprawnienia na revoke.cash lub Rabby Wallet.',
+        revokeNote: '',
+        revokeCash: '',
+        disclaimer: 'Zastrzeżenie: Ta strona jest graficzną nakładką na oryginalne funkcje kontraktu, ułatwiającą korzystanie. Nie ponoszę odpowiedzialności za żadne straty wynikłe z użycia kontraktu. Cała odpowiedzialność spoczywa na twórcy kontraktu.'
       }
     };
 
@@ -80,14 +82,14 @@
           _to: { en: 'Recipient address (e.g., 0x123...). Ensure it’s valid.', pl: 'Adres odbiorcy (np. 0x123...). Upewnij się, że jest poprawny.' },
           _value: { en: 'Amount of tokens (e.g., 1). Convert to wei below.', pl: 'Ilość tokenów (np. 1). Przelicz na wei poniżej.' }
         },
-        safety: { en: 'Verify recipient address. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Zweryfikuj adres odbiorcy. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Verify recipient address. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj adres odbiorcy. Sprawdź na ScamSniffer i Rabby.io.' }
       },
       withdraw: {
         description: { en: 'Withdraws funds from the contract (e.g., staking rewards).', pl: 'Wypłaca środki z kontraktu (np. nagrody ze stakowania).' },
         inputs: {
           _amount: { en: 'Amount to withdraw (e.g., 1). Convert to wei below.', pl: 'Ilość do wypłaty (np. 1). Przelicz na wei poniżej.' }
         },
-        safety: { en: 'Ensure contract has access controls. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Upewnij się, że kontrakt ma zabezpieczenia. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Ensure contract has access controls. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że kontrakt ma zabezpieczenia. Sprawdź na ScamSniffer i Rabby.io.' }
       },
       stake: {
         description: { en: 'Stakes tokens to earn rewards.', pl: 'Lokuje tokeny, aby zarabiać nagrody.' },
@@ -95,7 +97,7 @@
           _amount: { en: 'Amount to stake (e.g., 1). Convert to wei below.', pl: 'Ilość do zablokowania (np. 1). Przelicz na wei poniżej.' },
           pid: { en: 'Pool ID (e.g., 0, 1, 2).', pl: 'Identyfikator puli (np. 0, 1, 2).' }
         },
-        safety: { en: 'Verify pool ID and contract. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Zweryfikuj ID puli i kontrakt. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Verify pool ID and contract. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj ID puli i kontrakt. Sprawdź na ScamSniffer i Rabby.io.' }
       },
       addLiquidity: {
         description: { en: 'Adds liquidity to an AMM pool (e.g., Uniswap).', pl: 'Dodaje płynność do puli AMM (np. Uniswap).' },
@@ -105,7 +107,7 @@
           amountADesired: { en: 'Amount of token A (e.g., 1). Convert to wei below.', pl: 'Ilość tokena A (np. 1). Przelicz na wei poniżej.' },
           amountBDesired: { en: 'Amount of token B (e.g., 1). Convert to wei below.', pl: 'Ilość tokena B (np. 1). Przelicz na wei poniżej.' }
         },
-        safety: { en: 'Ensure pool is trusted. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Upewnij się, że pula jest zaufana. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Ensure pool is trusted. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że pula jest zaufana. Sprawdź na ScamSniffer i Rabby.io.' }
       },
       removeLiquidity: {
         description: { en: 'Removes liquidity from an AMM pool.', pl: 'Usuwa płynność z puli AMM.' },
@@ -114,7 +116,7 @@
           amountAMin: { en: 'Minimum token A (e.g., 1). Convert to wei below.', pl: 'Minimalna ilość tokena A (np. 1). Przelicz na wei poniżej.' },
           amountBMin: { en: 'Minimum token B (e.g., 1). Convert to wei below.', pl: 'Minimalna ilość tokena B (np. 1). Przelicz na wei poniżej.' }
         },
-        safety: { en: 'Check minimum amounts to avoid slippage. Verify with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Sprawdź minimalne ilości, aby uniknąć poślizgu. Zweryfikuj na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Check minimum amounts to avoid slippage. Verify with ScamSniffer and Rabby.io.', pl: 'Sprawdź minimalne ilości, aby uniknąć poślizgu. Zweryfikuj na ScamSniffer i Rabby.io.' }
       },
       swap: {
         description: { en: 'Swaps one token for another in an AMM pool.', pl: 'Wymienia jeden token na inny w puli AMM.' },
@@ -123,14 +125,14 @@
           amountOutMin: { en: 'Minimum output (e.g., 1). Convert to wei below.', pl: 'Minimalna ilość wyjściowa (np. 1). Przelicz na wei poniżej.' },
           path: { en: 'Token swap path (e.g., [input, output]).', pl: 'Ścieżka wymiany (np. [wejściowy, wyjściowy]).' }
         },
-        safety: { en: 'Set reasonable minimum output. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Ustaw rozsądną minimalną ilość wyjściową. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Set reasonable minimum output. Check with ScamSniffer and Rabby.io.', pl: 'Ustaw rozsądną minimalną ilość wyjściową. Sprawdź na ScamSniffer i Rabby.io.' }
       },
       claimRewards: {
         description: { en: 'Claims rewards from staking or farming.', pl: 'Odbiera nagrody ze stakowania lub farmingu.' },
         inputs: {
           pid: { en: 'Pool ID (e.g., 0, 1, 2).', pl: 'Identyfikator puli (np. 0, 1, 2).' }
         },
-        safety: { en: 'Ensure contract legitimacy. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Upewnij się, że kontrakt jest legalny. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Ensure contract legitimacy. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że kontrakt jest legalny. Sprawdź na ScamSniffer i Rabby.io.' }
       },
       mint: {
         description: { en: 'Mints a new NFT or ERC20 token.', pl: 'Tworzy nowy token NFT lub ERC20.' },
@@ -138,7 +140,7 @@
           _to: { en: 'Recipient address.', pl: 'Adres odbiorcy.' },
           tokenId: { en: 'Unique NFT ID (e.g., 1).', pl: 'Unikalny identyfikator NFT (np. 1).' }
         },
-        safety: { en: 'Verify minting limits. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Zweryfikuj limity mintowania. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Verify minting limits. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj limity mintowania. Sprawdź na ScamSniffer i Rabby.io.' }
       },
       deposit: {
         description: { en: 'Deposits tokens into a pool to start staking.', pl: 'Wpłaca tokeny do puli, aby rozpocząć stakowanie.' },
@@ -146,7 +148,7 @@
           _pid: { en: 'Pool ID (e.g., 0, 1, 2).', pl: 'Identyfikator puli (np. 0, 1, 2).' },
           _amount: { en: 'Amount to deposit (e.g., 1). Convert to wei below.', pl: 'Ilość do wpłaty (np. 1). Przelicz na wei poniżej.' }
         },
-        safety: { en: 'Verify pool ID and balance. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Zweryfikuj ID puli i saldo. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Verify pool ID and balance. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj ID puli i saldo. Sprawdź na ScamSniffer i Rabby.io.' }
       },
       withdraw: {
         description: { en: 'Withdraws staked tokens from a pool.', pl: 'Wypłaca zablokowane tokeny z puli.' },
@@ -154,14 +156,14 @@
           _pid: { en: 'Pool ID (e.g., 0, 1, 2).', pl: 'Identyfikator puli (np. 0, 1, 2).' },
           _amount: { en: 'Amount to withdraw (e.g., 1). Convert to wei below.', pl: 'Ilość do wypłaty (np. 1). Przelicz na wei poniżej.' }
         },
-        safety: { en: 'Check staked amount. Verify with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Sprawdź zablokowaną ilość. Zweryfikuj na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Check staked amount. Verify with ScamSniffer and Rabby.io.', pl: 'Sprawdź zablokowaną ilość. Zweryfikuj na ScamSniffer i Rabby.io.' }
       },
       emergencyWithdraw: {
         description: { en: 'Emergency withdrawal of staked tokens.', pl: 'Awaryjne wypłata zablokowanych tokenów.' },
         inputs: {
           _pid: { en: 'Pool ID (e.g., 0, 1, 2).', pl: 'Identyfikator puli (np. 0, 1, 2).' }
         },
-        safety: { en: 'Use only in emergencies; may forfeit rewards. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Używaj tylko w nagłych przypadkach; może skutkować utratą nagród. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Use only in emergencies; may forfeit rewards. Check with ScamSniffer and Rabby.io.', pl: 'Używaj tylko w nagłych przypadkach; może skutkować utratą nagród. Sprawdź na ScamSniffer i Rabby.io.' }
       },
       pendingCub: {
         description: { en: 'Checks pending rewards for a user in a pool.', pl: 'Sprawdza oczekujące nagrody dla użytkownika w puli.' },
@@ -169,18 +171,110 @@
           _pid: { en: 'Pool ID (e.g., 0, 1, 2).', pl: 'Identyfikator puli (np. 0, 1, 2).' },
           _user: { en: 'User address (e.g., 0x123...).', pl: 'Adres użytkownika (np. 0x123...).' }
         },
-        safety: { en: 'Ensure correct pool and address. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Upewnij się, że podano poprawną pulę i adres. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Ensure correct pool and address. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że podano poprawną pulę i adres. Sprawdź na ScamSniffer i Rabby.io.' }
       }
     };
 
     const networks = [
       { chainId: '0x1', name: 'Ethereum Mainnet', isTestnet: false },
       { chainId: '0x38', name: 'BNB Chain', isTestnet: false },
-      { chainId: '0xcc', name: 'opBNB', isTestnet: false },
       { chainId: '0xa4b1', name: 'Arbitrum One', isTestnet: false },
       { chainId: '0x89', name: 'Polygon', isTestnet: false },
       { chainId: '0xa', name: 'Optimism', isTestnet: false },
-      { chainId: '0x2105', name: 'Base', isTestnet: false }
+      { chainId: '0x2105', name: 'Base', isTestnet: false },
+      { chainId: '0xa86a', name: 'Avalanche', isTestnet: false },
+      { chainId: '0xfa', name: 'Fantom', isTestnet: false },
+      { chainId: '0xcc', name: 'opBNB', isTestnet: false },
+      { chainId: '0x28c58', name: 'Taiko', isTestnet: false },
+      { chainId: '0xaa36a7', name: 'Sepolia Testnet', isTestnet: true },
+      { chainId: '0x5', name: 'Goerli Testnet', isTestnet: true },
+      { chainId: '0x4268', name: 'Holesky Testnet', isTestnet: true },
+      { chainId: '0x19', name: 'Cronos', isTestnet: false },
+      { chainId: '0xa4ec', name: 'Celo', isTestnet: false },
+      { chainId: '0x1388', name: 'Mantle', isTestnet: false },
+      { chainId: '0x82750', name: 'Scroll', isTestnet: false },
+      { chainId: '0xe708', name: 'Linea', isTestnet: false },
+      { chainId: '0x144', name: 'zkSync Era', isTestnet: false },
+      { chainId: '0x504', name: 'Moonbeam', isTestnet: false },
+      { chainId: '0x64', name: 'Gnosis Chain', isTestnet: false },
+      { chainId: '0xe704', name: 'Metis', isTestnet: false },
+      { chainId: '0x440', name: 'Kava', isTestnet: false },
+      { chainId: '0x44d', name: 'Polygon zkEVM', isTestnet: false },
+      { chainId: '0x15b', name: 'Aurora', isTestnet: false },
+      { chainId: '0x2019', name: 'Klaytn', isTestnet: false },
+      { chainId: '0x3e8', name: 'Moonriver', isTestnet: false },
+      { chainId: '0x505', name: 'Canto', isTestnet: false },
+      { chainId: '0x315', name: 'Bitgert', isTestnet: false },
+      { chainId: '0x4e', name: 'OKT Chain', isTestnet: false },
+      { chainId: '0x106', name: 'Telos', isTestnet: false },
+      { chainId: '0x5c', name: 'Hoo Smart Chain', isTestnet: false },
+      { chainId: '0x45', name: 'Wanchain', isTestnet: false },
+      { chainId: '0x51', name: 'XinFin', isTestnet: false },
+      { chainId: '0x3c', name: 'Vision', isTestnet: false },
+      { chainId: '0x3d', name: 'Syscoin', isTestnet: false },
+      { chainId: '0x48', name: 'Rootstock', isTestnet: false },
+      { chainId: '0x65', name: 'TomoChain', isTestnet: false },
+      { chainId: '0x4a', name: 'Velas', isTestnet: false },
+      { chainId: '0x2329', name: 'Core', isTestnet: false },
+      { chainId: '0x57', name: 'SmartBCH', isTestnet: false },
+      { chainId: '0x4c', name: 'Fuse', isTestnet: false },
+      { chainId: '0x7b7', name: 'Evmos', isTestnet: false },
+      { chainId: '0x22b8', name: 'Oasis Sapphire', isTestnet: false },
+      { chainId: '0x118', name: 'Astar', isTestnet: false },
+      { chainId: '0x585', name: 'Shiden', isTestnet: false },
+      { chainId: '0x1d7', name: 'KCC', isTestnet: false },
+      { chainId: '0x326', name: 'Meter', isTestnet: false },
+      { chainId: '0x1af', name: 'OneLedger', isTestnet: false },
+      { chainId: '0x13e', name: 'ThunderCore', isTestnet: false },
+      { chainId: '0xa0', name: 'xDai', isTestnet: false },
+      { chainId: '0x152', name: 'Boba Network', isTestnet: false },
+      { chainId: '0x1a4', name: 'Harmony', isTestnet: false },
+      { chainId: '0x2b', name: 'Energy Web Chain', isTestnet: false },
+      { chainId: '0x3f', name: 'Ellipsis', isTestnet: false },
+      { chainId: '0x5e', name: 'RSK Testnet', isTestnet: true },
+      { chainId: '0x6b', name: 'Cronos Testnet', isTestnet: true },
+      { chainId: '0x7a', name: 'Fuse Testnet', isTestnet: true },
+      { chainId: '0x8a', name: 'Celo Testnet', isTestnet: true },
+      { chainId: '0x97', name: 'BNB Smart Chain Testnet', isTestnet: true },
+      { chainId: '0xa0b', name: 'Polygon Mumbai', isTestnet: true },
+      { chainId: '0xa7b', name: 'Avalanche Fuji', isTestnet: true },
+      { chainId: '0xb1c', name: 'Arbitrum Testnet', isTestnet: true },
+      { chainId: '0xc0f', name: 'Optimism Testnet', isTestnet: true },
+      { chainId: '0xd1e', name: 'Base Testnet', isTestnet: true },
+      { chainId: '0xe0f', name: 'Fantom Testnet', isTestnet: true },
+      { chainId: '0xf00', name: 'Moonbeam Testnet', isTestnet: true },
+      { chainId: '0x10a', name: 'Gnosis Chiado', isTestnet: true },
+      { chainId: '0x11b', name: 'Aurora Testnet', isTestnet: true },
+      { chainId: '0x12c', name: 'Klaytn Testnet', isTestnet: true },
+      { chainId: '0x13d', name: 'Moonriver Testnet', isTestnet: true },
+      { chainId: '0x14e', name: 'Canto Testnet', isTestnet: true },
+      { chainId: '0x15f', name: 'Bitgert Testnet', isTestnet: true },
+      { chainId: '0x160', name: 'OKT Testnet', isTestnet: true },
+      { chainId: '0x161', name: 'Telos Testnet', isTestnet: true },
+      { chainId: '0x162', name: 'Hoo Testnet', isTestnet: true },
+      { chainId: '0x163', name: 'Wanchain Testnet', isTestnet: true },
+      { chainId: '0x164', name: 'XinFin Testnet', isTestnet: true },
+      { chainId: '0x165', name: 'Vision Testnet', isTestnet: true },
+      { chainId: '0x166', name: 'Syscoin Testnet', isTestnet: true },
+      { chainId: '0x167', name: 'Rootstock Testnet', isTestnet: true },
+      { chainId: '0x168', name: 'TomoChain Testnet', isTestnet: true },
+      { chainId: '0x169', name: 'Velas Testnet', isTestnet: true },
+      { chainId: '0x16a', name: 'Core Testnet', isTestnet: true },
+      { chainId: '0x16b', name: 'SmartBCH Testnet', isTestnet: true },
+      { chainId: '0x16c', name: 'Fuse Testnet', isTestnet: true },
+      { chainId: '0x16d', name: 'Evmos Testnet', isTestnet: true },
+      { chainId: '0x16e', name: 'Oasis Sapphire Testnet', isTestnet: true },
+      { chainId: '0x16f', name: 'Astar Testnet', isTestnet: true },
+      { chainId: '0x170', name: 'Shiden Testnet', isTestnet: true },
+      { chainId: '0x171', name: 'KCC Testnet', isTestnet: true },
+      { chainId: '0x172', name: 'Meter Testnet', isTestnet: true },
+      { chainId: '0x173', name: 'OneLedger Testnet', isTestnet: true },
+      { chainId: '0x174', name: 'ThunderCore Testnet', isTestnet: true },
+      { chainId: '0x175', name: 'xDai Testnet', isTestnet: true },
+      { chainId: '0x176', name: 'Boba Testnet', isTestnet: true },
+      { chainId: '0x177', name: 'Harmony Testnet', isTestnet: true },
+      { chainId: '0x178', name: 'Energy Web Testnet', isTestnet: true },
+      { chainId: '0x179', name: 'Ellipsis Testnet', isTestnet: true }
     ];
 
     const poolIds = ['0', '1', '2', '3', '4'];
@@ -464,7 +558,8 @@
 
           <div className="mt-8">
             <h2 className="text-xl font-bold mb-4 flex items-center text-yellow-400"><i className="fas fa-lock mr-2"></i>{translations[language].revokePermissions}</h2>
-            <p className="text-sm text-gray-400 mb-4 flex items-center"><i className="fas fa-info-circle mr-2"></i>{translations[language].noPermissions} {translations[language].revokeNote}<a href="https://chainlist.org" target="_blank" class="underline">Chainlist.org</a>{translations[language].revokeCash}<a href="https://revoke.cash" target="_blank" class="underline">revoke.cash</a> or manage in <a href="https://rabby.io" target="_blank" class="underline">Rabby.io</a>.</p>
+            <p className="text-sm text-gray-400 mb-4 flex items-center"><i className="fas fa-info-circle mr-2"></i>{translations[language].noPermissions}</p>
+            <p className="text-sm text-center text-yellow-500 mt-4" dangerouslySetInnerHTML={{ __html: translations[language].disclaimer }}></p>
           </div>
 
           <div className="fixed bottom-0 left-0 right-0 space-y-2 p-4">
@@ -520,7 +615,7 @@
       const funcInfo = functionDescriptions[func.name] || {
         description: { en: 'Custom function. Follow contract documentation.', pl: 'Funkcja niestandardowa. Zgodnie z dokumentacją kontraktu.' },
         inputs: {},
-        safety: { en: 'Verify function and contract. Check with <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.', pl: 'Zweryfikuj funkcję i kontrakt. Sprawdź na <a href="https://www.scamsniffer.io" target="_blank" class="underline">ScamSniffer</a>.' }
+        safety: { en: 'Verify function and contract. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj funkcję i kontrakt. Sprawdź na ScamSniffer i Rabby.io.' }
       };
 
       return (
