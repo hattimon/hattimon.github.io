@@ -53,7 +53,7 @@ const translations = {
     interaction_info: "(<b>Clicking SWAP or Add/Remove LP</b> requires several subsequent clicks to approve the contract interaction for the specified amount – e.g., approving the Swap contract and confirming the Swap)",
     gui_info: "This is a secure (SSL) backup GUI using BinarySwap's original contract functions.",
     wallet_recommendation: "I recommend the <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a> wallet where you can also revoke permissions.",
-    transaction_history: "For transaction history, check <a href=\"https://debank.com/\" target="_blank">DeBank.com</a>.",
+    transaction_history: "For transaction history, check <a href=\"https://debank.com/\" target=\"_blank\">DeBank.com</a>.",
     wallet_label: "Wallet",
     disconnected: "Disconnected",
     connect: "Connect/Refresh Wallet",
@@ -119,7 +119,7 @@ const translations = {
     interaction_info: "(<b>Klikając ZAMIANA lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – np. zatwierdzenie kontraktu Zamiany i potwierdzenie Zamiany)",
     gui_info: "Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.",
     wallet_recommendation: "Polecam portfel <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a>, gdzie możesz również cofnąć uprawnienia.",
-    transaction_history: "Do podglądu historii transakcji sprawdź <a href=\"https://debank.com/\" target="_blank">DeBank.com</a>.",
+    transaction_history: "Do podglądu historii transakcji sprawdź <a href=\"https://debank.com/\" target=\"_blank\">DeBank.com</a>.",
     wallet_label: "Portfel",
     disconnected: "Niepołączony",
     connect: "Połącz/Odśwież Portfel",
@@ -185,8 +185,8 @@ async function handleSwap() {
 
   const slippage = parseFloat(document.getElementById("slippage").value);
   const deadline = Math.floor(Date.now() / 1000) + 300;
-  const fromToken = document.getElementById("fromToken").dataset.value;
-  const toToken = document.getElementById("toToken").dataset.value;
+  const fromToken = document.getElementById("fromToken").value;
+  const toToken = document.getElementById("toToken").value;
 
   if (fromToken === toToken) {
     return showError(translations[localStorage.language || "en"].error_invalid_pair);
@@ -475,11 +475,18 @@ function toggleMusic() {
 function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
-  const tempValue = fromToken.dataset.value;
-  fromToken.dataset.value = toToken.dataset.value;
-  toToken.dataset.value = tempValue;
-  fromToken.value = fromToken.dataset.value;
-  toToken.value = toToken.dataset.value;
+  const fromTokenDisplay = document.getElementById("fromTokenDisplay");
+  const toTokenDisplay = document.getElementById("toTokenDisplay");
+
+  // Zamiana wartości w ukrytych inputach
+  const tempValue = fromToken.value;
+  fromToken.value = toToken.value;
+  toToken.value = tempValue;
+
+  // Aktualizacja wyświetlanych tokenów
+  fromTokenDisplay.textContent = fromToken.value;
+  toTokenDisplay.textContent = toToken.value;
+
   console.log("Swapped: ", fromToken.value, "→", toToken.value);
 }
 
