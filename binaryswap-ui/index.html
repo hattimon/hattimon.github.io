@@ -6,57 +6,37 @@
   <title>BinarySwap</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-  <style>
-    :root { --bg:#1d1d1d; --text:#1db954; --card:#2a2a2a; --btn:#3a3a3a; --link:#a0ffcc; }
-    [data-theme="light"] { --bg:#fff; --text:#000; --card:#f0f0f0; --btn:#e0e0e0; --link:#007acc; }
-    body { margin:0;padding:20px;font-family:Arial;background:var(--bg);color:var(--text);transition:0.3s; }
-    a{color:var(--link);text-decoration:none;}
-    button{margin:5px;padding:10px 15px;border:none;border-radius:5px;background:var(--btn);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
-    input,select{margin:5px;padding:8px;border:1px solid #555;border-radius:5px;background:var(--card);color:var(--text);}
-    .section{margin-top:20px;padding:15px;border:1px solid #444;border-radius:10px;background:var(--card); }
-    #logo{max-width:500px;display:block;margin:0 auto;}
-    .top-links{text-align:center;margin-bottom:20px;}
-    .theme-toggle{position:fixed;top:10px;right:10px;padding:8px 12px;border-radius:5px;z-index:1000;background:var(--btn);color:var(--text);border:none;cursor:pointer;}
-    .center-title{text-align:center;font-size:24px;margin-top:10px;}
-    .error-message{margin-top:20px;padding:10px;background-color:#f8d7da;border:1px solid #f5c6cb;border-radius:5px;color:#721c24;}
-    #error-text{white-space: pre-wrap; word-wrap: break-word;}
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="button-group">
+    <button class="theme-toggle" onclick="toggleTheme()">🌞 Tryb jasny</button>
+    <button class="lang-toggle" onclick="toggleLanguage()">🌐 Język</button>
+    <button class="music-toggle" onclick="toggleMusic()">🎵 Music: On</button>
+  </div>
+
+  <img id="logo" src="logo.png" alt="BinarySwap logo">
+
+  <audio id="background-music" loop>
+    <source src="background-music.mp3" type="audio/mpeg">
+    Twoja przeglądarka nie obsługuje elementu audio.
+  </audio>
+
+  <!-- Google Translate -->
+  <div id="google_translate_element" style="position: absolute; top: 20px; left: 20px;"></div>
   
-<style>
-  #logo {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 0 auto;
-  }
+  <div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja</a></div>
+  <div class="top-links"><a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 Kurs 0101/WBNB</a></div>
+  <div class="top-links"><a href="https://pancakeswap.finance/bridge" target="_blank">🌉 Szybki Most opBNB ⇄ FDUSD</a></div>
+  <div class="top-links"><a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">🌉 Oficjalny Most opBNB ⇄ BNB (7 dni)</a></div>
 
-  /* Opcjonalnie: dla lepszego dopasowania do ekranu pełnej szerokości */
-  body, html {
-    margin: 0;
-    padding: 0;
-  }
-</style>
-
-<img id="logo" src="logo.png" alt="BinarySwap logo">
-
-<!-- Google Translate -->
-<div id="google_translate_element" style="position: absolute; top: 20px; left: 20px;"></div>
-  
-<div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja</a></div>
-<div class="top-links"><a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 Kurs 0101/WBNB</a></div>
-<div class="top-links"><a href="https://pancakeswap.finance/bridge" target="_blank">🌉 Szybki Most opBNB ⇄ FDUSD</a></div>
-<div class="top-links"><a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">🌉 Oficjalny Most opBNB ⇄ BNB (7 dni)</a></div>
-
-  <button class="theme-toggle" onclick="toggleTheme()">🌞 Tryb jasny</button>
   <div class="center-title" style="text-align: center; color: red; font-weight: bold;">Tryb Awaryjny BinarySwap</div>
- <p style="text-align: center;">
-  (<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)<br>
-  Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br>
-   <font color="orange" size="small">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia. <br>
-   Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>
-</p>
+  <p style="text-align: center;">
+    (<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)<br>
+    Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br>
+    <font color="orange" size="small">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia. <br>
+    Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>
+  </p>
 
   <div id="app-root">
     <div class="section">
@@ -102,42 +82,42 @@
     </div>
 
     <div class="section" id="lp-info">
-       <font color="ff1100"><h3>MasterChef – Awaryjna wypłata LP, NFT itp:</h3><br>
-1. Wejdź na kontrakt: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>
-&nbsp; &nbsp; &nbsp;    Skopiuj Adres kontraktu oraz zawartość pola <b>Contract ABI</b><br><br>      
-2. Otwórz w nowej zakładce strone: <a href="https://hattimon.github.io/sm-gui" target="_blank">Interfejs kontraktów inteligentnych</a><br>
-&nbsp; &nbsp; &nbsp;    przełacz sieć na opBNB i wklej w opowiednich polach te dane. <br><br>
-3. Przejdź do pola <b>emergencyWithdraw</b> i wpisuj kolejno 0,1,2,3,4,5 itd. <br>
-&nbsp; &nbsp; &nbsp;    w zależności od tego co stakujesz, podczas zatwierdzenia transakcji Rabby Wallet wyświetli wiadomość do podpisania np. wypłata LP lub NFT <br>
-&nbsp; &nbsp; &nbsp;    - zatwierdź każdą transakcje, która pokazuje wyplate czegoś z kontraktu i sprawdź w debank lub wyżej ilość tokenów LP (reszte zrobisz powyżej😉)      
-<br><br><font><br>
+      <font color="ff1100"><h3>MasterChef – Awaryjna wypłata LP, NFT itp:</h3><br>
+      1. Wejdź na kontrakt: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>
+      Skopiuj Adres kontraktu oraz zawartość pola <b>Contract ABI</b><br><br>      
+      2. Otwórz w nowej zakładce strone: <a href="https://hattimon.github.io/sm-gui" target="_blank">Interfejs kontraktów inteligentnych</a><br>
+      przełacz sieć na opBNB i wklej w opowiednich polach te dane. <br><br>
+      3. Przejdź do pola <b>emergencyWithdraw</b> i wpisuj kolejno 0,1,2,3,4,5 itd. <br>
+      w zależności od tego co stakujesz, podczas zatwierdzenia transakcji Rabby Wallet wyświetli wiadomość do podpisania np. wypłata LP lub NFT <br>
+      - zatwierdź każdą transakcje, która pokazuje wyplate czegoś z kontraktu i sprawdź w debank lub wyżej ilość tokenów LP (reszte zrobisz powyżej😉)      
+      <br><br><font><br>
       <font color="gray">
-<b>## Contracts </b>📃
-<br>
-🏭Factory: 0xd50aaE6C73E2486B0Da718D23F35Dcf5aad25911
-<br>
-⏺Init: 0x5ef9d9226744e2d0335d11ea48193e4ccd224fb01d8557c9db762f93cfe52881 
-<br>
-📡Router: 0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b&#x20
-<br>
-🔁Multi: 0x689e9631d1e308845DE5661C0B6bdE23c841e459
-<br>
-👨‍🍳Masterchef: 0x39a786421889EB581bd105508a0D2Dc03523B903
-<br>
-👩‍🍳MasterChef Audit: <a href="https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf" target="_blank">https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf</a>
-<br>
-🔥LP burn: https://mainnet.opbnbscan.com/tx/0x64a7105d6c186a165ece658c1b7987e49b8377f8edd75595a15da133b8bdea4c
-<br>
-🖥Terminals: 0xD954Bb4E6aF0CCC7d692431b8841A03916BeC9e9
-<br>
-🖥Wrapped Terminals: 0x7dC01688De0eFf09657406a7d55933d9349cC0B6
-<br>
-0101 Token: 0xa41B3067eC694DBec668c389550bA8fc589e5797
-<br>
-LP 0101/BNB: 0x506b8322e1159d06e493ebe7ffa41a24291e7ae3
-<br>
-opBNB Block Explorer: <a href="https://mainnet.opbnbscan.com" target="_blank">https://mainnet.opbnbscan.com</a></font>
-<br>      
+      <b>## Contracts </b>📃
+      <br>
+      🏭Factory: 0xd50aaE6C73E2486B0Da718D23F35Dcf5aad25911
+      <br>
+      ⏺Init: 0x5ef9d9226744e2d0335d11ea48193e4ccd224fb01d8557c9db762f93cfe52881
+      <br>
+      📡Router: 0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b 
+      <br>
+      🔁Multi: 0x689e9631d1e308845DE5661C0B6bdE23c841e459
+      <br>
+      👨‍🍳Masterchef: 0x39a786421889EB581bd105508a0D2Dc03523B903
+      <br>
+      👩‍🍳MasterChef Audit: <a href="https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf" target="_blank">https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf</a>
+      <br>
+      🔥LP burn: https://mainnet.opbnbscan.com/tx/0x64a7105d6c186a165ece658c1b7987e49b8377f8edd75595a15da133b8bdea4c
+      <br>
+      🖥Terminals: 0xD954Bb4E6aF0CCC7d692431b8841A03916BeC9e9
+      <br>
+      🖥Wrapped Terminals: 0x7dC01688De0eFf09657406a7d55933d9349cC0B6
+      <br>
+      0101 Token: 0xa41B3067eC694DBec668c389550bA8fc589e5797
+      <br>
+      LP 0101/BNB: 0x506b8322e1159d06e493ebe7ffa41a24291e7ae3
+      <br>
+      opBNB Block Explorer: <a href="https://mainnet.opbnbscan.com" target="_blank">https://mainnet.opbnbscan.com</a></font>
+      <br>      
     </div>
 
     <!-- Error Message Section -->
@@ -150,16 +130,15 @@ opBNB Block Explorer: <a href="https://mainnet.opbnbscan.com" target="_blank">ht
   <script src="app.js"></script>
 
   <!-- Google Translate -->
-<script type="text/javascript">
-  function googleTranslateElementInit() {
-    new google.translate.TranslateElement({
-      pageLanguage: 'pl', // domyślnie angielski
-      includedLanguages: 'en,pl,de,fr,es,ru,uk,zh-CN,ja', // dodaj języki jakie chcesz
-      layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-    }, 'google_translate_element');
-  }
-</script>
-<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-  
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'pl',
+        includedLanguages: 'en,pl,de,fr,es,ru,uk,zh-CN,ja',
+        layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+      }, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
