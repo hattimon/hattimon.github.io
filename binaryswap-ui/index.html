@@ -30,9 +30,9 @@
   <div class="center-title">BinarySwap <span data-i18n="emergency_mode">Tryb Awaryjny</span></div>
   <p class="intro-text">
     <span data-i18n="interaction_info">(<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)</span><br>
-    <span data-i18n="gui_info">Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.</span><br>
-    <span data-i18n="wallet_recommendation">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia.</span><br>
-    <span data-i18n="transaction_history">Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.</span>
+    <span data-i18n="gui_info">Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów.</span><br>
+    <span data-i18n="wallet_recommendation">Polecam portfel Rabby.io gdzie również cofniesz uprawnienia.</span><br>
+    <span data-i18n="transaction_history">Do podglądu historii transakcji polecam DeBank.com.</span>
   </p>
 
   <div id="app-root">
@@ -78,30 +78,22 @@
       <button onclick="handleSwap()" class="uniswap-btn"><i class="fas fa-exchange-alt"></i> <span data-i18n="swap_button">Swap</span></button>
     </div>
 
-    <div class="section">
-      <h3 data-i18n="liquidity_pool">Pula Płynności</h3>
-      <input type="number" id="lpPercent" placeholder="1–100%">
-      <div class="liquidity-actions">
-        <button onclick="addLiquidity(parseInt(lpPercent.value))"><i class="fas fa-plus-circle"></i> <span data-i18n="add_lp">Dodaj LP</span></button>
-        <button onclick="removeLiquidity(parseInt(lpPercent.value))"><i class="fas fa-minus-circle"></i> <span data-i18n="remove_lp">Usuń LP</span></button>
-      </div>
-    </div>
-
-    <div class="section lp-info-section" id="lp-info">
-      <h3>MasterChef – <span data-i18n="emergency_withdrawal">Awaryjna wypłata LP, NFT itp:</span></h3>
+    <div class="section lp-info-section" id decade="lp-info">
+      <h3>MasterChef – <span data-i18n="emergency_withdrawal">Awaryjna wypfulata LP, NFT itp:</span></h3>
       <div class="masterchef-instructions">
         <p>
-          1. <span data-i18n="contract_instruction_1">Wejdź na kontrakt:</span> <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>
-          <span data-i18n="contract_instruction_2">Skopiuj Adres kontraktu oraz zawartość pola <b>Contract ABI</b></span>
+          <span data-i18n="contract_instruction_1">Krok 1: Wejdź na kontrakt:</span> <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2nd2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>
+ now
+          <span data-i18n="contract_instruction_2">Skopiuj adres kontraktu oraz zawartość pola Contract ABI.</span>
         </p>
         <p>
-          2. <span data-i18n="contract_instruction_3">Otwórz w nowej zakładce stronę:</span> <a href="https://hattimon.github.io/sm-gui" target="_blank"><span data-i18n="smart_contracts_interface">Interfejs kontraktów inteligentnych</span></a><br>
-          <span data-i18n="contract_instruction_4">przełącz sieć na opBNB i wklej w odpowiednich polach te dane.</span>
+          <span data-i18n="contract_instruction_3">Krok 2: Otwórz w nowej zakładce stronę:</span> <a href="https://hattimon.github.io/sm-gui" target="_blank"><span data-i18n="smart_contracts_interface">Interfejs kontraktów inteligentnych</span></a><br>
+          <span data-i18n="contract_instruction_4">Przełącz sieć na opBNB i wklej dane w odpowiednie pola.</span>
         </p>
         <p>
-          3. <span data-i18n="contract_instruction_5">Przejdź do pola <b>emergencyWithdraw</b> i wpisuj kolejno 0,1,2,3,4,5 itd.</span><br>
-          <span data-i18n="contract_instruction_6">w zależności od tego co stakujesz, podczas zatwierdzenia transakcji Rabby Wallet wyświetli wiadomość do podpisania np. wypłata LP lub NFT</span><br>
-          <span data-i18n="contract_instruction_7">- zatwierdź każdą transakcję, która pokazuje wypłatę czegoś z kontraktu i sprawdź w DeBank lub wyżej ilość tokenów LP (reszta powyżej 😊)</span>
+          <span data-i18n="contract_instruction_5">Krok 3: Przejdź do pola emergencyWithdraw i wpisuj kolejno 0, 1, 2, 3, 4, 5 itd.</span><br>
+          <span data-i18n="contract_instruction_6">W zależności od tego, co stakujesz, podczas zatwierdzania transakcji Rabby Wallet wyświetli komunikat do podpisania, np. wypłata LP lub NFT.</span><br>
+          <span data-i18n="contract_instruction_7">Zatwierdź każdą transakcję, która pokazuje wypłatę z kontraktu i sprawdź ilość tokenów LP w DeBank lub powyżej (reszta powyżej 😊).</span>
         </p>
       </div>
       <div class="contracts-list">
