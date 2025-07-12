@@ -49,25 +49,19 @@
       <div class="section swap-section">
         <h3>Swap</h3>
         <div class="swap-card">
-          <div class="swap-input">
-            <input type="number" id="swapPercent" placeholder="Enter amount (1–100) %">
-            <select id="swapDirection">
-              <option value="toToken">BNB → 0101</option>
-              <option value="toBNB">0101 → BNB</option>
+          <div class="token-select">
+            <select id="fromToken">
+              <option value="BNB">BNB</option>
+              <option value="0101">0101</option>
+            </select>
+            <span>→</span>
+            <select id="toToken">
+              <option value="0101">0101</option>
+              <option value="BNB">BNB</option>
             </select>
           </div>
-          <div class="swap-settings">
-            <label>Slippage Tolerance</label>
-            <select id="swapSlippage">
-              <option value="1">1%</option>
-              <option value="3">3%</option>
-              <option value="5">5%</option>
-              <option value="10">10%</option>
-              <option value="20">20%</option>
-              <option value="30">30%</option>
-              <option value="50">50%</option>
-              <option value="100">100%</option>
-            </select>
+          <div class="swap-input">
+            <input type="number" id="swapPercent" placeholder="Enter amount (1–100) %">
           </div>
           <button class="uniswap-btn swap-btn" onclick="handleSwap()">Swap</button>
         </div>
@@ -115,8 +109,14 @@
         <strong>Error:</strong>
         <pre id="error-text"></pre>
       </div>
+
+      <button class="music-toggle" onclick="toggleMusic()">Music: On</button>
     </div>
   </div>
+
+  <audio id="background-music" loop>
+    <source src="https://www.classicgaming.cc/classics/zelda/zelda-overworld.mp3" type="audio/mpeg">
+  </audio>
 
   <script src="app.js"></script>
 
@@ -130,6 +130,7 @@
     }
 
     let lang = 'en';
+    let musicOn = true;
     const translations = {
       en: {
         connect: 'Connect/Refresh Wallet',
@@ -147,7 +148,13 @@
         step3: 'Step 3: Go to the <b>emergencyWithdraw</b> field and enter 0, 1, 2, 3, 4, 5, etc.',
         disconnected: 'Disconnected',
         intro: '(<b>Clicking SWAP or Add/Remove LP</b> requires several subsequent clicks to approve the contract interaction for the specified amount – e.g., approving the Swap contract and confirming the Swap)<br>This is a secure (SSL) backup GUI using BinarySwap\'s original contract functions.<br><font color="orange">I recommend the <a href="https://rabby.io/" target="_blank">Rabby.io</a> wallet where you can also revoke permissions.<br>For transaction history, check <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>',
-        enterAmount: 'Enter amount (1–100) %'
+        enterAmount: 'Enter amount (1–100) %',
+        documentation: 'Documentation',
+        price: '0101/WBNB Price',
+        fastBridge: 'Fast Bridge opBNB ⇄ FDUSD',
+        officialBridge: 'Official Bridge opBNB ⇄ BNB (7 days)',
+        musicOn: 'Music: On',
+        musicOff: 'Music: Off'
       },
       pl: {
         connect: 'Połącz/Odśwież Portfel',
@@ -165,7 +172,13 @@
         step3: 'Krok 3: Przejdź do pola <b>emergencyWithdraw</b> i wpisuj kolejno 0, 1, 2, 3, 4, 5 itd.',
         disconnected: 'Niepołączony',
         intro: '(<b>Klikając ZAMIANA lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – np. zatwierdzenie kontraktu Zamiany i potwierdzenie Zamiany)<br>Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br><font color="orange">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a>, gdzie możesz również cofnąć uprawnienia.<br>Do podglądu historii transakcji sprawdź <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>',
-        enterAmount: 'Wprowadź ilość (1–100) %'
+        enterAmount: 'Wprowadź ilość (1–100) %',
+        documentation: 'Dokumentacja',
+        price: 'Cena 0101/WBNB',
+        fastBridge: 'Szybki Most opBNB ⇄ FDUSD',
+        officialBridge: 'Oficjalny Most opBNB ⇄ BNB (7 dni)',
+        musicOn: 'Muzyka: Wł.',
+        musicOff: 'Muzyka: Wył.'
       }
     };
 
@@ -175,6 +188,11 @@
       document.querySelector('.theme-toggle').textContent = lang === 'en' ? 'Light Mode' : 'Tryb Jasny';
       document.querySelector('.center-title').textContent = `BinarySwap ${lang === 'en' ? 'Emergency Mode' : 'Tryb Awaryjny'}`;
       document.querySelector('.intro-text').innerHTML = translations[lang].intro;
+      document.querySelectorAll('.top-links a')[0].textContent = translations[lang].documentation;
+      document.querySelectorAll('.top-links a')[1].textContent = translations[lang].price;
+      document.querySelectorAll('.top-links a')[2].textContent = translations[lang].fastBridge;
+      document.querySelectorAll('.top-links a')[3].textContent = translations[lang].officialBridge;
+      document.querySelector('.music-toggle').textContent = musicOn ? translations[lang].musicOn : translations[lang].musicOff;
       document.querySelectorAll('.section')[0].innerHTML = `
         <p><strong>Wallet:</strong> <span id="wallet-address">${translations[lang].disconnected}</span></p>
         <button class="uniswap-btn" onclick="connectWallet()"><i class="fab fa-ethereum"></i> ${translations[lang].connect}</button>
@@ -189,25 +207,19 @@
       document.querySelectorAll('.section')[2].innerHTML = `
         <h3>${translations[lang].swap}</h3>
         <div class="swap-card">
-          <div class="swap-input">
-            <input type="number" id="swapPercent" placeholder="${translations[lang].enterAmount}">
-            <select id="swapDirection">
-              <option value="toToken">${lang === 'en' ? 'BNB → 0101' : 'BNB → 0101'}</option>
-              <option value="toBNB">${lang === 'en' ? '0101 → BNB' : '0101 → BNB'}</option>
+          <div class="token-select">
+            <select id="fromToken">
+              <option value="BNB">BNB</option>
+              <option value="0101">0101</option>
+            </select>
+            <span>→</span>
+            <select id="toToken">
+              <option value="0101">0101</option>
+              <option value="BNB">BNB</option>
             </select>
           </div>
-          <div class="swap-settings">
-            <label>${translations[lang].slippage}</label>
-            <select id="swapSlippage">
-              <option value="1">1%</option>
-              <option value="3">3%</option>
-              <option value="5">5%</option>
-              <option value="10">10%</option>
-              <option value="20">20%</option>
-              <option value="30">30%</option>
-              <option value="50">50%</option>
-              <option value="100">100%</option>
-            </select>
+          <div class="swap-input">
+            <input type="number" id="swapPercent" placeholder="${translations[lang].enterAmount}">
           </div>
           <button class="uniswap-btn swap-btn" onclick="handleSwap()">${lang === 'en' ? 'Swap' : 'Zamiana'}</button>
         </div>
@@ -234,6 +246,21 @@
       document.body.dataset.theme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
       document.querySelector('.theme-toggle').textContent = document.body.dataset.theme === 'light' ? 'Light Mode' : 'Tryb Jasny';
     }
+
+    function toggleMusic() {
+      const music = document.getElementById('background-music');
+      musicOn = !musicOn;
+      music.volume = 0.5;
+      music[musicOn ? 'play' : 'pause']();
+      document.querySelector('.music-toggle').textContent = musicOn ? translations[lang].musicOn : translations[lang].musicOff;
+    }
+
+    // Auto-play music on load
+    window.addEventListener('load', () => {
+      const music = document.getElementById('background-music');
+      music.volume = 0.5;
+      if (musicOn) music.play().catch(() => {});
+    });
   </script>
 </body>
 </html>
