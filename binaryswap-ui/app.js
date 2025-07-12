@@ -475,17 +475,14 @@ function toggleMusic() {
 function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
-  const fromTokenDisplay = document.getElementById("fromTokenDisplay");
-  const toTokenDisplay = document.getElementById("toTokenDisplay");
-
-  // Zamiana wartości w ukrytych inputach
   const tempValue = fromToken.value;
   fromToken.value = toToken.value;
   toToken.value = tempValue;
 
-  // Aktualizacja wyświetlanych tokenów
-  fromTokenDisplay.textContent = fromToken.value;
-  toTokenDisplay.textContent = toToken.value;
+  // Aktualizacja wybranych opcji w selektach
+  const tempSelectedIndex = fromToken.selectedIndex;
+  fromToken.selectedIndex = toToken.selectedIndex;
+  toToken.selectedIndex = tempSelectedIndex;
 
   console.log("Swapped: ", fromToken.value, "→", toToken.value);
 }
