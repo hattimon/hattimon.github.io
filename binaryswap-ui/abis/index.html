@@ -22,8 +22,12 @@
       <a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">Official Bridge opBNB ⇄ BNB (7 days)</a>
     </div>
 
-    <button class="theme-toggle" onclick="toggleTheme()">Light Mode</button>
-    <button class="lang-toggle" onclick="toggleLanguage()">Polski</button>
+    <div class="button-group">
+      <button class="theme-toggle" onclick="toggleTheme()">Light Mode</button>
+      <button class="lang-toggle" onclick="toggleLanguage()">Polski</button>
+      <button class="music-toggle" onclick="toggleMusic()">Music: On</button>
+    </div>
+
     <div class="center-title">BinarySwap Emergency Mode</div>
     <p class="intro-text">
       (<b>Clicking SWAP or Add/Remove LP</b> requires several subsequent clicks to approve the contract interaction for the specified amount – e.g., approving the Swap contract and confirming the Swap)<br>
@@ -83,9 +87,9 @@
       <div class="section lp-info-section">
         <h3>MasterChef – Emergency LP, NFT Withdrawal:</h3>
         <div class="masterchef-instructions">
-          <p><i class="fas fa-info-circle"></i> <strong>Step 1:</strong> Visit the contract: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Skopiuj adres kontraktu i pole <b>Contract ABI</b>.</p>
-          <p><i class="fas fa-external-link-alt"></i> <strong>Step 2:</strong> Open in a new tab: <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Przełącz na sieć opBNB i wklej dane do odpowiednich pól.</p>
-          <p><i class="fas fa-list-ol"></i> <strong>Step 3:</strong> Przejdź do pola <b>emergencyWithdraw</b> i wpisz 0, 1, 2, 3, 4, 5 itd.<br>W zależności od tego, co zdeponowałeś, portfel Rabby wyświetli komunikat podpisu (np. wypłata LP lub NFT).<br>- Zatwierdź każdą transakcję pokazującą wypłatę z kontraktu i sprawdź ilość tokenów LP w DeBank lub powyżej.</p>
+          <p><i class="fas fa-info-circle"></i> <strong>Step 1:</strong> Visit the contract: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Copy the Contract Address and the <b>Contract ABI</b> field.</p>
+          <p><i class="fas fa-external-link-alt"></i> <strong>Step 2:</strong> Open in a new tab: <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Switch to opBNB network and paste the data into the respective fields.</p>
+          <p><i class="fas fa-list-ol"></i> <strong>Step 3:</strong> Go to the <b>emergencyWithdraw</b> field and enter 0, 1, 2, 3, 4, 5, etc.<br>Depending on what you staked, Rabby Wallet will show a signing message (e.g., LP or NFT withdrawal).<br>- Approve each transaction showing a withdrawal from the contract and check the LP token amount in DeBank or above.</p>
         </div>
         <font color="gray">
         <div class="contracts-list">
@@ -109,8 +113,6 @@
         <strong>Error:</strong>
         <pre id="error-text"></pre>
       </div>
-
-      <button class="music-toggle" onclick="toggleMusic()">Music: On</button>
     </div>
   </div>
 
@@ -237,9 +239,9 @@
         </div>
       `;
       document.querySelectorAll('.section')[4].querySelector('h3').textContent = translations[lang].emergency;
-      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[0].innerHTML = `<i class="fas fa-info-circle"></i> <strong>${translations[lang].step1}</strong> Visit the contract: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Skopiuj adres kontraktu i pole <b>Contract ABI</b>.`;
-      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[1].innerHTML = `<i class="fas fa-external-link-alt"></i> <strong>${translations[lang].step2}</strong> Open in a new tab: <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Przełącz na sieć opBNB i wklej dane do odpowiednich pól.`;
-      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[2].innerHTML = `<i class="fas fa-list-ol"></i> <strong>${translations[lang].step3}</strong> W zależności od tego, co zdeponowałeś, portfel Rabby wyświetli komunikat podpisu (np. wypłata LP lub NFT).<br>- Zatwierdź każdą transakcję pokazującą wypłatę z kontraktu i sprawdź ilość tokenów LP w DeBank lub powyżej.`;
+      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[0].innerHTML = `<i class="fas fa-info-circle"></i> <strong>${translations[lang].step1}</strong> <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Copy the Contract Address and the <b>Contract ABI</b> field.`;
+      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[1].innerHTML = `<i class="fas fa-external-link-alt"></i> <strong>${translations[lang].step2}</strong> <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Switch to opBNB network and paste the data into the respective fields.`;
+      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[2].innerHTML = `<i class="fas fa-list-ol"></i> <strong>${translations[lang].step3}</strong> Depending on what you staked, Rabby Wallet will show a signing message (e.g., LP or NFT withdrawal).<br>- Approve each transaction showing a withdrawal from the contract and check the LP token amount in DeBank or above.`;
     }
 
     function toggleTheme() {
