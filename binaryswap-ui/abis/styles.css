@@ -1,34 +1,34 @@
 :root {
-  --bg: #f7f8fa;
-  --text: #1a1a1a;
-  --card: rgba(255, 255, 255, 0.9);
-  --btn: #ff007a;
-  --btn-hover: #d60067;
-  --link: #2172e5;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --border: #e6e6e6;
+  --bg: #e0e8d5; /* Earthy green background */
+  --text: #2a3d1e; /* Dark green text */
+  --card: rgba(200, 230, 180, 0.9); /* Light green card */
+  --btn: #4a7c3e; /* Green button */
+  --btn-hover: #3a5c2e; /* Darker green hover */
+  --link: #5a8c4a; /* Green link */
+  --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
+  --border: #a9c9a0; /* Soft green border */
 }
 
 [data-theme="light"] {
-  --bg: #f7f8fa;
-  --text: #1a1a1a;
-  --card: rgba(255, 255, 255, 0.9);
-  --btn: #ff007a;
-  --btn-hover: #d60067;
-  --link: #2172e5;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --border: #e6e6e6;
+  --bg: #e0e8d5;
+  --text: #2a3d1e;
+  --card: rgba(200, 230, 180, 0.9);
+  --btn: #4a7c3e;
+  --btn-hover: #3a5c2e;
+  --link: #5a8c4a;
+  --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
+  --border: #a9c9a0;
 }
 
 [data-theme="dark"] {
-  --bg: #1a1a1a;
-  --text: #ffffff;
-  --card: rgba(45, 45, 45, 0.9);
-  --btn: #ff007a;
-  --btn-hover: #d60067;
-  --link: #4dabf7;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --border: #444444;
+  --bg: #1e2a16; /* Darker earthy green */
+  --text: #d0e0c0; /* Light green text */
+  --card: rgba(74, 124, 62, 0.9); /* Dark green card */
+  --btn: #6a9c5e; /* Lighter green button */
+  --btn-hover: #508c4e; /* Medium green hover */
+  --link: #8ac784; /* Bright green link */
+  --shadow: 0 4px 12px rgba(30, 42, 22, 0.3);
+  --border: #7a9c70; /* Medium green border */
 }
 
 body {
@@ -56,13 +56,13 @@ a {
   color: var(--link);
   text-decoration: none;
   transition: color 0.3s ease;
-  word-break: break-all;
+  word-break: break-word; /* Wrap long texts */
   display: inline-block;
-  text-align: justify;
+  text-align: center;
 }
 
 a:hover {
-  color: #1a70d8;
+  color: #406830;
 }
 
 button {
@@ -83,18 +83,18 @@ button {
 button:hover {
   background: var(--btn-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 15px rgba(58, 92, 46, 0.2);
 }
 
 .uniswap-btn {
-  background: linear-gradient(90deg, #ff007a, #ff4d4d);
+  background: linear-gradient(90deg, #4a7c3e, #5a8c4a);
   border-radius: 20px;
   padding: 14px;
   font-size: 1.1rem;
 }
 
 .uniswap-btn:hover {
-  background: linear-gradient(90deg, #d60067, #ff3333);
+  background: linear-gradient(90deg, #3a5c2e, #406830);
 }
 
 .swap-btn {
@@ -116,9 +116,9 @@ input, select {
 }
 
 input:focus, select:focus {
-  border-color: #ff007a;
+  border-color: #406830;
   outline: none;
-  box-shadow: 0 0 8px rgba(255, 0, 122, 0.3);
+  box-shadow: 0 0 8px rgba(64, 104, 48, 0.3);
 }
 
 .section {
@@ -138,7 +138,7 @@ input:focus, select:focus {
 }
 
 #logo {
-  max-width: 150px;
+  max-width: 100%; /* Stretch to full width */
   height: auto;
   display: block;
   margin: 0 auto 20px;
@@ -155,7 +155,7 @@ input:focus, select:focus {
   flex-wrap: wrap;
 }
 
-.theme-toggle, .lang-toggle {
+.theme-toggle, .lang-toggle, .music-toggle {
   position: fixed;
   top: 10px;
   padding: 10px 20px;
@@ -178,10 +178,14 @@ input:focus, select:focus {
   right: 130px;
 }
 
-.theme-toggle:hover, .lang-toggle:hover {
+.music-toggle {
+  right: 250px;
+}
+
+.theme-toggle:hover, .lang-toggle:hover, .music-toggle:hover {
   background: var(--btn-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 15px rgba(58, 92, 46, 0.2);
 }
 
 .center-title {
@@ -189,8 +193,8 @@ input:focus, select:focus {
   font-size: 1.8rem;
   margin: 20px 0;
   font-weight: 700;
-  color: #ff007a;
-  text-shadow: 0 2px 6px rgba(255, 0, 122, 0.3);
+  color: #406830;
+  text-shadow: 0 2px 6px rgba(64, 104, 48, 0.3);
   animation: pulse 2s infinite;
 }
 
@@ -205,12 +209,13 @@ input:focus, select:focus {
   font-size: 0.95rem;
   margin-bottom: 20px;
   line-height: 1.5;
+  word-break: break-word; /* Wrap long texts */
 }
 
 .swap-section .swap-card, .liquidity-section .liquidity-card {
   padding: 20px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(200, 230, 180, 0.7);
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -220,7 +225,7 @@ input:focus, select:focus {
 }
 
 .swap-section .swap-card:hover, .liquidity-section .liquidity-card:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(200, 230, 180, 0.85);
 }
 
 .token-select {
@@ -278,19 +283,20 @@ input:focus, select:focus {
   margin: 10px 0;
   padding: 10px;
   background: var(--card);
-  border-left: 4px solid #ff007a;
+  border-left: 4px solid #406830;
   border-radius: 5px;
   text-align: left;
+  word-break: break-word; /* Wrap long texts */
 }
 
 .lp-info-section .masterchef-instructions a {
-  word-break: break-all;
+  word-break: break-word;
   text-align: justify;
 }
 
 .lp-info-section .masterchef-instructions i {
   margin-right: 10px;
-  color: #ff007a;
+  color: #406830;
 }
 
 .lp-info-section .contracts-list {
@@ -302,19 +308,20 @@ input:focus, select:focus {
   margin: 8px 0;
   padding: 8px;
   background: var(--card);
-  border-left: 4px solid #d60067;
+  border-left: 4px solid #3a5c2e;
   border-radius: 5px;
   text-align: left;
+  word-break: break-word; /* Wrap long texts */
 }
 
 .lp-info-section .contracts-list a {
-  word-break: break-all;
+  word-break: break-word;
   text-align: justify;
 }
 
 .lp-info-section .contracts-list i {
   margin-right: 10px;
-  color: #d60067;
+  color: #3a5c2e;
 }
 
 .error-message {
@@ -348,12 +355,15 @@ input:focus, select:focus {
     flex-direction: column;
     gap: 10px;
   }
-  .theme-toggle, .lang-toggle {
+  .theme-toggle, .lang-toggle, .music-toggle {
     top: 60px;
     right: 10px;
   }
   .lang-toggle {
     right: 130px;
+  }
+  .music-toggle {
+    right: 250px;
   }
   .center-title {
     font-size: 1.5rem;
