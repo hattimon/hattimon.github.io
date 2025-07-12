@@ -119,7 +119,7 @@ const translations = {
     interaction_info: "(<b>Klikając ZAMIANA lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – np. zatwierdzenie kontraktu Zamiany i potwierdzenie Zamiany)",
     gui_info: "Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.",
     wallet_recommendation: "Polecam portfel <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a>, gdzie możesz również cofnąć uprawnienia.",
-    transaction_history: "Do podglądu historii transakcji sprawdź <a href=\"https://debank.com/\" target="_blank\">DeBank.com</a>.",
+    transaction_history: "Do podglądu historii transakcji sprawdź <a href=\"https://debank.com/\" target="_blank">DeBank.com</a>.",
     wallet_label: "Portfel",
     disconnected: "Niepołączony",
     connect: "Połącz/Odśwież Portfel",
@@ -211,7 +211,7 @@ async function handleSwap() {
 }
 
 async function calculateAutoSlippage(fromToken, toToken, pc) {
-  if (!signer || !provider) return 0.5; // Fallback if wallet not connected
+  if (!signer || !provider) return 0.5;
 
   const router = new ethers.Contract(routerAddr, ROUTER, provider);
   let amountIn, path;
@@ -228,10 +228,10 @@ async function calculateAutoSlippage(fromToken, toToken, pc) {
     }
 
     const amounts = await router.getAmountsOut(amountIn, path);
-    return 0.1; // Assume 0.1% as minimum safe slippage for auto mode
+    return 0.1; // Default to 0.1% for safety
   } catch (error) {
     console.error("Error calculating auto slippage:", error);
-    return 0.5; // Fallback to 0.5% if calculation fails
+    return 0.5; // Fallback to 0.5%
   }
 }
 
@@ -311,32 +311,30 @@ async function addLiquidity(pc) {
     return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
   }
 
-  const token = new ethers.Contract(addr0101, ERC20, signer);
-  const router = new ethers.Contract(routerAddr, ROUTER, signer);
-  const bnbBalance = await provider.getBalance(account);
-  const tokenBalance = await token.balanceOf(account);
-  const valueBNB = bnbBalance * BigInt(pc) / BigInt(100);
-  const valueToken = tokenBalance * BigInt(pc) / BigInt(100);
+  const t = new ethers.Contract(addr0101, ERC20, signer);
+  const r = new ethers.Contract(routerAddr, ROUTER, signer);
+  const bB = await provider.getBalance(account), bT = await t.balanceOf(account);
+  const vB = bB * BigInt(pc) / BigInt(100), vT = bT * BigInt(pc) / BigInt(100);
 
-  if (valueBNB <= 0 || valueToken <= 0) {
+  if (vB <= 0 || vT <= 0) {
     return showError(translations[localStorage.language || "en"].error_insufficient_balance);
   }
 
   try {
-    const allowance = await token.allowance(account, routerAddr);
-    if (allowance < valueToken) {
-      const approveTx = await token.approve(routerAddr, valueToken);
+    const allowance = await t.allowance(account, routerAddr);
+    if (allowance < vT) {
+      const approveTx = await t.approve(routerAddr, vT);
       await approveTx.wait();
     }
 
-    const tx = await router.addLiquidityETH(
+    const tx = await r.addLiquidityETH(
       addr0101,
-      valueToken,
+      vT,
       0,
       0,
       account,
       Math.floor(Date.now() / 1000) + 300,
-      { value: valueBNB }
+      { value: vB }
     );
     await tx.wait();
     updateBalances();
@@ -350,25 +348,25 @@ async function removeLiquidity(pc) {
     return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
   }
 
-  const lpToken = new ethers.Contract(addrLP, ERC20, signer);
-  const router = new ethers.Contract(routerAddr, ROUTER, signer);
-  const balance = await lpToken.balanceOf(account);
-  const value = balance * BigInt(pc) / BigInt(100);
+  const l = new ethers.Contract(addrLP, ERC20, signer);
+  const r = new ethers.Contract(routerAddr, ROUTER, signer);
+  const bal = await l.balanceOf(account);
+  const v = bal * BigInt(pc) / BigInt(100);
 
-  if (value <= 0) {
+  if (v <= 0) {
     return showError(translations[localStorage.language || "en"].error_insufficient_balance);
   }
 
   try {
-    const allowance = await lpToken.allowance(account, routerAddr);
-    if (allowance < value) {
-      const approveTx = await lpToken.approve(routerAddr, value);
+    const allowance = await l.allowance(account, routerAddr);
+    if (allowance < v) {
+      const approveTx = await l.approve(routerAddr, v);
       await approveTx.wait();
     }
 
-    const tx = await router.removeLiquidityETH(
+    const tx = await r.removeLiquidityETH(
       addr0101,
-      value,
+      v,
       0,
       0,
       account,
@@ -446,11 +444,11 @@ async function connectWallet() {
 async function updateBalances() {
   if (!signer || !provider) return;
   try {
-    const token = new ethers.Contract(addr0101, ERC20, provider);
-    const lpToken = new ethers.Contract(addrLP, ERC20, provider);
+    const t = new ethers.Contract(addr0101, ERC20, provider);
+    const l = new ethers.Contract(addrLP, ERC20, provider);
     const [b0101, bLP, bBNB] = await Promise.all([
-      token.balanceOf(account),
-      lpToken.balanceOf(account),
+      t.balanceOf(account),
+      l.balanceOf(account),
       provider.getBalance(account)
     ]);
     document.getElementById("balance-0101").textContent = parseFloat(ethers.formatUnits(b0101, 18)).toFixed(8);
