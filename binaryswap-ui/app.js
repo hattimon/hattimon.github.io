@@ -176,8 +176,8 @@ async function handleSwap() {
 
   const slippage = 1; // Fixed slippage for simplicity
   const deadline = Math.floor(Date.now() / 1000) + 300;
-  const fromToken = document.getElementById("fromToken").textContent;
-  const toToken = document.getElementById("toToken").textContent;
+  const fromToken = document.getElementById("fromToken").value;
+  const toToken = document.getElementById("toToken").value;
 
   if (fromToken === toToken) {
     return showError(translations[localStorage.language || "en"].error_invalid_pair);
@@ -397,9 +397,9 @@ function toggleMusic() {
 function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
-  const temp = fromToken.textContent;
-  fromToken.textContent = toToken.textContent;
-  toToken.textContent = temp;
+  const temp = fromToken.value;
+  fromToken.value = toToken.value === "0101" ? "BNB" : "0101";
+  toToken.value = temp === "0101" ? "BNB" : "0101";
 }
 
 // === Error Handling ===
