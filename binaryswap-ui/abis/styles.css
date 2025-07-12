@@ -116,10 +116,9 @@ input:focus, select:focus {
   gap: 15px;
 }
 
-.theme-toggle {
+.theme-toggle, .lang-toggle {
   position: fixed;
   top: 10px;
-  right: 10px;
   padding: 10px 15px;
   border-radius: 8px;
   z-index: 1000;
@@ -132,7 +131,15 @@ input:focus, select:focus {
   transition: all 0.3s ease;
 }
 
-.theme-toggle:hover {
+.theme-toggle {
+  right: 10px;
+}
+
+.lang-toggle {
+  right: 120px;
+}
+
+.theme-toggle:hover, .lang-toggle:hover {
   background: linear-gradient(135deg, var(--hover), #27ae60);
   color: #fff;
   transform: translateY(-2px);
