@@ -7,7 +7,7 @@ const masterAddr = "0x39a786421889EB581bd105508a0D2Dc03523B903";
 const wbnbAddress = "0x4200000000000000000000000000000000000006";
 
 const opBNB = {
-  chainId: "0xcc", // 204 dec
+  chainId: "0xcc",
   chainName: "opBNB",
   nativeCurrency: {
     name: "BNB",
@@ -40,14 +40,14 @@ const MASTER = [
 ];
 
 // === Swap Handler ===
-async function handleSwap(){
-  const pc = parseInt(swapPercent.value);
-  if(isNaN(pc) || pc < 1 || pc > 100) return showError("Procent 1–100!");
+async function handleSwap() {
+  const pc = parseInt(document.getElementById("swapPercent").value);
+  if (isNaN(pc) || pc < 1 || pc > 100) return showError("Percentage must be 1–100!");
 
-  const slippage = parseInt(swapSlippage.value) || 1;
-  const deadline = Math.floor(Date.now()/1000) + 300;
+  const slippage = parseInt(document.getElementById("swapSlippage").value) || 1;
+  const deadline = Math.floor(Date.now() / 1000) + 300;
 
-  if (swapDirection.value === "toToken") {
+  if (document.getElementById("swapDirection").value === "toToken") {
     swapBNBto0101(pc, slippage, deadline);
   } else {
     swap0101toBNB(pc, slippage, deadline);
@@ -55,7 +55,7 @@ async function handleSwap(){
 }
 
 // === Swap: BNB → 0101 ===
-async function swapBNBto0101(pc, slippage, deadline){
+async function swapBNBto0101(pc, slippage, deadline) {
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
   const balance = await provider.getBalance(account);
   const amountIn = balance * BigInt(pc) / 100n;
@@ -75,12 +75,12 @@ async function swapBNBto0101(pc, slippage, deadline){
     await tx.wait();
     updateBalances();
   } catch (error) {
-    showError("Błąd przy swapie (BNB → 0101): " + error.message);
+    showError("Error swapping (BNB → 0101): " + error.message);
   }
 }
 
 // === Swap: 0101 → BNB ===
-async function swap0101toBNB(pc, slippage, deadline){
+async function swap0101toBNB(pc, slippage, deadline) {
   const token = new ethers.Contract(addr0101, ERC20, signer);
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
   const balance = await token.balanceOf(account);
@@ -106,34 +106,34 @@ async function swap0101toBNB(pc, slippage, deadline){
     await tx.wait();
     updateBalances();
   } catch (error) {
-    showError("Błąd przy swapie (0101 → BNB): " + error.message);
+    showError("Error swapping (0101 → BNB): " + error.message);
   }
 }
 
 // === LP Functions ===
-async function addLiquidity(pc){
+async function addLiquidity(pc) {
   const t = new ethers.Contract(addr0101, ERC20, signer);
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
   const bB = await provider.getBalance(account), bT = await t.balanceOf(account);
   const vB = bB * BigInt(pc) / 100n, vT = bT * BigInt(pc) / 100n;
   await t.approve(routerAddr, vT);
-  await r.addLiquidityETH(addr0101, vT, 0, 0, account, Math.floor(Date.now()/1e3)+300, {value: vB});
+  await r.addLiquidityETH(addr0101, vT, 0, 0, account, Math.floor(Date.now() / 1e3) + 300, { value: vB });
   updateBalances();
 }
 
-async function removeLiquidity(pc){
+async function removeLiquidity(pc) {
   const l = new ethers.Contract(addrLP, ERC20, signer);
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
   const bal = await l.balanceOf(account);
   const v = bal * BigInt(pc) / 100n;
   await l.approve(routerAddr, v);
-  await r.removeLiquidityETH(addr0101, v, 0, 0, account, Math.floor(Date.now()/1e3)+300);
+  await r.removeLiquidityETH(addr0101, v, 0, 0, account, Math.floor(Date.now() / 1e3) + 300);
   updateBalances();
 }
 
 // === Wallet Functions ===
 async function switchToOpBNB() {
-  if (!window.ethereum) return showError("Zainstaluj MetaMask!");
+  if (!window.ethereum) return showError("Install MetaMask!");
 
   try {
     await window.ethereum.request({
@@ -148,17 +148,16 @@ async function switchToOpBNB() {
           params: [opBNB]
         });
       } catch (addError) {
-        return showError("Nie można dodać sieci opBNB: " + addError.message);
+        return showError("Cannot add opBNB network: " + addError.message);
       }
     } else {
-      return showError("Nie można przełączyć sieci: " + switchError.message);
+      return showError("Cannot switch network: " + switchError.message);
     }
   }
 }
 
-
-async function connectWallet(){
-  if (!window.ethereum) return showError("Zainstaluj MetaMask!");
+async function connectWallet() {
+  if (!window.ethereum) return showError("Install MetaMask!");
 
   try {
     const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
@@ -176,10 +175,10 @@ async function connectWallet(){
               params: [opBNB]
             });
           } catch (addError) {
-            return showError("Nie można dodać sieci opBNB: " + addError.message);
+            return showError("Cannot add opBNB network: " + addError.message);
           }
         } else {
-          return showError("Nie można przełączyć sieci: " + switchError.message);
+          return showError("Cannot switch network: " + switchError.message);
         }
       }
     }
@@ -188,15 +187,15 @@ async function connectWallet(){
     await provider.send("eth_requestAccounts", []);
     signer = await provider.getSigner();
     account = await signer.getAddress();
-    document.getElementById("wallet-address").innerText = account;
+    document.getElementById("wallet-address").textContent = account.slice(0, 6) + "..." + account.slice(-4);
     updateBalances();
-    // fetchLPInfo?.();
   } catch (err) {
-    showError("Błąd połączenia z portfelem: " + err.message);
+    showError("Wallet connection error: " + err.message);
   }
 }
 
-async function updateBalances(){
+async function updateBalances() {
+  if (!signer) return;
   const t = new ethers.Contract(addr0101, ERC20, provider);
   const l = new ethers.Contract(addrLP, ERC20, provider);
   const [b0101, bLP, bBNB] = await Promise.all([
@@ -204,23 +203,23 @@ async function updateBalances(){
     l.balanceOf(account),
     provider.getBalance(account)
   ]);
-  document.getElementById("balance-0101").innerText = parseFloat(ethers.formatUnits(b0101,18)).toFixed(8);
-  document.getElementById("balance-bnb").innerText = parseFloat(ethers.formatUnits(bBNB,18)).toFixed(8);
-  document.getElementById("balance-lp").innerText = parseFloat(ethers.formatUnits(bLP,18)).toFixed(8);
+  document.getElementById("balance-0101").textContent = parseFloat(ethers.formatUnits(b0101, 18)).toFixed(8);
+  document.getElementById("balance-bnb").textContent = parseFloat(ethers.formatUnits(bBNB, 18)).toFixed(8);
+  document.getElementById("balance-lp").textContent = parseFloat(ethers.formatUnits(bLP, 18)).toFixed(8);
 }
 
 // === Theme Toggle ===
-function toggleTheme(){
+function toggleTheme() {
   const html = document.documentElement;
-  const light = html.getAttribute("data-theme")==="light";
-  html.setAttribute("data-theme", light?"":"light");
-  document.querySelector(".theme-toggle").innerText = light?"🌞 Tryb jasny":"🌙 Tryb ciemny";
-  localStorage.theme = light?"":"light";
+  const light = html.getAttribute("data-theme") === "light";
+  html.setAttribute("data-theme", light ? "" : "light");
+  document.querySelector(".theme-toggle").textContent = light ? "🌞 Light Mode" : "🌙 Dark Mode";
+  localStorage.theme = light ? "" : "light";
 }
 (() => {
   const th = localStorage.theme;
   document.documentElement.setAttribute("data-theme", th || "");
-  document.querySelector(".theme-toggle").innerText = th?"🌙 Tryb ciemny":"🌞 Tryb jasny";
+  document.querySelector(".theme-toggle").textContent = th ? "🌙 Dark Mode" : "🌞 Light Mode";
 })();
 
 // === Error Handling ===
@@ -229,4 +228,5 @@ function showError(message) {
   const errorText = document.getElementById('error-text');
   errorText.textContent = message;
   errorContainer.style.display = 'block';
+  setTimeout(() => (errorContainer.style.display = 'none'), 5000);
 }
