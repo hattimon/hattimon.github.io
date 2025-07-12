@@ -8,25 +8,28 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </head>
 <body>
   <div class="container">
     <img id="logo" src="logo.png" alt="BinarySwap logo">
 
+    <div id="google_translate_element" style="position: absolute; top: 20px; left: 20px;"></div>
+
     <div class="button-group">
-      <button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-moon"></i> <span data-i18n="theme_dark">Dark Mode</span></button>
-      <button class="lang-toggle" onclick="toggleLanguage()"><i class="fas fa-globe"></i> <span data-i18n="language">English</span></button>
-      <button class="music-toggle" onclick="toggleMusic()"><i class="fas fa-music"></i> <span data-i18n="music_on">Music: On</span></button>
+      <button class="theme-toggle"><i class="fas fa-moon"></i> <span data-i18n="theme_dark">Dark Mode</span></button>
+      <button class="lang-toggle"><i class="fas fa-globe"></i> <span data-i18n="language">English</span></button>
+      <button class="music-toggle"><i class="fas fa-music"></i> <span data-i18n="music_on">Music: On</span></button>
     </div>
 
     <div class="top-links">
-      <a href="https://binaryswap.gitbook.io/binaryswap" target="_blank"><i class="fas fa-book"></i> <span data-i18n="documentation">Documentation</span></a>
-      <a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank"><i class="fas fa-chart-line"></i> <span data-i18n="price">0101/WBNB Price</span></a>
-      <a href="https://pancakeswap.finance/bridge" target="_blank"><i class="fas fa-exchange-alt"></i> <span data-i18n="fast_bridge">Fast Bridge opBNB ⇄ FDUSD</span></a>
-      <a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank"><i class="fas fa-exchange-alt"></i> <span data-i18n="official_bridge">Official Bridge opBNB ⇄ BNB (7 days)</span></a>
+      <a href="https://binaryswap.gitbook.io/binaryswap" target="_blank" data-i18n="documentation">Documentation</a>
+      <a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank" data-i18n="price">0101/WBNB Price</a>
+      <a href="https://pancakeswap.finance/bridge" target="_blank" data-i18n="fast_bridge">Fast Bridge opBNB ⇄ FDUSD</a>
+      <a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank" data-i18n="official_bridge">Official Bridge opBNB ⇄ BNB (7 days)</a>
     </div>
 
-    <div class="center-title">BinarySwap <span data-i18n="emergency_mode">Emergency Mode</span></div>
+    <div class="center-title" data-i18n="emergency_mode">BinarySwap Emergency Mode</div>
     <p class="intro-text">
       <span data-i18n="interaction_info">(<b>Clicking SWAP or Add/Remove LP</b> requires several subsequent clicks to approve the contract interaction for the specified amount – e.g., approving the Swap contract and confirming the Swap)</span><br>
       <span data-i18n="gui_info">This is a secure (SSL) backup GUI using BinarySwap's original contract functions.</span><br>
@@ -37,8 +40,8 @@
     <div id="app-root">
       <div class="section wallet-section">
         <p><strong data-i18n="wallet_label">Wallet:</strong> <span id="wallet-address" data-i18n="disconnected">Disconnected</span></p>
-        <button class="uniswap-btn" onclick="connectWallet()"><i class="fab fa-ethereum"></i> <span data-i18n="connect">Connect/Refresh Wallet</span></button>
-        <button class="uniswap-btn" onclick="switchToOpBNB()"><i class="fas fa-network-wired"></i> <span data-i18n="switch">Switch to opBNB</span></button>
+        <button class="uniswap-btn" id="connect-wallet-btn"><i class="fab fa-ethereum"></i> <span data-i18n="connect">Connect/Refresh Wallet</span></button>
+        <button class="uniswap-btn" id="switch-network-btn"><i class="fas fa-network-wired"></i> <span data-i18n="switch">Switch to opBNB</span></button>
       </div>
 
       <div class="section wallet-content-section">
@@ -56,7 +59,7 @@
               <option value="0101">0101</option>
               <option value="BNB">BNB</option>
             </select>
-            <button class="swap-arrow" onclick="swapTokens()">↔</button>
+            <button class="swap-arrow" id="swap-tokens-btn">↔</button>
             <select id="toToken" disabled>
               <option value="BNB">BNB</option>
               <option value="0101">0101</option>
@@ -67,25 +70,11 @@
             <select id="slippage">
               <option value="auto">Auto Slippage</option>
               <option value="0.1">0.1%</option>
-              <option value="0.3">0.3%</option>
               <option value="0.5">0.5%</option>
               <option value="1">1%</option>
-              <option value="2">2%</option>
-              <option value="3">3%</option>
-              <option value="5">5%</option>
-              <option value="10">10%</option>
-              <option value="15">15%</option>
-              <option value="20">20%</option>
-              <option value="25">25%</option>
-              <option value="30">30%</option>
-              <option value="50">50%</option>
-              <option value="60">60%</option>
-              <option value="70">70%</option>
-              <option value="90">90%</option>
-              <option value="100">100%</option>
             </select>
           </div>
-          <button class="uniswap-btn swap-btn" onclick="handleSwap()" data-i18n="swap_button">Swap</button>
+          <button class="uniswap-btn swap-btn" id="swap-btn" data-i18n="swap_button">Swap</button>
         </div>
       </div>
 
@@ -96,8 +85,8 @@
             <input type="number" id="lpPercent" placeholder="Enter amount (1–100) %" data-i18n-placeholder="enter_amount">
           </div>
           <div class="liquidity-actions">
-            <button class="uniswap-btn" onclick="addLiquidity(parseInt(lpPercent.value))" data-i18n="add_lp">Add Liquidity</button>
-            <button class="uniswap-btn" onclick="removeLiquidity(parseInt(lpPercent.value))" data-i18n="remove_lp">Remove Liquidity</button>
+            <button class="uniswap-btn" id="add-liquidity-btn" data-i18n="add_lp">Add Liquidity</button>
+            <button class="uniswap-btn" id="remove-liquidity-btn" data-i18n="remove_lp">Remove Liquidity</button>
           </div>
         </div>
       </div>
@@ -115,13 +104,13 @@
           <p><i class="fas fa-exchange-alt"></i> <strong data-i18n="router">Router:</strong> 0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b</p>
           <p><i class="fas fa-random"></i> <strong data-i18n="multi">Multi:</strong> 0x689e9631d1e308845DE5661C0B6bdE23c841e459</p>
           <p><i class="fas fa-user-chef"></i> <strong data-i18n="masterchef">Masterchef:</strong> 0x39a786421889EB581bd105508a0D2Dc03523B903</p>
-          <p><i class="fas fa-file-alt"></i> <strong data-i18n="masterchef_audit">MasterChef Audit:</strong> <a href="https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf" target="_blank">https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf</a></p>
-          <p><i class="fas fa-fire"></i> <strong data-i18n="lp_burn">LP burn:</strong> <a href="https://mainnet.opbnbscan.com/tx/0x64a7105d6c186a165ece658c1b7987e49b8377f8edd75595a15da133b8bdea4c" target="_blank">https://mainnet.opbnbscan.com/tx/...</a></p>
+          <p><i class="fas fa-file-alt"></i> <strong data-i18n="masterchef_audit">MasterChef Audit:</strong> <a href="https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf" target="_blank">Audit Report</a></p>
+          <p><i class="fas fa-fire"></i> <strong data-i18n="lp_burn">LP burn:</strong> <a href="https://mainnet.opbnbscan.com/tx/0x64a7105d6c186a165ece658c1b7987e49b8377f8edd75595a15da133b8bdea4c" target="_blank">Transaction</a></p>
           <p><i class="fas fa-desktop"></i> <strong data-i18n="terminals">Terminals:</strong> 0xD954Bb4E6aF0CCC7d692431b8841A03916BeC9e9</p>
           <p><i class="fas fa-gift"></i> <strong data-i18n="wrapped_terminals">Wrapped Terminals:</strong> 0x7dC01688De0eFf09657406a7d55933d9349cC0B6</p>
           <p><i class="fas fa-coins"></i> <strong data-i18n="token_0101">0101 Token:</strong> 0xa41B3067eC694DBec668c389550bA8fc589e5797</p>
           <p><i class="fas fa-handshake"></i> <strong data-i18n="lp_0101_bnb">LP 0101/BNB:</strong> 0x506b8322e1159d06e493ebe7ffa41a24291e7ae3</p>
-          <p><i class="fas fa-globe"></i> <strong data-i18n="block_explorer">opBNB Block Explorer:</strong> <a href="https://mainnet.opbnbscan.com" target="_blank">https://mainnet.opbnbscan.com</a></p>
+          <p><i class="fas fa-globe"></i> <strong data-i18n="block_explorer">opBNB Block Explorer:</strong> <a href="https://mainnet.opbnbscan.com" target="_blank">opBNB Scan</a></p>
         </div>
       </div>
 
@@ -137,5 +126,10 @@
   </div>
 
   <script src="app.js"></script>
+  <script>
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({pageLanguage: 'en'}, 'google_translate_element');
+    }
+  </script>
 </body>
 </html>
