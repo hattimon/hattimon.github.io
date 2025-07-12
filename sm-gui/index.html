@@ -35,16 +35,18 @@
         selectNetwork: 'Select Network',
         searchNetwork: 'Search Network...',
         addNetwork: 'Network not found? Add it via ',
-        safetyNote: 'Safety Note: Always verify the contract address and ABI. Use DeBank, Rabby.io, and ScamSniffer to check transaction safety.',
+        safetyNote: 'Safety Note: Always verify the contract address and ABI. Use <a href="https://debank.com" target="_blank">DeBank</a>, <a href="https://rabby.io" target="_blank">Rabby.io</a>, and <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> to check transaction safety.',
         mobileView: 'Mobile View',
         desktopView: 'Desktop View',
         copy: 'Copy',
         revokePermissions: 'Revoke Permissions',
-        noPermissions: 'You can check your signed permissions on revoke.cash or Rabby Wallet.',
+        noPermissions: 'You can check your signed permissions on <a href="https://revoke.cash" target="_blank">revoke.cash</a> or <a href="https://rabby.io" target="_blank">Rabby Wallet</a>.',
         revokeNote: '',
         revokeCash: '',
-        disclaimer: 'Disclaimer: This site is a graphical overlay for original contract functions to ease usage. I am not responsible for any losses incurred due to contract usage. All responsibility lies with the contract creator.',
-        convertNote: 'Entered amount (natural number) will be converted to wei if required (e.g., uint256).'
+        disclaimer: 'Disclaimer: This site is a graphical overlay for original contract functions to ease usage. I am not responsible for any losses incurred due to contract usage. All responsibility lies with the contract creator and the user.',
+        convertNote: 'Entered amount (natural number) will be converted to wei if required (e.g., uint256).',
+        ethToWei: 'ETH to Wei',
+        weiToEth: 'Wei to ETH'
       },
       pl: {
         title: 'Interfejs kontraktów inteligentnych',
@@ -64,16 +66,18 @@
         selectNetwork: 'Wybierz sieć',
         searchNetwork: 'Szukaj sieci...',
         addNetwork: 'Nie znaleziono sieci? Dodaj ją przez ',
-        safetyNote: 'Uwaga o bezpieczeństwie: Zawsze weryfikuj adres kontraktu i ABI. Użyj DeBank, Rabby.io oraz ScamSniffer, aby sprawdzić bezpieczeństwo transakcji.',
+        safetyNote: 'Uwaga o bezpieczeństwie: Zawsze weryfikuj adres kontraktu i ABI. Użyj <a href="https://debank.com" target="_blank">DeBank</a>, <a href="https://rabby.io" target="_blank">Rabby.io</a> oraz <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a>, aby sprawdzić bezpieczeństwo transakcji.',
         mobileView: 'Wersja mobilna',
         desktopView: 'Wersja PC',
         copy: 'Kopiuj',
         revokePermissions: 'Cofnij uprawnienia',
-        noPermissions: 'Możesz sprawdzić swoje podpisane uprawnienia na revoke.cash lub Rabby Wallet.',
+        noPermissions: 'Możesz sprawdzić swoje podpisane uprawnienia na <a href="https://revoke.cash" target="_blank">revoke.cash</a> lub <a href="https://rabby.io" target="_blank">Rabby Wallet</a>.',
         revokeNote: '',
         revokeCash: '',
-        disclaimer: 'Zastrzeżenie: Ta strona jest graficzną nakładką na oryginalne funkcje kontraktu, ułatwiającą korzystanie. Nie ponoszę odpowiedzialności za żadne straty wynikłe z użycia kontraktu. Cała odpowiedzialność spoczywa na twórcy kontraktu.',
-        convertNote: 'Wpisana kwota (liczba naturalna) zostanie zamieniona na wei, jeśli jest wymagana (np. uint256).'
+        disclaimer: 'Zastrzeżenie: Ta strona jest graficzną nakładką na oryginalne funkcje kontraktu, ułatwiającą korzystanie. Nie ponoszę odpowiedzialności za żadne straty wynikłe z użycia kontraktu. Cała odpowiedzialność spoczywa na twórcy kontraktu oraz użytkowniku.',
+        convertNote: 'Wpisana kwota (liczba naturalna) zostanie zamieniona na wei, jeśli jest wymagana (np. uint256).',
+        ethToWei: 'ETH na Wei',
+        weiToEth: 'Wei na ETH'
       }
     };
 
@@ -84,14 +88,14 @@
           _to: { en: 'Recipient address.', pl: 'Adres odbiorcy.' },
           _value: { en: 'Amount of tokens.', pl: 'Ilość tokenów.' }
         },
-        safety: { en: 'Verify recipient address. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj adres odbiorcy. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Verify recipient address. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Zweryfikuj adres odbiorcy. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       withdraw: {
         description: { en: 'Withdraws funds from the contract (e.g., staking rewards).', pl: 'Wypłaca środki z kontraktu (np. nagrody ze stakowania).' },
         inputs: {
           _amount: { en: 'Amount to withdraw.', pl: 'Ilość do wypłaty.' }
         },
-        safety: { en: 'Ensure contract has access controls. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że kontrakt ma zabezpieczenia. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Ensure contract has access controls. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Upewnij się, że kontrakt ma zabezpieczenia. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       stake: {
         description: { en: 'Stakes tokens to earn rewards.', pl: 'Lokuje tokeny, aby zarabiać nagrody.' },
@@ -99,7 +103,7 @@
           _amount: { en: 'Amount to stake.', pl: 'Ilość do zablokowania.' },
           pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' }
         },
-        safety: { en: 'Verify pool ID and contract. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj ID puli i kontrakt. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Verify pool ID and contract. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Zweryfikuj ID puli i kontrakt. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       addLiquidity: {
         description: { en: 'Adds liquidity to an AMM pool (e.g., Uniswap).', pl: 'Dodaje płynność do puli AMM (np. Uniswap).' },
@@ -109,7 +113,7 @@
           amountADesired: { en: 'Desired amount of token A.', pl: 'Pożądana ilość tokena A.' },
           amountBDesired: { en: 'Desired amount of token B.', pl: 'Pożądana ilość tokena B.' }
         },
-        safety: { en: 'Ensure pool is trusted. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że pula jest zaufana. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Ensure pool is trusted. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Upewnij się, że pula jest zaufana. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       removeLiquidity: {
         description: { en: 'Removes liquidity from an AMM pool.', pl: 'Usuwa płynność z puli AMM.' },
@@ -118,7 +122,7 @@
           amountAMin: { en: 'Minimum amount of token A.', pl: 'Minimalna ilość tokena A.' },
           amountBMin: { en: 'Minimum amount of token B.', pl: 'Minimalna ilość tokena B.' }
         },
-        safety: { en: 'Check minimum amounts to avoid slippage. Verify with ScamSniffer and Rabby.io.', pl: 'Sprawdź minimalne ilości, aby uniknąć poślizgu. Zweryfikuj na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Check minimum amounts to avoid slippage. Verify with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Sprawdź minimalne ilości, aby uniknąć poślizgu. Zweryfikuj na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       swap: {
         description: { en: 'Swaps one token for another in an AMM pool.', pl: 'Wymienia jeden token na inny w puli AMM.' },
@@ -127,14 +131,14 @@
           amountOutMin: { en: 'Minimum output amount.', pl: 'Minimalna ilość wyjściowa.' },
           path: { en: 'Token swap path.', pl: 'Ścieżka wymiany tokenów.' }
         },
-        safety: { en: 'Set reasonable minimum output. Check with ScamSniffer and Rabby.io.', pl: 'Ustaw rozsądną minimalną ilość wyjściową. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Set reasonable minimum output. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Ustaw rozsądną minimalną ilość wyjściową. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       claimRewards: {
         description: { en: 'Claims rewards from staking or farming.', pl: 'Odbiera nagrody ze stakowania lub farmingu.' },
         inputs: {
           pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' }
         },
-        safety: { en: 'Ensure contract legitimacy. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że kontrakt jest legalny. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Ensure contract legitimacy. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Upewnij się, że kontrakt jest legalny. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       mint: {
         description: { en: 'Mints a new NFT or ERC20 token.', pl: 'Tworzy nowy token NFT lub ERC20.' },
@@ -142,7 +146,7 @@
           _to: { en: 'Recipient address.', pl: 'Adres odbiorcy.' },
           tokenId: { en: 'Unique NFT ID.', pl: 'Unikalny identyfikator NFT.' }
         },
-        safety: { en: 'Verify minting limits. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj limity mintowania. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Verify minting limits. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Zweryfikuj limity mintowania. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       deposit: {
         description: { en: 'Deposits tokens into a pool to start staking.', pl: 'Wpłaca tokeny do puli, aby rozpocząć stakowanie.' },
@@ -150,14 +154,14 @@
           _pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' },
           _amount: { en: 'Amount to deposit.', pl: 'Ilość do wpłaty.' }
         },
-        safety: { en: 'Verify pool ID and balance. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj ID puli i saldo. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Verify pool ID and balance. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Zweryfikuj ID puli i saldo. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       emergencyWithdraw: {
         description: { en: 'Emergency withdrawal of staked tokens.', pl: 'Awaryjne wypłata zablokowanych tokenów.' },
         inputs: {
           _pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' }
         },
-        safety: { en: 'Use only in emergencies; may forfeit rewards. Check with ScamSniffer and Rabby.io.', pl: 'Używaj tylko w nagłych przypadkach; może skutkować utratą nagród. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Use only in emergencies; may forfeit rewards. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Używaj tylko w nagłych przypadkach; może skutkować utratą nagród. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       },
       pendingCub: {
         description: { en: 'Checks pending rewards for a user in a pool.', pl: 'Sprawdza oczekujące nagrody dla użytkownika w puli.' },
@@ -165,7 +169,7 @@
           _pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' },
           _user: { en: 'User address.', pl: 'Adres użytkownika.' }
         },
-        safety: { en: 'Ensure correct pool and address. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że podano poprawną pulę i adres. Sprawdź na ScamSniffer i Rabby.io.' }
+        safety: { en: 'Ensure correct pool and address. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.', pl: 'Upewnij się, że podano poprawną pulę i adres. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.' }
       }
     };
 
@@ -289,6 +293,8 @@
       const [notifications, setNotifications] = useState([]);
       const [networkSearch, setNetworkSearch] = useState('');
       const [theme, setTheme] = useState('dark');
+      const [ethValue, setEthValue] = useState('');
+      const [weiValue, setWeiValue] = useState('');
 
       useEffect(() => {
         if (window.ethereum) {
@@ -381,6 +387,26 @@
         network.name.toLowerCase().includes(networkSearch.toLowerCase()) ||
         network.chainId.toLowerCase().includes(networkSearch.toLowerCase())
       );
+
+      const handleEthChange = (e) => {
+        const value = e.target.value;
+        setEthValue(value);
+        if (value) {
+          setWeiValue(web3.utils.toWei(value, 'ether'));
+        } else {
+          setWeiValue('');
+        }
+      };
+
+      const handleWeiChange = (e) => {
+        const value = e.target.value;
+        setWeiValue(value);
+        if (value) {
+          setEthValue(web3.utils.fromWei(value, 'ether'));
+        } else {
+          setEthValue('');
+        }
+      };
 
       if (isLoading) {
         return (
@@ -476,29 +502,24 @@
             <label className="block text-lg font-medium mb-2 text-yellow-400"><i className="fas fa-calculator mr-2"></i>Token Value Converter</label>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium mb-1 text-yellow-400">ETH to Wei</label>
+                <label className="block text-sm font-medium mb-1 text-yellow-400">{translations[language].ethToWei}</label>
                 <input
                   type="number"
                   step="0.000000000000000001"
                   className="w-full p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
                   placeholder="Enter ETH (e.g., 1)"
-                  onChange={(e) => {
-                    const ethValue = e.target.value;
-                    if (ethValue) {
-                      const weiValue = web3.utils.toWei(ethValue, 'ether');
-                      document.getElementById('weiOutput').value = weiValue;
-                    }
-                  }}
+                  value={ethValue}
+                  onChange={handleEthChange}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-yellow-400">Wei to ETH</label>
+                <label className="block text-sm font-medium mb-1 text-yellow-400">{translations[language].weiToEth}</label>
                 <input
                   type="number"
-                  id="weiOutput"
                   className="w-full p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
                   placeholder="Wei output"
-                  readOnly
+                  value={weiValue}
+                  onChange={handleWeiChange}
                 />
               </div>
             </div>
@@ -618,7 +639,7 @@
       };
 
       const convertToWei = (name, value) => {
-        if (value && web3.utils.isHexStrict(value)) return value; // Keep hex as is
+        if (value && web3.utils.isHexStrict(value)) return value;
         const converted = web3.utils.toWei(value || '0', 'ether');
         setInputs(prev => ({ ...prev, [name]: converted }));
       };
@@ -637,7 +658,7 @@
               : translations[language].writeContract}
           </p>
           <p className="text-sm text-gray-200 mb-2 bg-green-900 p-3 rounded flex items-center"><i className="fas fa-user-graduate mr-2"></i>{translations[language].assistant}{functionDescriptions[func.name]?.description[language] || 'Custom function. Follow contract documentation.'}</p>
-          <p className="text-sm text-yellow-500 mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{functionDescriptions[func.name]?.safety[language] || 'Verify function and contract. Check with ScamSniffer and Rabby.io.'}</p>
+          <p className="text-sm text-yellow-500 mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{functionDescriptions[func.name]?.safety[language] || 'Verify function and contract. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.'}</p>
           {func.inputs.map((input, index) => (
             <div key={index} className="mb-3">
               <label className="block text-sm font-medium mb-1 text-yellow-400 flex items-center"><i className="fas fa-keyboard mr-2"></i>{input.name} ({input.type})</label>
