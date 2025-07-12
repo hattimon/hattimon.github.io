@@ -185,8 +185,8 @@ async function handleSwap() {
 
   const slippage = parseFloat(document.getElementById("slippage").value);
   const deadline = Math.floor(Date.now() / 1000) + 300;
-  const fromToken = document.getElementById("fromToken").value;
-  const toToken = document.getElementById("toToken").value;
+  const fromToken = document.getElementById("fromToken").dataset.value;
+  const toToken = document.getElementById("toToken").dataset.value;
 
   if (fromToken === toToken) {
     return showError(translations[localStorage.language || "en"].error_invalid_pair);
@@ -200,31 +200,6 @@ async function handleSwap() {
     }
   } catch (error) {
     showError(translations[localStorage.language || "en"].error_swap_bnb_to_0101 + " " + error.message);
-  }
-}
-
-async function calculateAutoSlippage(fromToken, toToken, pc) {
-  if (!signer || !provider) return 0.5;
-
-  const router = new ethers.Contract(routerAddr, ROUTER, provider);
-  let amountIn, path;
-  try {
-    if (fromToken === "BNB") {
-      const balance = await provider.getBalance(account);
-      amountIn = balance * BigInt(pc) / BigInt(100);
-      path = [wbnbAddress, addr0101];
-    } else {
-      const token = new ethers.Contract(addr0101, ERC20, provider);
-      const balance = await token.balanceOf(account);
-      amountIn = balance * BigInt(pc) / BigInt(100);
-      path = [addr0101, wbnbAddress];
-    }
-
-    const amounts = await router.getAmountsOut(amountIn, path);
-    return 0.1; // Default to 0.1% for safety
-  } catch (error) {
-    console.error("Error calculating auto slippage:", error);
-    return 0.5; // Fallback to 0.5%
   }
 }
 
@@ -500,9 +475,11 @@ function toggleMusic() {
 function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
-  const temp = fromToken.value;
-  fromToken.value = toToken.value === "0101" ? "BNB" : "0101";
-  toToken.value = temp === "BNB" ? "0101" : "BNB";
+  const tempValue = fromToken.dataset.value;
+  fromToken.dataset.value = toToken.dataset.value;
+  toToken.dataset.value = tempValue;
+  fromToken.value = fromToken.dataset.value;
+  toToken.value = toToken.dataset.value;
   console.log("Swapped: ", fromToken.value, "→", toToken.value);
 }
 
