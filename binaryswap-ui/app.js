@@ -177,7 +177,7 @@ async function handleSwap() {
   const slippage = 1; // Fixed slippage for simplicity
   const deadline = Math.floor(Date.now() / 1000) + 300;
   const fromToken = document.getElementById("fromToken").value;
-  const toToken = document.getElementById("toToken").value;
+  const toToken = document.getElementById("toToken").textContent;
 
   if (fromToken === toToken) {
     return showError(translations[localStorage.language || "en"].error_invalid_pair);
@@ -394,24 +394,19 @@ function toggleMusic() {
 }
 
 // === Swap Tokens ===
-function updateToTokenOptions() {
+function syncToken() {
   const fromToken = document.getElementById("fromToken").value;
-  const toTokenSelect = document.getElementById("toToken");
-  const tokens = ["BNB", "0101"].filter(token => token !== fromToken);
-  toTokenSelect.innerHTML = tokens.map(token => `<option value="${token}">${token}</option>`).join("");
+  const toToken = document.getElementById("toToken");
+  toToken.textContent = fromToken === "BNB" ? "0101" : "BNB";
 }
 
 function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
   const temp = fromToken.value;
-  fromToken.value = toToken.value;
-  toToken.value = temp;
-  updateToTokenOptions();
-}
-
-function syncTokens() {
-  updateToTokenOptions();
+  fromToken.value = toToken.textContent;
+  toToken.textContent = temp;
+  syncToken();
 }
 
 // === Error Handling ===
@@ -486,6 +481,6 @@ function copyToClipboard(text) {
   }
 
   // Initialize swap token selection
-  syncTokens();
-  document.getElementById("fromToken").addEventListener("change", syncTokens);
+  syncToken();
+  document.getElementById("fromToken").addEventListener("change", syncToken);
 })();
