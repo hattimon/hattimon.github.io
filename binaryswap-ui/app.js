@@ -116,7 +116,7 @@ const translations = {
     interaction_info: "(<b>Klikając ZAMIANA lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – np. zatwierdzenie kontraktu Zamiany i potwierdzenie Zamiany)",
     gui_info: "Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.",
     wallet_recommendation: "Polecam portfel <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a>, gdzie możesz również cofnąć uprawnienia.",
-    transaction_history: "Do podglądu historii transakcji sprawdź <a href=\"https://debank.com/\" target=\"_blank\">DeBank.com</a>.",
+    transaction_history: "Do podglądu historii transakcji sprawdź <a href=\"https://debank.com/\" target="_blank\">DeBank.com</a>.",
     wallet_label: "Portfel",
     disconnected: "Niepołączony",
     connect: "Połącz/Odśwież Portfel",
@@ -171,7 +171,7 @@ async function handleSwap() {
   const pc = parseInt(document.getElementById("swapPercent").value);
   if (isNaN(pc) || pc < 1 || pc > 100) return showError(translations[localStorage.language || "en"].error_invalid_percent);
 
-  const slippage = 1;
+  const slippageSelect = document.getElementById("slippage").value;
   const deadline = Math.floor(Date.now() / 1000) + 300;
   const fromToken = document.getElementById("fromToken").value;
   const toToken = document.getElementById("toToken").value;
@@ -180,10 +180,40 @@ async function handleSwap() {
     return showError(translations[localStorage.language || "en"].error_invalid_pair);
   }
 
+  let slippage;
+  if (slippageSelect === "auto") {
+    slippage = await calculateAutoSlippage(fromToken, toToken, pc);
+  } else {
+    slippage = parseFloat(slippageSelect);
+  }
+
   if (fromToken === "BNB" && toToken === "0101") {
     await swapBNBto0101(pc, slippage, deadline);
   } else if (fromToken === "0101" && toToken === "BNB") {
     await swap0101toBNB(pc, slippage, deadline);
+  }
+}
+
+async function calculateAutoSlippage(fromToken, toToken, pc) {
+  const router = new ethers.Contract(routerAddr, ROUTER, signer);
+  let amountIn, path;
+  if (fromToken === "BNB") {
+    const balance = await provider.getBalance(account);
+    amountIn = balance * BigInt(pc) / 100n;
+    path = [wbnbAddress, addr0101];
+  } else {
+    const token = new ethers.Contract(addr0101, ERC20, signer);
+    const balance = await token.balanceOf(account);
+    amountIn = balance * BigInt(pc) / 100n;
+    path = [addr0101, wbnbAddress];
+  }
+  try {
+    const amounts = await router.getAmountsOut(amountIn, path);
+    const priceImpact = 0.1; // Assume 0.1% as minimum safe slippage for auto mode
+    return priceImpact;
+  } catch (error) {
+    console.error("Error calculating auto slippage:", error);
+    return 0.5; // Fallback to 0.5% if calculation fails
   }
 }
 
@@ -195,7 +225,7 @@ async function swapBNBto0101(pc, slippage, deadline) {
   try {
     const path = [wbnbAddress, addr0101];
     const amounts = await router.getAmountsOut(amountIn, path);
-    const amountOutMin = amounts[1] * BigInt(100 - slippage) / 100n;
+    const amountOutMin = amounts[1] * BigInt(Math.floor(1000 - slippage * 10)) / 1000n;
 
     const tx = await router.swapExactETHForTokens(
       amountOutMin,
@@ -220,7 +250,7 @@ async function swap0101toBNB(pc, slippage, deadline) {
   try {
     const path = [addr0101, wbnbAddress];
     const amounts = await router.getAmountsOut(amountIn, path);
-    const amountOutMin = amounts[1] * BigInt(100 - slippage) / 100n;
+    const amountOutMin = amounts[1] * BigInt(Math.floor(1000 - slippage * 10)) / 1000n;
 
     const allowance = await token.allowance(account, routerAddr);
     if (allowance < amountIn) {
@@ -240,8 +270,6 @@ async function swap0101toBNB(pc, slippage, deadline) {
     showError(translations[localStorage.language || "en"].error_swap_0101_to_bnb + " " + error.message);
   }
 }
-
-async彼此
 
 async function addLiquidity(pc) {
   const t = new ethers.Contract(addr0101, ERC20, signer);
