@@ -32,7 +32,7 @@
         errorInvalidAbi: 'Invalid ABI or contract address: ',
         errorFunctionCall: 'Function call failed: ',
         assistant: 'Assistant: ',
-        selectNetwork: 'Select Network',
+        selectNetwork: 'Selected Network: ',
         searchNetwork: 'Search Network...',
         addNetwork: 'Network not found? Add it via ',
         safetyNote: 'Safety Note: Always verify the contract address and ABI. Use <a href="https://debank.com" target="_blank">DeBank</a>, <a href="https://rabby.io" target="_blank">Rabby.io</a>, and <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> to check transaction safety.',
@@ -40,9 +40,12 @@
         desktopView: 'Desktop View',
         copy: 'Copy',
         revokePermissions: 'Revoke Permissions',
-        noPermissions: 'You can check your signed permissions on <a href="https://revoke.cash" target="_blank">revoke.cash</a> or <a href="https://rabby.io" target="_blank">Rabby Wallet</a>.',
+        noPermissions: 'You can check your signed permissions on Revoke Permissions or Rabby Wallet.',
+        wallet: 'Wallet',
+        network: 'Network',
+        settings: 'Settings',
         revokeNote: '',
-        revokeCash: '',
+        revokeCash: 'Revoke Permissions',
         disclaimer: 'Disclaimer: This site is a graphical overlay for original contract functions to ease usage. I am not responsible for any losses incurred due to contract usage. All responsibility lies with the contract creator and the user.',
         convertNote: 'Entered amount (natural number) will be converted to wei if required (e.g., uint256).',
         ethToWei: 'ETH to Wei',
@@ -63,7 +66,7 @@
         errorInvalidAbi: 'Nieprawidłowy ABI lub adres kontraktu: ',
         errorFunctionCall: 'Błąd wywołania funkcji: ',
         assistant: 'Asystent: ',
-        selectNetwork: 'Wybierz sieć',
+        selectNetwork: 'Wybrana sieć: ',
         searchNetwork: 'Szukaj sieci...',
         addNetwork: 'Nie znaleziono sieci? Dodaj ją przez ',
         safetyNote: 'Uwaga o bezpieczeństwie: Zawsze weryfikuj adres kontraktu i ABI. Użyj <a href="https://debank.com" target="_blank">DeBank</a>, <a href="https://rabby.io" target="_blank">Rabby.io</a> oraz <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a>, aby sprawdzić bezpieczeństwo transakcji.',
@@ -71,9 +74,12 @@
         desktopView: 'Wersja PC',
         copy: 'Kopiuj',
         revokePermissions: 'Cofnij uprawnienia',
-        noPermissions: 'Możesz sprawdzić swoje podpisane uprawnienia na <a href="https://revoke.cash" target="_blank">revoke.cash</a> lub <a href="https://rabby.io" target="_blank">Rabby Wallet</a>.',
+        noPermissions: 'Możesz sprawdzić swoje podpisane uprawnienia na Cofnij uprawnienia lub Rabby Wallet.',
+        wallet: 'Portfel',
+        network: 'Sieć',
+        settings: 'Ustawienia',
         revokeNote: '',
-        revokeCash: '',
+        revokeCash: 'Cofnij uprawnienia',
         disclaimer: 'Zastrzeżenie: Ta strona jest graficzną nakładką na oryginalne funkcje kontraktu, ułatwiającą korzystanie. Nie ponoszę odpowiedzialności za żadne straty wynikłe z użycia kontraktu. Cała odpowiedzialność spoczywa na twórcy kontraktu oraz użytkowniku.',
         convertNote: 'Wpisana kwota (liczba naturalna) zostanie zamieniona na wei, jeśli jest wymagana (np. uint256).',
         ethToWei: 'ETH na Wei',
@@ -425,7 +431,7 @@
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div className="bg-gray-800 p-4 rounded-lg shadow-lg bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
-              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-wallet mr-2"></i>Wallet</h2>
+              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-wallet mr-2"></i>{translations[language].wallet}</h2>
               {!account ? (
                 <button
                   className="w-full bg-green-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-green-500 hover:border-yellow-400 transition h-10 flex items-center justify-center"
@@ -444,13 +450,13 @@
             </div>
 
             <div className="bg-gray-800 p-4 rounded-lg shadow-lg bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
-              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-network-wired mr-2"></i>Network</h2>
+              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-network-wired mr-2"></i>{translations[language].network}</h2>
               <select
                 className="w-full bg-gray-700 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 mb-2"
                 value={currentNetwork?.chainId || ''}
                 onChange={e => switchNetwork(e.target.value)}
               >
-                <option value="">{translations[language].selectNetwork}</option>
+                <option value="">{translations[language].selectNetwork}{currentNetwork ? currentNetwork.name : ''}</option>
                 {filteredNetworks.map(network => (
                   <option key={network.chainId} value={network.chainId}>
                     {network.name} ({network.isTestnet ? 'Testnet' : 'Mainnet'})
@@ -470,7 +476,7 @@
             </div>
 
             <div className="bg-gray-800 p-4 rounded-lg shadow-lg bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
-              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-cog mr-2"></i>Settings</h2>
+              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-cog mr-2"></i>{translations[language].settings}</h2>
               <select
                 className="w-full bg-gray-700 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 mb-2"
                 value={language}
@@ -602,7 +608,9 @@
 
           <div className="mt-8">
             <h2 className="text-xl font-bold mb-4 flex items-center text-yellow-400"><i className="fas fa-lock mr-2"></i>{translations[language].revokePermissions}</h2>
-            <p className="text-sm text-gray-400 mb-4 flex items-center"><i className="fas fa-info-circle mr-2"></i>{translations[language].noPermissions}</p>
+            <p className="text-sm text-gray-400 mb-4 flex items-center"><i className="fas fa-info-circle mr-2"></i>{translations[language].noPermissions
+              .replace('Revoke Permissions', `<a href="https://revoke.cash" target="_blank">${translations[language].revokeCash}</a>`)
+              .replace('Rabby Wallet', `<a href="https://rabby.io" target="_blank">Rabby Wallet</a>`)}</p>
             <p className="text-sm text-center text-yellow-500 mt-4" dangerouslySetInnerHTML={{ __html: translations[language].disclaimer }}></p>
           </div>
 
@@ -658,7 +666,7 @@
               : translations[language].writeContract}
           </p>
           <p className="text-sm text-gray-200 mb-2 bg-green-900 p-3 rounded flex items-center"><i className="fas fa-user-graduate mr-2"></i>{translations[language].assistant}{functionDescriptions[func.name]?.description[language] || 'Custom function. Follow contract documentation.'}</p>
-          <p className="text-sm text-yellow-500 mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{functionDescriptions[func.name]?.safety[language] || 'Verify function and contract. Check with <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> and <a href="https://rabby.io" target="_blank">Rabby.io</a>.'}</p>
+          <p className="text-sm text-yellow-500 mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{functionDescriptions[func.name]?.safety[language] || 'Zweryfikuj funkcję i kontrakt. Sprawdź na <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> i <a href="https://rabby.io" target="_blank">Rabby.io</a>.'}</p>
           {func.inputs.map((input, index) => (
             <div key={index} className="mb-3">
               <label className="block text-sm font-medium mb-1 text-yellow-400 flex items-center"><i className="fas fa-keyboard mr-2"></i>{input.name} ({input.type})</label>
