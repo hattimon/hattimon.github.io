@@ -7,6 +7,7 @@
   --link: #5a8c4a;
   --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
   --border: #a9c9a0;
+  --toast-text: #2a3d1e;
 }
 
 [data-theme="light"] {
@@ -19,6 +20,7 @@
   --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
   --border: #a9c9a0;
   --toast-bg: #ffcccb;
+  --toast-text: #2a3d1e;
 }
 
 [data-theme="dark"] {
@@ -31,6 +33,7 @@
   --shadow: 0 4px 12px rgba(30, 42, 22, 0.3);
   --border: #7a9c70;
   --toast-bg: #f8b0b0;
+  --toast-text: #1e2a16; /* Ciemna czcionka dla toastów w trybie ciemnym */
 }
 
 [data-theme="dark"] input,
@@ -142,21 +145,12 @@ input, select {
   transition: all 0.3s ease;
 }
 
+[data-theme="dark"] .swap-section select {
+  background: #2a3d1e; /* Ciemne tło dla select w trybie ciemnym */
+  color: #d0e0c0; /* Jasna czcionka dla kontrastu */
+}
+
 input:focus, select:focus {
-  border-color: #406830;
-  outline: none;
-  box-shadow: 0 0 8px rgba(64, 104, 48, 0.3);
-}
-
-input#fromToken, input#toToken {
-  width: 100px;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid var(--border);
-  font-weight: 500;
-}
-
-input#fromToken:focus, input#toToken:focus {
   border-color: #406830;
   outline: none;
   box-shadow: 0 0 8px rgba(64, 104, 48, 0.3);
@@ -372,7 +366,7 @@ input#fromToken:focus, input#toToken:focus {
   align-items: center;
   gap: 10px;
   box-shadow: var(--shadow);
-  color: var(--text);
+  color: var(--toast-text); /* Ciemna czcionka w trybie ciemnym */
   font-size: 0.9rem;
   max-width: 400px;
   opacity: 0;
@@ -457,7 +451,7 @@ input#fromToken:focus, input#toToken:focus {
     flex-direction: column;
     gap: 8px;
   }
-  .token-select input#fromToken, .token-select input#toToken {
+  .token-select select {
     width: 100%;
   }
   .swap-arrow {
