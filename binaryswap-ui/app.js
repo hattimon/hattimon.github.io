@@ -7,7 +7,7 @@ const masterAddr = "0x39a786421889EB581bd105508a0D2Dc03523B903";
 const wbnbAddress = "0x4200000000000000000000000000000000000006";
 
 const opBNB = {
-  chainId: "0xcc", // 204 dec
+  chainId: "0xcc",
   chainName: "opBNB",
   nativeCurrency: {
     name: "BNB",
@@ -156,7 +156,6 @@ async function switchToOpBNB() {
   }
 }
 
-
 async function connectWallet(){
   if (!window.ethereum) return showError("Zainstaluj MetaMask!");
 
@@ -190,7 +189,6 @@ async function connectWallet(){
     account = await signer.getAddress();
     document.getElementById("wallet-address").innerText = account;
     updateBalances();
-    // fetchLPInfo?.();
   } catch (err) {
     showError("Błąd połączenia z portfelem: " + err.message);
   }
@@ -213,20 +211,42 @@ async function updateBalances(){
 function toggleTheme(){
   const html = document.documentElement;
   const light = html.getAttribute("data-theme")==="light";
-  html.setAttribute("data-theme", light?"":"light");
-  document.querySelector(".theme-toggle").innerText = light?"🌞 Tryb jasny":"🌙 Tryb ciemny";
-  localStorage.theme = light?"":"light";
+  html.setAttribute("data-theme", light?"dark":"light");
+  document.querySelector(".theme-toggle").innerText = light?"🌙 Tryb ciemny":"🌞 Tryb jasny";
+  localStorage.theme = light?"dark":"light";
 }
-(() => {
-  const th = localStorage.theme;
-  document.documentElement.setAttribute("data-theme", th || "");
-  document.querySelector(".theme-toggle").innerText = th?"🌙 Tryb ciemny":"🌞 Tryb jasny";
-})();
 
-// === Error Handling ===
-function showError(message) {
-  const errorContainer = document.getElementById('error-container');
-  const errorText = document.getElementById('error-text');
-  errorText.textContent = message;
-  errorContainer.style.display = 'block';
+// === Language Toggle (Placeholder) ===
+function toggleLanguage(){
+  // Dodaj logikę zmiany języka, np. przełączanie Google Translate
+  showError("Funkcja zmiany języka nie jest jeszcze zaimplementowana.");
 }
+
+// === Music Toggle ===
+function toggleMusic(){
+  const audio = document.getElementById("background-music");
+  const isPlaying = !audio.paused;
+  if (isPlaying) {
+    audio.pause();
+    document.querySelector(".music-toggle").innerText = "🎵 Music: Off";
+    localStorage.music = "off";
+  } else {
+    audio.play().catch(err => showError("Nie można odtworzyć muzyki: " + err.message));
+    document.querySelector(".music-toggle").innerText = "🎵 Music: On";
+    localStorage.music = "on";
+  }
+}
+
+// === Initialization ===
+(() => {
+  const th = localStorage.theme || "light";
+  document.documentElement.setAttribute("data-theme", th);
+  document.querySelector(".theme-toggle").innerText = th === "light" ? "🌙 Tryb ciemny" : "🌞 Tryb jasny";
+
+  const musicState = localStorage.music || "on";
+  const audio = document.getElementById("background-music");
+  document.querySelector(".music-toggle").innerText = musicState === "on" ? "🎵 Music: On" : "🎵 Music: Off";
+  if (musicState === "on") {
+    audio.play().catch(err => console.log("Autoodtwarzanie zablokowane: ", err.message));
+  }
+})();
