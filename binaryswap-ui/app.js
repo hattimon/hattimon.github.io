@@ -398,8 +398,9 @@ function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
   const temp = fromToken.value;
-  fromToken.value = toToken.value === "0101" ? "BNB" : "0101";
-  toToken.value = temp === "0101" ? "BNB" : "0101";
+  fromToken.value = toToken.value;
+  toToken.value = temp;
+  fromToken.dispatchEvent(new Event('change')); // Aktualizacja UI
   console.log("Swapped: ", fromToken.value, "→", toToken.value); // Debug
 }
 
