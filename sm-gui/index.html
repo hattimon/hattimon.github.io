@@ -107,7 +107,7 @@
         description: { en: 'Stakes tokens to earn rewards.', pl: 'Lokuje tokeny, aby zarabiać nagrody.' },
         inputs: {
           _amount: { en: 'Amount to stake.', pl: 'Ilość do zablokowania.' },
-          pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' }
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' }
         },
         safety: { en: 'Verify pool ID and contract. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj ID puli i kontrakt. Sprawdź z ScamSniffer i Rabby.io.' }
       },
@@ -142,7 +142,7 @@
       claimRewards: {
         description: { en: 'Claims rewards from staking or farming.', pl: 'Odbiera nagrody ze stakowania lub farmingu.' },
         inputs: {
-          pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' }
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' }
         },
         safety: { en: 'Ensure contract legitimacy. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że kontrakt jest legalny. Sprawdź z ScamSniffer i Rabby.io.' }
       },
@@ -157,7 +157,7 @@
       deposit: {
         description: { en: 'Deposits tokens into a pool to start staking.', pl: 'Wpłaca tokeny do puli, aby rozpocząć stakowanie.' },
         inputs: {
-          _pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' },
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' },
           _amount: { en: 'Amount to deposit.', pl: 'Ilość do wpłaty.' }
         },
         safety: { en: 'Verify pool ID and balance. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj ID puli i saldo. Sprawdź z ScamSniffer i Rabby.io.' }
@@ -165,17 +165,24 @@
       emergencyWithdraw: {
         description: { en: 'Emergency withdrawal of staked tokens.', pl: 'Awaryjne wypłata zablokowanych tokenów.' },
         inputs: {
-          _pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' }
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' }
         },
         safety: { en: 'Use only in emergencies; may forfeit rewards. Check with ScamSniffer and Rabby.io.', pl: 'Używaj tylko w nagłych przypadkach; może skutkować utratą nagród. Sprawdź z ScamSniffer i Rabby.io.' }
       },
       pendingCub: {
         description: { en: 'Checks pending rewards for a user in a pool.', pl: 'Sprawdza oczekujące nagrody dla użytkownika w puli.' },
         inputs: {
-          _pid: { en: 'Pool ID.', pl: 'Identyfikator puli.' },
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' },
           _user: { en: 'User address.', pl: 'Adres użytkownika.' }
         },
         safety: { en: 'Ensure correct pool and address. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że podano poprawną pulę i adres. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      deadline: {
+        description: { en: 'Sets a deadline for a transaction (e.g., in seconds from now).', pl: 'Ustawia termin ważności transakcji (np. w sekundach od teraz).' },
+        inputs: {
+          deadline: { en: 'Deadline (uint256). Typically a timestamp (e.g., current time + 300 seconds). Use block.timestamp + buffer (e.g., 300-600 seconds) to avoid expiration.', pl: 'Termin ważności (uint256). Zazwyczaj znacznik czasu (np. aktualny czas + 300 sekund). Użyj block.timestamp + bufor (np. 300-600 sekund), aby uniknąć wygaśnięcia.' }
+        },
+        safety: { en: 'Ensure deadline is in the future. Verify with contract documentation.', pl: 'Upewnij się, że termin jest w przyszłości. Sprawdź dokumentację kontraktu.' }
       }
     };
 
@@ -666,7 +673,7 @@
           <p className="text-sm text-gray-200 mb-2 bg-green-900 p-3 rounded flex items-center"><i className="fas fa-user-graduate mr-2"></i>{translations[language].assistant}{functionDescriptions[func.name]?.description[language] || (language === 'en' ? 'Custom function. Follow contract documentation.' : 'Funkcja niestandardowa. Postępuj zgodnie z dokumentacją kontraktu.')}</p>
           <p className="text-sm text-yellow-500 mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{functionDescriptions[func.name]?.safety[language] || (language === 'en' ? 'Verify function and contract. Check with ScamSniffer and Rabby.io.' : 'Zweryfikuj funkcję i kontrakt. Sprawdź z ScamSniffer i Rabby.io.')}</p>
           {func.inputs.map((input, index) => (
-            <div key={index} className="mb-3">
+            <div key={index} className="mb-3 relative">
               <label className="block text-sm font-medium mb-1 text-yellow-400 flex items-center"><i className="fas fa-keyboard mr-2"></i>{input.name} ({input.type})</label>
               <p className="text-xs text-gray-400 mb-1 flex items-center"><i className="fas fa-lightbulb mr-2"></i>
                 {input.type === 'address' && 'Contract address (e.g., swap router, LP token, or token contract).'}
@@ -675,64 +682,71 @@
                 {input.type === 'uint8' && 'Small integer (0-255).'}
                 {input.type === 'bytes32' && '32-byte hexadecimal value.'}
               </p>
-              {input.type === 'address' ? (
-                <input
-                  type="text"
-                  className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
-                  placeholder="Enter address"
-                  value={inputs[input.name] || ''}
-                  onChange={e => handleInputChange(input.name, e.target.value)}
-                />
-              ) : input.type === 'uint256' ? (
-                <div className="flex space-x-2">
+              <div className="relative">
+                {input.type === 'address' ? (
+                  <input
+                    type="text"
+                    className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
+                    placeholder="Enter address"
+                    value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
+                  />
+                ) : input.type === 'uint256' ? (
+                  <div className="flex space-x-2">
+                    <input
+                      type="number"
+                      step="0.000000000000000001"
+                      className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
+                      placeholder="Enter amount (e.g., 1)"
+                      onChange={e => handleInputChange(input.name, e.target.value)}
+                      value={inputs[input.name] || ''}
+                    />
+                    <button
+                      className="bg-yellow-600 text-gray-900 px-3 py-2 rounded border border-yellow-400 hover:bg-yellow-500 transition h-10 flex items-center"
+                      onClick={() => convertToWei(input.name, inputs[input.name])}
+                    >
+                      <i className="fas fa-calculator mr-1"></i>To Wei
+                    </button>
+                  </div>
+                ) : input.type === 'bool' ? (
+                  <input
+                    type="text"
+                    className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
+                    placeholder="Enter bool"
+                    value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
+                  />
+                ) : input.type === 'uint8' ? (
                   <input
                     type="number"
-                    step="0.000000000000000001"
                     className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
-                    placeholder="Enter amount (e.g., 1)"
-                    onChange={e => handleInputChange(input.name, e.target.value)}
+                    placeholder="Enter uint8"
                     value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
                   />
-                  <button
-                    className="bg-yellow-600 text-gray-900 px-3 py-2 rounded border border-yellow-400 hover:bg-yellow-500 transition h-10 flex items-center"
-                    onClick={() => convertToWei(input.name, inputs[input.name])}
-                  >
-                    <i className="fas fa-calculator mr-1"></i>To Wei
-                  </button>
-                </div>
-              ) : input.type === 'bool' ? (
-                <input
-                  type="text"
-                  className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
-                  placeholder="Enter bool"
-                  value={inputs[input.name] || ''}
-                  onChange={e => handleInputChange(input.name, e.target.value)}
-                />
-              ) : input.type === 'uint8' ? (
-                <input
-                  type="number"
-                  className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
-                  placeholder="Enter uint8"
-                  value={inputs[input.name] || ''}
-                  onChange={e => handleInputChange(input.name, e.target.value)}
-                />
-              ) : input.type === 'bytes32' ? (
-                <input
-                  type="text"
-                  className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
-                  placeholder="Enter bytes32"
-                  value={inputs[input.name] || ''}
-                  onChange={e => handleInputChange(input.name, e.target.value)}
-                />
-              ) : (
-                <input
-                  type="text"
-                  className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
-                  placeholder={`Enter ${input.type}`}
-                  value={inputs[input.name] || ''}
-                  onChange={e => handleInputChange(input.name, e.target.value)}
-                />
-              )}
+                ) : input.type === 'bytes32' ? (
+                  <input
+                    type="text"
+                    className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
+                    placeholder="Enter bytes32"
+                    value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    className={`w-full p-2 bg-${theme === 'dark' ? 'gray-700' : theme === 'light' ? 'gray-200' : theme === 'warm' ? 'yellow-800' : 'blue-800'} border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-${theme === 'dark' || theme === 'warm' || theme === 'cold' ? 'gray-200' : 'gray-900'} h-10`}
+                    placeholder={`Enter ${input.type}`}
+                    value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
+                  />
+                )}
+                {functionDescriptions[func.name]?.inputs[input.name] && (
+                  <div className="absolute z-10 hidden group-hover:block bg-gray-800 text-white p-2 rounded shadow-lg mt-1 w-64">
+                    {functionDescriptions[func.name].inputs[input.name][language]}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
           <button
