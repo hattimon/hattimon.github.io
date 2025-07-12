@@ -1,4 +1,3 @@
-// === Web3 Config ===
 let provider, signer, account;
 const addr0101 = "0xa41b3067ec694dbec668c389550ba8fc589e5797";
 const addrLP = "0x506b8322e1159d06e493ebe7ffa41a24291e7ae3";
@@ -39,7 +38,6 @@ const MASTER = [
   "function emergencyWithdraw(uint256)"
 ];
 
-// === Translations ===
 const translations = {
   en: {
     theme_light: "Light Mode",
@@ -101,6 +99,9 @@ const translations = {
     error_swap_0101_to_bnb: "Error swapping (0101 → BNB):",
     error_invalid_pair: "Cannot swap the same token!",
     error_play_music: "Cannot play music:",
+    error_insufficient_balance: "Insufficient balance for this transaction!",
+    error_approval_failed: "Token approval failed!",
+    error_liquidity_failed: "Liquidity operation failed!",
     copy_button: "Copy",
     copied: "Copied!"
   },
@@ -164,17 +165,25 @@ const translations = {
     error_swap_0101_to_bnb: "Błąd przy zamianie (0101 → BNB):",
     error_invalid_pair: "Nie można zamienić tego samego tokenu!",
     error_play_music: "Nie można odtworzyć muzyki:",
+    error_insufficient_balance: "Niewystarczające saldo dla tej transakcji!",
+    error_approval_failed: "Zatwierdzenie tokena nie powiodło się!",
+    error_liquidity_failed: "Operacja płynności nie powiodła się!",
     copy_button: "Kopiuj",
     copied: "Skopiowano!"
   }
 };
 
-// === Swap Handler ===
 async function handleSwap() {
-  const pc = parseInt(document.getElementById("swapPercent").value);
-  if (isNaN(pc) || pc < 1 || pc > 100) return showError(translations[localStorage.language || "en"].error_invalid_percent);
+  if (!signer || !provider) {
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+  }
 
-  const slippage = 1; // Fixed slippage for simplicity
+  const pc = parseInt(document.getElementById("swapPercent").value);
+  if (isNaN(pc) || pc < 1 || pc > 100) {
+    return showError(translations[localStorage.language || "en"].error_invalid_percent);
+  }
+
+  const slippageSelect = document.getElementById("slippage").value;
   const deadline = Math.floor(Date.now() / 1000) + 300;
   const fromToken = document.getElementById("fromToken").value;
   const toToken = document.getElementById("toToken").value;
@@ -183,23 +192,66 @@ async function handleSwap() {
     return showError(translations[localStorage.language || "en"].error_invalid_pair);
   }
 
-  if (fromToken === "BNB" && toToken === "0101") {
-    await swapBNBto0101(pc, slippage, deadline);
-  } else if (fromToken === "0101" && toToken === "BNB") {
-    await swap0101toBNB(pc, slippage, deadline);
+  let slippage;
+  if (slippageSelect === "auto") {
+    slippage = await calculateAutoSlippage(fromToken, toToken, pc);
+  } else {
+    slippage = parseFloat(slippageSelect);
+  }
+
+  try {
+    if (fromToken === "BNB" && toToken === "0101") {
+      await swapBNBto0101(pc, slippage, deadline);
+    } else if (fromToken === "0101" && toToken === "BNB") {
+      await swap0101toBNB(pc, slippage, deadline);
+    }
+  } catch (error) {
+    showError(translations[localStorage.language || "en"].error_swap_bnb_to_0101 + " " + error.message);
   }
 }
 
-// === Swap: BNB → 0101 ===
+async function calculateAutoSlippage(fromToken, toToken, pc) {
+  if (!signer || !provider) return 0.5;
+
+  const router = new ethers.Contract(routerAddr, ROUTER, provider);
+  let amountIn, path;
+  try {
+    if (fromToken === "BNB") {
+      const balance = await provider.getBalance(account);
+      amountIn = balance * BigInt(pc) / BigInt(100);
+      path = [wbnbAddress, addr0101];
+    } else {
+      const token = new ethers.Contract(addr0101, ERC20, provider);
+      const balance = await token.balanceOf(account);
+      amountIn = balance * BigInt(pc) / BigInt(100);
+      path = [addr0101, wbnbAddress];
+    }
+
+    const amounts = await router.getAmountsOut(amountIn, path);
+    return 0.1; // Default to 0.1% for safety
+  } catch (error) {
+    console.error("Error calculating auto slippage:", error);
+    return 0.5; // Fallback to 0.5%
+  }
+}
+
 async function swapBNBto0101(pc, slippage, deadline) {
+  if (!signer || !provider) {
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+  }
+
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
   const balance = await provider.getBalance(account);
-  const amountIn = balance * BigInt(pc) / 100n;
+  const amountIn = balance * BigInt(pc) / BigInt(100);
+
+  if (amountIn <= 0) {
+    return showError(translations[localStorage.language || "en"].error_insufficient_balance);
+  }
 
   try {
     const path = [wbnbAddress, addr0101];
     const amounts = await router.getAmountsOut(amountIn, path);
-    const amountOutMin = amounts[1] * BigInt(100 - slippage) / 100n;
+    const amountOutMin = amounts[1] * BigInt(Math.floor(1000 - slippage * 10)) / BigInt(1000);
 
     const tx = await router.swapExactETHForTokens(
       amountOutMin,
@@ -215,21 +267,29 @@ async function swapBNBto0101(pc, slippage, deadline) {
   }
 }
 
-// === Swap: 0101 → BNB ===
 async function swap0101toBNB(pc, slippage, deadline) {
+  if (!signer || !provider) {
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+  }
+
   const token = new ethers.Contract(addr0101, ERC20, signer);
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
   const balance = await token.balanceOf(account);
-  const amountIn = balance * BigInt(pc) / 100n;
+  const amountIn = balance * BigInt(pc) / BigInt(100);
+
+  if (amountIn <= 0) {
+    return showError(translations[localStorage.language || "en"].error_insufficient_balance);
+  }
 
   try {
     const path = [addr0101, wbnbAddress];
     const amounts = await router.getAmountsOut(amountIn, path);
-    const amountOutMin = amounts[1] * BigInt(100 - slippage) / 100n;
+    const amountOutMin = amounts[1] * BigInt(Math.floor(1000 - slippage * 10)) / BigInt(1000);
 
     const allowance = await token.allowance(account, routerAddr);
     if (allowance < amountIn) {
-      await token.approve(routerAddr, amountIn);
+      const approveTx = await token.approve(routerAddr, amountIn);
+      await approveTx.wait();
     }
 
     const tx = await router.swapExactTokensForETH(
@@ -246,28 +306,79 @@ async function swap0101toBNB(pc, slippage, deadline) {
   }
 }
 
-// === LP Functions ===
 async function addLiquidity(pc) {
+  if (!signer || !provider) {
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+  }
+
   const t = new ethers.Contract(addr0101, ERC20, signer);
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
   const bB = await provider.getBalance(account), bT = await t.balanceOf(account);
-  const vB = bB * BigInt(pc) / 100n, vT = bT * BigInt(pc) / 100n;
-  await t.approve(routerAddr, vT);
-  await r.addLiquidityETH(addr0101, vT, 0, 0, account, Math.floor(Date.now() / 1e3) + 300, { value: vB });
-  updateBalances();
+  const vB = bB * BigInt(pc) / BigInt(100), vT = bT * BigInt(pc) / BigInt(100);
+
+  if (vB <= 0 || vT <= 0) {
+    return showError(translations[localStorage.language || "en"].error_insufficient_balance);
+  }
+
+  try {
+    const allowance = await t.allowance(account, routerAddr);
+    if (allowance < vT) {
+      const approveTx = await t.approve(routerAddr, vT);
+      await approveTx.wait();
+    }
+
+    const tx = await r.addLiquidityETH(
+      addr0101,
+      vT,
+      0,
+      0,
+      account,
+      Math.floor(Date.now() / 1000) + 300,
+      { value: vB }
+    );
+    await tx.wait();
+    updateBalances();
+  } catch (error) {
+    showError(translations[localStorage.language || "en"].error_liquidity_failed + " " + error.message);
+  }
 }
 
 async function removeLiquidity(pc) {
+  if (!signer || !provider) {
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+  }
+
   const l = new ethers.Contract(addrLP, ERC20, signer);
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
   const bal = await l.balanceOf(account);
-  const v = bal * BigInt(pc) / 100n;
-  await l.approve(routerAddr, v);
-  await r.removeLiquidityETH(addr0101, v, 0, 0, account, Math.floor(Date.now() / 1e3) + 300);
-  updateBalances();
+  const v = bal * BigInt(pc) / BigInt(100);
+
+  if (v <= 0) {
+    return showError(translations[localStorage.language || "en"].error_insufficient_balance);
+  }
+
+  try {
+    const allowance = await l.allowance(account, routerAddr);
+    if (allowance < v) {
+      const approveTx = await l.approve(routerAddr, v);
+      await approveTx.wait();
+    }
+
+    const tx = await r.removeLiquidityETH(
+      addr0101,
+      v,
+      0,
+      0,
+      account,
+      Math.floor(Date.now() / 1000) + 300
+    );
+    await tx.wait();
+    updateBalances();
+  } catch (error) {
+    showError(translations[localStorage.language || "en"].error_liquidity_failed + " " + error.message);
+  }
 }
 
-// === Wallet Functions ===
 async function switchToOpBNB() {
   if (!window.ethereum) return showError(translations[localStorage.language || "en"].error_no_metamask);
 
@@ -331,20 +442,23 @@ async function connectWallet() {
 }
 
 async function updateBalances() {
-  if (!signer) return;
-  const t = new ethers.Contract(addr0101, ERC20, provider);
-  const l = new ethers.Contract(addrLP, ERC20, provider);
-  const [b0101, bLP, bBNB] = await Promise.all([
-    t.balanceOf(account),
-    l.balanceOf(account),
-    provider.getBalance(account)
-  ]);
-  document.getElementById("balance-0101").textContent = parseFloat(ethers.formatUnits(b0101, 18)).toFixed(8);
-  document.getElementById("balance-bnb").textContent = parseFloat(ethers.formatUnits(bBNB, 18)).toFixed(8);
-  document.getElementById("balance-lp").textContent = parseFloat(ethers.formatUnits(bLP, 18)).toFixed(8);
+  if (!signer || !provider) return;
+  try {
+    const t = new ethers.Contract(addr0101, ERC20, provider);
+    const l = new ethers.Contract(addrLP, ERC20, provider);
+    const [b0101, bLP, bBNB] = await Promise.all([
+      t.balanceOf(account),
+      l.balanceOf(account),
+      provider.getBalance(account)
+    ]);
+    document.getElementById("balance-0101").textContent = parseFloat(ethers.formatUnits(b0101, 18)).toFixed(8);
+    document.getElementById("balance-bnb").textContent = parseFloat(ethers.formatUnits(bBNB, 18)).toFixed(8);
+    document.getElementById("balance-lp").textContent = parseFloat(ethers.formatUnits(bLP, 18)).toFixed(8);
+  } catch (error) {
+    console.error("Error updating balances:", error);
+  }
 }
 
-// === Theme Toggle ===
 function toggleTheme() {
   const html = document.documentElement;
   const isLight = html.getAttribute("data-theme") === "light";
@@ -355,7 +469,6 @@ function toggleTheme() {
   document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${newTheme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${newTheme}">${translations[lang][`theme_${newTheme}`]}</span>`;
 }
 
-// === Language Toggle ===
 function toggleLanguage() {
   const newLang = localStorage.language === "pl" ? "en" : "pl";
   localStorage.language = newLang;
@@ -365,7 +478,6 @@ function toggleLanguage() {
   document.querySelector(".music-toggle").innerHTML = `<i class="fas fa-music"></i> <span data-i18n="music_${localStorage.music === "on" ? "on" : "off"}">${translations[newLang][`music_${localStorage.music === "on" ? "on" : "off"}`]}</span>`;
 }
 
-// === Update Translations ===
 function updateTranslations(lang) {
   document.querySelectorAll("[data-i18n]").forEach(element => {
     const key = element.getAttribute("data-i18n");
@@ -377,7 +489,6 @@ function updateTranslations(lang) {
   });
 }
 
-// === Music Toggle ===
 function toggleMusic() {
   const audio = document.getElementById("background-music");
   const isPlaying = !audio.paused;
@@ -393,18 +504,16 @@ function toggleMusic() {
   }
 }
 
-// === Swap Tokens ===
 function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
   const temp = fromToken.value;
   fromToken.value = toToken.value === "0101" ? "BNB" : "0101";
-  toToken.value = temp === "0101" ? "BNB" : "0101";
-  fromToken.dispatchEvent(new Event('change')); // Aktualizacja UI
-  console.log("Swapped: ", fromToken.value, "→", toToken.value); // Debug
+  toToken.value = temp === "BNB" ? "0101" : "BNB";
+  fromToken.dispatchEvent(new Event('change'));
+  console.log("Swapped: ", fromToken.value, "→", toToken.value);
 }
 
-// === Error Handling ===
 function showError(message) {
   const toastContainer = document.getElementById("toast-container") || createToastContainer();
   const lang = localStorage.language || "en";
@@ -452,7 +561,6 @@ function copyToClipboard(text) {
   navigator.clipboard.writeText(text).catch(err => console.error("Copy failed:", err));
 }
 
-// === Initialization ===
 (() => {
   const th = localStorage.theme || "dark";
   document.documentElement.setAttribute("data-theme", th);
