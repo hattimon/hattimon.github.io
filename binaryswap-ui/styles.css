@@ -152,7 +152,7 @@ select:disabled {
 }
 
 #slippage {
-  max-width: 150px; /* Smaller width for slippage dropdown */
+  max-width: 150px;
 }
 
 input:focus, select:focus {
@@ -392,7 +392,7 @@ input:focus, select:focus {
 .toast-message {
   flex-grow: 1;
   word-break: break-word;
-  color: #ff0000; /* Stały czerwony kolor tekstu w toastach */
+  color: #ff0000;
 }
 
 .toast-copy, .toast-close {
@@ -472,15 +472,8 @@ input:focus, select:focus {
     padding: 8px;
     font-size: 0.8rem;
   }
-  #toast-container {
-    width: calc(100% - 20px);
-    padding: 0 10px;
-  }
   .toast {
     max-width: 100%;
     font-size: 0.85rem;
-  }
-  #slippage {
-    max-width: 100%; /* Full width on mobile for consistency */
   }
 }
