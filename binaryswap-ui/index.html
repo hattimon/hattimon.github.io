@@ -45,25 +45,45 @@
         <h3 data-i18n="wallet_contents">Wallet Contents</h3>
         <p>0101: <span id="balance-0101">–</span></p>
         <p>BNB: <span id="balance-bnb">–</span></p>
-        <p>LP (0101/BNB): <span id="balance-lp">–</span></p>
+        <p>LP (0101/BNB): span id="balance-lp">–</span></p>
       </div>
 
       <div class="section swap-section">
         <h3 data-i18n="swap">Swap</h3>
         <div class="swap-card">
           <div class="token-select">
-            <select id="fromToken">
+            <select id="fromToken" disabled>
               <option value="0101">0101</option>
               <option value="BNB">BNB</option>
             </select>
             <button class="swap-arrow" onclick="swapTokens()">↔</button>
-            <select id="toToken">
+            <select id="toToken" disabled>
               <option value="BNB">BNB</option>
               <option value="0101">0101</option>
             </select>
           </div>
           <div class="swap-input">
             <input type="number" id="swapPercent" placeholder="Enter amount (1–100) %" data-i18n-placeholder="enter_amount">
+            <select id="slippage">
+              <option value="auto">Auto</option>
+              <option value="0.1">0.1%</option>
+              <option value="0.3">0.3%</option>
+              <option value="0.5">0.5%</option>
+              <option value="1">1%</option>
+              <option value="2">2%</option>
+              <option value="3">3%</option>
+              <option value="5">5%</option>
+              <option value="10">10%</option>
+              <option value="15">15%</option>
+              <option value="20">20%</option>
+              <option value="25">25%</option>
+              <option value="30">30%</option>
+              <option value="50">50%</option>
+              <option value="60">60%</option>
+              <option value="70">70%</option>
+              <option value="90">90%</option>
+              <option value="100">100%</option>
+            </select>
           </div>
           <button class="uniswap-btn swap-btn" onclick="handleSwap()" data-i18n="swap_button">Swap</button>
         </div>
