@@ -70,14 +70,14 @@ const translations = {
     add_lp: "Dodaj LP",
     remove_lp: "Usuń LP",
     emergency_withdrawal: "Awaryjna wypłata LP, NFT itp:",
-    contract_instruction_1: "Wejdź na kontrakt:",
-    contract_instruction_2: "Skopiuj Adres kontraktu oraz zawartość pola Contract ABI",
-    contract_instruction_3: "Otwórz w nowej zakładce stronę:",
+    contract_instruction_1: "Krok 1: Wejdź na kontrakt:",
+    contract_instruction_2: "Skopiuj adres kontraktu oraz zawartość pola Contract ABI.",
+    contract_instruction_3: "Krok 2: Otwórz w nowej zakładce stronę:",
     smart_contracts_interface: "Interfejs kontraktów inteligentnych",
-    contract_instruction_4: "przełącz sieć na opBNB i wklej w odpowiednich polach te dane.",
-    contract_instruction_5: "Przejdź do pola emergencyWithdraw i wpisuj kolejno 0,1,2,3,4,5 itd.",
-    contract_instruction_6: "w zależności od tego co stakujesz, podczas zatwierdzenia transakcji Rabby Wallet wyświetli wiadomość do podpisania np. wypłata LP lub NFT",
-    contract_instruction_7: "- zatwierdź każdą transakcję, która pokazuje wypłatę czegoś z kontraktu i sprawdź w DeBank lub wyżej ilość tokenów LP (reszta powyżej 😊)",
+    contract_instruction_4: "Przełącz sieć na opBNB i wklej dane w odpowiednie pola.",
+    contract_instruction_5: "Krok 3: Przejdź do pola emergencyWithdraw i wpisuj kolejno 0, 1, 2, 3, 4, 5 itd.",
+    contract_instruction_6: "W zależności od tego, co stakujesz, podczas zatwierdzania transakcji Rabby Wallet wyświetli komunikat do podpisania, np. wypłata LP lub NFT.",
+    contract_instruction_7: "Zatwierdź każdą transakcję, która pokazuje wypłatę z kontraktu i sprawdź ilość tokenów LP w DeBank lub powyżej (reszta powyżej 😊).",
     error_label: "Błąd",
     error_invalid_percent: "Procent 1–100!",
     error_no_metamask: "Zainstaluj MetaMask!",
@@ -86,7 +86,6 @@ const translations = {
     error_connect_wallet: "Błąd połączenia z portfelem:",
     error_swap_bnb_to_0101: "Błąd przy swapie (BNB → 0101):",
     error_swap_0101_to_bnb: "Błąd przy swapie (0101 → BNB):",
-    error_language_not_implemented: "Funkcja zmiany języka nie jest jeszcze zaimplementowana.",
     error_play_music: "Nie można odtworzyć muzyki:"
   },
   en: {
@@ -118,14 +117,14 @@ const translations = {
     add_lp: "Add LP",
     remove_lp: "Remove LP",
     emergency_withdrawal: "Emergency Withdrawal of LP, NFT, etc.:",
-    contract_instruction_1: "Visit the contract:",
-    contract_instruction_2: "Copy the Contract Address and the contents of the Contract ABI field",
-    contract_instruction_3: "Open in a new tab the page:",
+    contract_instruction_1: "Step 1: Visit the contract:",
+    contract_instruction_2: "Copy the Contract Address and the Contract ABI field.",
+    contract_instruction_3: "Step 2: Open in a new tab the page:",
     smart_contracts_interface: "Smart Contracts Interface",
-    contract_instruction_4: "switch the network to opBNB and paste the data into the appropriate fields.",
-    contract_instruction_5: "Go to the emergencyWithdraw field and enter 0,1,2,3,4,5, etc. sequentially.",
-    contract_instruction_6: "depending on what you are staking, during transaction confirmation, Rabby Wallet will display a message to sign, e.g., withdrawal of LP or NFT",
-    contract_instruction_7: "- approve each transaction that shows the withdrawal of something from the contract and check the LP token amount on DeBank or above (the rest can be done above 😊)",
+    contract_instruction_4: "Switch to opBNB network and paste the data into the respective fields.",
+    contract_instruction_5: "Step 3: Go to the emergencyWithdraw field and enter 0, 1, 2, 3, 4, 5, etc. sequentially.",
+    contract_instruction_6: "Depending on what you staked, during transaction confirmation, Rabby Wallet will show a signing message, e.g., LP or NFT withdrawal.",
+    contract_instruction_7: "Approve each transaction showing a withdrawal from the contract and check the LP token amount in DeBank or above (the rest above 😊).",
     error_label: "Error",
     error_invalid_percent: "Percentage 1–100!",
     error_no_metamask: "Install MetaMask!",
@@ -134,7 +133,6 @@ const translations = {
     error_connect_wallet: "Wallet connection error:",
     error_swap_bnb_to_0101: "Error during swap (BNB → 0101):",
     error_swap_0101_to_bnb: "Error during swap (0101 → BNB):",
-    error_language_not_implemented: "Language change function not yet implemented.",
     error_play_music: "Cannot play music:"
   }
 };
@@ -312,10 +310,14 @@ async function updateBalances(){
 // === Theme Toggle ===
 function toggleTheme(){
   const html = document.documentElement;
-  const light = html.getAttribute("data-theme") === "light";
-  html.setAttribute("data-theme", light ? "dark" : "light");
-  document.querySelector(".theme-toggle").innerHTML = light ? `🌙 <span data-i18n="theme_dark">${translations[localStorage.language || "pl"].theme_dark}</span>` : `🌞 <span data-i18n="theme_light">${translations[localStorage.language || "pl"].theme_light}</span>`;
-  localStorage.theme = light ? "dark" : "light";
+  const isLight = html.getAttribute("data-theme") === "light";
+  const newTheme = isLight ? "dark" : "light";
+  html.setAttribute("data-theme", newTheme);
+  localStorage.theme = newTheme;
+  const lang = localStorage.language || "pl";
+  document.querySelector(".theme-toggle").innerHTML = newTheme === "light" ? 
+    `🌞 <span data-i18n="theme_light">${translations[lang].theme_light}</span>` : 
+    `🌙 <span data-i18n="theme_dark">${translations[lang].theme_dark}</span>`;
 }
 
 // === Language Toggle ===
@@ -324,6 +326,12 @@ function toggleLanguage(){
   localStorage.language = newLang;
   updateTranslations(newLang);
   document.querySelector(".lang-toggle").innerHTML = `🌐 <span data-i18n="language">${translations[newLang].language}</span>`;
+  document.querySelector(".theme-toggle").innerHTML = localStorage.theme === "light" ? 
+    `🌞 <span data-i18n="theme_light">${translations[newLang].theme_light}</span>` : 
+    `🌙 <span data-i18n="theme_dark">${translations[newLang].theme_dark}</span>`;
+  document.querySelector(".music-toggle").innerHTML = localStorage.music === "on" ? 
+    `🎵 <span data-i18n="music_on">${translations[newLang].music_on}</span>` : 
+    `🎵 <span data-i18n="music_off">${translations[newLang].music_off}</span>`;
 }
 
 // === Update Translations ===
@@ -341,12 +349,12 @@ function toggleMusic(){
   const lang = localStorage.language || "pl";
   if (isPlaying) {
     audio.pause();
-    document.querySelector(".music-toggle").innerHTML = `🎵 <span data-i18n="music_off">${translations[lang].music_off}</span>`;
     localStorage.music = "off";
+    document.querySelector(".music-toggle").innerHTML = `🎵 <span data-i18n="music_off">${translations[lang].music_off}</span>`;
   } else {
     audio.play().catch(err => showError(translations[lang].error_play_music + " " + err.message));
-    document.querySelector(".music-toggle").innerHTML = `🎵 <span data-i18n="music_on">${translations[lang].music_on}</span>`;
     localStorage.music = "on";
+    document.querySelector(".music-toggle").innerHTML = `🎵 <span data-i18n="music_on">${translations[lang].music_on}</span>`;
   }
 }
 
@@ -359,19 +367,32 @@ function swapTokens() {
   swapToken2.value = temp === "toToken" ? "0101" : "BNB";
 }
 
+// === Error Handling ===
+function showError(message) {
+  const errorContainer = document.getElementById('error-container');
+  const errorText = document.getElementById('error-text');
+  errorText.textContent = message;
+  errorContainer.style.display = 'block';
+}
+
 // === Initialization ===
 (() => {
   const th = localStorage.theme || "light";
   document.documentElement.setAttribute("data-theme", th);
-  document.querySelector(".theme-toggle").innerHTML = th === "light" ? `🌞 <span data-i18n="theme_light">${translations[localStorage.language || "pl"].theme_light}</span>` : `🌙 <span data-i18n="theme_dark">${translations[localStorage.language || "pl"].theme_dark}</span>`;
-
+  
   const lang = localStorage.language || "pl";
   updateTranslations(lang);
-  document.querySelector(".lang-toggle").innerHTML = `🌐 <span data-i18n="language">${translations[lang].language}</span>`;
-
+  
   const musicState = localStorage.music || "on";
   const audio = document.getElementById("background-music");
-  document.querySelector(".music-toggle").innerHTML = musicState === "on" ? `🎵 <span data-i18n="music_on">${translations[lang].music_on}</span>` : `🎵 <span data-i18n="music_off">${translations[lang].music_off}</span>`;
+  document.querySelector(".theme-toggle").innerHTML = th === "light" ? 
+    `🌞 <span data-i18n="theme_light">${translations[lang].theme_light}</span>` : 
+    `🌙 <span data-i18n="theme_dark">${translations[lang].theme_dark}</span>`;
+  document.querySelector(".lang-toggle").innerHTML = `🌐 <span data-i18n="language">${translations[lang].language}</span>`;
+  document.querySelector(".music-toggle").innerHTML = musicState === "on" ? 
+    `🎵 <span data-i18n="music_on">${translations[lang].music_on}</span>` : 
+    `🎵 <span data-i18n="music_off">${translations[lang].music_off}</span>`;
+  
   if (musicState === "on") {
     audio.play().catch(err => console.log("Autoodtwarzanie zablokowane: ", err.message));
   }
