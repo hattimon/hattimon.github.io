@@ -156,6 +156,12 @@ input:focus, select:focus {
   box-shadow: 0 0 8px rgba(64, 104, 48, 0.3);
 }
 
+input[readonly] {
+  background: var(--card);
+  cursor: default;
+  user-select: none;
+}
+
 .section {
   margin: 20px 0;
   padding: 20px;
@@ -452,7 +458,7 @@ input:focus, select:focus {
     flex-direction: column;
     gap: 8px;
   }
-  .token-select select {
+  .token-select input {
     width: 100%;
   }
   .swap-arrow {
