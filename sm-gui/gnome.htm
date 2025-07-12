@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Contract GUI</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    /* [Previous CSS remains unchanged, omitted for brevity] */
+    .tooltip {
+      display: none;
+      position: absolute;
+      z-index: 10;
+      background-color: #1f2937;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      white-space: normal;
+      max-width: 200px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    /* [Rest of the CSS remains unchanged] */
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-mono transition-colors duration-300">
+  <div id="root"></div>
+  <div class="gnome red-gnome" id="gnome1"><div class="cap"></div><div class="beard"></div><div class="eyes"></div><div class="nose"></div><div class="legs"></div><div class="arms"></div></div>
+  <div class="gnome green-gnome" id="gnome2"><div class="cap"></div><div class="beard"></div><div class="eyes"></div><div class="nose"></div><div class="legs"></div><div class="arms"></div></div>
+  <script type="text/babel">
+    /* [Previous JavaScript/React code remains unchanged, omitted for brevity] */
+    const { useState, useEffect } = React;
+
+    const translations = {
+      en: {
+        title: 'Smart Contract GUI',
+        welcome: 'Connect your wallet and enter a contract address and ABI to generate an interface.',
+        connectWallet: 'Connect Wallet',
+        disconnectWallet: 'Disconnect Wallet',
+        contractAddress: 'Contract Address',
+        contractAbi: 'Contract ABI (JSON)',
+        loadContract: 'Load Contract',
+        readContract: 'Read Contract (View functions that read data without changing state)',
+        writeContract: 'Write Contract (Functions that execute transactions or modify state)',
+        loading: 'Loading...',
+        errorNoMetaMask: 'MetaMask or Rabby is not installed. Please install a wallet to use this app.',
+        errorInvalidAbi: 'Invalid ABI or contract address: ',
+        errorFunctionCall: 'Function call failed: ',
+        assistant: 'Assistant: ',
+        selectNetwork: 'Selected Network: ',
+        searchNetwork: 'Search Network...',
+        addNetwork: 'Network not found? Add it via ',
+        safetyNote: 'Safety Note: Always verify the contract address and ABI. Use <a href="https://debank.com" target="_blank">DeBank</a>, <a href="https://rabby.io" target="_blank">Rabby.io</a>, and <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a> to check transaction safety.',
+        mobileView: 'Mobile View',
+        desktopView: 'Desktop View',
+        copy: 'Copy',
+        revokePermissions: 'Revoke Permissions',
+        noPermissions: 'You can check your signed permissions on revoke.cash or Rabby Wallet.',
+        wallet: 'Wallet',
+        network: 'Network',
+        settings: 'Settings',
+        revokeNote: '',
+        revokeCash: 'Revoke Permissions',
+        disclaimer: 'Disclaimer: This site is a graphical overlay for original contract functions to ease usage. I am not responsible for any losses incurred due to contract usage. All responsibility lies with the contract creator and the user.',
+        convertNote: 'Entered amount (natural number) will be converted to wei if required (e.g., uint256).',
+        ethToWei: 'ETH to Wei',
+        weiToEth: 'Wei to ETH',
+        glossary: 'Smart Contract Compendium',
+        advancedSources: 'Advanced Knowledge Resources',
+        whatIsSmartContract: 'What is a Smart Contract?',
+        howWorks: 'How Smart Contracts Work?',
+        defiBasics: 'DeFi Basics',
+        swapMechanics: 'Swap Mechanics',
+        lendBorrow: 'Lending and Borrowing',
+        nftOverview: 'NFT Overview',
+        stakeNft: 'Staking NFTs',
+        fractionalNft: 'Fractional NFTs',
+        advancedConcepts: 'Advanced Concepts'
+      },
+      pl: {
+        title: 'Interfejs kontraktów inteligentnych',
+        welcome: 'Połącz portfel, wprowadź adres kontraktu i ABI, aby wygenerować interfejs.',
+        connectWallet: 'Połącz portfel',
+        disconnectWallet: 'Rozłącz portfel',
+        contractAddress: 'Adres kontraktu',
+        contractAbi: 'ABI kontraktu (JSON)',
+        loadContract: 'Wczytaj kontrakt',
+        readContract: 'Odczyt kontraktu (Funkcje tylko do odczytu danych bez zmiany stanu)',
+        writeContract: 'Zapis kontraktu (Funkcje wykonujące transakcje lub zmieniające stan)',
+        loading: 'Ładowanie...',
+        errorNoMetaMask: 'MetaMask lub Rabby nie jest zainstalowany. Zainstaluj portfel, aby korzystać z aplikacji.',
+        errorInvalidAbi: 'Nieprawidłowy ABI lub adres kontraktu: ',
+        errorFunctionCall: 'Błąd wywołania funkcji: ',
+        assistant: 'Asystent: ',
+        selectNetwork: 'Wybrana sieć: ',
+        searchNetwork: 'Szukaj sieci...',
+        addNetwork: 'Nie znaleziono sieci? Dodaj ją przez ',
+        safetyNote: 'Uwaga o bezpieczeństwie: Zawsze weryfikuj adres kontraktu i ABI. Użyj <a href="https://debank.com" target="_blank">DeBank</a>, <a href="https://rabby.io" target="_blank">Rabby.io</a> oraz <a href="https://scamsniffer.io" target="_blank">ScamSniffer</a>, aby sprawdzić bezpieczeństwo transakcji.',
+        mobileView: 'Wersja mobilna',
+        desktopView: 'Wersja PC',
+        copy: 'Kopiuj',
+        revokePermissions: 'Cofnij uprawnienia',
+        noPermissions: 'Możesz sprawdzić swoje podpisane uprawnienia na revoke.cash lub Rabby Wallet.',
+        wallet: 'Portfel',
+        network: 'Sieć',
+        settings: 'Ustawienia',
+        revokeNote: '',
+        revokeCash: 'Cofnij uprawnienia',
+        disclaimer: 'Zastrzeżenie: Ta strona jest graficzną nakładką na oryginalne funkcje kontraktu, ułatwiającą korzystanie. Nie ponoszę odpowiedzialności za żadne straty wynikłe z użycia kontraktu. Cała odpowiedzialność spoczywa na twórcy kontraktu oraz użytkowniku.',
+        convertNote: 'Wpisana kwota (liczba naturalna) zostanie zamieniona na wei, jeśli jest wymagana (np. uint256).',
+        ethToWei: 'ETH na Wei',
+        weiToEth: 'Wei na ETH',
+        glossary: 'Kompendium wiedzy o smart kontraktach',
+        advancedSources: 'Zaawansowane źródła wiedzy',
+        whatIsSmartContract: 'Czym jest smart kontrakt?',
+        howWorks: 'Jak działają smart kontrakty?',
+        defiBasics: 'Podstawy DeFi',
+        swapMechanics: 'Mechanika swapów',
+        lendBorrow: 'Pożyczanie i udzielanie pożyczek',
+        nftOverview: 'Przegląd NFT',
+        stakeNft: 'Staking NFT',
+        fractionalNft: 'NFT frakcyjne',
+        advancedConcepts: 'Zaawansowane koncepcje'
+      }
+    };
+
+    const advancedSources = {
+      en: {
+        ethereumOrg: { url: 'https://ethereum.org/en/developers/docs/', description: 'Official Ethereum documentation with detailed insights into smart contracts, EVM, Solidity, and best practices.' },
+        solidityDocs: { url: 'https://docs.soliditylang.org/', description: 'Comprehensive guide to the Solidity language, including code examples, advanced features, and security tips.' },
+        quicknodeGuides: { url: 'https://www.quicknode.com/guides', description: 'Practical tutorials on writing, testing, and deploying smart contracts, focusing on Ethereum and EVM.' },
+        openzeppelinDocs: { url: 'https://docs.openzeppelin.com/contracts/', description: 'Resources for secure smart contract development, including OpenZeppelin libraries with usage examples.' },
+        metanaLearn: { url: 'https://metana.io/learn', description: 'Advanced courses and tutorials on interacting with EVM, building dApps, and debugging contracts.' },
+        remixIde: { url: 'https://remix.ethereum.org/', description: 'Online IDE for writing, testing, and deploying smart contracts directly on Ethereum, with built-in tools for debugging and verification.' }
+      },
+      pl: {
+        ethereumOrg: { url: 'https://ethereum.org/en/developers/docs/', description: 'Oficjalna dokumentacja Ethereum zawierająca szczegółowe informacje o smart kontraktach, EVM, Solidity i najlepszych praktykach.' },
+        solidityDocs: { url: 'https://docs.soliditylang.org/', description: 'Kompleksowy przewodnik po języku Solidity, z przykładami kodu, zaawansowanymi funkcjami i wskazówkami dotyczącymi bezpieczeństwa.' },
+        quicknodeGuides: { url: 'https://www.quicknode.com/guides', description: 'Praktyczne tutoriale dotyczące pisania, testowania i wdrażania smart kontraktów, z naciskiem na Ethereum i EVM.' },
+        openzeppelinDocs: { url: 'https://docs.openzeppelin.com/contracts/', description: 'Zasoby dotyczące bezpiecznego programowania smart kontraktów, w tym biblioteki OpenZeppelin z przykładami użycia.' },
+        metanaLearn: { url: 'https://metana.io/learn', description: 'Zaawansowane kursy i poradniki dotyczące interakcji z EVM, tworzenia dApps i debugowania kontraktów.' },
+        remixIde: { url: 'https://remix.ethereum.org/', description: 'Online IDE do pisania, testowania i wdrażania smart kontraktów bezpośrednio na Ethereum, z wbudowanymi narzędziami do debugowania i weryfikacji.' }
+      }
+    };
+
+    const glossaryContent = {
+      whatIsSmartContract: {
+        en: 'A smart contract is a self-executing program on the blockchain that automatically enforces and executes agreements when predefined conditions are met, without intermediaries. It is written in languages like Solidity and deployed on networks like Ethereum.',
+        pl: 'Smart kontrakt to samowykonujący się program na blockchainie, który automatycznie egzekwuje i realizuje umowy, gdy spełnione są zdefiniowane warunki, bez pośredników. Jest pisany w językach takich jak Solidity i wdrażany na sieciach takich jak Ethereum.'
+      },
+      howWorks: {
+        en: 'Smart contracts run on the Ethereum Virtual Machine (EVM), a decentralized runtime environment. They are triggered by transactions or events, executing code deterministically across all nodes. Logic is defined by if-then-else statements and stored immutably on the blockchain.',
+        pl: 'Smart kontrakty działają na Ethereum Virtual Machine (EVM), zdecentralizowanym środowisku wykonawczym. Są uruchamiane przez transakcje lub wydarzenia, wykonując kod deterministycznie na wszystkich węzłach. Logika jest definiowana przez instrukcje if-then-else i przechowywana niezmiennie na blockchainie.'
+      },
+      defiBasics: {
+        en: 'DeFi (Decentralized Finance) uses smart contracts to offer financial services like lending, borrowing, and staking. Key functions include deposit (e.g., `deposit(_pid, _amount)`), withdraw (e.g., `withdraw(_amount)`), and claimRewards (e.g., `claimRewards(_pid)`). These contracts manage liquidity pools and reward mechanisms, often using AMM (Automated Market Maker) models.',
+        pl: 'DeFi (Zdecentralizowane Finanse) wykorzystuje smart kontrakty do oferowania usług finansowych, takich jak pożyczanie, udzielanie pożyczek i staking. Kluczowe funkcje to wpłata (np. `deposit(_pid, _amount)`), wypłata (np. `withdraw(_amount)`) oraz pobieranie nagród (np. `claimRewards(_pid)`). Te kontrakty zarządzają pulami płynności i mechanizmami nagród, często korzystając z modeli AMM (Automated Market Maker).'
+      },
+      swapMechanics: {
+        en: 'Swaps enable token exchanges via AMM pools (e.g., Uniswap). The core function is `swap(amountIn, amountOutMin, path, deadline)`, where `amountIn` is the input token amount, `amountOutMin` protects against slippage, `path` defines token route, and `deadline` sets transaction expiry. Price is determined by a constant product formula (x * y = k), adjusting based on pool liquidity.',
+        pl: 'Swapy umożliwiają wymianę tokenów za pośrednictwem pul AMM (np. Uniswap). Główna funkcja to `swap(amountIn, amountOutMin, path, deadline)`, gdzie `amountIn` to ilość wejściowego tokena, `amountOutMin` chroni przed poślizgiem, `path` określa trasę tokenów, a `deadline` ustala wygaśnięcie transakcji. Cena jest ustalana przez formułę stałego produktu (x * y = k), dostosowując się do płynności puli.'
+      },
+      lendBorrow: {
+        en: 'Lending and borrowing involve depositing collateral (e.g., `supply(asset, amount)`) and borrowing against it (e.g., `borrow(asset, amount)`). Smart contracts like Aave use over-collateralization and liquidation mechanisms. Interest rates are algorithmically adjusted based on supply and demand, with functions like `repay(asset, amount)` to settle loans.',
+        pl: 'Pożyczanie i udzielanie pożyczek polega na wpłacaniu zabezpieczenia (np. `supply(asset, amount)`) i pożyczaniu na jego podstawie (np. `borrow(asset, amount)`). Smart kontrakty, takie jak Aave, wykorzystują nadzabezpieczenie i mechanizmy likwidacji. Stopy procentowe są dostosowywane algorytmicznie na podstawie podaży i popytu, z funkcjami takimi jak `repay(asset, amount)` do spłaty pożyczek.'
+      },
+      nftOverview: {
+        en: 'NFTs (Non-Fungible Tokens) are unique digital assets on the blockchain, often using ERC-721 or ERC-1155 standards. Functions include `mint(_to, tokenId)` to create NFTs and `transferFrom(_from, _to, tokenId)` to transfer ownership. They are used for art, collectibles, and gaming.',
+        pl: 'NFT (Non-Fungible Tokens) to unikalne cyfrowe aktywa na blockchainie, często oparte na standardach ERC-721 lub ERC-1155. Funkcje obejmują `mint(_to, tokenId)` do tworzenia NFT oraz `transferFrom(_from, _to, tokenId)` do przenoszenia własności. Są wykorzystywane w sztuce, kolekcjonerstwie i grach.'
+      },
+      stakeNft: {
+        en: 'Staking NFTs involves locking them in a contract to earn rewards, similar to token staking. Functions like `stakeNft(tokenId)` and `claimNftRewards()` allow users to participate in yield farming or governance. The logic ensures NFTs are non-transferable during staking.',
+        pl: 'Staking NFT polega na zablokowaniu ich w kontrakcie w celu uzyskania nagród, podobnie jak w przypadku tokenów. Funkcje takie jak `stakeNft(tokenId)` i `claimNftRewards()` pozwalają użytkownikom uczestniczyć w yield farming lub zarządzaniu. Logika zapewnia, że NFT są nieprzetransferowalne podczas stakingu.'
+      },
+      fractionalNft: {
+        en: 'Fractional NFTs divide ownership of a high-value NFT into smaller shares (e.g., ERC-20 tokens). Functions include `fractionalize(nftId, shares)` to split and `redeemFractions(nftId)` to recombine. This democratizes access to expensive assets, managed via smart contracts.',
+        pl: 'NFT frakcyjne dzielą własność wartościowego NFT na mniejsze udziały (np. tokeny ERC-20). Funkcje obejmują `fractionalize(nftId, shares)` do podziału oraz `redeemFractions(nftId)` do ponownego połączenia. Umożliwia to demokratyzację dostępu do drogich aktywów, zarządzanych za pomocą smart kontraktów.'
+      },
+      advancedConcepts: {
+        en: 'Advanced features include multi-signature wallets (`multiSend(addresses, amounts)`), flash loans (borrow and repay in one transaction), and oracles for off-chain data (e.g., `getPrice(asset)`). Logic involves complex state machines, gas optimization, and security audits to prevent reentrancy or overflow attacks.',
+        pl: 'Zaawansowane funkcje obejmują wielopodpisowe portfele (`multiSend(addresses, amounts)`), flash loans (pożyczka i spłata w jednej transakcji) oraz oracles dla danych off-chain (np. `getPrice(asset)`). Logika obejmuje złożone maszyny stanów, optymalizację gazu i audyty bezpieczeństwa, aby zapobiec atakom typu reentrancy czy overflow.'
+      }
+    };
+
+    const functionDescriptions = {
+      transfer: {
+        description: { en: 'Transfers tokens (e.g., ERC20) to a specified address.', pl: 'Przesyła tokeny (np. ERC20) na podany adres.' },
+        inputs: {
+          _to: { en: 'Recipient address.', pl: 'Adres odbiorcy.' },
+          _value: { en: 'Amount of tokens.', pl: 'Ilość tokenów.' }
+        },
+        safety: { en: 'Verify recipient address. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj adres odbiorcy. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      withdraw: {
+        description: { en: 'Withdraws funds from the contract (e.g., staking rewards).', pl: 'Wypłaca środki z kontraktu (np. nagrody ze stakowania).' },
+        inputs: {
+          _amount: { en: 'Amount to withdraw.', pl: 'Ilość do wypłaty.' }
+        },
+        safety: { en: 'Ensure contract has access controls. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że kontrakt ma zabezpieczenia. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      stake: {
+        description: { en: 'Stakes tokens to earn rewards.', pl: 'Lokuje tokeny, aby zarabiać nagrody.' },
+        inputs: {
+          _amount: { en: 'Amount to stake.', pl: 'Ilość do zablokowania.' },
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' }
+        },
+        safety: { en: 'Verify pool ID and contract. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj ID puli i kontrakt. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      addLiquidity: {
+        description: { en: 'Adds liquidity to an AMM pool (e.g., Uniswap).', pl: 'Dodaje płynność do puli AMM (np. Uniswap).' },
+        inputs: {
+          tokenA: { en: 'Address of first token.', pl: 'Adres pierwszego tokena.' },
+          tokenB: { en: 'Address of second token.', pl: 'Adres drugiego tokena.' },
+          amountADesired: { en: 'Desired amount of token A.', pl: 'Pożądana ilość tokena A.' },
+          amountBDesired: { en: 'Desired amount of token B.', pl: 'Pożądana ilość tokena B.' }
+        },
+        safety: { en: 'Ensure pool is trusted. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że pula jest zaufana. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      removeLiquidity: {
+        description: { en: 'Removes liquidity from an AMM pool.', pl: 'Usuwa płynność z puli AMM.' },
+        inputs: {
+          liquidity: { en: 'Amount of LP tokens.', pl: 'Ilość tokenów LP.' },
+          amountAMin: { en: 'Minimum amount of token A.', pl: 'Minimalna ilość tokena A.' },
+          amountBMin: { en: 'Minimum amount of token B.', pl: 'Minimalna ilość tokena B.' }
+        },
+        safety: { en: 'Check minimum amounts to avoid slippage. Verify with ScamSniffer and Rabby.io.', pl: 'Sprawdź minimalne ilości, aby uniknąć poślizgu. Zweryfikuj z ScamSniffer i Rabby.io.' }
+      },
+      swap: {
+        description: { en: 'Swaps one token for another in an AMM pool.', pl: 'Wymienia jeden token na inny w puli AMM.' },
+        inputs: {
+          amountIn: { en: 'Input amount.', pl: 'Ilość wejściowa.' },
+          amountOutMin: { en: 'Minimum output amount.', pl: 'Minimalna ilość wyjściowa.' },
+          path: { en: 'Token swap path.', pl: 'Ścieżka wymiany tokenów.' },
+          deadline: { en: 'Deadline (uint256). Typically a timestamp (e.g., current time + 300 seconds). Use block.timestamp + buffer (e.g., 300-600 seconds) to avoid expiration.', pl: 'Termin ważności (uint256). Zazwyczaj znacznik czasu (np. aktualny czas + 300 sekund). Użyj block.timestamp + bufor (np. 300-600 sekund), aby uniknąć wygaśnięcia.' }
+        },
+        safety: { en: 'Set reasonable minimum output. Check with ScamSniffer and Rabby.io.', pl: 'Ustaw rozsądną minimalną ilość wyjściową. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      claimRewards: {
+        description: { en: 'Claims rewards from staking or farming.', pl: 'Odbiera nagrody ze stakowania lub farmingu.' },
+        inputs: {
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' }
+        },
+        safety: { en: 'Ensure contract legitimacy. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że kontrakt jest legalny. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      mint: {
+        description: { en: 'Mints a new NFT or ERC20 token.', pl: 'Tworzy nowy token NFT lub ERC20.' },
+        inputs: {
+          _to: { en: 'Recipient address.', pl: 'Adres odbiorcy.' },
+          tokenId: { en: 'Unique NFT ID.', pl: 'Unikalny identyfikator NFT.' }
+        },
+        safety: { en: 'Verify minting limits. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj limity mintowania. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      deposit: {
+        description: { en: 'Deposits tokens into a pool to start staking.', pl: 'Wpłaca tokeny do puli, aby rozpocząć stakowanie.' },
+        inputs: {
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' },
+          _amount: { en: 'Amount to deposit.', pl: 'Ilość do wpłaty.' }
+        },
+        safety: { en: 'Verify pool ID and balance. Check with ScamSniffer and Rabby.io.', pl: 'Zweryfikuj ID puli i saldo. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      emergencyWithdraw: {
+        description: { en: 'Emergency withdrawal of staked tokens.', pl: 'Awaryjne wypłata zablokowanych tokenów.' },
+        inputs: {
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' }
+        },
+        safety: { en: 'Use only in emergencies; may forfeit rewards. Check with ScamSniffer and Rabby.io.', pl: 'Używaj tylko w nagłych przypadkach; może skutkować utratą nagród. Sprawdź z ScamSniffer i Rabby.io.' }
+      },
+      pendingCub: {
+        description: { en: 'Checks pending rewards for a user in a pool.', pl: 'Sprawdza oczekujące nagrody dla użytkownika w puli.' },
+        inputs: {
+          _pid: { en: 'Pool ID (uint256). Typically 0, 1, 2, 3, etc., for MasterChef contracts. Check contract documentation or poolLength() function.', pl: 'Identyfikator puli (uint256). Zazwyczaj 0, 1, 2, 3 itd. dla kontraktów MasterChef. Sprawdź dokumentację kontraktu lub funkcję poolLength().' },
+          _user: { en: 'User address.', pl: 'Adres użytkownika.' }
+        },
+        safety: { en: 'Ensure correct pool and address. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że podano poprawną pulę i adres. Sprawdź z ScamSniffer i Rabby.io.' }
+      }
+    };
+
+    const networks = [
+      { chainId: '0x1', name: 'Ethereum Mainnet', isTestnet: false },
+      { chainId: '0x38', name: 'BNB Chain', isTestnet: false },
+      { chainId: '0xa4b1', name: 'Arbitrum One', isTestnet: false },
+      { chainId: '0x89', name: 'Polygon', isTestnet: false },
+      { chainId: '0xa', name: 'Optimism', isTestnet: false },
+      { chainId: '0x2105', name: 'Base', isTestnet: false },
+      { chainId: '0xa86a', name: 'Avalanche', isTestnet: false },
+      { chainId: '0xfa', name: 'Fantom', isTestnet: false },
+      { chainId: '0xcc', name: 'opBNB', isTestnet: false },
+      { chainId: '0x28c58', name: 'Taiko', isTestnet: false },
+      { chainId: '0xaa36a7', name: 'Sepolia Testnet', isTestnet: true },
+      { chainId: '0x5', name: 'Goerli Testnet', isTestnet: true },
+      { chainId: '0x4268', name: 'Holesky Testnet', isTestnet: true },
+      { chainId: '0x19', name: 'Cronos', isTestnet: false },
+      { chainId: '0xa4ec', name: 'Celo', isTestnet: false },
+      { chainId: '0x1388', name: 'Mantle', isTestnet: false },
+      { chainId: '0x82750', name: 'Scroll', isTestnet: false },
+      { chainId: '0xe708', name: 'Linea', isTestnet: false },
+      { chainId: '0x144', name: 'zkSync Era', isTestnet: false },
+      { chainId: '0x504', name: 'Moonbeam', isTestnet: false },
+      { chainId: '0x64', name: 'Gnosis Chain', isTestnet: false },
+      { chainId: '0xe704', name: 'Metis', isTestnet: false },
+      { chainId: '0x440', name: 'Kava', isTestnet: false },
+      { chainId: '0x44d', name: 'Polygon zkEVM', isTestnet: false },
+      { chainId: '0x15b', name: 'Aurora', isTestnet: false },
+      { chainId: '0x2019', name: 'Klaytn', isTestnet: false },
+      { chainId: '0x3e8', name: 'Moonriver', isTestnet: false },
+      { chainId: '0x505', name: 'Canto', isTestnet: false },
+      { chainId: '0x315', name: 'Bitgert', isTestnet: false },
+      { chainId: '0x4e', name: 'OKT Chain', isTestnet: false },
+      { chainId: '0x106', name: 'Telos', isTestnet: false },
+      { chainId: '0x5c', name: 'Hoo Smart Chain', isTestnet: false },
+      { chainId: '0x45', name: 'Wanchain', isTestnet: false },
+      { chainId: '0x51', name: 'XinFin', isTestnet: false },
+      { chainId: '0x3c', name: 'Vision', isTestnet: false },
+      { chainId: '0x3d', name: 'Syscoin', isTestnet: false },
+      { chainId: '0x48', name: 'Rootstock', isTestnet: false },
+      { chainId: '0x65', name: 'TomoChain', isTestnet: false },
+      { chainId: '0x4a', name: 'Velas', isTestnet: false },
+      { chainId: '0x2329', name: 'Core', isTestnet: false },
+      { chainId: '0x57', name: 'SmartBCH', isTestnet: false },
+      { chainId: '0x4c', name: 'Fuse', isTestnet: false },
+      { chainId: '0x7b7', name: 'Evmos', isTestnet: false },
+      { chainId: '0x22b8', name: 'Oasis Sapphire', isTestnet: false },
+      { chainId: '0x118', name: 'Astar', isTestnet: false },
+      { chainId: '0x585', name: 'Shiden', isTestnet: false },
+      { chainId: '0x1d7', name: 'KCC', isTestnet: false },
+      { chainId: '0x326', name: 'Meter', isTestnet: false },
+      { chainId: '0x1af', name: 'OneLedger', isTestnet: false },
+      { chainId: '0x13e', name: 'ThunderCore', isTestnet: false },
+      { chainId: '0xa0', name: 'xDai', isTestnet: false },
+      { chainId: '0x152', name: 'Boba Network', isTestnet: false },
+      { chainId: '0x1a4', name: 'Harmony', isTestnet: false },
+      { chainId: '0x2b', name: 'Energy Web Chain', isTestnet: false },
+      { chainId: '0x3f', name: 'Ellipsis', isTestnet: false },
+      { chainId: '0x5e', name: 'RSK Testnet', isTestnet: true },
+      { chainId: '0x6b', name: 'Cronos Testnet', isTestnet: true },
+      { chainId: '0x7a', name: 'Fuse Testnet', isTestnet: true },
+      { chainId: '0x8a', name: 'Celo Testnet', isTestnet: true },
+      { chainId: '0x97', name: 'BNB Smart Chain Testnet', isTestnet: true },
+      { chainId: '0xa0b', name: 'Polygon Mumbai', isTestnet: true },
+      { chainId: '0xa7b', name: 'Avalanche Fuji', isTestnet: true },
+      { chainId: '0xb1c', name: 'Arbitrum Testnet', isTestnet: true },
+      { chainId: '0xc0f', name: 'Optimism Testnet', isTestnet: true },
+      { chainId: '0xd1e', name: 'Base Testnet', isTestnet: true },
+      { chainId: '0xe0f', name: 'Fantom Testnet', isTestnet: true },
+      { chainId: '0xf00', name: 'Moonbeam Testnet', isTestnet: true },
+      { chainId: '0x10a', name: 'Gnosis Chiado', isTestnet: true },
+      { chainId: '0x11b', name: 'Aurora Testnet', isTestnet: true },
+      { chainId: '0x12c', name: 'Klaytn Testnet', isTestnet: true },
+      { chainId: '0x13d', name: 'Moonriver Testnet', isTestnet: true },
+      { chainId: '0x14e', name: 'Canto Testnet', isTestnet: true },
+      { chainId: '0x15f', name: 'Bitgert Testnet', isTestnet: true },
+      { chainId: '0x160', name: 'OKT Testnet', isTestnet: true },
+      { chainId: '0x161', name: 'Telos Testnet', isTestnet: true },
+      { chainId: '0x162', name: 'Hoo Testnet', isTestnet: true },
+      { chainId: '0x163', name: 'Wanchain Testnet', isTestnet: true },
+      { chainId: '0x164', name: 'XinFin Testnet', isTestnet: true },
+      { chainId: '0x165', name: 'Vision Testnet', isTestnet: true },
+      { chainId: '0x166', name: 'Syscoin Testnet', isTestnet: true },
+      { chainId: '0x167', name: 'Rootstock Testnet', isTestnet: true },
+      { chainId: '0x168', name: 'TomoChain Testnet', isTestnet: true },
+      { chainId: '0x169', name: 'Velas Testnet', isTestnet: true },
+      { chainId: '0x16a', name: 'Core Testnet', isTestnet: true },
+      { chainId: '0x16b', name: 'SmartBCH Testnet', isTestnet: true },
+      { chainId: '0x16c', name: 'Fuse Testnet', isTestnet: true },
+      { chainId: '0x16d', name: 'Evmos Testnet', isTestnet: true },
+      { chainId: '0x16e', name: 'Oasis Sapphire Testnet', isTestnet: true },
+      { chainId: '0x16f', name: 'Astar Testnet', isTestnet: true },
+      { chainId: '0x170', name: 'Shiden Testnet', isTestnet: true },
+      { chainId: '0x171', name: 'KCC Testnet', isTestnet: true },
+      { chainId: '0x172', name: 'Meter Testnet', isTestnet: true },
+      { chainId: '0x173', name: 'OneLedger Testnet', isTestnet: true },
+      { chainId: '0x174', name: 'ThunderCore Testnet', isTestnet: true },
+      { chainId: '0x175', name: 'xDai Testnet', isTestnet: true },
+      { chainId: '0x176', name: 'Boba Testnet', isTestnet: true },
+      { chainId: '0x177', name: 'Harmony Testnet', isTestnet: true },
+      { chainId: '0x178', name: 'Energy Web Testnet', isTestnet: true },
+      { chainId: '0x179', name: 'Ellipsis Testnet', isTestnet: true }
+    ];
+
+    const poolIds = ['0', '1', '2', '3', '4'];
+
+    function App() {
+      const [web3, setWeb3] = useState(null);
+      const [account, setAccount] = useState(null);
+      const [contractAddress, setContractAddress] = useState('');
+      const [abi, setAbi] = useState('');
+      const [contract, setContract] = useState(null);
+      const [functions, setFunctions] = useState([]);
+      const [error, setError] = useState('');
+      const [results, setResults] = useState({});
+      const [isLoading, setIsLoading] = useState(true);
+      const [language, setLanguage] = useState('en');
+      const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+      const [currentNetwork, setCurrentNetwork] = useState(null);
+      const [notifications, setNotifications] = useState([]);
+      const [networkSearch, setNetworkSearch] = useState('');
+      const [theme, setTheme] = useState('dark');
+      const [ethValue, setEthValue] = useState('');
+      const [weiValue, setWeiValue] = useState('');
+
+      useEffect(() => {
+        if (window.ethereum) {
+          const web3Instance = new Web3(window.ethereum);
+          setWeb3(web3Instance);
+          window.ethereum.request({ method: 'eth_requestAccounts' })
+            .then(accounts => {
+              setAccount(accounts[0]);
+              web3Instance.eth.getChainId().then(chainId => {
+                setCurrentNetwork(networks.find(n => n.chainId === `0x${parseInt(chainId).toString(16)}`) || { name: 'Unknown Network' });
+              });
+              setIsLoading(false);
+            })
+            .catch(err => {
+              setError(translations[language].errorNoMetaMask);
+              setIsLoading(false);
+            });
+          window.ethereum.on('accountsChanged', accounts => setAccount(accounts[0]));
+          window.ethereum.on('chainChanged', chainId => {
+            setCurrentNetwork(networks.find(n => n.chainId === `0x${parseInt(chainId).toString(16)}`) || { name: 'Unknown Network' });
+          });
+        } else {
+          setError(translations[language].errorNoMetaMask);
+          setIsLoading(false);
+        }
+      }, [language]);
+
+      const switchNetwork = async (chainId) => {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: chainId }]
+          });
+          setCurrentNetwork(networks.find(n => n.chainId === chainId));
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].addNetwork} Chainlist.org: ${err.message}` }]);
+        }
+      };
+
+      const disconnectWallet = () => {
+        setAccount(null);
+        setCurrentNetwork(null);
+      };
+
+      const loadContract = () => {
+        try {
+          const abiJson = JSON.parse(abi);
+          if (!web3.utils.isAddress(contractAddress)) {
+            throw new Error('Invalid contract address');
+          }
+          const contractInstance = new web3.eth.Contract(abiJson, contractAddress);
+          setContract(contractInstance);
+          const contractFunctions = abiJson.filter(item => item.type === 'function');
+          setFunctions(contractFunctions);
+          setError('');
+          setResults({});
+        } catch (err) {
+          setError(translations[language].errorInvalidAbi + err.message);
+        }
+      };
+
+      const callFunction = async (func, inputs) => {
+        try {
+          const processedInputs = inputs.map((input, index) => {
+            const param = func.inputs[index];
+            if (param.type === 'uint256') {
+              return web3.utils.toWei(input || '0', 'ether');
+            }
+            return input;
+          });
+          const method = contract.methods[func.name](...processedInputs);
+          if (func.stateMutability === 'view' || func.stateMutability === 'pure') {
+            const result = await method.call({ from: account });
+            setResults(prev => ({ ...prev, [func.name]: result.toString() }));
+          } else {
+            const tx = await method.send({ from: account });
+            setResults(prev => ({ ...prev, [func.name]: `Transaction hash: ${tx.transactionHash}` }));
+          }
+          setError('');
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].errorFunctionCall + err.message }]);
+        }
+      };
+
+      const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        setNotifications([...notifications, { id: Date.now(), message: 'Text copied to clipboard!' }]);
+      };
+
+      const filteredNetworks = networks.filter(network =>
+        network.name.toLowerCase().includes(networkSearch.toLowerCase()) ||
+        network.chainId.toLowerCase().includes(networkSearch.toLowerCase())
+      );
+
+      const handleEthChange = (e) => {
+        const value = e.target.value;
+        setEthValue(value);
+        if (value) {
+          setWeiValue(web3.utils.toWei(value, 'ether'));
+        } else {
+          setWeiValue('');
+        }
+      };
+
+      const handleWeiChange = (e) => {
+        const value = e.target.value;
+        setWeiValue(value);
+        if (value) {
+          setEthValue(web3.utils.fromWei(value, 'ether'));
+        } else {
+          setEthValue('');
+        }
+      };
+
+      // Gnome movement logic
+      useEffect(() => {
+        const gnome1 = document.getElementById('gnome1');
+        const gnome2 = document.getElementById('gnome2');
+        let gnome1X = 50, gnome1Y = 50;
+        let gnome2X = 150, gnome2Y = 50;
+        let isChasing = false;
+
+        function getRandomFrame() {
+          const frames = document.querySelectorAll('.frame');
+          return frames[Math.floor(Math.random() * frames.length)];
+        }
+
+        function moveGnome(gnome, x, y) {
+          gnome.style.left = x + 'px';
+          gnome.style.top = y + 'px';
+        }
+
+        function animateGnomes() {
+          const behavior1 = Math.random() > 0.5 ? 'run' : 'walk';
+          const behavior2 = Math.random() > 0.5 ? 'run' : 'walk';
+
+          const frame1 = getRandomFrame().getBoundingClientRect();
+          const frame2 = getRandomFrame().getBoundingClientRect();
+          const uiBounds = document.getElementById('root').getBoundingClientRect();
+          const maxX = uiBounds.width - 10;
+          const maxY = uiBounds.height - 16;
+
+          if (behavior1 === 'run') gnome1X += 8;
+          else gnome1X += 4;
+          if (behavior2 === 'run') gnome2X += 8;
+          else gnome2X += 4;
+
+          gnome1Y = Math.max(frame1.top, Math.min(gnome1Y + (Math.random() - 0.5) * 10, frame1.bottom - 16));
+          gnome2Y = Math.max(frame2.top, Math.min(gnome2Y + (Math.random() - 0.5) * 10, frame2.bottom - 16));
+
+          if (behavior1 === 'run' && Math.random() > 0.7) console.log('Red gnome laughing!');
+          if (behavior2 === 'run' && Math.random() > 0.7) console.log('Green gnome laughing!');
+
+          if (Math.abs(gnome1X - gnome2X) < 50 && Math.abs(gnome1Y - gnome2Y) < 50) {
+            isChasing = true;
+            if (gnome1X < gnome2X) gnome1X += 10;
+            else gnome2X += 10;
+            console.log('Gnomes are chasing each other!');
+          } else if (isChasing && Math.random() > 0.8) {
+            console.log('Gnomes laugh together!');
+            isChasing = false;
+          }
+
+          gnome1X = Math.max(0, Math.min(gnome1X, maxX));
+          gnome1Y = Math.max(0, Math.min(gnome1Y, maxY));
+          gnome2X = Math.max(0, Math.min(gnome2X, maxX));
+          gnome2Y = Math.max(0, Math.min(gnome2Y, maxY));
+
+          moveGnome(gnome1, gnome1X, gnome1Y);
+          moveGnome(gnome2, gnome2X, gnome2Y);
+
+          requestAnimationFrame(animateGnomes);
+        }
+
+        animateGnomes();
+      }, []);
+
+      if (isLoading) {
+        return (
+          <div className="container mx-auto p-4 max-w-4xl">
+            <h1 className="text-3xl font-bold mb-6 text-center text-yellow-400"><i className="fas fa-spinner fa-spin mr-2"></i>{translations[language].loading}</h1>
+            <p className="text-center text-gray-400">{translations[language].loading}</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className={`container mx-auto p-4 max-w-4xl ${theme === 'dark' ? 'bg-gray-900 text-gray-200' : theme === 'light' ? 'bg-gray-100 text-gray-900' : theme === 'warm' ? 'bg-yellow-900 text-yellow-200' : 'bg-blue-900 text-blue-200'} transition-colors duration-300`}>
+          <header className="mb-8 text-center">
+            <h1 className="text-4xl font-bold text-yellow-400"><i className="fas fa-terminal mr-2"></i>{translations[language].title}</h1>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="frame bg-gray-800 p-4 rounded-lg shadow-lg bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
+              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-wallet mr-2"></i>{translations[language].wallet}</h2>
+              {!account ? (
+                <button
+                  className="w-full bg-green-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-green-500 hover:border-yellow-400 transition h-10 flex items-center justify-center"
+                  onClick={() => window.ethereum.request({ method: 'eth_requestAccounts' })}
+                >
+                  <i className="fas fa-wallet mr-2"></i>{translations[language].connectWallet}
+                </button>
+              ) : (
+                <button
+                  className="w-full bg-red-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-red-500 hover:border-yellow-400 transition h-10 flex items-center justify-center"
+                  onClick={disconnectWallet}
+                >
+                  <i className="fas fa-sign-out-alt mr-2"></i>{translations[language].disconnectWallet}
+                </button>
+              )}
+            </div>
+
+            <div className="frame bg-gray-800 p-4 rounded-lg shadow-lg bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
+              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-network-wired mr-2"></i>{translations[language].network}</h2>
+              <select
+                className="w-full bg-gray-700 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 mb-2"
+                value={currentNetwork?.chainId || ''}
+                onChange={e => switchNetwork(e.target.value)}
+              >
+                <option value="">{translations[language].selectNetwork}{currentNetwork ? currentNetwork.name : ''}</option>
+                {filteredNetworks.sort((a, b) => a.name.localeCompare(b.name)).map(network => (
+                  <option key={network.chainId} value={network.chainId}>
+                    {network.name} ({network.isTestnet ? 'Testnet' : 'Mainnet'})
+                  </option>
+                ))}
+              </select>
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                  placeholder={translations[language].searchNetwork}
+                  value={networkSearch}
+                  onChange={e => setNetworkSearch(e.target.value)}
+                />
+                <i className="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+              </div>
+            </div>
+
+            <div className="frame bg-gray-800 p-4 rounded-lg shadow-lg bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
+              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-cog mr-2"></i>{translations[language].settings}</h2>
+              <select
+                className="w-full bg-gray-700 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 mb-2"
+                value={language}
+                onChange={e => setLanguage(e.target.value)}
+              >
+                <option value="en">English</option>
+                <option value="pl">Polski</option>
+              </select>
+              <select
+                className="w-full bg-gray-700 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 mb-2"
+                value={theme}
+                onChange={e => setTheme(e.target.value)}
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="warm">Warm</option>
+                <option value="cold">Cold</option>
+              </select>
+              <button
+                className="w-full bg-gray-700 text-gray-200 px-4 py-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 flex items-center justify-center"
+                onClick={() => setIsMobileView(!isMobileView)}
+              >
+                <i className="fas fa-mobile-alt mr-2"></i>{isMobileView ? translations[language].desktopView : translations[language].mobileView}
+              </button>
+            </div>
+          </div>
+
+          <div className="frame mb-6">
+            <label className="block text-lg font-medium mb-2 text-yellow-400"><i className="fas fa-calculator mr-2"></i>Token Value Converter</label>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-yellow-400">{translations[language].ethToWei}</label>
+                <input
+                  type="number"
+                  step="0.000000000000000001"
+                  className="w-full p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                  placeholder="Enter ETH (e.g., 1)"
+                  value={ethValue}
+                  onChange={handleEthChange}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-yellow-400">{translations[language].weiToEth}</label>
+                <input
+                  type="number"
+                  className="w-full p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                  placeholder="Wei output"
+                  value={weiValue}
+                  onChange={handleWeiChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          <p className="text-lg mb-4 text-center text-gray-400"><i className="fas fa-info-circle mr-2"></i>{translations[language].welcome}</p>
+          <p className="text-sm mb-4 text-center text-yellow-500" dangerouslySetInnerHTML={{ __html: translations[language].safetyNote }}></p>
+
+          <div className="frame mb-6">
+            <label className="block text-lg font-medium mb-2 text-yellow-400"><i className="fas fa-address-card mr-2"></i>{translations[language].contractAddress}</label>
+            <input
+              type="text"
+              className="w-full p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+              placeholder="0x..."
+              value={contractAddress}
+              onChange={e => setContractAddress(e.target.value)}
+            />
+          </div>
+          <div className="frame mb-6">
+            <label className="block text-lg font-medium mb-2 text-yellow-400"><i className="fas fa-code mr-2"></i>{translations[language].contractAbi}</label>
+            <textarea
+              className="w-full p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200"
+              rows="6"
+              placeholder='[{"type":"function", "name":"functionName", "inputs":[...], ...}]'
+              value={abi}
+              onChange={e => setAbi(e.target.value)}
+            />
+          </div>
+          <div className="frame mb-6">
+            <button
+              className="w-full bg-green-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-green-500 hover:border-yellow-400 transition h-10 flex items-center justify-center"
+              onClick={loadContract}
+            >
+              <i className="fas fa-download mr-2"></i>{translations[language].loadContract}
+            </button>
+          </div>
+
+          {error && (
+            <p className="text-red-500 mt-4 p-3 bg-red-900 rounded flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{error}</p>
+          )}
+
+          <p className="text-sm text-gray-400 mt-4 mb-2"><i className="fas fa-info-circle mr-2"></i>{translations[language].convertNote}</p>
+
+          <div className={`mt-8 ${isMobileView ? 'space-y-6' : 'grid grid-cols-1 md:grid-cols-2 gap-6'}`}>
+            <div className="frame p-4 rounded-lg shadow-lg bg-gradient-to-r from-green-900 to-green-800 hover:shadow-xl transition-shadow">
+              <h2 className="text-xl font-bold mb-4 flex items-center"><i className="fas fa-shield-alt mr-2"></i>{translations[language].readContract}</h2>
+              {functions
+                .filter(func => func.stateMutability === 'view' || func.stateMutability === 'pure')
+                .map((func, index) => (
+                  <FunctionForm
+                    key={index}
+                    func={func}
+                    callFunction={callFunction}
+                    result={results[func.name]}
+                    web3={web3}
+                    language={language}
+                    isMobileView={isMobileView}
+                    setNotifications={setNotifications}
+                    theme={theme}
+                  />
+                ))}
+            </div>
+            <div className="frame p-4 rounded-lg shadow-lg bg-gradient-to-r from-orange-900 to-orange-800 hover:shadow-xl transition-shadow">
+              <h2 className="text-xl font-bold mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{translations[language].writeContract}</h2>
+              {functions
+                .filter(func => func.stateMutability !== 'view' && func.stateMutability !== 'pure')
+                .map((func, index) => (
+                  <FunctionForm
+                    key={index}
+                    func={func}
+                    callFunction={callFunction}
+                    result={results[func.name]}
+                    web3={web3}
+                    language={language}
+                    isMobileView={isMobileView}
+                    setNotifications={setNotifications}
+                    theme={theme}
+                  />
+                ))}
+            </div>
+          </div>
+
+          <div className="frame mt-8">
+            <h2 className="text-xl font-bold mb-4 flex items-center text-yellow-400"><i className="fas fa-lock mr-2"></i>{translations[language].revokePermissions}</h2>
+            <p className="text-sm text-gray-400 mb-4 flex items-center"><i className="fas fa-info-circle mr-2"></i>{translations[language].noPermissions}</p>
+            <p className="text-sm text-center text-yellow-500 mt-4" dangerouslySetInnerHTML={{ __html: translations[language].disclaimer }}></p>
+          </div>
+
+          <div className="fixed bottom-0 left-0 right-0 space-y-2 p-4">
+            {notifications.map(notification => (
+              <div key={notification.id} className="bg-red-900 text-red-200 p-3 rounded flex justify-between items-center max-w-4xl mx-auto shadow-lg hover:shadow-xl transition-shadow">
+                <span>{notification.message}</span>
+                <div className="flex space-x-2">
+                  <button
+                    className="text-yellow-400 hover:text-yellow-200"
+                    onClick={() => copyToClipboard(notification.message)}
+                  >
+                    <i className="fas fa-copy"></i> {translations[language].copy}
+                  </button>
+                  <button
+                    className="text-yellow-400 hover:text-yellow-200"
+                    onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="frame mt-12">
+            <h2 className="text-2xl font-bold mb-6 text-yellow-400 flex items-center"><i className="fas fa-book mr-2"></i>{translations[language].glossary}</h2>
+            {Object.keys(glossaryContent).map((key, index) => (
+              <div key={index} className="accordion-item">
+                <button
+                  className="text-lg"
+                  onClick={() => {
+                    const content = document.querySelectorAll('.accordion-content')[index];
+                    content.style.display = content.style.display === 'block' ? 'none' : 'block';
+                    content.parentElement.classList.toggle('active');
+                  }}
+                >
+                  {translations[language][key]}
+                </button>
+                <div className="accordion-content">
+                  {glossaryContent[key][language]}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="frame mt-12">
+            <h2 className="text-2xl font-bold mb-6 text-yellow-400 flex items-center"><i className="fas fa-graduation-cap mr-2"></i>{translations[language].advancedSources}</h2>
+            {Object.entries(advancedSources[language]).map(([key, { url, description }]) => (
+              <a key={key} href={url} target="_blank" rel="noopener noreferrer" className="source-link">
+                {description}
+              </a>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function FunctionForm({ func, callFunction, result, web3, language, isMobileView, setNotifications, theme }) {
+      const [inputs, setInputs] = useState({});
+
+      const handleInputChange = (name, value) => {
+        setInputs(prev => ({ ...prev, [name]: value }));
+      };
+
+      const convertToWei = (name, value) => {
+        if (value && web3.utils.isHexStrict(value)) return value;
+        const converted = web3.utils.toWei(value || '0', 'ether');
+        setInputs(prev => ({ ...prev, [name]: converted }));
+      };
+
+      const handleSubmit = () => {
+        const inputValues = func.inputs.map(input => inputs[input.name] || '');
+        callFunction(func, inputValues);
+      };
+
+      return (
+        <div className="frame p-4 bg-gray-800 border border-yellow-600 rounded-lg shadow-lg mb-4 bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
+          <h2 className="text-lg font-semibold mb-2 text-yellow-400 flex items-center"><i className="fas fa-cog mr-2"></i>{func.name}</h2>
+          <p className="text-sm text-gray-400 mb-2 flex items-center"><i className="fas fa-info-circle mr-2"></i>
+            {func.stateMutability === 'view' || func.stateMutability === 'pure'
+              ? translations[language].readContract
+              : translations[language].writeContract}
+          </p>
+          <p className="text-sm text-gray-200 mb-2 bg-green-900 p-3 rounded flex items-center"><i className="fas fa-user-graduate mr-2"></i>{translations[language].assistant}{functionDescriptions[func.name]?.description[language] || (language === 'en' ? 'Custom function. Follow contract documentation.' : 'Funkcja niestandardowa. Postępuj zgodnie z dokumentacją kontraktu.')}</p>
+          <p className="text-sm text-yellow-500 mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{functionDescriptions[func.name]?.safety[language] || (language === 'en' ? 'Verify function and contract. Check with ScamSniffer and Rabby.io.' : 'Zweryfikuj funkcję i kontrakt. Sprawdź z ScamSniffer i Rabby.io.')}</p>
+          {func.inputs.map((input, index) => (
+            <div key={index} className="mb-3 relative group">
+              <label className="block text-sm font-medium mb-1 text-yellow-400 flex items-center"><i className="fas fa-keyboard mr-2"></i>{input.name} ({input.type})</label>
+              <p className="text-xs text-gray-400 mb-1 flex items-center"><i className="fas fa-lightbulb mr-2"></i>
+                {input.type === 'address' && (language === 'en' ? 'Contract address (e.g., swap router, LP token, or token contract).' : 'Adres kontraktu (np. router wymiany, token LP lub kontrakt tokena).')}
+                {input.type === 'uint256' && (language === 'en' ? 'Amount in wei (e.g., for liquidity or token amounts).' : 'Kwota w wei (np. dla płynności lub ilości tokenów).')}
+                {input.type === 'bool' && (language === 'en' ? 'True or false value.' : 'Wartość true lub false.')}
+                {input.type === 'uint8' && (language === 'en' ? 'Small integer (0-255).' : 'Mała liczba całkowita (0-255).')}
+                {input.type === 'bytes32' && (language === 'en' ? '32-byte hexadecimal value.' : 'Wartość szesnastkowa 32 bajtów.')}
+              </p>
+              <div className="relative">
+                {input.type === 'address' ? (
+                  <input
+                    type="text"
+                    className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                    placeholder={language === 'en' ? 'Enter address' : 'Wprowadź adres'}
+                    value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
+                  />
+                ) : input.type === 'uint256' ? (
+                  <div className="flex space-x-2">
+                    <input
+                      type="number"
+                      step="0.000000000000000001"
+                      className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                      placeholder={language === 'en' ? 'Enter amount (e.g., 1)' : 'Wprowadź kwotę (np. 1)'}
+                      onChange={e => handleInputChange(input.name, e.target.value)}
+                      value={inputs[input.name] || ''}
+                    />
+                    <button
+                      className="bg-yellow-600 text-gray-900 px-3 py-2 rounded border border-yellow-400 hover:bg-yellow-500 transition h-10 flex items-center"
+                      onClick={() => convertToWei(input.name, inputs[input.name])}
+                    >
+                      <i className="fas fa-calculator mr-1"></i>{language === 'en' ? 'To Wei' : 'Na Wei'}
+                    </button>
+                  </div>
+                ) : input.type === 'bool' ? (
+                  <input
+                    type="text"
+                    className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                    placeholder={language === 'en' ? 'Enter bool' : 'Wprowadź bool'}
+                    value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
+                  />
+                ) : input.type === 'uint8' ? (
+                  <input
+                    type="number"
+                    className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                    placeholder={language === 'en' ? 'Enter uint8' : 'Wprowadź uint8'}
+                    value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
+                  />
+                ) : input.type === 'bytes32' ? (
+                  <input
+                    type="text"
+                    className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                    placeholder={language === 'en' ? 'Enter bytes32' : 'Wprowadź bytes32'}
+                    value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                    placeholder={language === 'en' ? `Enter ${input.type}` : `Wprowadź ${input.type}`}
+                    value={inputs[input.name] || ''}
+                    onChange={e => handleInputChange(input.name, e.target.value)}
+                  />
+                )}
+                {functionDescriptions[func.name]?.inputs[input.name] && (
+                  <div className="tooltip">
+                    {functionDescriptions[func.name].inputs[input.name][language]}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+          <button
+            className="bg-green-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-green-500 hover:border-yellow-400 transition h-10 flex items-center justify-center"
+            onClick={handleSubmit}
+          >
+            <i className="fas fa-play mr-2"></i>
+            {func.stateMutability === 'view' || func.stateMutability === 'pure' ? (language === 'en' ? 'Call' : 'Wywołaj') : (language === 'en' ? 'Send Transaction' : 'Wyślij transakcję')}
+          </button>
+          {result && (
+            <p className="mt-3 text-sm text-gray-200 break-all flex items-center"><i className="fas fa-check-circle mr-2"></i>{language === 'en' ? 'Result: ' : 'Wynik: '}{result}</p>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+
+    // Add this script to serve the page locally or via GitHub Pages
+    if (typeof module !== 'undefined' && module.exports) {
+      module.exports = { App };
+    }
+  </script>
+</body>
+</html>
