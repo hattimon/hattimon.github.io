@@ -109,7 +109,6 @@ input, select {
   color: var(--text);
   font-family: 'Roboto', sans-serif;
   font-size: 1rem;
-  width: 100%;
   box-sizing: border-box;
   transition: all 0.3s ease;
 }
@@ -234,6 +233,12 @@ input:focus, select:focus {
   width: 100px;
 }
 
+.swap-arrow {
+  padding: 8px;
+  font-size: 1rem;
+  line-height: 1;
+}
+
 .swap-input, .liquidity-input {
   display: flex;
   flex-direction: column;
@@ -267,6 +272,10 @@ input:focus, select:focus {
   line-height: 1.6;
 }
 
+.lp-info-section .masterchef-instructions h3 {
+  color: var(--link);
+}
+
 .lp-info-section .masterchef-instructions p {
   margin: 10px 0;
   padding: 10px;
@@ -290,6 +299,11 @@ input:focus, select:focus {
 .lp-info-section .contracts-list {
   font-size: 0.85rem;
   line-height: 1.5;
+  color: var(--text);
+}
+
+.lp-info-section .contracts-list h4 {
+  color: var(--link);
 }
 
 .lp-info-section .contracts-list p {
@@ -367,6 +381,10 @@ input:focus, select:focus {
   }
   .token-select select {
     width: 100%;
+  }
+  .swap-arrow {
+    width: 40px;
+    margin: 5px auto;
   }
   .liquidity-actions {
     flex-direction: column;
