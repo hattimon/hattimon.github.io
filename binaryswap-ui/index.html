@@ -10,57 +10,61 @@
 </head>
 <body>
   <div class="button-group">
-    <button class="theme-toggle" onclick="toggleTheme()">🌞 Tryb jasny</button>
-    <button class="lang-toggle" onclick="toggleLanguage()">🌐 Język</button>
-    <button class="music-toggle" onclick="toggleMusic()">🎵 Music: On</button>
+    <button class="theme-toggle" onclick="toggleTheme()">🌞 <span data-i18n="theme_light">Tryb jasny</span></button>
+    <button class="lang-toggle" onclick="toggleLanguage()">🌐 <span data-i18n="language">Polski</span></button>
+    <button class="music-toggle" onclick="toggleMusic()">🎵 <span data-i18n="music_on">Music: On</span></button>
   </div>
 
   <img id="logo" src="logo.png" alt="BinarySwap logo">
 
   <audio id="background-music" loop>
     <source src="background-music.mp3" type="audio/mpeg">
-    Twoja przeglądarka nie obsługuje elementu audio.
+    <span data-i18n="audio_not_supported">Twoja przeglądarka nie obsługuje elementu audio.</span>
   </audio>
 
-  <!-- Google Translate -->
-  <div id="google_translate_element" style="position: absolute; top: 20px; left: 20px;"></div>
-  
-  <div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Dokumentacja</a></div>
-  <div class="top-links"><a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 Kurs 0101/WBNB</a></div>
-  <div class="top-links"><a href="https://pancakeswap.finance/bridge" target="_blank">🌉 Szybki Most opBNB ⇄ FDUSD</a></div>
-  <div class="top-links"><a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">🌉 Oficjalny Most opBNB ⇄ BNB (7 dni)</a></div>
+  <div class="top-links"><a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 <span data-i18n="documentation">Dokumentacja</span></a></div>
+  <div class="top-links"><a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 <span data-i18n="pair_rate">Kurs 0101/WBNB</span></a></div>
+  <div class="top-links"><a href="https://pancakeswap.finance/bridge" target="_blank">🌉 <span data-i18n="fast_bridge">Szybki Most opBNB ⇄ FDUSD</span></a></div>
+  <div class="top-links"><a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">🌉 <span data-i18n="official_bridge">Oficjalny Most opBNB ⇄ BNB (7 dni)</span></a></div>
 
-  <div class="center-title" style="text-align: center; color: red; font-weight: bold;">Tryb Awaryjny BinarySwap</div>
-  <p style="text-align: center;">
-    (<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)<br>
-    Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br>
-    <font color="orange" size="small">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia. <br>
-    Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>
+  <div class="center-title">BinarySwap <span data-i18n="emergency_mode">Tryb Awaryjny</span></div>
+  <p class="intro-text">
+    <span data-i18n="interaction_info">(<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)</span><br>
+    <span data-i18n="gui_info">Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.</span><br>
+    <span data-i18n="wallet_recommendation">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia.</span><br>
+    <span data-i18n="transaction_history">Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.</span>
   </p>
 
   <div id="app-root">
     <div class="section">
-      <p><strong>Portfel:</strong> <span id="wallet-address">Niepołączony</span></p>
-      <button onclick="connectWallet()"><i class="fab fa-ethereum"></i> Połącz/Odświerz Portfel</button>
-      <button onclick="switchToOpBNB()"><i class="fas fa-network-wired"></i> Przełącz na opBNB</button>
+      <p><strong data-i18n="wallet_label">Portfel:</strong> <span id="wallet-address" data-i18n="wallet_not_connected">Niepołączony</span></p>
+      <button onclick="connectWallet()"><i class="fab fa-ethereum"></i> <span data-i18n="connect_wallet">Połącz/Odświerz Portfel</span></button>
+      <button onclick="switchToOpBNB()"><i class="fas fa-network-wired"></i> <span data-i18n="switch_network">Przełącz na opBNB</span></button>
     </div>
 
     <div class="section">
-      <h3>Zawartość Portfela</h3>
+      <h3 data-i18n="wallet_content">Zawartość Portfela</h3>
       <p>0101: <span id="balance-0101">–</span></p>
       <p>BNB: <span id="balance-bnb">–</span></p>
       <p>LP (0101/BNB): <span id="balance-lp">–</span></p>
     </div>
 
     <div class="section">
-      <h3>Swap</h3>
-      <input type="number" id="swapPercent" placeholder="ilość w (1–100) %">
-      <h4>Zamiana</h4>
-      <select id="swapDirection">
-        <option value="toToken">BNB → 0101</option>
-        <option value="toBNB">0101 → BNB</option>
-      </select>
-      <h4>Poślizg</h4>
+      <h3 data-i18n="swap_title">Swap</h3>
+      <input type="number" id="swapPercent" placeholder="1–100%">
+      <h4 data-i18n="swap_direction">Zamiana</h4>
+      <div class="token-select">
+        <select id="swapDirection">
+          <option value="toToken">BNB → 0101</option>
+          <option value="toBNB">0101 → BNB</option>
+        </select>
+        <button onclick="swapTokens()" class="swap-arrow">↔</button>
+        <select id="swapToken2">
+          <option value="0101">0101</option>
+          <option value="BNB">BNB</option>
+        </select>
+      </div>
+      <h4 data-i18n="slippage">Poślizg</h4>
       <select id="swapSlippage">
         <option value="1">1%</option>
         <option value="3">3%</option>
@@ -71,74 +75,58 @@
         <option value="50">50%</option>
         <option value="100">100%</option>
       </select>
-      <button onclick="handleSwap()"><i class="fas fa-exchange-alt"></i> Swap</button>
+      <button onclick="handleSwap()" class="uniswap-btn"><i class="fas fa-exchange-alt"></i> <span data-i18n="swap_button">Swap</span></button>
     </div>
 
     <div class="section">
-      <h3>Pula Płynności</h3>
-      <input type="number" id="lpPercent" placeholder="ilość w (1–100) %">
-      <button onclick="addLiquidity(parseInt(lpPercent.value))"><i class="fas fa-plus-circle"></i> Dodaj LP</button>
-      <button onclick="removeLiquidity(parseInt(lpPercent.value))"><i class="fas fa-minus-circle"></i> Usuń LP</button>
+      <h3 data-i18n="liquidity_pool">Pula Płynności</h3>
+      <input type="number" id="lpPercent" placeholder="1–100%">
+      <div class="liquidity-actions">
+        <button onclick="addLiquidity(parseInt(lpPercent.value))"><i class="fas fa-plus-circle"></i> <span data-i18n="add_lp">Dodaj LP</span></button>
+        <button onclick="removeLiquidity(parseInt(lpPercent.value))"><i class="fas fa-minus-circle"></i> <span data-i18n="remove_lp">Usuń LP</span></button>
+      </div>
     </div>
 
-    <div class="section" id="lp-info">
-      <font color="ff1100"><h3>MasterChef – Awaryjna wypłata LP, NFT itp:</h3><br>
-      1. Wejdź na kontrakt: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>
-      Skopiuj Adres kontraktu oraz zawartość pola <b>Contract ABI</b><br><br>      
-      2. Otwórz w nowej zakładce strone: <a href="https://hattimon.github.io/sm-gui" target="_blank">Interfejs kontraktów inteligentnych</a><br>
-      przełacz sieć na opBNB i wklej w opowiednich polach te dane. <br><br>
-      3. Przejdź do pola <b>emergencyWithdraw</b> i wpisuj kolejno 0,1,2,3,4,5 itd. <br>
-      w zależności od tego co stakujesz, podczas zatwierdzenia transakcji Rabby Wallet wyświetli wiadomość do podpisania np. wypłata LP lub NFT <br>
-      - zatwierdź każdą transakcje, która pokazuje wyplate czegoś z kontraktu i sprawdź w debank lub wyżej ilość tokenów LP (reszte zrobisz powyżej😉)      
-      <br><br><font><br>
-      <font color="gray">
-      <b>## Contracts </b>📃
-      <br>
-      🏭Factory: 0xd50aaE6C73E2486B0Da718D23F35Dcf5aad25911
-      <br>
-      ⏺Init: 0x5ef9d9226744e2d0335d11ea48193e4ccd224fb01d8557c9db762f93cfe52881
-      <br>
-      📡Router: 0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b 
-      <br>
-      🔁Multi: 0x689e9631d1e308845DE5661C0B6bdE23c841e459
-      <br>
-      👨‍🍳Masterchef: 0x39a786421889EB581bd105508a0D2Dc03523B903
-      <br>
-      👩‍🍳MasterChef Audit: <a href="https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf" target="_blank">https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf</a>
-      <br>
-      🔥LP burn: https://mainnet.opbnbscan.com/tx/0x64a7105d6c186a165ece658c1b7987e49b8377f8edd75595a15da133b8bdea4c
-      <br>
-      🖥Terminals: 0xD954Bb4E6aF0CCC7d692431b8841A03916BeC9e9
-      <br>
-      🖥Wrapped Terminals: 0x7dC01688De0eFf09657406a7d55933d9349cC0B6
-      <br>
-      0101 Token: 0xa41B3067eC694DBec668c389550bA8fc589e5797
-      <br>
-      LP 0101/BNB: 0x506b8322e1159d06e493ebe7ffa41a24291e7ae3
-      <br>
-      opBNB Block Explorer: <a href="https://mainnet.opbnbscan.com" target="_blank">https://mainnet.opbnbscan.com</a></font>
-      <br>      
+    <div class="section lp-info-section" id="lp-info">
+      <h3>MasterChef – <span data-i18n="emergency_withdrawal">Awaryjna wypłata LP, NFT itp:</span></h3>
+      <div class="masterchef-instructions">
+        <p>
+          1. <span data-i18n="contract_instruction_1">Wejdź na kontrakt:</span> <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>
+          <span data-i18n="contract_instruction_2">Skopiuj Adres kontraktu oraz zawartość pola <b>Contract ABI</b></span>
+        </p>
+        <p>
+          2. <span data-i18n="contract_instruction_3">Otwórz w nowej zakładce stronę:</span> <a href="https://hattimon.github.io/sm-gui" target="_blank"><span data-i18n="smart_contracts_interface">Interfejs kontraktów inteligentnych</span></a><br>
+          <span data-i18n="contract_instruction_4">przełącz sieć na opBNB i wklej w odpowiednich polach te dane.</span>
+        </p>
+        <p>
+          3. <span data-i18n="contract_instruction_5">Przejdź do pola <b>emergencyWithdraw</b> i wpisuj kolejno 0,1,2,3,4,5 itd.</span><br>
+          <span data-i18n="contract_instruction_6">w zależności od tego co stakujesz, podczas zatwierdzenia transakcji Rabby Wallet wyświetli wiadomość do podpisania np. wypłata LP lub NFT</span><br>
+          <span data-i18n="contract_instruction_7">- zatwierdź każdą transakcję, która pokazuje wypłatę czegoś z kontraktu i sprawdź w DeBank lub wyżej ilość tokenów LP (reszta powyżej 😊)</span>
+        </p>
+      </div>
+      <div class="contracts-list">
+        <h4>Contracts 📃</h4>
+        <p>🏭 Factory: 0xd50aaE6C73E2486B0Da718D23F35Dcf5aad25911</p>
+        <p>⏺ Init: 0x5ef9d9226744e2d0335d11ea48193e4ccd224fb01d8557c9db762f93cfe52881</p>
+        <p>📡 Router: 0x3958795ca5C4d9f7Eb55656Ba664efA032E1357b</p>
+        <p>🔁 Multi: 0x689e9631d1e308845DE5661C0B6bdE23c841e459</p>
+        <p>👨‍🍳 Masterchef: 0x39a786421889EB581bd105508a0D2Dc03523B903</p>
+        <p>👩‍🍳 MasterChef Audit: <a href="https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf" target="_blank">https://github.com/bcaservice/audit-report/blob/main/MasterChef/MasterChef.pdf</a></p>
+        <p>🔥 LP burn: <a href="https://mainnet.opbnbscan.com/tx/0x64a7105d6c186a165ece658c1b7987e49b8377f8edd75595a15da133b8bdea4c" target="_blank">https://mainnet.opbnbscan.com/tx/...</a></p>
+        <p>🖥 Terminals: 0xD954Bb4E6aF0CCC7d692431b8841A03916BeC9e9</p>
+        <p>🖥 Wrapped Terminals: 0x7dC01688De0eFf09657406a7d55933d9349cC0B6</p>
+        <p>0101 Token: 0xa41B3067eC694DBec668c389550bA8fc589e5797</p>
+        <p>LP 0101/BNB: 0x506b8322e1159d06e493ebe7ffa41a24291e7ae3</p>
+        <p>opBNB Block Explorer: <a href="https://mainnet.opbnbscan.com" target="_blank">https://mainnet.opbnbscan.com</a></p>
+      </div>
     </div>
 
-    <!-- Error Message Section -->
     <div class="error-message" id="error-container" style="display:none;">
-      <strong>Błąd:</strong>
+      <strong data-i18n="error_label">Błąd:</strong>
       <pre id="error-text"></pre>
     </div>
   </div>
 
   <script src="app.js"></script>
-
-  <!-- Google Translate -->
-  <script type="text/javascript">
-    function googleTranslateElementInit() {
-      new google.translate.TranslateElement({
-        pageLanguage: 'pl',
-        includedLanguages: 'en,pl,de,fr,es,ru,uk,zh-CN,ja',
-        layout: google.translate.TranslateElement.InlineLayout.SIMPLE
-      }, 'google_translate_element');
-    }
-  </script>
-  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>
