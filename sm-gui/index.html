@@ -54,6 +54,15 @@
     .accordion-item.active .accordion-content {
       display: block;
     }
+    .source-link {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #facc15;
+      text-decoration: underline;
+    }
+    .source-link:hover {
+      color: #fde047;
+    }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-200 font-mono transition-colors duration-300">
@@ -96,6 +105,7 @@
         ethToWei: 'ETH to Wei',
         weiToEth: 'Wei to ETH',
         glossary: 'Smart Contract Compendium',
+        advancedSources: 'Advanced Knowledge Resources',
         whatIsSmartContract: 'What is a Smart Contract?',
         howWorks: 'How Smart Contracts Work?',
         defiBasics: 'DeFi Basics',
@@ -140,6 +150,7 @@
         ethToWei: 'ETH na Wei',
         weiToEth: 'Wei na ETH',
         glossary: 'Kompendium wiedzy o smart kontraktach',
+        advancedSources: 'Zaawansowane źródła wiedzy',
         whatIsSmartContract: 'Czym jest smart kontrakt?',
         howWorks: 'Jak działają smart kontrakty?',
         defiBasics: 'Podstawy DeFi',
@@ -149,6 +160,25 @@
         stakeNft: 'Staking NFT',
         fractionalNft: 'NFT frakcyjne',
         advancedConcepts: 'Zaawansowane koncepcje'
+      }
+    };
+
+    const advancedSources = {
+      en: {
+        ethereumOrg: { url: 'https://ethereum.org/en/developers/docs/', description: 'Official Ethereum documentation with detailed insights into smart contracts, EVM, Solidity, and best practices.' },
+        solidityDocs: { url: 'https://docs.soliditylang.org/', description: 'Comprehensive guide to the Solidity language, including code examples, advanced features, and security tips.' },
+        quicknodeGuides: { url: 'https://www.quicknode.com/guides', description: 'Practical tutorials on writing, testing, and deploying smart contracts, focusing on Ethereum and EVM.' },
+        openzeppelinDocs: { url: 'https://docs.openzeppelin.com/contracts/', description: 'Resources for secure smart contract development, including OpenZeppelin libraries with usage examples.' },
+        metanaLearn: { url: 'https://metana.io/learn', description: 'Advanced courses and tutorials on interacting with EVM, building dApps, and debugging contracts.' },
+        remixIde: { url: 'https://remix.ethereum.org/', description: 'Online IDE for writing, testing, and deploying smart contracts directly on Ethereum, with built-in tools for debugging and verification.' }
+      },
+      pl: {
+        ethereumOrg: { url: 'https://ethereum.org/en/developers/docs/', description: 'Oficjalna dokumentacja Ethereum zawierająca szczegółowe informacje o smart kontraktach, EVM, Solidity i najlepszych praktykach.' },
+        solidityDocs: { url: 'https://docs.soliditylang.org/', description: 'Kompleksowy przewodnik po języku Solidity, z przykładami kodu, zaawansowanymi funkcjami i wskazówkami dotyczącymi bezpieczeństwa.' },
+        quicknodeGuides: { url: 'https://www.quicknode.com/guides', description: 'Praktyczne tutoriale dotyczące pisania, testowania i wdrażania smart kontraktów, z naciskiem na Ethereum i EVM.' },
+        openzeppelinDocs: { url: 'https://docs.openzeppelin.com/contracts/', description: 'Zasoby dotyczące bezpiecznego programowania smart kontraktów, w tym biblioteki OpenZeppelin z przykładami użycia.' },
+        metanaLearn: { url: 'https://metana.io/learn', description: 'Zaawansowane kursy i poradniki dotyczące interakcji z EVM, tworzenia dApps i debugowania kontraktów.' },
+        remixIde: { url: 'https://remix.ethereum.org/', description: 'Online IDE do pisania, testowania i wdrażania smart kontraktów bezpośrednio na Ethereum, z wbudowanymi narzędziami do debugowania i weryfikacji.' }
       }
     };
 
@@ -662,6 +692,15 @@
                   {glossaryContent[key][language]}
                 </div>
               </div>
+            ))}
+          </div>
+
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold mb-6 text-yellow-400 flex items-center"><i className="fas fa-graduation-cap mr-2"></i>{translations[language].advancedSources}</h2>
+            {Object.entries(advancedSources[language]).map(([key, { url, description }]) => (
+              <a key={key} href={url} target="_blank" rel="noopener noreferrer" className="source-link">
+                {description}
+              </a>
             ))}
           </div>
         </div>
