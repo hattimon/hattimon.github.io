@@ -52,12 +52,12 @@
         <h3 data-i18n="swap">Swap</h3>
         <div class="swap-card">
           <div class="token-select">
-            <select id="fromToken" onchange="syncTokens()">
+            <select id="fromToken" onchange="syncToken()">
               <option value="BNB">BNB</option>
               <option value="0101">0101</option>
             </select>
             <button class="swap-arrow" onclick="swapTokens()">↔</button>
-            <select id="toToken"></select>
+            <span id="toToken"></span>
           </div>
           <div class="swap-input">
             <input type="number" id="swapPercent" placeholder="Enter amount (1–100) %" data-i18n-placeholder="enter_amount">
