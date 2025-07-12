@@ -83,9 +83,9 @@
       <div class="section lp-info-section">
         <h3>MasterChef – Emergency LP, NFT Withdrawal:</h3>
         <div class="masterchef-instructions">
-          <p><i class="fas fa-info-circle"></i> <strong>Step 1:</strong> Visit the contract: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Copy the Contract Address and the <b>Contract ABI</b> field.</p>
-          <p><i class="fas fa-external-link-alt"></i> <strong>Step 2:</strong> Open in a new tab: <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Switch to opBNB network and paste the data into the respective fields.</p>
-          <p><i class="fas fa-list-ol"></i> <strong>Step 3:</strong> Go to the <b>emergencyWithdraw</b> field and enter 0, 1, 2, 3, 4, 5, etc.<br>Depending on what you staked, Rabby Wallet will show a signing message (e.g., LP or NFT withdrawal)<br>- Approve each transaction showing a withdrawal from the contract and check the LP token amount in DeBank or above.</p>
+          <p><i class="fas fa-info-circle"></i> <strong>Step 1:</strong> Visit the contract: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Skopiuj adres kontraktu i pole <b>Contract ABI</b>.</p>
+          <p><i class="fas fa-external-link-alt"></i> <strong>Step 2:</strong> Open in a new tab: <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Przełącz na sieć opBNB i wklej dane do odpowiednich pól.</p>
+          <p><i class="fas fa-list-ol"></i> <strong>Step 3:</strong> Przejdź do pola <b>emergencyWithdraw</b> i wpisz 0, 1, 2, 3, 4, 5 itd.<br>W zależności od tego, co zdeponowałeś, portfel Rabby wyświetli komunikat podpisu (np. wypłata LP lub NFT).<br>- Zatwierdź każdą transakcję pokazującą wypłatę z kontraktu i sprawdź ilość tokenów LP w DeBank lub powyżej.</p>
         </div>
         <font color="gray">
         <div class="contracts-list">
@@ -109,8 +109,14 @@
         <strong>Error:</strong>
         <pre id="error-text"></pre>
       </div>
+
+      <button class="music-toggle" onclick="toggleMusic()">Music: On</button>
     </div>
   </div>
+
+  <audio id="background-music" loop>
+    <source src="zelda-overworld.mp3" type="audio/mpeg">
+  </audio>
 
   <script src="app.js"></script>
 
@@ -124,6 +130,7 @@
     }
 
     let lang = 'en';
+    let musicOn = true;
     const translations = {
       en: {
         connect: 'Connect/Refresh Wallet',
@@ -145,7 +152,9 @@
         documentation: 'Documentation',
         price: '0101/WBNB Price',
         fastBridge: 'Fast Bridge opBNB ⇄ FDUSD',
-        officialBridge: 'Official Bridge opBNB ⇄ BNB (7 days)'
+        officialBridge: 'Official Bridge opBNB ⇄ BNB (7 days)',
+        musicOn: 'Music: On',
+        musicOff: 'Music: Off'
       },
       pl: {
         connect: 'Połącz/Odśwież Portfel',
@@ -160,14 +169,16 @@
         emergency: 'MasterChef – Awaryjna wypłata LP, NFT itp:',
         step1: 'Krok 1: Wejdź na kontrakt:',
         step2: 'Krok 2: Otwórz w nowej zakładce strone:',
-        step3: 'Krok 3: Przejdź do pola <b>emergencyWithdraw</b> i wpisuj kolejno 0, 1, 2, 3, 4, 5 itd.',
+        step3: 'Krok 3: Przejdź do pola <b>emergencyWithdraw</b> i wpisz 0, 1, 2, 3, 4, 5 itd.',
         disconnected: 'Niepołączony',
         intro: '(<b>Klikając ZAMIANA lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – np. zatwierdzenie kontraktu Zamiany i potwierdzenie Zamiany)<br>Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br><font color="orange">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a>, gdzie możesz również cofnąć uprawnienia.<br>Do podglądu historii transakcji sprawdź <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>',
         enterAmount: 'Wprowadź ilość (1–100) %',
         documentation: 'Dokumentacja',
         price: 'Cena 0101/WBNB',
         fastBridge: 'Szybki Most opBNB ⇄ FDUSD',
-        officialBridge: 'Oficjalny Most opBNB ⇄ BNB (7 dni)'
+        officialBridge: 'Oficjalny Most opBNB ⇄ BNB (7 dni)',
+        musicOn: 'Muzyka: Wł.',
+        musicOff: 'Muzyka: Wył.'
       }
     };
 
@@ -181,6 +192,7 @@
       document.querySelectorAll('.top-links a')[1].textContent = translations[lang].price;
       document.querySelectorAll('.top-links a')[2].textContent = translations[lang].fastBridge;
       document.querySelectorAll('.top-links a')[3].textContent = translations[lang].officialBridge;
+      document.querySelector('.music-toggle').textContent = musicOn ? translations[lang].musicOn : translations[lang].musicOff;
       document.querySelectorAll('.section')[0].innerHTML = `
         <p><strong>Wallet:</strong> <span id="wallet-address">${translations[lang].disconnected}</span></p>
         <button class="uniswap-btn" onclick="connectWallet()"><i class="fab fa-ethereum"></i> ${translations[lang].connect}</button>
@@ -225,15 +237,29 @@
         </div>
       `;
       document.querySelectorAll('.section')[4].querySelector('h3').textContent = translations[lang].emergency;
-      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[0].innerHTML = `<i class="fas fa-info-circle"></i> <strong>${translations[lang].step1}</strong> Visit the contract: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Copy the Contract Address and the <b>Contract ABI</b> field.`;
-      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[1].innerHTML = `<i class="fas fa-external-link-alt"></i> <strong>${translations[lang].step2}</strong> Open in a new tab: <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Switch to opBNB network and paste the data into the respective fields.`;
-      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[2].innerHTML = `<i class="fas fa-list-ol"></i> <strong>${translations[lang].step3}</strong> Depending on what you staked, Rabby Wallet will show a signing message (e.g., LP or NFT withdrawal)<br>- Approve each transaction showing a withdrawal from the contract and check the LP token amount in DeBank or above.`;
+      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[0].innerHTML = `<i class="fas fa-info-circle"></i> <strong>${translations[lang].step1}</strong> Visit the contract: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Skopiuj adres kontraktu i pole <b>Contract ABI</b>.`;
+      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[1].innerHTML = `<i class="fas fa-external-link-alt"></i> <strong>${translations[lang].step2}</strong> Open in a new tab: <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Przełącz na sieć opBNB i wklej dane do odpowiednich pól.`;
+      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[2].innerHTML = `<i class="fas fa-list-ol"></i> <strong>${translations[lang].step3}</strong> W zależności od tego, co zdeponowałeś, portfel Rabby wyświetli komunikat podpisu (np. wypłata LP lub NFT).<br>- Zatwierdź każdą transakcję pokazującą wypłatę z kontraktu i sprawdź ilość tokenów LP w DeBank lub powyżej.`;
     }
 
     function toggleTheme() {
       document.body.dataset.theme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
       document.querySelector('.theme-toggle').textContent = document.body.dataset.theme === 'light' ? 'Light Mode' : 'Tryb Jasny';
     }
+
+    function toggleMusic() {
+      const music = document.getElementById('background-music');
+      musicOn = !musicOn;
+      music.volume = 0.5;
+      music[musicOn ? 'play' : 'pause']();
+      document.querySelector('.music-toggle').textContent = musicOn ? translations[lang].musicOn : translations[lang].musicOff;
+    }
+
+    window.addEventListener('load', () => {
+      const music = document.getElementById('background-music');
+      music.volume = 0.5;
+      if (musicOn) music.play().catch(() => {});
+    });
   </script>
 </body>
 </html>
