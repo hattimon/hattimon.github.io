@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Contract GUI</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-gray-200">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Tłumaczenia
+    const translations = {
+      en: {
+        title: 'Smart Contract GUI',
+        welcome: 'Connect your wallet and enter a contract address and ABI to generate an interface.',
+        connectWallet: 'Connect Wallet',
+        disconnectWallet: 'Disconnect Wallet',
+        contractAddress: 'Contract Address',
+        contractAbi: 'Contract ABI (JSON)',
+        loadContract: 'Load Contract',
+        readContract: 'Read Contract (View functions that read data without changing state)',
+        writeContract: 'Write Contract (Functions that execute transactions or modify state)',
+        loading: 'Loading...',
+        errorNoMetaMask: 'MetaMask or Rabby is not installed. Please install a wallet to use this app.',
+        errorInvalidAbi: 'Invalid ABI or contract address: ',
+        errorFunctionCall: 'Function call failed: ',
+        assistant: 'Assistant: ',
+        selectNetwork: 'Select Network',
+        addNetwork: 'Network not found? Add it via ',
+        safetyNote: 'Safety Note: Always verify the contract address and ABI. Use ',
+        forTxHistory: ' to view transaction history, ',
+        toManageWallet: ' to manage wallet permissions, and ',
+        forSafety: ' to check transaction safety.',
+        mobileView: 'Mobile View',
+        desktopView: 'Desktop View',
+        copy: 'Copy'
+      },
+      pl: {
+        title: 'Interfejs kontraktów inteligentnych',
+        welcome: 'Połącz portfel, wprowadź adres kontraktu i ABI, aby wygenerować interfejs.',
+        connectWallet: 'Połącz portfel',
+        disconnectWallet: 'Rozłącz portfel',
+        contractAddress: 'Adres kontraktu',
+        contractAbi: 'ABI kontraktu (JSON)',
+        loadContract: 'Wczytaj kontrakt',
+        readContract: 'Odczyt kontraktu (Funkcje tylko do odczytu danych bez zmiany stanu)',
+        writeContract: 'Zapis kontraktu (Funkcje wykonujące transakcje lub zmieniające stan)',
+        loading: 'Ładowanie...',
+        errorNoMetaMask: 'MetaMask lub Rabby nie jest zainstalowany. Zainstaluj portfel, aby korzystać z aplikacji.',
+        errorInvalidAbi: 'Nieprawidłowy ABI lub adres kontraktu: ',
+        errorFunctionCall: 'Błąd wywołania funkcji: ',
+        assistant: 'Asystent: ',
+        selectNetwork: 'Wybierz sieć',
+        addNetwork: 'Nie znaleziono sieci? Dodaj ją przez ',
+        safetyNote: 'Uwaga o bezpieczeństwie: Zawsze weryfikuj adres kontraktu i ABI. Użyj ',
+        forTxHistory: ' do przeglądania historii transakcji, ',
+        toManageWallet: ' do zarządzania uprawnieniami portfela oraz ',
+        forSafety: ' do sprawdzania bezpieczeństwa transakcji.',
+        mobileView: 'Wersja mobilna',
+        desktopView: 'Wersja PC',
+        copy: 'Kopiuj'
+      }
+    };
+
+    // Definicje funkcji z ostrzeżeniami bezpieczeństwa
+    const functionDescriptions = {
+      transfer: {
+        description: { en: 'Transfers tokens (e.g., ERC20) to a specified address.', pl: 'Przesyła tokeny (np. ERC20) na podany adres.' },
+        inputs: {
+          _to: { en: 'Recipient address (e.g., 0x123...). Ensure it’s a valid Ethereum address.', pl: 'Adres odbiorcy (np. 0x123...). Upewnij się, że to poprawny adres Ethereum.' },
+          _value: { en: 'Amount of tokens (e.g., 1 for 1 token). Enter in ETH/tokens, we’ll convert to wei.', pl: 'Ilość tokenów (np. 1 dla 1 tokena). Wpisz w ETH/tokenach, przeliczymy na wei.' }
+        },
+        safety: { en: 'Ensure the recipient address is correct to avoid losing funds.', pl: 'Upewnij się, że adres odbiorcy jest poprawny, aby uniknąć utraty środków.' }
+      },
+      withdraw: {
+        description: { en: 'Withdraws funds from the contract (e.g., staking rewards).', pl: 'Wypłaca środki z kontraktu (np. nagrody ze stakowania).' },
+        inputs: {
+          _amount: { en: 'Amount to withdraw (e.g., 1 ETH or 100 tokens).', pl: 'Ilość do wypłaty (np. 1 ETH lub 100 tokenów).' }
+        },
+        safety: { en: 'Check if the contract has proper access controls to prevent unauthorized withdrawals.', pl: 'Sprawdź, czy kontrakt ma odpowiednie zabezpieczenia, aby zapobiec nieautoryzowanym wypłatom.' }
+      },
+      stake: {
+        description: { en: 'Stakes tokens in a contract to earn rewards.', pl: 'Lokuje tokeny w kontrakcie, aby zarabiać nagrody.' },
+        inputs: {
+          _amount: { en: 'Amount of tokens to stake (e.g., 100 tokens).', pl: 'Ilość tokenów do zablokowania (np. 100 tokenów).' },
+          pid: { en: 'Pool ID (e.g., 0, 1, 2). Select from the list.', pl: 'Identyfikator puli (np. 0, 1, 2). Wybierz z listy.' }
+        },
+        safety: { en: 'Verify the pool ID and contract reputation before staking.', pl: 'Zweryfikuj ID puli i reputację kontraktu przed stakowaniem.' }
+      },
+      addLiquidity: {
+        description: { en: 'Adds liquidity to an AMM pool (e.g., Uniswap).', pl: 'Dodaje płynność do puli AMM (np. Uniswap).' },
+        inputs: {
+          tokenA: { en: 'Address of token A.', pl: 'Adres tokena A.' },
+          tokenB: { en: 'Address of token B.', pl: 'Adres tokena B.' },
+          amountADesired: { en: 'Amount of token A.', pl: 'Ilość tokena A.' },
+          amountBDesired: { en: 'Amount of token B.', pl: 'Ilość tokena B.' }
+        },
+        safety: { en: 'Ensure the pool is trusted to avoid impermanent loss.', pl: 'Upewnij się, że pula jest zaufana, aby uniknąć strat nietrwałych.' }
+      },
+      removeLiquidity: {
+        description: { en: 'Removes liquidity from an AMM pool.', pl: 'Usuwa płynność z puli AMM.' },
+        inputs: {
+          liquidity: { en: 'Amount of LP tokens to remove.', pl: 'Ilość tokenów LP do usunięcia.' },
+          amountAMin: { en: 'Minimum amount of token A to receive.', pl: 'Minimalna ilość tokena A do otrzymania.' },
+          amountBMin: { en: 'Minimum amount of token B to receive.', pl: 'Minimalna ilość tokena B do otrzymania.' }
+        },
+        safety: { en: 'Check minimum amounts to avoid slippage losses.', pl: 'Sprawdź minimalne ilości, aby uniknąć strat z poślizgu.' }
+      },
+      swap: {
+        description: { en: 'Swaps one token for another in an AMM pool.', pl: 'Wymienia jeden token na inny w puli AMM.' },
+        inputs: {
+          amountIn: { en: 'Amount of input tokens.', pl: 'Ilość tokenów wejściowych.' },
+          amountOutMin: { en: 'Minimum amount of output tokens.', pl: 'Minimalna ilość tokenów wyjściowych.' },
+          path: { en: 'Token swap path (e.g., [input token, output token]).', pl: 'Ścieżka wymiany tokenów (np. [token wejściowy, token wyjściowy]).' }
+        },
+        safety: { en: 'Set a reasonable minimum output to avoid high slippage.', pl: 'Ustaw rozsądną minimalną ilość wyjściową, aby uniknąć dużego poślizgu.' }
+      },
+      claimRewards: {
+        description: { en: 'Claims rewards from staking or farming.', pl: 'Odbiera nagrody ze stakowania lub farmingu.' },
+        inputs: {
+          pid: { en: 'Pool ID (e.g., 0, 1, 2). Select from the list.', pl: 'Identyfikator puli (np. 0, 1, 2). Wybierz z listy.' }
+        },
+        safety: { en: 'Ensure the contract is legitimate to avoid scams.', pl: 'Upewnij się, że kontrakt jest legalny, aby uniknąć oszustw.' }
+      },
+      mint: {
+        description: { en: 'Mints a new NFT or ERC20 token.', pl: 'Tworzy nowy token NFT lub ERC20.' },
+        inputs: {
+          _to: { en: 'Recipient address.', pl: 'Adres odbiorcy.' },
+          tokenId: { en: 'Unique NFT ID (e.g., 1).', pl: 'Unikalny identyfikator NFT (np. 1).' }
+        },
+        safety: { en: 'Verify the contract’s minting limits to avoid overpaying.', pl: 'Zweryfikuj limity mintowania kontraktu, aby uniknąć przepłacania.' }
+      }
+    };
+
+    // Sieci z Chainlist.org
+    const networks = [
+      { chainId: '0x1', name: 'Ethereum Mainnet', isTestnet: false },
+      { chainId: '0xaa36a7', name: 'Sepolia Testnet', isTestnet: true },
+      { chainId: '0xa', name: 'Optimism Mainnet', isTestnet: false },
+      { chainId: '0xa4b1', name: 'Arbitrum One Mainnet', isTestnet: false }
+    ];
+
+    // Przykładowe wartości
+    const poolIds = ['0', '1', '2', '3', '4'];
+    const popularTokens = [
+      { name: 'ETH', address: '0x0000000000000000000000000000000000000000' },
+      { name: 'DAI', address: '0x6B175474E89094C44Da98b954EedeAC495271d0F' },
+      { name: 'USDC', address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' }
+    ];
+
+    function App() {
+      const [web3, setWeb3] = useState(null);
+      const [account, setAccount] = useState(null);
+      const [contractAddress, setContractAddress] = useState('');
+      const [abi, setAbi] = useState('');
+      const [contract, setContract] = useState(null);
+      const [functions, setFunctions] = useState([]);
+      const [error, setError] = useState('');
+      const [results, setResults] = useState({});
+      const [isLoading, setIsLoading] = useState(true);
+      const [language, setLanguage] = useState('en');
+      const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+      const [currentNetwork, setCurrentNetwork] = useState(null);
+      const [notifications, setNotifications] = useState([]);
+
+      useEffect(() => {
+        try {
+          if (window.ethereum) {
+            const web3Instance = new Web3(window.ethereum);
+            setWeb3(web3Instance);
+            window.ethereum.request({ method: 'eth_requestAccounts' })
+              .then(accounts => {
+                setAccount(accounts[0]);
+                web3Instance.eth.getChainId().then(chainId => {
+                  setCurrentNetwork(networks.find(n => n.chainId === chainId) || { name: 'Unknown Network' });
+                });
+                setIsLoading(false);
+              })
+              .catch(err => {
+                setError(translations[language].errorNoMetaMask);
+                setIsLoading(false);
+              });
+            window.ethereum.on('accountsChanged', accounts => setAccount(accounts[0]));
+            window.ethereum.on('chainChanged', chainId => {
+              setCurrentNetwork(networks.find(n => n.chainId === chainId) || { name: 'Unknown Network' });
+            });
+          } else {
+            setError(translations[language].errorNoMetaMask);
+            setIsLoading(false);
+          }
+        } catch (err) {
+          setError('Initialization error: ' + err.message);
+          setIsLoading(false);
+        }
+      }, [language]);
+
+      const switchNetwork = async (chainId) => {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId }]
+          });
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].addNetwork} Chainlist.org: ${err.message}` }]);
+        }
+      };
+
+      const disconnectWallet = () => {
+        setAccount(null);
+        setCurrentNetwork(null);
+      };
+
+      const loadContract = () => {
+        try {
+          const abiJson = JSON.parse(abi);
+          if (!web3.utils.isAddress(contractAddress)) {
+            throw new Error('Invalid contract address');
+          }
+          const contractInstance = new web3.eth.Contract(abiJson, contractAddress);
+          setContract(contractInstance);
+          const contractFunctions = abiJson.filter(item => item.type === 'function');
+          setFunctions(contractFunctions);
+          setError('');
+          setResults({});
+        } catch (err) {
+          setError(translations[language].errorInvalidAbi + err.message);
+        }
+      };
+
+      const callFunction = async (func, inputs) => {
+        try {
+          const processedInputs = inputs.map((input, index) => {
+            const param = func.inputs[index];
+            if (param.type === 'uint256' && (param.name.includes('amount') || param.name.includes('value') || param.name.includes('liquidity'))) {
+              return web3.utils.toWei(input || '0', 'ether');
+            }
+            return input;
+          });
+          const method = contract.methods[func.name](...processedInputs);
+          if (func.stateMutability === 'view' || func.stateMutability === 'pure') {
+            const result = await method.call({ from: account });
+            setResults(prev => ({ ...prev, [func.name]: result.toString() }));
+          } else {
+            const tx = await method.send({ from: account });
+            setResults(prev => ({ ...prev, [func.name]: `Transaction hash: ${tx.transactionHash}` }));
+          }
+          setError('');
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].errorFunctionCall + err.message }]);
+        }
+      };
+
+      const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        setNotifications([...notifications, { id: Date.now(), message: 'Text copied to clipboard!' }]);
+      };
+
+      if (isLoading) {
+        return (
+          <div className="container mx-auto p-4 max-w-4xl">
+            <h1 className="text-3xl font-bold mb-6 text-center text-yellow-400">{translations[language].loading}</h1>
+            <p className="text-center text-gray-400">{translations[language].loading}</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="container mx-auto p-4 max-w-4xl font-mono">
+          <header className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-yellow-400">{translations[language].title}</h1>
+            <div className="flex space-x-2">
+              <select
+                className="bg-gray-800 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition"
+                value={language}
+                onChange={e => setLanguage(e.target.value)}
+              >
+                <option value="en">English</option>
+                <option value="pl">Polski</option>
+              </select>
+              <select
+                className="bg-gray-800 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition"
+                value={currentNetwork?.chainId || ''}
+                onChange={e => switchNetwork(e.target.value)}
+              >
+                <option value="">{translations[language].selectNetwork}</option>
+                {networks.map(network => (
+                  <option key={network.chainId} value={network.chainId}>
+                    {network.name} ({network.isTestnet ? 'Testnet' : 'Mainnet'})
+                  </option>
+                ))}
+              </select>
+              {!account ? (
+                <button
+                  className="bg-green-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-green-500 hover:border-yellow-400 transition"
+                  onClick={() => window.ethereum.request({ method: 'eth_requestAccounts' })}
+                >
+                  <i className="fas fa-wallet mr-2"></i>{translations[language].connectWallet}
+                </button>
+              ) : (
+                <button
+                  className="bg-red-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-red-500 hover:border-yellow-400 transition"
+                  onClick={disconnectWallet}
+                >
+                  <i className="fas fa-sign-out-alt mr-2"></i>{translations[language].disconnectWallet}
+                </button>
+              )}
+              <button
+                className="bg-gray-800 text-gray-200 px-4 py-2 rounded border border-yellow-600 hover:border-yellow-400 transition"
+                onClick={() => setIsMobileView(!isMobileView)}
+              >
+                <i className="fas fa-mobile-alt mr-2"></i>{isMobileView ? translations[language].desktopView : translations[language].mobileView}
+              </button>
+            </div>
+          </header>
+
+          <p className="text-lg mb-4 text-center text-gray-400">{translations[language].welcome}</p>
+          <p className="text-sm mb-4 text-center text-yellow-500">
+            {translations[language].safetyNote}
+            <a href="https://debank.com" target="_blank" className="underline">{translations[language].forTxHistory}DeBank</a>,
+            <a href="https://rabby.io" target="_blank" className="underline">{translations[language].toManageWallet}Rabby</a>,
+            <a href="https://www.scamsniffer.io" target="_blank" className="underline">{translations[language].forSafety}ScamSniffer</a>.
+          </p>
+
+          <div className="mb-6">
+            <label className="block text-lg font-medium mb-2 text-yellow-400">{translations[language].contractAddress}</label>
+            <input
+              type="text"
+              className="w-full p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200"
+              placeholder="0x..."
+              value={contractAddress}
+              onChange={e => setContractAddress(e.target.value)}
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-lg font-medium mb-2 text-yellow-400">{translations[language].contractAbi}</label>
+            <textarea
+              className="w-full p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200"
+              rows="6"
+              placeholder='[{"type":"function", "name":"functionName", "inputs":[...], ...}]'
+              value={abi}
+              onChange={e => setAbi(e.target.value)}
+            />
+          </div>
+          <button
+            className="w-full bg-green-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-green-500 hover:border-yellow-400 transition"
+            onClick={loadContract}
+          >
+            <i className="fas fa-download mr-2"></i>{translations[language].loadContract}
+          </button>
+
+          {error && (
+            <p className="text-red-500 mt-4 p-3 bg-red-900 rounded">{error}</p>
+          )}
+
+          <div className={`mt-8 ${isMobileView ? 'space-y-6' : 'grid grid-cols-1 md:grid-cols-2 gap-6'}`}>
+            <div>
+              <h2 className="text-xl font-bold mb-4 text-yellow-400">{translations[language].readContract}</h2>
+              {functions
+                .filter(func => func.stateMutability === 'view' || func.stateMutability === 'pure')
+                .map((func, index) => (
+                  <FunctionForm
+                    key={index}
+                    func={func}
+                    callFunction={callFunction}
+                    result={results[func.name]}
+                    web3={web3}
+                    language={language}
+                    isMobileView={isMobileView}
+                    setNotifications={setNotifications}
+                  />
+                ))}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold mb-4 text-yellow-400">{translations[language].writeContract}</h2>
+              {functions
+                .filter(func => func.stateMutability !== 'view' && func.stateMutability !== 'pure')
+                .map((func, index) => (
+                  <FunctionForm
+                    key={index}
+                    func={func}
+                    callFunction={callFunction}
+                    result={results[func.name]}
+                    web3={web3}
+                    language={language}
+                    isMobileView={isMobileView}
+                    setNotifications={setNotifications}
+                  />
+                ))}
+            </div>
+          </div>
+
+          <div className="fixed bottom-0 left-0 right-0 space-y-2 p-4">
+            {notifications.map(notification => (
+              <div key={notification.id} className="bg-red-900 text-red-200 p-3 rounded flex justify-between items-center max-w-4xl mx-auto">
+                <span>{notification.message}</span>
+                <div className="flex space-x-2">
+                  <button
+                    className="text-yellow-400 hover:text-yellow-200"
+                    onClick={() => copyToClipboard(notification.message)}
+                  >
+                    <i className="fas fa-copy"></i> {translations[language].copy}
+                  </button>
+                  <button
+                    className="text-yellow-400 hover:text-yellow-200"
+                    onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function FunctionForm({ func, callFunction, result, web3, language, isMobileView, setNotifications }) {
+      const [inputs, setInputs] = useState({});
+      const [convertedValues, setConvertedValues] = useState({});
+
+      const handleInputChange = (name, value) => {
+        setInputs(prev => ({ ...prev, [name]: value }));
+        if (func.inputs.find(input => input.name === name)?.type === 'uint256' && (name.includes('amount') || name.includes('value') || name.includes('liquidity'))) {
+          setConvertedValues(prev => ({ ...prev, [name]: web3.utils.toWei(value || '0', 'ether') }));
+        }
+      };
+
+      const handleSubmit = () => {
+        const inputValues = func.inputs.map(input => inputs[input.name] || '');
+        callFunction(func, inputValues);
+      };
+
+      const funcInfo = functionDescriptions[func.name] || {
+        description: { en: 'Custom function. Enter parameters according to the contract documentation.', pl: 'Funkcja niestandardowa. Wprowadź parametry zgodnie z dokumentacją kontraktu.' },
+        inputs: {},
+        safety: { en: 'Verify the function’s purpose and contract’s reputation.', pl: 'Zweryfikuj cel funkcji i reputację kontraktu.' }
+      };
+
+      return (
+        <div className="p-4 bg-gray-800 border border-yellow-600 rounded-lg shadow-lg mb-4">
+          <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-cog mr-2"></i>{func.name}</h2>
+          <p className="text-sm text-gray-400 mb-2">
+            {func.stateMutability === 'view' || func.stateMutability === 'pure'
+              ? translations[language].readContract
+              : translations[language].writeContract}
+          </p>
+          <p className="text-sm text-gray-200 mb-2 bg-green-900 p-3 rounded">
+            <i className="fas fa-info-circle mr-2"></i>{translations[language].assistant}{funcInfo.description[language]}
+          </p>
+          <p className="text-sm text-yellow-500 mb-4">{funcInfo.safety[language]}</p>
+          {func.inputs.map((input, index) => (
+            <div key={index} className="mb-3">
+              <label className="block text-sm font-medium mb-1 text-yellow-400">
+                {input.name || `Parameter ${index + 1}`} ({input.type})
+              </label>
+              <p className="text-xs text-gray-400 mb-1">
+                {funcInfo.inputs[input.name]?.[language] || `Enter a valid ${input.type}`}
+              </p>
+              {input.name === 'pid' && input.type === 'uint256' ? (
+                <select
+                  className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200"
+                  onChange={e => handleInputChange(input.name || `param${index}`, e.target.value)}
+                >
+                  <option value="">{translations[language].selectNetwork}</option>
+                  {poolIds.map(pid => (
+                    <option key={pid} value={pid}>{pid}</option>
+                  ))}
+                </select>
+              ) : (input.type === 'address' && (func.name === 'swap' || func.name === 'addLiquidity' || func.name === 'removeLiquidity')) ? (
+                <select
+                  className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200"
+                  onChange={e => handleInputChange(input.name || `param${index}`, e.target.value)}
+                >
+                  <option value="">Select Token</option>
+                  {popularTokens.map(token => (
+                    <option key={token.address} value={token.address}>{token.name}</option>
+                  ))}
+                </select>
+              ) : (input.type === 'uint256' && (input.name.includes('amount') || input.name.includes('value') || input.name.includes('liquidity'))) ? (
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    step="0.000000000000000001"
+                    className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200"
+                    placeholder="Enter amount (e.g., 1 ETH)"
+                    onChange={e => handleInputChange(input.name || `param${index}`, e.target.value)}
+                  />
+                  <button
+                    className="bg-yellow-600 text-gray-900 px-3 py-2 rounded border border-yellow-400 hover:bg-yellow-500 transition"
+                    onClick={() => setConvertedValues(prev => ({ ...prev, [input.name]: web3.utils.toWei(inputs[input.name] || '0', 'ether') }))}
+                  >
+                    <i className="fas fa-calculator mr-2"></i>Convert
+                  </button>
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200"
+                  placeholder={funcInfo.inputs[input.name]?.[language] || `Enter ${input.type}`}
+                  onChange={e => handleInputChange(input.name || `param${index}`, e.target.value)}
+                />
+              )}
+              {convertedValues[input.name] && (
+                <p className="text-xs text-gray-400 mt-1">Converted: {convertedValues[input.name]} wei</p>
+              )}
+            </div>
+          ))}
+          <button
+            className="bg-green-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-green-500 hover:border-yellow-400 transition"
+            onClick={handleSubmit}
+          >
+            <i className="fas fa-play mr-2"></i>
+            {func.stateMutability === 'view' || func.stateMutability === 'pure' ? 'Call' : 'Send Transaction'}
+          </button>
+          {result && (
+            <p className="mt-3 text-sm text-gray-200 break-all">
+              <i className="fas fa-check-circle mr-2"></i>Result: {result}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    try {
+      ReactDOM.render(<App />, document.getElementById('root'));
+    } catch (err) {
+      console.error('Rendering error:', err);
+      document.getElementById('root').innerHTML = `
+        <div style="text-align: center; padding: 20px; color: #f87171;">
+          <h1>Rendering Error</h1>
+          <p>${err.message}</p>
+          <p>Check the browser console (F12) or ensure all CDN scripts are accessible.</p>
+          <p>Ensure you have an internet connection and MetaMask/Rabby installed.</p>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
