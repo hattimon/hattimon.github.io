@@ -1,479 +1,256 @@
 :root {
-  --bg: #e0e8d5;
-  --text: #2a3d1e;
-  --card: rgba(200, 230, 180, 0.9);
-  --btn: #4a7c3e;
-  --btn-hover: #3a5c2e;
-  --link: #5a8c4a;
-  --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
-  --border: #a9c9a0;
-  --toast-text: #2a3d1e;
+  --bg-color: #1a1a1a;
+  --text-color: #ffffff;
+  --card-bg: #2c2c2c;
+  --border-color: #444444;
+  --button-bg: #6200ea;
+  --button-hover-bg: #3700b3;
+  --error-bg: #ff4444;
+  --error-text: #ffffff;
+  --highlight-bg: #333333;
 }
 
 [data-theme="light"] {
-  --bg: #e0e8d5;
-  --text: #2a3d1e;
-  --card: rgba(200, 230, 180, 0.9);
-  --btn: #4a7c3e;
-  --btn-hover: #3a5c2e;
-  --link: #5a8c4a;
-  --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
-  --border: #a9c9a0;
-  --toast-bg: #ffcccb;
-  --toast-text: #2a3d1e;
-}
-
-[data-theme="dark"] {
-  --bg: #1e2a16;
-  --text: #d0e0c0;
-  --card: rgba(74, 124, 62, 0.9);
-  --btn: #6a9c5e;
-  --btn-hover: #508c4e;
-  --link: #8ac784;
-  --shadow: 0 4px 12px rgba(30, 42, 22, 0.3);
-  --border: #7a9c70;
-  --toast-bg: #f8b0b0;
-  --toast-text: #1e2a16;
-}
-
-[data-theme="dark"] input,
-[data-theme="dark"] select {
-  color: var(--text);
-  background: #2a3d1e;
-}
-
-[data-theme="dark"] input::placeholder {
-  color: #a0b090;
+  --bg-color: #f5f5f5;
+  --text-color: #333333;
+  --card-bg: #ffffff;
+  --border-color: #cccccc;
+  --button-bg: #6200ea;
+  --button-hover-bg: #3700b3;
+  --error-bg: #ff4444;
+  --error-text: #ffffff;
+  --highlight-bg: #e0e0e0;
 }
 
 body {
-  margin: 0;
-  padding: 20px 0;
   font-family: 'Roboto', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  transition: all 0.3s ease;
-  min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  overflow-x: hidden;
+  align-items: center;
+  min-height: 100vh;
 }
 
 .container {
-  max-width: 480px;
+  max-width: 800px;
   width: 100%;
-  padding: 0 15px;
-  text-align: center;
-}
-
-a {
-  color: var(--link);
-  text-decoration: none;
-  transition: color 0.3s ease;
-  word-break: break-word;
-  display: inline-block;
-  text-align: center;
-}
-
-a:hover {
-  color: #406830;
-}
-
-button {
-  margin: 5px 0;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 20px;
-  background: var(--btn);
-  color: #fff;
-  cursor: pointer;
-  font-weight: 500;
-  box-shadow: var(--shadow);
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-}
-
-button:hover {
-  background: var(--btn-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(58, 92, 46, 0.2);
-}
-
-.uniswap-btn {
-  background: linear-gradient(90deg, #4a7c3e, #5a8c4a);
-  border-radius: 20px;
-  padding: 10px;
-  font-size: 1rem;
-}
-
-.uniswap-btn:hover {
-  background: linear-gradient(90deg, #3a5c2e, #406830);
-}
-
-.swap-btn {
-  margin-top: 15px;
-}
-
-.swap-arrow {
-  padding: 8px;
-  font-size: 1rem;
-  line-height: 1;
-  background: var(--btn);
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.swap-arrow:hover {
-  background: var(--btn-hover);
-}
-
-input, select {
-  margin: 5px 0;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--card);
-  color: var(--text);
-  font-family: 'Roboto', sans-serif;
-  font-size: 1rem;
-  width: 100%;
-  box-sizing: border-box;
-  transition: all 0.3s ease;
-}
-
-select:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-#slippage {
-  max-width: 150px;
-}
-
-input:focus, select:focus {
-  border-color: #406830;
-  outline: none;
-  box-shadow: 0 0 8px rgba(64, 104, 48, 0.3);
-}
-
-.section {
-  margin: 20px 0;
   padding: 20px;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  background: var(--card);
-  box-shadow: var(--shadow);
-  animation: fadeIn 0.5s ease-in-out;
-  text-align: center;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  box-sizing: border-box;
 }
 
 #logo {
-  max-width: 100%;
-  height: auto;
   display: block;
-  margin: 0 auto 20px;
-  border-radius: 10px;
-  box-shadow: var(--shadow);
-}
-
-.top-links {
-  text-align: center;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  flex-wrap: wrap;
+  margin: 0 auto;
+  max-width: 200px;
 }
 
 .button-group {
-  position: fixed;
-  top: 10px;
-  right: 10px;
   display: flex;
+  justify-content: center;
   gap: 10px;
-  z-index: 1000;
-}
-
-.theme-toggle, .lang-toggle, .music-toggle {
-  padding: 6px 12px;
-  font-size: 0.85rem;
-}
-
-.theme-toggle:hover, .lang-toggle:hover, .music-toggle:hover {
-  background: var(--btn-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(58, 92, 46, 0.2);
-}
-
-.center-title {
-  text-align: center;
-  font-size: 1.8rem;
-  margin: 20px 0;
-  font-weight: 700;
-  color: #406830;
-  text-shadow: 0 2px 6px rgba(64, 104, 48, 0.3);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.intro-text {
-  text-align: center;
-  font-size: 0.95rem;
   margin-bottom: 20px;
-  line-height: 1.5;
-  word-break: break-word;
 }
 
-.highlight-text {
-  color: var(--link);
-}
-
-.swap-section .swap-card, .liquidity-section .liquidity-card {
-  padding: 20px;
-  border-radius: 20px;
-  background: rgba(200, 230, 180, 0.7);
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  backdrop-filter: blur(5px);
-  transition: all 0.3s ease;
-}
-
-.swap-section .swap-card:hover, .liquidity-section .liquidity-card:hover {
-  background: rgba(200, 230, 180, 0.85);
-}
-
-.token-select {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-  width: 100%;
-}
-
-.swap-input, .liquidity-input {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 15px;
-  width: 100%;
-}
-
-.liquidity-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  width: 100%;
-}
-
-.lp-info-section .masterchef-instructions {
-  margin-bottom: 15px;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: var(--text);
-}
-
-.lp-info-section .masterchef-instructions p {
-  margin: 10px 0;
-  padding: 10px;
-  background: var(--card);
-  border-left: 4px solid #406830;
-  border-radius: 5px;
-  text-align: left;
-  word-break: break-word;
-}
-
-.lp-info-section .masterchef-instructions a {
-  word-break: break-word;
-  text-align: justify;
-}
-
-.lp-info-section .masterchef-instructions i {
-  margin-right: 10px;
-  color: #406830;
-}
-
-.lp-info-section .contracts-list {
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: var(--text);
-}
-
-.lp-info-section .contracts-list p {
-  margin: 8px 0;
-  padding: 8px;
-  background: var(--card);
-  border-left: 4px solid #3a5c2e;
-  border-radius: 5px;
-  text-align: left;
-  word-break: break-word;
-}
-
-.lp-info-section .contracts-list a {
-  word-break: break-word;
-  text-align: justify;
-}
-
-.lp-info-section .contracts-list i {
-  margin-right: 10px;
-  color: #3a5c2e;
-}
-
-.contract-text {
-  color: var(--text);
-}
-
-.error-message {
-  margin: 20px 0;
-  padding: 15px;
-  background: #ffebee;
-  border: 1px solid #ffcdd2;
-  border-radius: 16px;
-  color: #c62828;
-  box-shadow: var(--shadow);
-  text-align: center;
-}
-
-#toast-container {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 3000;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.toast {
-  background: var(--toast-bg);
-  border: 2px solid #c62828;
-  border-radius: 8px;
-  padding: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: var(--shadow);
-  color: var(--toast-text);
-  font-size: 0.9rem;
-  max-width: 400px;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.toast.show {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.toast.hide {
-  opacity: 0;
-  transform: scale(0.8);
-}
-
-.toast-message {
-  flex-grow: 1;
-  word-break: break-word;
-  color: #ff0000;
-}
-
-.toast-copy, .toast-close {
-  padding: 6px 12px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  background: var(--btn);
-  color: #fff;
+.button-group button {
+  background-color: var(--button-bg);
+  color: var(--text-color);
   border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
   cursor: pointer;
+  font-size: 16px;
   display: flex;
   align-items: center;
   gap: 5px;
 }
 
-.toast-copy:hover, .toast-close:hover {
-  background: var(--btn-hover);
+.button-group button:hover {
+  background-color: var(--button-hover-bg);
 }
 
-.toast-close {
+.top-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.top-links a {
+  color: var(--text-color);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.top-links a:hover {
+  text-decoration: underline;
+}
+
+.center-title {
+  text-align: center;
+  font-size: 24px;
   font-weight: bold;
-  padding: 6px 10px;
+  margin: 20px 0;
 }
 
-@keyframes toastShow {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
+.intro-text {
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 20px;
 }
 
-@keyframes toastHide {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.8); }
+.intro-text .highlight-text {
+  background-color: var(--highlight-bg);
+  padding: 2px 5px;
+  border-radius: 3px;
 }
 
-@media (max-width: 480px) {
+.section {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.section h3 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+.wallet-section p {
+  margin: 0 0 10px 0;
+}
+
+.uniswap-btn {
+  background-color: var(--button-bg);
+  color: var(--text-color);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 5px;
+}
+
+.uniswap-btn:hover {
+  background-color: var(--button-hover-bg);
+}
+
+.swap-card, .liquidity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.token-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.token-select select {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  font-size: 16px;
+}
+
+.swap-arrow {
+  background-color: var(--button-bg);
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--text-color);
+}
+
+.swap-arrow:hover {
+  background-color: var(--button-hover-bg);
+}
+
+.swap-input {
+  display: flex;
+  gap: 10px;
+}
+
+.swap-input input, .liquidity-input input {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  font-size: 16px;
+  flex-grow: 1;
+}
+
+.swap-input select {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  font-size: 16px;
+}
+
+.liquidity-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.masterchef-instructions p {
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.contracts-list p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
   .container {
-    padding: 0 10px;
+    padding: 10px;
   }
+
+  .button-group {
+    flex-direction: column;
+    align-items: center;
+  }
+
   .top-links {
     flex-direction: column;
-    gap: 10px;
+    align-items: center;
   }
-  .button-group {
-    top: 60px;
-    flex-direction: column;
-    right: 10px;
-  }
-  .button-group button {
-    margin: 5px 0;
-  }
-  .center-title {
-    font-size: 1.5rem;
-  }
-  .section {
-    padding: 15px;
-  }
+
   .uniswap-btn {
-    padding: 10px;
-    font-size: 1rem;
-  }
-  .token-select {
-    flex-direction: column;
-    gap: 8px;
-  }
-  .token-select select {
     width: 100%;
+    justify-content: center;
   }
-  .swap-arrow {
-    width: 40px;
-    margin: 5px auto;
-  }
-  .liquidity-actions {
+
+  .swap-input, .liquidity-actions {
     flex-direction: column;
   }
-  .lp-info-section .masterchef-instructions p,
-  .lp-info-section .contracts-list p {
-    padding: 8px;
-    font-size: 0.8rem;
-  }
-  .toast {
-    max-width: 100%;
-    font-size: 0.85rem;
-  }
+}
+
+.toast {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.toast.show {
+  opacity: 1;
+}
+
+.toast.hide {
+  opacity: 0;
 }
