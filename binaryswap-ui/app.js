@@ -134,7 +134,7 @@ const translations = {
     contract_instruction_1: "Wejdź na kontrakt:",
     contract_instruction_2: "Skopiuj adres kontraktu oraz zawartość pola Contract ABI.",
     step2: "Krok 2:",
-    contract_instruction_3: "Otwórz w nowej zakładce stronę:",
+    contract_instruction_3: "Otwórz w nowej zakładce strone:",
     smart_contract_interface: "Interfejs kontraktów inteligentnych",
     contract_instruction_4: "Przełącz sieć na opBNB i wklej dane w odpowiednie pola.",
     step3: "Krok 3:",
@@ -398,8 +398,8 @@ function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
   const temp = fromToken.value;
-  fromToken.value = toToken.value;
-  toToken.value = temp;
+  fromToken.value = toToken.value === "0101" ? "BNB" : "0101";
+  toToken.value = temp === "0101" ? "BNB" : "0101";
   fromToken.dispatchEvent(new Event('change')); // Aktualizacja UI
   console.log("Swapped: ", fromToken.value, "→", toToken.value); // Debug
 }
