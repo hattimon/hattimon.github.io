@@ -10,6 +10,27 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    .tooltip {
+      display: none;
+      position: absolute;
+      z-index: 10;
+      background-color: #1f2937;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      white-space: normal;
+      max-width: 200px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .group:hover .tooltip {
+      display: block;
+    }
+  </style>
 </head>
 <body class="bg-gray-900 text-gray-200 font-mono transition-colors duration-300">
   <div id="root"></div>
@@ -135,7 +156,8 @@
         inputs: {
           amountIn: { en: 'Input amount.', pl: 'Ilość wejściowa.' },
           amountOutMin: { en: 'Minimum output amount.', pl: 'Minimalna ilość wyjściowa.' },
-          path: { en: 'Token swap path.', pl: 'Ścieżka wymiany tokenów.' }
+          path: { en: 'Token swap path.', pl: 'Ścieżka wymiany tokenów.' },
+          deadline: { en: 'Deadline (uint256). Typically a timestamp (e.g., current time + 300 seconds). Use block.timestamp + buffer (e.g., 300-600 seconds) to avoid expiration.', pl: 'Termin ważności (uint256). Zazwyczaj znacznik czasu (np. aktualny czas + 300 sekund). Użyj block.timestamp + bufor (np. 300-600 sekund), aby uniknąć wygaśnięcia.' }
         },
         safety: { en: 'Set reasonable minimum output. Check with ScamSniffer and Rabby.io.', pl: 'Ustaw rozsądną minimalną ilość wyjściową. Sprawdź z ScamSniffer i Rabby.io.' }
       },
@@ -176,13 +198,6 @@
           _user: { en: 'User address.', pl: 'Adres użytkownika.' }
         },
         safety: { en: 'Ensure correct pool and address. Check with ScamSniffer and Rabby.io.', pl: 'Upewnij się, że podano poprawną pulę i adres. Sprawdź z ScamSniffer i Rabby.io.' }
-      },
-      deadline: {
-        description: { en: 'Sets a deadline for a transaction (e.g., in seconds from now).', pl: 'Ustawia termin ważności transakcji (np. w sekundach od teraz).' },
-        inputs: {
-          deadline: { en: 'Deadline (uint256). Typically a timestamp (e.g., current time + 300 seconds). Use block.timestamp + buffer (e.g., 300-600 seconds) to avoid expiration.', pl: 'Termin ważności (uint256). Zazwyczaj znacznik czasu (np. aktualny czas + 300 sekund). Użyj block.timestamp + bufor (np. 300-600 sekund), aby uniknąć wygaśnięcia.' }
-        },
-        safety: { en: 'Ensure deadline is in the future. Verify with contract documentation.', pl: 'Upewnij się, że termin jest w przyszłości. Sprawdź dokumentację kontraktu.' }
       }
     };
 
@@ -673,7 +688,7 @@
           <p className="text-sm text-gray-200 mb-2 bg-green-900 p-3 rounded flex items-center"><i className="fas fa-user-graduate mr-2"></i>{translations[language].assistant}{functionDescriptions[func.name]?.description[language] || (language === 'en' ? 'Custom function. Follow contract documentation.' : 'Funkcja niestandardowa. Postępuj zgodnie z dokumentacją kontraktu.')}</p>
           <p className="text-sm text-yellow-500 mb-4 flex items-center"><i className="fas fa-exclamation-triangle mr-2"></i>{functionDescriptions[func.name]?.safety[language] || (language === 'en' ? 'Verify function and contract. Check with ScamSniffer and Rabby.io.' : 'Zweryfikuj funkcję i kontrakt. Sprawdź z ScamSniffer i Rabby.io.')}</p>
           {func.inputs.map((input, index) => (
-            <div key={index} className="mb-3 relative">
+            <div key={index} className="mb-3 relative group">
               <label className="block text-sm font-medium mb-1 text-yellow-400 flex items-center"><i className="fas fa-keyboard mr-2"></i>{input.name} ({input.type})</label>
               <p className="text-xs text-gray-400 mb-1 flex items-center"><i className="fas fa-lightbulb mr-2"></i>
                 {input.type === 'address' && 'Contract address (e.g., swap router, LP token, or token contract).'}
@@ -742,7 +757,7 @@
                   />
                 )}
                 {functionDescriptions[func.name]?.inputs[input.name] && (
-                  <div className="absolute z-10 hidden group-hover:block bg-gray-800 text-white p-2 rounded shadow-lg mt-1 w-64">
+                  <div className="tooltip">
                     {functionDescriptions[func.name].inputs[input.name][language]}
                   </div>
                 )}
