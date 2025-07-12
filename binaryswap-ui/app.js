@@ -1,4 +1,3 @@
-// === Web3 Config ===
 let provider, signer, account;
 const addr0101 = "0xa41b3067ec694dbec668c389550ba8fc589e5797";
 const addrLP = "0x506b8322e1159d06e493ebe7ffa41a24291e7ae3";
@@ -39,7 +38,6 @@ const MASTER = [
   "function emergencyWithdraw(uint256)"
 ];
 
-// === Translations ===
 const translations = {
   en: {
     theme_light: "Light Mode",
@@ -169,12 +167,11 @@ const translations = {
   }
 };
 
-// === Swap Handler ===
 async function handleSwap() {
   const pc = parseInt(document.getElementById("swapPercent").value);
   if (isNaN(pc) || pc < 1 || pc > 100) return showError(translations[localStorage.language || "en"].error_invalid_percent);
 
-  const slippage = 1; // Fixed slippage for simplicity
+  const slippage = 1;
   const deadline = Math.floor(Date.now() / 1000) + 300;
   const fromToken = document.getElementById("fromToken").value;
   const toToken = document.getElementById("toToken").value;
@@ -190,7 +187,6 @@ async function handleSwap() {
   }
 }
 
-// === Swap: BNB → 0101 ===
 async function swapBNBto0101(pc, slippage, deadline) {
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
   const balance = await provider.getBalance(account);
@@ -215,7 +211,6 @@ async function swapBNBto0101(pc, slippage, deadline) {
   }
 }
 
-// === Swap: 0101 → BNB ===
 async function swap0101toBNB(pc, slippage, deadline) {
   const token = new ethers.Contract(addr0101, ERC20, signer);
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
@@ -246,7 +241,8 @@ async function swap0101toBNB(pc, slippage, deadline) {
   }
 }
 
-// === LP Functions ===
+async彼此
+
 async function addLiquidity(pc) {
   const t = new ethers.Contract(addr0101, ERC20, signer);
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
@@ -267,7 +263,6 @@ async function removeLiquidity(pc) {
   updateBalances();
 }
 
-// === Wallet Functions ===
 async function switchToOpBNB() {
   if (!window.ethereum) return showError(translations[localStorage.language || "en"].error_no_metamask);
 
@@ -344,7 +339,6 @@ async function updateBalances() {
   document.getElementById("balance-lp").textContent = parseFloat(ethers.formatUnits(bLP, 18)).toFixed(8);
 }
 
-// === Theme Toggle ===
 function toggleTheme() {
   const html = document.documentElement;
   const isLight = html.getAttribute("data-theme") === "light";
@@ -355,7 +349,6 @@ function toggleTheme() {
   document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${newTheme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${newTheme}">${translations[lang][`theme_${newTheme}`]}</span>`;
 }
 
-// === Language Toggle ===
 function toggleLanguage() {
   const newLang = localStorage.language === "pl" ? "en" : "pl";
   localStorage.language = newLang;
@@ -365,7 +358,6 @@ function toggleLanguage() {
   document.querySelector(".music-toggle").innerHTML = `<i class="fas fa-music"></i> <span data-i18n="music_${localStorage.music === "on" ? "on" : "off"}">${translations[newLang][`music_${localStorage.music === "on" ? "on" : "off"}`]}</span>`;
 }
 
-// === Update Translations ===
 function updateTranslations(lang) {
   document.querySelectorAll("[data-i18n]").forEach(element => {
     const key = element.getAttribute("data-i18n");
@@ -377,7 +369,6 @@ function updateTranslations(lang) {
   });
 }
 
-// === Music Toggle ===
 function toggleMusic() {
   const audio = document.getElementById("background-music");
   const isPlaying = !audio.paused;
@@ -393,18 +384,16 @@ function toggleMusic() {
   }
 }
 
-// === Swap Tokens ===
 function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
   const temp = fromToken.value;
-  fromToken.value = toToken.value === "0101" ? "BNB" : "0101";
-  toToken.value = temp === "BNB" ? "0101" : "BNB";
-  fromToken.dispatchEvent(new Event('change')); // Aktualizacja UI
-  console.log("Swapped: ", fromToken.value, "→", toToken.value); // Debug
+  fromToken.value = toToken.value;
+  toToken.value = temp;
+  fromToken.dispatchEvent(new Event('change'));
+  console.log("Swapped: ", fromToken.value, "→", toToken.value);
 }
 
-// === Error Handling ===
 function showError(message) {
   const toastContainer = document.getElementById("toast-container") || createToastContainer();
   const lang = localStorage.language || "en";
@@ -452,7 +441,6 @@ function copyToClipboard(text) {
   navigator.clipboard.writeText(text).catch(err => console.error("Copy failed:", err));
 }
 
-// === Initialization ===
 (() => {
   const th = localStorage.theme || "dark";
   document.documentElement.setAttribute("data-theme", th);
