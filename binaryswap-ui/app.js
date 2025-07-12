@@ -100,7 +100,9 @@ const translations = {
     error_swap_bnb_to_0101: "Error swapping (BNB → 0101):",
     error_swap_0101_to_bnb: "Error swapping (0101 → BNB):",
     error_invalid_pair: "Only BNB ↔ 0101 swaps are supported!",
-    error_play_music: "Cannot play music:"
+    error_play_music: "Cannot play music:",
+    copy_button: "Copy",
+    copied: "Copied!"
   },
   pl: {
     theme_light: "Tryb Jasny",
@@ -161,7 +163,9 @@ const translations = {
     error_swap_bnb_to_0101: "Błąd przy zamianie (BNB → 0101):",
     error_swap_0101_to_bnb: "Błąd przy zamianie (0101 → BNB):",
     error_invalid_pair: "Obsługiwana jest tylko zamiana BNB ↔ 0101!",
-    error_play_music: "Nie można odtworzyć muzyki:"
+    error_play_music: "Nie można odtworzyć muzyki:",
+    copy_button: "Kopiuj",
+    copied: "Skopiowano!"
   }
 };
 
@@ -355,8 +359,8 @@ function toggleLanguage() {
   localStorage.language = newLang;
   updateTranslations(newLang);
   document.querySelector(".lang-toggle").innerHTML = `<i class="fas fa-globe"></i> <span data-i18n="language">${translations[newLang].language}</span>`;
-  document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${localStorage.theme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${localStorage.theme || "light"}">${translations[newLang][`theme_${localStorage.theme || "light"}`]}</span>`;
-  document.querySelector(".music-toggle").innerHTML = `<i class="fas fa-music"></i> <span data-i18n="music_${localStorage.music === "on" ? "on" : "off"}">${translations[newLang][`music_${localStorage.music === "on" ? "on" : "off"}`]}</span>`;
+  document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${localStorage.theme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${localStorage.theme || "light"}">${translations[localStorage.language || "en"][`theme_${localStorage.theme || "light"}`]}</span>`;
+  document.querySelector(".music-toggle").innerHTML = `<i class="fas fa-music"></i> <span data-i18n="music_${localStorage.music === "on" ? "on" : "off"}">${translations[localStorage.language || "en"][`music_${localStorage.music === "on" ? "on" : "off"}`]}</span>`;
 }
 
 // === Update Translations ===
@@ -404,11 +408,55 @@ function syncTokens() {
 
 // === Error Handling ===
 function showError(message) {
-  const errorContainer = document.getElementById('error-container');
-  const errorText = document.getElementById('error-text');
-  errorText.textContent = message;
-  errorContainer.style.display = 'block';
-  setTimeout(() => (errorContainer.style.display = 'none'), 5000);
+  const toastContainer = document.getElementById('toast-container') || createToastContainer();
+  const lang = localStorage.language || "en";
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `
+    <strong data-i18n="error_label">${translations[lang].error_label}:</strong>
+    <span class="toast-message">${message}</span>
+    <button class="toast-copy" data-i18n="copy_button">${translations[lang].copy_button}</button>
+    <button class="toast-close">X</button>
+  `;
+  toastContainer.appendChild(toast);
+
+  // Animate toast appearance
+  setTimeout(() => toast.classList.add('show'), 100);
+
+  // Auto-remove after 7 seconds
+  const timeout = setTimeout(() => removeToast(toast), 7000);
+
+  // Copy button functionality
+  toast.querySelector('.toast-copy').addEventListener('click', () => {
+    copyToClipboard(message);
+    toast.querySelector('.toast-copy').innerHTML = translations[lang].copied;
+    setTimeout(() => {
+      toast.querySelector('.toast-copy').innerHTML = translations[lang].copy_button;
+    }, 2000);
+  });
+
+  // Close button functionality
+  toast.querySelector('.toast-close').addEventListener('click', () => {
+    clearTimeout(timeout);
+    removeToast(toast);
+  });
+}
+
+function createToastContainer() {
+  const container = document.createElement('div');
+  container.id = 'toast-container';
+  document.body.appendChild(container);
+  return container;
+}
+
+function removeToast(toast) {
+  toast.classList.remove('show');
+  toast.classList.add('hide');
+  setTimeout(() => toast.remove(), 300);
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).catch(err => console.error('Copy failed:', err));
 }
 
 // === Initialization ===
