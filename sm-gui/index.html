@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,18 +24,31 @@
       const [functions, setFunctions] = useState([]);
       const [error, setError] = useState('');
       const [results, setResults] = useState({});
+      const [isLoading, setIsLoading] = useState(true);
 
       // Initialize Web3 and connect to MetaMask
       useEffect(() => {
-        if (window.ethereum) {
-          const web3Instance = new Web3(window.ethereum);
-          setWeb3(web3Instance);
-          window.ethereum.request({ method: 'eth_requestAccounts' })
-            .then(accounts => setAccount(accounts[0]))
-            .catch(err => setError('Failed to connect to MetaMask: ' + err.message));
-          window.ethereum.on('accountsChanged', accounts => setAccount(accounts[0]));
-        } else {
-          setError('MetaMask is not installed. Please install it to use this app.');
+        try {
+          if (window.ethereum) {
+            const web3Instance = new Web3(window.ethereum);
+            setWeb3(web3Instance);
+            window.ethereum.request({ method: 'eth_requestAccounts' })
+              .then(accounts => {
+                setAccount(accounts[0]);
+                setIsLoading(false);
+              })
+              .catch(err => {
+                setError('Nie udało się połączyć z MetaMask: ' + err.message);
+                setIsLoading(false);
+              });
+            window.ethereum.on('accountsChanged', accounts => setAccount(accounts[0]));
+          } else {
+            setError('MetaMask nie jest zainstalowany. Zainstaluj MetaMask, aby korzystać z aplikacji.');
+            setIsLoading(false);
+          }
+        } catch (err) {
+          setError('Błąd podczas inicjalizacji: ' + err.message);
+          setIsLoading(false);
         }
       }, []);
 
@@ -43,16 +56,17 @@
       const loadContract = () => {
         try {
           const abiJson = JSON.parse(abi);
+          if (!web3.utils.isAddress(contractAddress)) {
+            throw new Error('Nieprawidłowy adres kontraktu');
+          }
           const contractInstance = new web3.eth.Contract(abiJson, contractAddress);
           setContract(contractInstance);
-
-          // Extract functions from ABI
           const contractFunctions = abiJson.filter(item => item.type === 'function');
           setFunctions(contractFunctions);
           setError('');
           setResults({});
         } catch (err) {
-          setError('Invalid ABI or contract address: ' + err.message);
+          setError('Nieprawidłowy ABI lub adres kontraktu: ' + err.message);
         }
       };
 
@@ -65,175 +79,45 @@
             setResults(prev => ({ ...prev, [func.name]: result.toString() }));
           } else {
             const tx = await method.send({ from: account });
-            setResults(prev => ({ ...prev, [func.name]: `Transaction hash: ${tx.transactionHash}` }));
+            setResults(prev => ({ ...prev, [func.name]: `Hash transakcji: ${tx.transactionHash}` }));
           }
           setError('');
         } catch (err) {
-          setError('Function call failed: ' + err.message);
+          setError('Błąd wywołania funkcji: ' + err.message);
         }
       };
 
-      return (
-        <div className="container mx-auto p-4">
-          <h1 className="text-3xl font-bold mb-4">Smart Contract GUI</h1>
-          
-          {/* Connect Wallet */}
-          <div className="mb-4">
-            <p className="text-lg">Account: {account || 'Not connected'}</p>
-            {!account && <button
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              onClick={() => window.ethereum.request({ method: 'eth_requestAccounts' })}
-            >
-              Connect MetaMask
-            </button>}
+      if (isLoading) {
+        return (
+          <div className="container mx-auto p-4 max-w-4xl">
+            <h1 className="text-3xl font-bold mb-6 text-center">Ładowanie...</h1>
           </div>
-
-          {/* Contract Input */}
-          <div className="mb-4">
-            <label className="block text-lg mb-2">Contract Address</label>
-            <input
-              type="text"
-              className="w-full p-2 border rounded"
-              placeholder="0x..."
-              value={contractAddress}
-              onChange={e => setContractAddress(e.target.value)}
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-lg mb-2">Contract ABI (JSON)</label>
-            <textarea
-              className="w-full p-2 border rounded"
-              rows="5"
-              placeholder='[{"type":"function", ...}]'
-              value={abi}
-              onChange={e => setAbi(e.target.value)}
-            />
-          </div>
-          <button
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-            onClick={loadContract}
-          >
-            Load Contract
-          </button>
-
-          {/* Error Message */}
-          {error && <p className="text-red-500 mt-4">{error}</p>}
-
-          {/* Function List */}
-          <div className="mt-8">
-            {functions.map((func, index) => (
-              <FunctionForm key={index} func={func} callFunction={callFunction} result={results[func.name]} />
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    function FunctionForm({ func, callFunction, result }) {
-      const [inputsowice
-System: Let's complete the implementation of the React-based web application for generating a GUI for Ethereum/EVM smart contracts. The previous response was cut off, so I'll provide the full, updated code, including the missing `FunctionForm` component and ensuring all requirements are met. The artifact will maintain the same `artifact_id` since this is a continuation and completion of the previous artifact.
-
-The application will:
-- Use React with Tailwind CSS for a responsive UI.
-- Integrate Web3.js for Ethereum/EVM interaction via MetaMask.
-- Dynamically generate forms for smart contract functions based on the provided ABI.
-- Be a static SPA suitable for GitHub Pages.
-- Handle both view and state-changing functions, displaying results or transaction hashes.
-
-<xaiArtifact artifact_id="dec619af-eba4-440d-92ee-67995d366e12" artifact_version_id="b671b19c-a03d-4c0a-9e8c-79d089cdbf53" title="index.html" contentType="text/html">
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Contract GUI</title>
-  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-
-    function App() {
-      const [web3, setWeb3] = useState(null);
-      const [account, setAccount] = useState(null);
-      const [contractAddress, setContractAddress] = useState('');
-      const [abi, setAbi] = useState('');
-      const [contract, setContract] = useState(null);
-      const [functions, setFunctions] = useState([]);
-      const [error, setError] = useState('');
-      const [results, setResults] = useState({});
-
-      // Initialize Web3 and connect to MetaMask
-      useEffect(() => {
-        if (window.ethereum) {
-          const web3Instance = new Web3(window.ethereum);
-          setWeb3(web3Instance);
-          window.ethereum.request({ method: 'eth_requestAccounts' })
-            .then(accounts => setAccount(accounts[0]))
-            .catch(err => setError('Failed to connect to MetaMask: ' + err.message));
-          window.ethereum.on('accountsChanged', accounts => setAccount(accounts[0]));
-        } else {
-          setError('MetaMask is not installed. Please install it to use this app.');
-        }
-      }, []);
-
-      // Parse ABI and generate function list
-      const loadContract = () => {
-        try {
-          const abiJson = JSON.parse(abi);
-          const contractInstance = new web3.eth.Contract(abiJson, contractAddress);
-          setContract(contractInstance);
-          const contractFunctions = abiJson.filter(item => item.type === 'function');
-          setFunctions(contractFunctions);
-          setError('');
-          setResults({});
-        } catch (err) {
-          setError('Invalid ABI or contract address: ' + err.message);
-        }
-      };
-
-      // Handle function calls
-      const callFunction = async (func, inputs) => {
-        try {
-          const method = contract.methods[func.name](...inputs);
-          if (func.stateMutability === 'view' || func.stateMutability === 'pure') {
-            const result = await method.call({ from: account });
-            setResults(prev => ({ ...prev, [func.name]: result.toString() }));
-          } else {
-            const tx = await method.send({ from: account });
-            setResults(prev => ({ ...prev, [func.name]: `Transaction hash: ${tx.transactionHash}` }));
-          }
-          setError('');
-        } catch (err) {
-          setError('Function call failed: ' + err.message);
-        }
-      };
+        );
+      }
 
       return (
         <div className="container mx-auto p-4 max-w-4xl">
           <h1 className="text-3xl font-bold mb-6 text-center">Smart Contract GUI</h1>
+          <p className="text-lg mb-4 text-center">
+            Połącz portfel MetaMask i wprowadź adres kontraktu oraz ABI, aby wygenerować interfejs.
+          </p>
           
           {/* Connect Wallet */}
           <div className="mb-6 p-4 bg-gray-100 rounded-lg">
-            <p className="text-lg mb-2">Account: {account || 'Not connected'}</p>
+            <p className="text-lg mb-2">Konto: {account || 'Nie połączono'}</p>
             {!account && (
               <button
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
                 onClick={() => window.ethereum.request({ method: 'eth_requestAccounts' })}
               >
-                Connect MetaMask
+                Połącz MetaMask
               </button>
             )}
           </div>
 
           {/* Contract Input */}
           <div className="mb-6">
-            <label className="block text-lg font-medium mb-2">Contract Address</label>
+            <label className="block text-lg font-medium mb-2">Adres kontraktu</label>
             <input
               type="text"
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -243,7 +127,7 @@ The application will:
             />
           </div>
           <div className="mb-6">
-            <label className="block text-lg font-medium mb-2">Contract ABI (JSON)</label>
+            <label className="block text-lg font-medium mb-2">ABI kontraktu (JSON)</label>
             <textarea
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows="6"
@@ -256,7 +140,7 @@ The application will:
             className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
             onClick={loadContract}
           >
-            Load Contract
+            Wczytaj kontrakt
           </button>
 
           {/* Error Message */}
@@ -291,40 +175,48 @@ The application will:
           <h2 className="text-xl font-semibold mb-3">{func.name}</h2>
           <p className="text-sm text-gray-600 mb-2">
             {func.stateMutability === 'view' || func.stateMutability === 'pure'
-              ? 'Read-only function'
-              : 'State-changing function'}
+              ? 'Funkcja tylko do odczytu'
+              : 'Funkcja zmieniająca stan'}
           </p>
           {func.inputs.map((input, index) => (
             <div key={index} className="mb-3">
               <label className="block text-sm font-medium mb-1">
-                {input.name || `Parameter ${index + 1}`} ({input.type})
+                {input.name || `Parametr ${index + 1}`} ({input.type})
               </label>
               <input
                 type="text"
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={`Enter ${input.type}`}
+                placeholder={`Wprowadź ${input.type}`}
                 onChange={e => handleInputChange(input.name || `param${index}`, e.target.value)}
               />
-
-
             </div>
           ))}
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
             onClick={handleSubmit}
           >
-            {func.stateMutability === 'view' || func.stateMutability === 'pure' ? 'Call' : 'Send Transaction'}
+            {func.stateMutability === 'view' || func.stateMutability === 'pure' ? 'Wywołaj' : 'Wyślij transakcję'}
           </button>
           {result && (
             <p className="mt-3 text-sm text-gray-700 break-all">
-              Result: {result}
+              Wynik: {result}
             </p>
           )}
         </div>
       );
     }
 
-    ReactDOM.render(<App />, document.getElementById('root'));
+    try {
+      ReactDOM.render(<App />, document.getElementById('root'));
+    } catch (err) {
+      document.getElementById('root').innerHTML = `
+        <div style="text-align: center; padding: 20px; color: red;">
+          <h1>Błąd renderowania aplikacji</h1>
+          <p>${err.message}</p>
+          <p>Sprawdź konsolę przeglądarki (F12) lub upewnij się, że wszystkie skrypty CDN są dostępne.</p>
+        </div>
+      `;
+    }
   </script>
 </body>
 </html>
