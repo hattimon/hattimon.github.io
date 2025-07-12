@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Contract GUI</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Definicje asystenta dla popularnych funkcji
+    const functionDescriptions = {
+      'transfer': {
+        description: 'Przesyła tokeny na podany adres.',
+        inputs: {
+          '_ Ques: 'Adres odbiorcy (np. 0x123...).',
+          _value: 'Ilość tokenów (w jednostkach tokena, np. 100 dla 100 tokenów).'
+        }
+      },
+      'withdraw': {
+        description: 'Wypłaca środki z kontraktu (np. nagrody ze stakowania).',
+        inputs: {
+          _amount: 'Ilość do wypłaty (w jednostkach tokena lub ETH).'
+        }
+      },
+      'stake': {
+        description: 'Lokuje tokeny w kontrakcie stakowania, aby zarabiać nagrody.',
+        inputs: {
+          _amount: 'Ilość tokenów do zablokowania.',
+          pid: 'Identyfikator puli stakowania (np. 0, 1, 2).'
+        }
+      },
+      'addLiquidity': {
+        description: 'Dodaje płynność do puli (np. Uniswap).',
+        inputs: {
+          tokenA: 'Adres tokena A.',
+          tokenB: 'Adres tokena B.',
+          amountADesired: 'Ilość tokena A.',
+          amountBDesired: 'Ilość tokena B.'
+        }
+      },
+      'swap': {
+        description: 'Wymienia jeden token na inny w puli AMM.',
+        inputs: {
+          amountIn: 'Ilość tokenów wejściowych.',
+          amountOutMin: 'Minimalna ilość tokenów wyjściowych.',
+          path: 'Ścieżka tokenów (tablica adresów, np. [tokenIn, tokenOut]).'
+        }
+      }
+    };
+
+    // Przykładowe wartości dla pid
+    const poolIds = ['0', '1', '2', '3', '4'];
+
+    function App() {
+      const [web3, setWeb3] = useState(null);
+      const [account, setAccount] = useState(null);
+      const [contractAddress, setContractAddress] = useState('');
+      const [abi, setAbi] = useState('');
+      const [contract, setContract] = useState(null);
+      const [functions, setFunctions] = useState([]);
+      const [error, setError] = useState('');
+      const [results, setResults] = useState({});
+      const [isLoading, setIsLoading] = useState(true);
+
+      useEffect(() => {
+        try {
+          if (window.ethereum) {
+            const web3Instance = new Web3(window.ethereum);
+            setWeb3(web3Instance);
+            window.ethereum.request({ method: 'eth_requestAccounts' })
+              .then(accounts => {
+                setAccount(accounts[0]);
+                setIsLoading(false);
+              })
+              .catch(err => {
+                setError('Nie udało się połączyć z MetaMask: ' + err.message);
+                setIsLoading(false);
+              });
+            window.ethereum.on('accountsChanged', accounts => setAccount(accounts[0]));
+          } else {
+            setError('MetaMask nie jest zainstalowany. Zainstaluj MetaMask, aby korzystać z aplikacji.');
+            setIsLoading(false);
+          }
+        } catch (err) {
+          setError('Błąd podczas inicjalizacji: ' + err.message);
+          setIsLoading(false);
+        }
+      }, []);
+
+      const loadContract = () => {
+        try {
+          const abiJson = JSON.parse(abi);
+          if (!web3.utils.isAddress(contractAddress)) {
+            throw new Error('Nieprawidłowy adres kontraktu');
+          }
+          const contractInstance = new web3.eth.Contract(abiJson, contractAddress);
+          setContract(contractInstance);
+          const contractFunctions = abiJson.filter(item => item.type === 'function');
+          setFunctions(contractFunctions);
+          setError('');
+          setResults({});
+        } catch (err) {
+          setError('Nieprawidłowy ABI lub adres kontraktu: ' + err.message);
+        }
+      };
+
+      const callFunction = async (func, inputs) => {
+        try {
+          const method = contract.methods[func.name](...inputs);
+          if (func.stateMutability === 'view' || func.stateMutability === 'pure') {
+            const result = await method.call({ from: account });
+            setResults(prev => ({ ...prev, [func.name]: result.toString() }));
+          } else {
+            const tx = await method.send({ from: account });
+            setResults(prev => ({ ...prev, [func.name]: `Hash transakcji: ${tx.transactionHash}` }));
+          }
+          setError('');
+        } catch (err) {
+          setError('Błąd wywołania funkcji: ' + err.message);
+        }
+      };
+
+      if (isLoading) {
+        return (
+          <div className="container mx-auto p-4 max-w-4xl">
+            <h1 className="text-3xl font-bold mb-6 text-center">Ładowanie...</h1>
+          </div>
+        );
+      }
+
+      return (
+        <div className="container mx-auto p-4 max-w-4xl">
+          <h1 className="text-3xl font-bold mb-6 text-center">Smart Contract GUI</h1>
+          <p className="text-lg mb-4 text-center">
+            Połącz portfel MetaMask, wprowadź adres kontraktu i ABI, aby wygenerować prosty interfejs.
+          </p>
+          
+          <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+            <p className="text-lg mb-2">Konto: {account || 'Nie połączono'}</p>
+            {!account && (
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                onClick={() => window.ethereum.request({ method: 'eth_requestAccounts' })}
+              >
+                Połącz MetaMask
+              </button>
+            )}
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-lg font-medium mb-2">Adres kontraktu</label>
+            <input
+              type="text"
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="0x..."
+              value={contractAddress}
+              onChange={e => setContractAddress(e.target.value)}
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-lg font-medium mb-2">ABI kontraktu (JSON)</label>
+            <textarea
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows="6"
+              placeholder='[{"type":"function", "name":"functionName", "inputs":[...], ...}]'
+              value={abi}
+              onChange={e => setAbi(e.target.value)}
+            />
+          </div>
+          <button
+            className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+            onClick={loadContract}
+          >
+            Wczytaj kontrakt
+          </button>
+
+          {error && (
+            <p className="text-red-500 mt-4 p-3 bg-red-100 rounded">{error}</p>
+          )}
+
+          <div className="mt-8 space-y-6">
+            {functions.map((func, index) => (
+              <FunctionForm key={index} func={func} callFunction={callFunction} result={results[func.name]} />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function FunctionForm({ func, callFunction, result }) {
+      const [inputs, setInputs] = useState({});
+
+      const handleInputChange = (name, value) => {
+        setInputs(prev => ({ ...prev, [name]: value }));
+      };
+
+      const handleSubmit = () => {
+        const inputValues = func.inputs.map(input => inputs[input.name] || '');
+        callFunction(func, inputValues);
+      };
+
+      const funcInfo = functionDescriptions[func.name] || {
+        description: 'Funkcja niestandardowa. Wprowadź parametry zgodnie z dokumentacją kontraktu.',
+        inputs: {}
+      };
+
+      return (
+        <div className="p-4 bg-white border rounded-lg shadow-sm">
+          <h2 className="text-xl font-semibold mb-3">{func.name}</h2>
+          <p className="text-sm text-gray-600 mb-2">
+            {func.stateMutability === 'view' || func.stateMutability === 'pure'
+              ? 'Funkcja tylko do odczytu'
+              : 'Funkcja zmieniająca stan'}
+          </p>
+          <p className="text-sm text-gray-700 mb-4">{funcInfo.description}</p>
+          {func.inputs.map((input, index) => (
+            <div key={index} className="mb-3">
+              <label className="block text-sm font-medium mb-1">
+                {input.name || `Parametr ${index + 1}`} ({input.type})
+              </label>
+              {input.name === 'pid' && input.type === 'uint256' ? (
+                <select
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={e => handleInputChange(input.name || `param${index}`, e.target.value)}
+                >
+                  <option value="">Wybierz ID puli</option>
+                  {poolIds.map(pid => (
+                    <option key={pid} value={pid}>{pid}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder={funcInfo.inputs[input.name] || `Wprowadź ${input.type}`}
+                  onChange={e => handleInputChange(input.name || `param${index}`, e.target.value)}
+                />
+              )}
+            </div>
+          ))}
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+            onClick={handleSubmit}
+          >
+            {func.stateMutability === 'view' || func.stateMutability === 'pure' ? 'Wywołaj' : 'Wyślij transakcję'}
+          </button>
+          {result && (
+            <p className="mt-3 text-sm text-gray-700 break-all">
+              Wynik: {result}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    try {
+      ReactDOM.render(<App />, document.getElementById('root'));
+    } catch (err) {
+      document.getElementById('root').innerHTML = `
+        <div style="text-align: center; padding: 20px; color: red;">
+          <h1>Błąd renderowania aplikacji</h1>
+          <p>${err.message}</p>
+          <p>Sprawdź konsolę przeglądarki (F12) lub upewnij się, że wszystkie skrypty CDN są dostępne.</p>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
