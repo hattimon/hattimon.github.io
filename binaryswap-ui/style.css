@@ -1,88 +1,379 @@
-/* Pozostaje bez zmian */
+:root {
+  --bg: #e0e8d5;
+  --text: #2a3d1e;
+  --card: rgba(200, 230, 180, 0.9);
+  --btn: #4a7c3e;
+  --btn-hover: #3a5c2e;
+  --link: #5a8c4a;
+  --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
+  --border: #a9c9a0;
+}
+
+[data-theme="light"] {
+  --bg: #e0e8d5;
+  --text: #2a3d1e;
+  --card: rgba(200, 230, 180, 0.9);
+  --btn: #4a7c3e;
+  --btn-hover: #3a5c2e;
+  --link: #5a8c4a;
+  --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
+  --border: #a9c9a0;
+}
+
+[data-theme="dark"] {
+  --bg: #1e2a16;
+  --text: #d0e0c0;
+  --card: rgba(74, 124, 62, 0.9);
+  --btn: #6a9c5e;
+  --btn-hover: #508c4e;
+  --link: #8ac784;
+  --shadow: 0 4px 12px rgba(30, 42, 22, 0.3);
+  --border: #7a9c70;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f8f8f8;
   margin: 0;
-  padding: 0;
-}
-
-.header {
-  text-align: center;
-  background-color: #1E1E1E;
-  color: white;
-  padding: 20px;
-}
-
-h1 {
-  margin: 0;
-}
-
-.wallet-info {
+  padding: 20px 0;
+  font-family: 'Roboto', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: all 0.3s ease;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  align-items: flex-start;
+  overflow-x: hidden;
 }
 
-.wallet-info button {
-  margin: 0 10px;
-  padding: 10px 20px;
-  background-color: #00bcd4;
+.container {
+  max-width: 480px;
+  width: 100%;
+  padding: 0 15px;
+  text-align: center;
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+  transition: color 0.3s ease;
+  word-break: break-word;
+  display: inline-block;
+  text-align: center;
+}
+
+a:hover {
+  color: #406830;
+}
+
+button {
+  margin: 5px 0;
+  padding: 8px 12px;
   border: none;
-  color: white;
+  border-radius: 20px;
+  background: var(--btn);
+  color: #fff;
   cursor: pointer;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
 }
 
-.wallet-info button:hover {
-  background-color: #00796b;
+button:hover {
+  background: var(--btn-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(58, 92, 46, 0.2);
 }
 
-#token-balances {
-  text-align: center;
-  margin-top: 20px;
-}
-
-#swap-ui {
-  text-align: center;
-  margin-top: 40px;
-}
-
-#swap-ui input {
+.uniswap-btn {
+  background: linear-gradient(90deg, #4a7c3e, #5a8c4a);
+  border-radius: 20px;
   padding: 10px;
-  margin: 10px;
-  width: 200px;
+  font-size: 1rem;
 }
 
-#swap-ui button {
-  padding: 10px 20px;
-  background-color: #00bcd4;
-  border: none;
-  color: white;
-  cursor: pointer;
+.uniswap-btn:hover {
+  background: linear-gradient(90deg, #3a5c2e, #406830);
 }
 
-#swap-ui button:hover {
-  background-color: #00796b;
+.swap-btn {
+  margin-top: 15px;
 }
 
-#lp-ui {
+input, select {
+  margin: 5px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--text);
+  font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+input:focus, select:focus {
+  border-color: #406830;
+  outline: none;
+  box-shadow: 0 0 8px rgba(64, 104, 48, 0.3);
+}
+
+.section {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.5s ease-in-out;
   text-align: center;
-  margin-top: 40px;
 }
 
-#lp-ui input {
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#logo {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto 20px;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.top-links {
+  text-align: center;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px auto;
+  width: auto;
+  z-index: 1000;
+}
+
+.theme-toggle, .lang-toggle, .music-toggle {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  width: auto;
+  white-space: nowrap;
+}
+
+.theme-toggle:hover, .lang-toggle:hover, .music-toggle:hover {
+  background: var(--btn-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(58, 92, 46, 0.2);
+}
+
+.center-title {
+  text-align: center;
+  font-size: 1.8rem;
+  margin: 20px 0;
+  font-weight: 700;
+  color: #406830;
+  text-shadow: 0 2px 6px rgba(64, 104, 48, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.intro-text {
+  text-align: center;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.swap-section .swap-card, .liquidity-section .liquidity-card {
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(200, 230, 180, 0.7);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+}
+
+.swap-section .swap-card:hover, .liquidity-section .liquidity-card:hover {
+  background: rgba(200, 230, 180, 0.85);
+}
+
+.token-select {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.token-select select {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 1rem;
+  width: 100px;
+}
+
+.swap-input, .liquidity-input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.swap-settings {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.swap-settings label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.liquidity-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  width: 100%;
+}
+
+.lp-info-section .masterchef-instructions {
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.lp-info-section .masterchef-instructions p {
+  margin: 10px 0;
   padding: 10px;
-  margin: 10px;
-  width: 200px;
+  background: var(--card);
+  border-left: 4px solid #406830;
+  border-radius: 5px;
+  text-align: left;
+  word-break: break-word;
 }
 
-#lp-ui button {
-  padding: 10px 20px;
-  background-color: #ff4081;
-  border: none;
-  color: white;
-  cursor: pointer;
+.lp-info-section .masterchef-instructions a {
+  word-break: break-word;
+  text-align: justify;
 }
 
-#lp-ui button:hover {
-  background-color: #e91e63;
+.lp-info-section .masterchef-instructions i {
+  margin-right: 10px;
+  color: #406830;
+}
+
+.lp-info-section .contracts-list {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.lp-info-section .contracts-list p {
+  margin: 8px 0;
+  padding: 8px;
+  background: var(--card);
+  border-left: 4px solid #3a5c2e;
+  border-radius: 5px;
+  text-align: left;
+  word-break: break-word;
+}
+
+.lp-info-section .contracts-list a {
+  word-break: break-word;
+  text-align: justify;
+}
+
+.lp-info-section .contracts-list i {
+  margin-right: 10px;
+  color: #3a5c2e;
+}
+
+.error-message {
+  margin: 20px 0;
+  padding: 15px;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 16px;
+  color: #c62828;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+#error-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 10px;
+  }
+  .top-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .button-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 10px auto;
+  }
+  .button-group button {
+    margin: 5px;
+  }
+  .center-title {
+    font-size: 1.5rem;
+  }
+  .section {
+    padding: 15px;
+  }
+  .uniswap-btn {
+    padding: 10px;
+    font-size: 1rem;
+  }
+  .token-select {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .token-select select {
+    width: 100%;
+  }
+  .liquidity-actions {
+    flex-direction: column;
+  }
+  .lp-info-section .masterchef-instructions p,
+  .lp-info-section .contracts-list p {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
 }
