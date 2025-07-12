@@ -39,18 +39,120 @@ const MASTER = [
   "function emergencyWithdraw(uint256)"
 ];
 
+// === Translations ===
+const translations = {
+  pl: {
+    theme_light: "Tryb jasny",
+    theme_dark: "Tryb ciemny",
+    language: "Polski",
+    music_on: "Music: On",
+    music_off: "Music: Off",
+    audio_not_supported: "Twoja przeglądarka nie obsługuje elementu audio.",
+    documentation: "Dokumentacja",
+    pair_rate: "Kurs 0101/WBNB",
+    fast_bridge: "Szybki Most opBNB ⇄ FDUSD",
+    official_bridge: "Oficjalny Most opBNB ⇄ BNB (7 dni)",
+    emergency_mode: "Tryb Awaryjny",
+    interaction_info: "(<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)",
+    gui_info: "Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów.",
+    wallet_recommendation: "Polecam portfel Rabby.io gdzie również cofniesz uprawnienia.",
+    transaction_history: "Do podglądu historii transakcji polecam DeBank.com.",
+    wallet_label: "Portfel",
+    wallet_not_connected: "Niepołączony",
+    connect_wallet: "Połącz/Odświerz Portfel",
+    switch_network: "Przełącz na opBNB",
+    wallet_content: "Zawartość Portfela",
+    swap_title: "Swap",
+    swap_direction: "Zamiana",
+    slippage: "Poślizg",
+    swap_button: "Swap",
+    liquidity_pool: "Pula Płynności",
+    add_lp: "Dodaj LP",
+    remove_lp: "Usuń LP",
+    emergency_withdrawal: "Awaryjna wypłata LP, NFT itp:",
+    contract_instruction_1: "Wejdź na kontrakt:",
+    contract_instruction_2: "Skopiuj Adres kontraktu oraz zawartość pola Contract ABI",
+    contract_instruction_3: "Otwórz w nowej zakładce stronę:",
+    smart_contracts_interface: "Interfejs kontraktów inteligentnych",
+    contract_instruction_4: "przełącz sieć na opBNB i wklej w odpowiednich polach te dane.",
+    contract_instruction_5: "Przejdź do pola emergencyWithdraw i wpisuj kolejno 0,1,2,3,4,5 itd.",
+    contract_instruction_6: "w zależności od tego co stakujesz, podczas zatwierdzenia transakcji Rabby Wallet wyświetli wiadomość do podpisania np. wypłata LP lub NFT",
+    contract_instruction_7: "- zatwierdź każdą transakcję, która pokazuje wypłatę czegoś z kontraktu i sprawdź w DeBank lub wyżej ilość tokenów LP (reszta powyżej 😊)",
+    error_label: "Błąd",
+    error_invalid_percent: "Procent 1–100!",
+    error_no_metamask: "Zainstaluj MetaMask!",
+    error_switch_network: "Nie można przełączyć sieci:",
+    error_add_network: "Nie można dodać sieci opBNB:",
+    error_connect_wallet: "Błąd połączenia z portfelem:",
+    error_swap_bnb_to_0101: "Błąd przy swapie (BNB → 0101):",
+    error_swap_0101_to_bnb: "Błąd przy swapie (0101 → BNB):",
+    error_language_not_implemented: "Funkcja zmiany języka nie jest jeszcze zaimplementowana.",
+    error_play_music: "Nie można odtworzyć muzyki:"
+  },
+  en: {
+    theme_light: "Light Mode",
+    theme_dark: "Dark Mode",
+    language: "English",
+    music_on: "Music: On",
+    music_off: "Music: Off",
+    audio_not_supported: "Your browser does not support the audio element.",
+    documentation: "Documentation",
+    pair_rate: "0101/WBNB Rate",
+    fast_bridge: "Fast Bridge opBNB ⇄ FDUSD",
+    official_bridge: "Official Bridge opBNB ⇄ BNB (7 days)",
+    emergency_mode: "Emergency Mode",
+    interaction_info: "(<b>Clicking SWAP or Add/Remove LP</b> requires several consecutive clicks to approve contract interactions for the specified amount – e.g., approve the Swap contract and confirm the Swap)",
+    gui_info: "This is a secure (SSL) substitute GUI using the original functions of BinarySwap contracts.",
+    wallet_recommendation: "I recommend the Rabby.io wallet where you can also revoke permissions.",
+    transaction_history: "For transaction history, I recommend DeBank.com.",
+    wallet_label: "Wallet",
+    wallet_not_connected: "Not Connected",
+    connect_wallet: "Connect/Refresh Wallet",
+    switch_network: "Switch to opBNB",
+    wallet_content: "Wallet Contents",
+    swap_title: "Swap",
+    swap_direction: "Swap Direction",
+    slippage: "Slippage",
+    swap_button: "Swap",
+    liquidity_pool: "Liquidity Pool",
+    add_lp: "Add LP",
+    remove_lp: "Remove LP",
+    emergency_withdrawal: "Emergency Withdrawal of LP, NFT, etc.:",
+    contract_instruction_1: "Visit the contract:",
+    contract_instruction_2: "Copy the Contract Address and the contents of the Contract ABI field",
+    contract_instruction_3: "Open in a new tab the page:",
+    smart_contracts_interface: "Smart Contracts Interface",
+    contract_instruction_4: "switch the network to opBNB and paste the data into the appropriate fields.",
+    contract_instruction_5: "Go to the emergencyWithdraw field and enter 0,1,2,3,4,5, etc. sequentially.",
+    contract_instruction_6: "depending on what you are staking, during transaction confirmation, Rabby Wallet will display a message to sign, e.g., withdrawal of LP or NFT",
+    contract_instruction_7: "- approve each transaction that shows the withdrawal of something from the contract and check the LP token amount on DeBank or above (the rest can be done above 😊)",
+    error_label: "Error",
+    error_invalid_percent: "Percentage 1–100!",
+    error_no_metamask: "Install MetaMask!",
+    error_switch_network: "Cannot switch network:",
+    error_add_network: "Cannot add opBNB network:",
+    error_connect_wallet: "Wallet connection error:",
+    error_swap_bnb_to_0101: "Error during swap (BNB → 0101):",
+    error_swap_0101_to_bnb: "Error during swap (0101 → BNB):",
+    error_language_not_implemented: "Language change function not yet implemented.",
+    error_play_music: "Cannot play music:"
+  }
+};
+
 // === Swap Handler ===
 async function handleSwap(){
   const pc = parseInt(swapPercent.value);
-  if(isNaN(pc) || pc < 1 || pc > 100) return showError("Procent 1–100!");
+  if(isNaN(pc) || pc < 1 || pc > 100) return showError(translations[localStorage.language || "pl"].error_invalid_percent);
 
   const slippage = parseInt(swapSlippage.value) || 1;
   const deadline = Math.floor(Date.now()/1000) + 300;
 
-  if (swapDirection.value === "toToken") {
+  if (swapDirection.value === "toToken" && swapToken2.value === "0101") {
     swapBNBto0101(pc, slippage, deadline);
-  } else {
+  } else if (swapDirection.value === "toBNB" && swapToken2.value === "BNB") {
     swap0101toBNB(pc, slippage, deadline);
+  } else {
+    showError("Invalid token pair selection.");
   }
 }
 
@@ -75,7 +177,7 @@ async function swapBNBto0101(pc, slippage, deadline){
     await tx.wait();
     updateBalances();
   } catch (error) {
-    showError("Błąd przy swapie (BNB → 0101): " + error.message);
+    showError(translations[localStorage.language || "pl"].error_swap_bnb_to_0101 + " " + error.message);
   }
 }
 
@@ -106,7 +208,7 @@ async function swap0101toBNB(pc, slippage, deadline){
     await tx.wait();
     updateBalances();
   } catch (error) {
-    showError("Błąd przy swapie (0101 → BNB): " + error.message);
+    showError(translations[localStorage.language || "pl"].error_swap_0101_to_bnb + " " + error.message);
   }
 }
 
@@ -133,7 +235,7 @@ async function removeLiquidity(pc){
 
 // === Wallet Functions ===
 async function switchToOpBNB() {
-  if (!window.ethereum) return showError("Zainstaluj MetaMask!");
+  if (!window.ethereum) return showError(translations[localStorage.language || "pl"].error_no_metamask);
 
   try {
     await window.ethereum.request({
@@ -148,16 +250,16 @@ async function switchToOpBNB() {
           params: [opBNB]
         });
       } catch (addError) {
-        return showError("Nie można dodać sieci opBNB: " + addError.message);
+        return showError(translations[localStorage.language || "pl"].error_add_network + " " + addError.message);
       }
     } else {
-      return showError("Nie można przełączyć sieci: " + switchError.message);
+      return showError(translations[localStorage.language || "pl"].error_switch_network + " " + switchError.message);
     }
   }
 }
 
 async function connectWallet(){
-  if (!window.ethereum) return showError("Zainstaluj MetaMask!");
+  if (!window.ethereum) return showError(translations[localStorage.language || "pl"].error_no_metamask);
 
   try {
     const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
@@ -175,10 +277,10 @@ async function connectWallet(){
               params: [opBNB]
             });
           } catch (addError) {
-            return showError("Nie można dodać sieci opBNB: " + addError.message);
+            return showError(translations[localStorage.language || "pl"].error_add_network + " " + addError.message);
           }
         } else {
-          return showError("Nie można przełączyć sieci: " + switchError.message);
+          return showError(translations[localStorage.language || "pl"].error_switch_network + " " + switchError.message);
         }
       }
     }
@@ -190,7 +292,7 @@ async function connectWallet(){
     document.getElementById("wallet-address").innerText = account;
     updateBalances();
   } catch (err) {
-    showError("Błąd połączenia z portfelem: " + err.message);
+    showError(translations[localStorage.language || "pl"].error_connect_wallet + " " + err.message);
   }
 }
 
@@ -210,43 +312,75 @@ async function updateBalances(){
 // === Theme Toggle ===
 function toggleTheme(){
   const html = document.documentElement;
-  const light = html.getAttribute("data-theme")==="light";
-  html.setAttribute("data-theme", light?"dark":"light");
-  document.querySelector(".theme-toggle").innerText = light?"🌙 Tryb ciemny":"🌞 Tryb jasny";
-  localStorage.theme = light?"dark":"light";
+  const light = html.getAttribute("data-theme") === "light";
+  html.setAttribute("data-theme", light ? "dark" : "light");
+  document.querySelector(".theme-toggle").innerHTML = light ? `🌙 <span data-i18n="theme_dark">${translations[localStorage.language || "pl"].theme_dark}</span>` : `🌞 <span data-i18n="theme_light">${translations[localStorage.language || "pl"].theme_light}</span>`;
+  localStorage.theme = light ? "dark" : "light";
 }
 
-// === Language Toggle (Placeholder) ===
+// === Language Toggle ===
 function toggleLanguage(){
-  // Dodaj logikę zmiany języka, np. przełączanie Google Translate
-  showError("Funkcja zmiany języka nie jest jeszcze zaimplementowana.");
+  const newLang = localStorage.language === "pl" ? "en" : "pl";
+  localStorage.language = newLang;
+  updateTranslations(newLang);
+  document.querySelector(".lang-toggle").innerHTML = `🌐 <span data-i18n="language">${translations[newLang].language}</span>`;
+}
+
+// === Update Translations ===
+function updateTranslations(lang) {
+  document.querySelectorAll("[data-i18n]").forEach(element => {
+    const key = element.getAttribute("data-i18n");
+    element.innerText = translations[lang][key];
+  });
 }
 
 // === Music Toggle ===
 function toggleMusic(){
   const audio = document.getElementById("background-music");
   const isPlaying = !audio.paused;
+  const lang = localStorage.language || "pl";
   if (isPlaying) {
     audio.pause();
-    document.querySelector(".music-toggle").innerText = "🎵 Music: Off";
+    document.querySelector(".music-toggle").innerHTML = `🎵 <span data-i18n="music_off">${translations[lang].music_off}</span>`;
     localStorage.music = "off";
   } else {
-    audio.play().catch(err => showError("Nie można odtworzyć muzyki: " + err.message));
-    document.querySelector(".music-toggle").innerText = "🎵 Music: On";
+    audio.play().catch(err => showError(translations[lang].error_play_music + " " + err.message));
+    document.querySelector(".music-toggle").innerHTML = `🎵 <span data-i18n="music_on">${translations[lang].music_on}</span>`;
     localStorage.music = "on";
   }
+}
+
+// === Swap Tokens ===
+function swapTokens() {
+  const swapDirection = document.getElementById("swapDirection");
+  const swapToken2 = document.getElementById("swapToken2");
+  const temp = swapDirection.value;
+  swapDirection.value = swapToken2.value === "0101" ? "toBNB" : "toToken";
+  swapToken2.value = temp === "toToken" ? "0101" : "BNB";
 }
 
 // === Initialization ===
 (() => {
   const th = localStorage.theme || "light";
   document.documentElement.setAttribute("data-theme", th);
-  document.querySelector(".theme-toggle").innerText = th === "light" ? "🌙 Tryb ciemny" : "🌞 Tryb jasny";
+  document.querySelector(".theme-toggle").innerHTML = th === "light" ? `🌞 <span data-i18n="theme_light">${translations[localStorage.language || "pl"].theme_light}</span>` : `🌙 <span data-i18n="theme_dark">${translations[localStorage.language || "pl"].theme_dark}</span>`;
+
+  const lang = localStorage.language || "pl";
+  updateTranslations(lang);
+  document.querySelector(".lang-toggle").innerHTML = `🌐 <span data-i18n="language">${translations[lang].language}</span>`;
 
   const musicState = localStorage.music || "on";
   const audio = document.getElementById("background-music");
-  document.querySelector(".music-toggle").innerText = musicState === "on" ? "🎵 Music: On" : "🎵 Music: Off";
+  document.querySelector(".music-toggle").innerHTML = musicState === "on" ? `🎵 <span data-i18n="music_on">${translations[lang].music_on}</span>` : `🎵 <span data-i18n="music_off">${translations[lang].music_off}</span>`;
   if (musicState === "on") {
     audio.play().catch(err => console.log("Autoodtwarzanie zablokowane: ", err.message));
   }
+
+  // Initialize swap token selection
+  const swapDirection = document.getElementById("swapDirection");
+  const swapToken2 = document.getElementById("swapToken2");
+  swapToken2.value = swapDirection.value === "toToken" ? "0101" : "BNB";
+  swapDirection.addEventListener("change", () => {
+    swapToken2.value = swapDirection.value === "toToken" ? "0101" : "BNB";
+  });
 })();
