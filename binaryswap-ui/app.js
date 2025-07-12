@@ -79,7 +79,7 @@ const translations = {
     enter_amount: "Enter amount (1–100) %",
     error_label: "Error",
     error_invalid_percent: "Percentage must be 1–100!",
-    error_no_metamask: "Install MetaMask!",
+    error_no_metamask: "Install MetaMask or a compatible wallet!",
     error_switch_network: "Cannot switch network:",
     error_add_network: "Cannot add opBNB network:",
     error_connect_wallet: "Wallet connection error:",
@@ -90,6 +90,7 @@ const translations = {
     error_insufficient_balance: "Insufficient balance for this transaction!",
     error_approval_failed: "Token approval failed!",
     error_liquidity_failed: "Liquidity operation failed!",
+    error_wallet_conflict: "Multiple wallets detected! Please disable other wallet extensions and keep only one (e.g., MetaMask or Rabby).",
     copy_button: "Copy",
     copied: "Copied!"
   },
@@ -107,7 +108,7 @@ const translations = {
     interaction_info: "(<b>Klikając ZAMIANA lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – np. zatwierdzenie kontraktu Zamiany i potwierdzenie Zamiany)",
     gui_info: "Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.",
     wallet_recommendation: "Polecam portfel <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a>, gdzie możesz również cofnąć uprawnienia.",
-    transaction_history: "Do podglądu historii transakcji sprawdź <a href=\"https://debank.com/\" target="_blank\">DeBank.com</a>.",
+    transaction_history: "Do podglądu historii transakcji sprawdź <a href=\"https://debank.com/\" target=\"_blank\">DeBank.com</a>.",
     wallet_label: "Portfel",
     disconnected: "Niepołączony",
     connect: "Połącz/Odśwież Portfel",
@@ -145,7 +146,7 @@ const translations = {
     enter_amount: "Wprowadź ilość (1–100) %",
     error_label: "Błąd",
     error_invalid_percent: "Procent musi być od 1 do 100!",
-    error_no_metamask: "Zainstaluj MetaMask!",
+    error_no_metamask: "Zainstaluj MetaMask lub kompatybilny portfel!",
     error_switch_network: "Nie można przełączyć sieci:",
     error_add_network: "Nie można dodać sieci opBNB:",
     error_connect_wallet: "Błąd połączenia z portfelem:",
@@ -156,12 +157,18 @@ const translations = {
     error_insufficient_balance: "Niewystarczające saldo dla tej transakcji!",
     error_approval_failed: "Zatwierdzenie tokena nie powiodło się!",
     error_liquidity_failed: "Operacja płynności nie powiodła się!",
+    error_wallet_conflict: "Wykryto wiele portfeli! Proszę wyłączyć inne rozszerzenia portfeli i zostawić tylko jedno (np. MetaMask lub Rabby).",
     copy_button: "Kopiuj",
     copied: "Skopiowano!"
   }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Sprawdzenie konfliktów z portfelami
+  if (window.ethereum && window.ethereum.isMetaMask && window.ethereum.isTally) {
+    showError(translations[localStorage.language || "en"].error_wallet_conflict);
+  }
+
   const themeToggleBtn = document.querySelector('.theme-toggle');
   const langToggleBtn = document.querySelector('.lang-toggle');
   const musicToggleBtn = document.querySelector('.music-toggle');
@@ -180,14 +187,20 @@ document.addEventListener('DOMContentLoaded', () => {
   swapTokensBtn.addEventListener('click', swapTokens);
   swapBtn.addEventListener('click', handleSwap);
   addLiquidityBtn.addEventListener('click', () => {
-    const lpPercent = document.getElementById('lpPercent').value;
-    if (lpPercent >= 1 && lpPercent <= 100) addLiquidity(lpPercent);
-    else showError(translations[localStorage.language || "en"].error_invalid_percent);
+    const lpPercent = parseFloat(document.getElementById('lpPercent').value);
+    if (isNaN(lpPercent) || lpPercent < 1 || lpPercent > 100) {
+      showError(translations[localStorage.language || "en"].error_invalid_percent);
+    } else {
+      addLiquidity(lpPercent);
+    }
   });
   removeLiquidityBtn.addEventListener('click', () => {
-    const lpPercent = document.getElementById('lpPercent').value;
-    if (lpPercent >= 1 && lpPercent <= 100) removeLiquidity(lpPercent);
-    else showError(translations[localStorage.language || "en"].error_invalid_percent);
+    const lpPercent = parseFloat(document.getElementById('lpPercent').value);
+    if (isNaN(lpPercent) || lpPercent < 1 || lpPercent > 100) {
+      showError(translations[localStorage.language || "en"].error_invalid_percent);
+    } else {
+      removeLiquidity(lpPercent);
+    }
   });
 
   const th = localStorage.theme || "dark";
@@ -204,7 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function connectWallet() {
-  if (!window.ethereum) return showError(translations[localStorage.language || "en"].error_no_metamask);
+  if (!window.ethereum) {
+    showError(translations[localStorage.language || "en"].error_no_metamask);
+    return;
+  }
 
   try {
     provider = new ethers.BrowserProvider(window.ethereum);
@@ -227,25 +243,31 @@ async function connectWallet() {
               params: [opBNB]
             });
           } catch (addError) {
-            return showError(translations[localStorage.language || "en"].error_add_network + " " + addError.message);
+            showError(translations[localStorage.language || "en"].error_add_network + " " + addError.message);
+            return;
           }
         } else if (switchError.code === -32002) {
-          return showError("Network switch request already pending. Please check your wallet.");
+          showError("Network switch request already pending. Please check your wallet.");
+          return;
         } else {
-          return showError(translations[localStorage.language || "en"].error_switch_network + " " + switchError.message);
+          showError(translations[localStorage.language || "en"].error_switch_network + " " + switchError.message);
+          return;
         }
       }
     }
 
     document.getElementById("wallet-address").textContent = account.slice(0, 6) + "..." + account.slice(-4);
-    updateBalances();
+    await updateBalances();
   } catch (err) {
     showError(translations[localStorage.language || "en"].error_connect_wallet + " " + err.message);
   }
 }
 
 async function switchToOpBNB() {
-  if (!window.ethereum) return showError(translations[localStorage.language || "en"].error_no_metamask);
+  if (!window.ethereum) {
+    showError(translations[localStorage.language || "en"].error_no_metamask);
+    return;
+  }
 
   try {
     await window.ethereum.request({
@@ -260,10 +282,12 @@ async function switchToOpBNB() {
           params: [opBNB]
         });
       } catch (addError) {
-        return showError(translations[localStorage.language || "en"].error_add_network + " " + addError.message);
+        showError(translations[localStorage.language || "en"].error_add_network + " " + addError.message);
+        return;
       }
     } else {
-      return showError(translations[localStorage.language || "en"].error_switch_network + " " + switchError.message);
+      showError(translations[localStorage.language || "en"].error_switch_network + " " + switchError.message);
+      return;
     }
   }
 }
@@ -281,11 +305,12 @@ async function updateBalances() {
       lpToken.balanceOf(account)
     ]);
 
-    document.getElementById("balance-0101").textContent = parseFloat(ethers.formatEther(balance0101)).toFixed(8);
-    document.getElementById("balance-bnb").textContent = parseFloat(ethers.formatEther(balanceBNB)).toFixed(8);
-    document.getElementById("balance-lp").textContent = parseFloat(ethers.formatEther(balanceLP)).toFixed(8);
+    document.getElementById("balance-0101").textContent = parseFloat(ethers.formatEther(balance0101)).toFixed(6);
+    document.getElementById("balance-bnb").textContent = parseFloat(ethers.formatEther(balanceBNB)).toFixed(6);
+    document.getElementById("balance-lp").textContent = parseFloat(ethers.formatEther(balanceLP)).toFixed(6);
   } catch (err) {
     console.error("Error updating balances:", err);
+    showError("Failed to update balances: " + err.message);
   }
 }
 
@@ -294,7 +319,10 @@ async function calculateAutoSlippage() {
 }
 
 async function handleSwap() {
-  if (!signer) return showError(translations[localStorage.language || "en"].error_connect_wallet);
+  if (!signer) {
+    showError(translations[localStorage.language || "en"].error_connect_wallet);
+    return;
+  }
 
   const fromToken = document.getElementById("fromToken").value;
   const toToken = document.getElementById("toToken").value;
@@ -303,26 +331,31 @@ async function handleSwap() {
   const slippage = slippageSelect ? slippageSelect.value : "auto";
 
   if (isNaN(percent) || percent < 1 || percent > 100) {
-    return showError(translations[localStorage.language || "en"].error_invalid_percent);
+    showError(translations[localStorage.language || "en"].error_invalid_percent);
+    return;
   }
   if (fromToken === toToken) {
-    return showError(translations[localStorage.language || "en"].error_invalid_pair);
+    showError(translations[localStorage.language || "en"].error_invalid_pair);
+    return;
   }
 
-  const amountPercent = (percent / 100).toString();
-  let amount;
   try {
+    let amount;
     if (fromToken === "BNB") {
       const balanceBNB = await provider.getBalance(account);
       amount = balanceBNB * BigInt(Math.floor(percent)) / BigInt(100);
+      if (amount <= 0 || balanceBNB < amount) {
+        showError(translations[localStorage.language || "en"].error_insufficient_balance);
+        return;
+      }
     } else {
       const token0101 = new ethers.Contract(addr0101, ERC20, provider);
       const balance0101 = await token0101.balanceOf(account);
       amount = balance0101 * BigInt(Math.floor(percent)) / BigInt(100);
-    }
-
-    if (amount <= 0) {
-      return showError(translations[localStorage.language || "en"].error_insufficient_balance);
+      if (amount <= 0 || balance0101 < amount) {
+        showError(translations[localStorage.language || "en"].error_insufficient_balance);
+        return;
+      }
     }
 
     const slippagePercent = slippage === "auto" ? await calculateAutoSlippage() : parseFloat(slippage);
@@ -346,7 +379,8 @@ async function swapBNBto0101(amount, amountOutMin) {
   try {
     const tx = await router.swapExactETHForTokens(amountOutMin, path, account, deadline, { value: amount });
     await tx.wait();
-    updateBalances();
+    showError("Swap (BNB → 0101) successful!");
+    await updateBalances();
   } catch (err) {
     showError(translations[localStorage.language || "en"].error_swap_bnb_to_0101 + " " + err.message);
   }
@@ -367,14 +401,18 @@ async function swap0101toBNB(amount, amountOutMin) {
 
     const tx = await router.swapExactTokensForETH(amount, amountOutMin, path, account, deadline);
     await tx.wait();
-    updateBalances();
+    showError("Swap (0101 → BNB) successful!");
+    await updateBalances();
   } catch (err) {
     showError(translations[localStorage.language || "en"].error_swap_0101_to_bnb + " " + err.message);
   }
 }
 
 async function addLiquidity(percent) {
-  if (!signer) return showError(translations[localStorage.language || "en"].error_connect_wallet);
+  if (!signer) {
+    showError(translations[localStorage.language || "en"].error_connect_wallet);
+    return;
+  }
 
   const token0101 = new ethers.Contract(addr0101, ERC20, signer);
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
@@ -387,7 +425,8 @@ async function addLiquidity(percent) {
   const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
 
   if (amountBNB <= 0 || amount0101 <= 0) {
-    return showError(translations[localStorage.language || "en"].error_insufficient_balance);
+    showError(translations[localStorage.language || "en"].error_insufficient_balance);
+    return;
   }
 
   try {
@@ -399,14 +438,18 @@ async function addLiquidity(percent) {
 
     const tx = await router.addLiquidityETH(addr0101, amount0101, amountTokenMin, amountETHMin, account, deadline, { value: amountBNB });
     await tx.wait();
-    updateBalances();
+    showError("Liquidity added successfully!");
+    await updateBalances();
   } catch (err) {
     showError(translations[localStorage.language || "en"].error_liquidity_failed + " " + err.message);
   }
 }
 
 async function removeLiquidity(percent) {
-  if (!signer) return showError(translations[localStorage.language || "en"].error_connect_wallet);
+  if (!signer) {
+    showError(translations[localStorage.language || "en"].error_connect_wallet);
+    return;
+  }
 
   const lpToken = new ethers.Contract(addrLP, ERC20, signer);
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
@@ -417,7 +460,8 @@ async function removeLiquidity(percent) {
   const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
 
   if (amount <= 0) {
-    return showError(translations[localStorage.language || "en"].error_insufficient_balance);
+    showError(translations[localStorage.language || "en"].error_insufficient_balance);
+    return;
   }
 
   try {
@@ -429,7 +473,8 @@ async function removeLiquidity(percent) {
 
     const tx = await router.removeLiquidityETH(addr0101, amount, amountTokenMin, amountETHMin, account, deadline);
     await tx.wait();
-    updateBalances();
+    showError("Liquidity removed successfully!");
+    await updateBalances();
   } catch (err) {
     showError(translations[localStorage.language || "en"].error_liquidity_failed + " " + err.message);
   }
@@ -497,9 +542,10 @@ function showError(message) {
   toast.style.display = "flex";
   toast.style.alignItems = "center";
   toast.style.gap = "10px";
+  toast.style.maxWidth = "400px";
   toast.innerHTML = `
     <strong data-i18n="error_label">${translations[lang].error_label}:</strong>
-    <span class="toast-message">${message}</span>
+    <span>${message}</span>
     <button class="toast-copy" style="background:none;border:none;cursor:pointer;color:var(--text-color);">
       <i class="fas fa-copy"></i> <span data-i18n="copy_button">${translations[lang].copy_button}</span>
     </button>
@@ -513,10 +559,11 @@ function showError(message) {
   const timeout = setTimeout(() => removeToast(toast), 7000);
 
   toast.querySelector(".toast-copy").addEventListener("click", () => {
-    navigator.clipboard.writeText(message).catch(err => console.error("Copy failed:", err));
-    const copyButton = toast.querySelector(".toast-copy span");
-    copyButton.innerHTML = translations[lang].copied;
-    setTimeout(() => copyButton.innerHTML = translations[lang].copy_button, 2000);
+    navigator.clipboard.writeText(message).then(() => {
+      const copyButton = toast.querySelector(".toast-copy span");
+      copyButton.innerHTML = translations[lang].copied;
+      setTimeout(() => copyButton.innerHTML = translations[lang].copy_button, 2000);
+    }).catch(err => console.error("Copy failed:", err));
   });
 
   toast.querySelector(".toast-close").addEventListener("click", () => {
