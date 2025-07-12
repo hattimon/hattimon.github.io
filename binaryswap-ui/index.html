@@ -38,11 +38,14 @@
       <span data-i18n="gui_info">This is a secure (SSL) backup GUI using BinarySwap's original contract functions.</span><br>
       <span class="highlight-text" data-i18n="wallet_recommendation">I recommend the <a href="https://rabby.io/" target="_blank">Rabby.io</a> wallet where you can also revoke permissions.</span><br>
       <span class="highlight-text" data-i18n="transaction_history">For transaction history, check <a href="https://debank.com/" target="_blank">DeBank.com</a>.</span><br><br>
-   <span>
+  <span>
     ✅ Enjoying this tool or found it useful❔<br>
     🗯 I'm grateful for any support ☕️<br>
     🔗 Any EVM chain:<br>
-    <span class="copy-container" onclick="copyToClipboard()" style="cursor:pointer; background:#1e2a16; padding:6px 10px; border-radius:6px; display:inline-block; font-family:monospace;">
+    <span class="copy-container"
+          onclick="copyToClipboard(this)"
+          title="Click to copy"
+          style="cursor:pointer; background:#1e2a16; padding:6px 10px; border-radius:6px; display:inline-block; font-family:monospace; color:#fff;">
       0x6D4e9Eb20b7460baE679CA1E9bA02d00697F57c2
     </span>
   </span>
@@ -64,9 +67,10 @@
 ">
   Copied to clipboard ✅
 </div>
+
 <script>
-  function copyToClipboard() {
-    const address = '0x6D4e9Eb20b7460baE679CA1E9bA02d00697F57c2';
+  function copyToClipboard(el) {
+    const address = el.textContent.trim();  // pobiera tekst z klikniętego elementu
     navigator.clipboard.writeText(address).then(() => {
       const toast = document.getElementById('toast');
       toast.style.visibility = 'visible';
@@ -75,6 +79,8 @@
         toast.style.opacity = '0';
         toast.style.visibility = 'hidden';
       }, 2000);
+    }).catch(err => {
+      console.error("Copy failed:", err);
     });
   }
 </script>
