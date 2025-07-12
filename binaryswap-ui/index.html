@@ -49,17 +49,32 @@
 </p>
 
 <!-- Toast notification -->
-<div id="toast" style="position:fixed; bottom:20px; right:20px; background:#4caf50; color:white; padding:10px 16px; border-radius:8px; opacity:0; transition:opacity 0.3s ease; z-index:9999;">
+<div id="toast" style="
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #4caf50;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 9999;
+">
   Copied to clipboard ✅
 </div>
-
 <script>
   function copyToClipboard() {
     const address = '0x6D4e9Eb20b7460baE679CA1E9bA02d00697F57c2';
     navigator.clipboard.writeText(address).then(() => {
       const toast = document.getElementById('toast');
+      toast.style.visibility = 'visible';
       toast.style.opacity = '1';
-      setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.visibility = 'hidden';
+      }, 2000);
     });
   }
 </script>
