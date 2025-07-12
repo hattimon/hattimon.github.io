@@ -99,7 +99,7 @@ const translations = {
     error_connect_wallet: "Wallet connection error:",
     error_swap_bnb_to_0101: "Error swapping (BNB → 0101):",
     error_swap_0101_to_bnb: "Error swapping (0101 → BNB):",
-    error_invalid_pair: "Only BNB ↔ 0101 swaps are supported!",
+    error_invalid_pair: "Cannot swap the same token!",
     error_play_music: "Cannot play music:",
     copy_button: "Copy",
     copied: "Copied!"
@@ -162,7 +162,7 @@ const translations = {
     error_connect_wallet: "Błąd połączenia z portfelem:",
     error_swap_bnb_to_0101: "Błąd przy zamianie (BNB → 0101):",
     error_swap_0101_to_bnb: "Błąd przy zamianie (0101 → BNB):",
-    error_invalid_pair: "Obsługiwana jest tylko zamiana BNB ↔ 0101!",
+    error_invalid_pair: "Nie można zamienić tego samego tokenu!",
     error_play_music: "Nie można odtworzyć muzyki:",
     copy_button: "Kopiuj",
     copied: "Skopiowano!"
@@ -179,12 +179,14 @@ async function handleSwap() {
   const fromToken = document.getElementById("fromToken").value;
   const toToken = document.getElementById("toToken").value;
 
+  if (fromToken === toToken) {
+    return showError(translations[localStorage.language || "en"].error_invalid_pair);
+  }
+
   if (fromToken === "BNB" && toToken === "0101") {
     swapBNBto0101(pc, slippage, deadline);
   } else if (fromToken === "0101" && toToken === "BNB") {
     swap0101toBNB(pc, slippage, deadline);
-  } else {
-    showError(translations[localStorage.language || "en"].error_invalid_pair);
   }
 }
 
@@ -359,8 +361,8 @@ function toggleLanguage() {
   localStorage.language = newLang;
   updateTranslations(newLang);
   document.querySelector(".lang-toggle").innerHTML = `<i class="fas fa-globe"></i> <span data-i18n="language">${translations[newLang].language}</span>`;
-  document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${localStorage.theme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${localStorage.theme || "light"}">${translations[localStorage.language || "en"][`theme_${localStorage.theme || "light"}`]}</span>`;
-  document.querySelector(".music-toggle").innerHTML = `<i class="fas fa-music"></i> <span data-i18n="music_${localStorage.music === "on" ? "on" : "off"}">${translations[localStorage.language || "en"][`music_${localStorage.music === "on" ? "on" : "off"}`]}</span>`;
+  document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${localStorage.theme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${localStorage.theme || "light"}">${translations[newLang][`theme_${localStorage.theme || "light"}`]}</span>`;
+  document.querySelector(".music-toggle").innerHTML = `<i class="fas fa-music"></i> <span data-i18n="music_${localStorage.music === "on" ? "on" : "off"}">${translations[newLang][`music_${localStorage.music === "on" ? "on" : "off"}`]}</span>`;
 }
 
 // === Update Translations ===
@@ -392,71 +394,77 @@ function toggleMusic() {
 }
 
 // === Swap Tokens ===
+function updateToTokenOptions() {
+  const fromToken = document.getElementById("fromToken").value;
+  const toTokenSelect = document.getElementById("toToken");
+  const tokens = ["BNB", "0101"].filter(token => token !== fromToken);
+  toTokenSelect.innerHTML = tokens.map(token => `<option value="${token}">${token}</option>`).join("");
+}
+
 function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
   const temp = fromToken.value;
   fromToken.value = toToken.value;
   toToken.value = temp;
+  updateToTokenOptions();
 }
 
 function syncTokens() {
-  const fromToken = document.getElementById("fromToken");
-  const toToken = document.getElementById("toToken");
-  toToken.value = fromToken.value === "BNB" ? "0101" : "BNB";
+  updateToTokenOptions();
 }
 
 // === Error Handling ===
 function showError(message) {
-  const toastContainer = document.getElementById('toast-container') || createToastContainer();
+  const toastContainer = document.getElementById("toast-container") || createToastContainer();
   const lang = localStorage.language || "en";
-  const toast = document.createElement('div');
-  toast.className = 'toast';
+  const toast = document.createElement("div");
+  toast.className = "toast";
   toast.innerHTML = `
     <strong data-i18n="error_label">${translations[lang].error_label}:</strong>
     <span class="toast-message">${message}</span>
-    <button class="toast-copy" data-i18n="copy_button">${translations[lang].copy_button}</button>
-    <button class="toast-close">X</button>
+    <button class="toast-copy"><i class="fas fa-copy"></i> <span data-i18n="copy_button">${translations[lang].copy_button}</span></button>
+    <button class="toast-close"><i class="fas fa-times"></i></button>
   `;
   toastContainer.appendChild(toast);
 
   // Animate toast appearance
-  setTimeout(() => toast.classList.add('show'), 100);
+  setTimeout(() => toast.classList.add("show"), 100);
 
   // Auto-remove after 7 seconds
   const timeout = setTimeout(() => removeToast(toast), 7000);
 
   // Copy button functionality
-  toast.querySelector('.toast-copy').addEventListener('click', () => {
+  toast.querySelector(".toast-copy").addEventListener("click", () => {
     copyToClipboard(message);
-    toast.querySelector('.toast-copy').innerHTML = translations[lang].copied;
+    toast.querySelector(".toast-copy span").innerHTML = translations[lang].copied;
     setTimeout(() => {
-      toast.querySelector('.toast-copy').innerHTML = translations[lang].copy_button;
+      toast.querySelector(".toast-copy span").innerHTML = translations[lang].copy_button;
     }, 2000);
   });
 
   // Close button functionality
-  toast.querySelector('.toast-close').addEventListener('click', () => {
+  toast.querySelector(".toast-close").addEventListener("click", () => {
     clearTimeout(timeout);
     removeToast(toast);
   });
 }
 
 function createToastContainer() {
-  const container = document.createElement('div');
-  container.id = 'toast-container';
+  const container = document.createElement("div");
+  container.id = "toast-container";
   document.body.appendChild(container);
   return container;
 }
 
 function removeToast(toast) {
-  toast.classList.remove('show');
-  toast.classList.add('hide');
+  toast.classList.remove("show");
+  toast.classList.add("hide");
   setTimeout(() => toast.remove(), 300);
 }
 
 function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).catch(err => console.error('Copy failed:', err));
+  navigator.clipboard.writeText(text).catch(err => console.error("Copy failed:", err));
 }
 
 // === Initialization ===
