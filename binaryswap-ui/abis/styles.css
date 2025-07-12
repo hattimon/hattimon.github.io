@@ -1,31 +1,53 @@
 :root {
-  --bg: #1d1d1d;
-  --text: #1db954;
-  --card: #2a2a2a;
-  --btn: #3a3a3a;
-  --link: #a0ffcc;
-  --shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  --hover: #2ecc71;
+  --bg: #f7f8fa;
+  --text: #1a1a1a;
+  --card: #ffffff;
+  --btn: #ff007a;
+  --btn-hover: #d60067;
+  --link: #2172e5;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --border: #e6e6e6;
 }
 
 [data-theme="light"] {
-  --bg: #ffffff;
-  --text: #000000;
-  --card: #f0f0f0;
-  --btn: #e0e0e0;
-  --link: #007acc;
-  --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  --hover: #27ae60;
+  --bg: #f7f8fa;
+  --text: #1a1a1a;
+  --card: #ffffff;
+  --btn: #ff007a;
+  --btn-hover: #d60067;
+  --link: #2172e5;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --border: #e6e6e6;
+}
+
+[data-theme="dark"] {
+  --bg: #1a1a1a;
+  --text: #ffffff;
+  --card: #2d2d2d;
+  --btn: #ff007a;
+  --btn-hover: #d60067;
+  --link: #4dabf7;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --border: #444444;
 }
 
 body {
   margin: 0;
-  padding: 20px;
+  padding: 20px 0;
   font-family: 'Roboto', sans-serif;
-  background: linear-gradient(135deg, var(--bg), #2a2a2a);
+  background: var(--bg);
   color: var(--text);
   transition: all 0.3s ease;
   min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.container {
+  max-width: 480px;
+  width: 100%;
+  padding: 0 15px;
 }
 
 a {
@@ -35,58 +57,74 @@ a {
 }
 
 a:hover {
-  color: var(--hover);
-  text-decoration: underline;
+  color: #1a70d8;
 }
 
 button {
-  margin: 5px;
-  padding: 10px 15px;
+  margin: 5px 0;
+  padding: 12px;
   border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--btn), #444);
-  color: var(--text);
+  border-radius: 20px;
+  background: var(--btn);
+  color: #fff;
   cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   font-weight: 500;
   box-shadow: var(--shadow);
   transition: all 0.3s ease;
+  width: 100%;
+  font-size: 1.1rem;
 }
 
 button:hover {
-  background: linear-gradient(135deg, var(--hover), #27ae60);
-  color: #fff;
+  background: var(--btn-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.uniswap-btn {
+  background: linear-gradient(90deg, #ff007a, #ff4d4d);
+  border-radius: 20px;
+  padding: 14px;
+  font-size: 1.1rem;
+}
+
+.uniswap-btn:hover {
+  background: linear-gradient(90deg, #d60067, #ff3333);
+}
+
+.swap-btn {
+  margin-top: 15px;
 }
 
 input, select {
-  margin: 5px;
-  padding: 10px;
-  border: 1px solid #666;
-  border-radius: 8px;
+  margin: 5px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
   background: var(--card);
   color: var(--text);
   font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
   transition: all 0.3s ease;
 }
 
 input:focus, select:focus {
-  border-color: var(--hover);
+  border-color: #ff007a;
   outline: none;
-  box-shadow: 0 0 5px var(--hover);
+  box-shadow: 0 0 8px rgba(255, 0, 122, 0.3);
 }
 
 .section {
-  margin-top: 20px;
+  margin: 20px 0;
   padding: 20px;
-  border: 1px solid #555;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--card), #333);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
   box-shadow: var(--shadow);
   animation: fadeIn 0.5s ease-in-out;
+  text-align: center;
 }
 
 @keyframes fadeIn {
@@ -95,7 +133,7 @@ input:focus, select:focus {
 }
 
 #logo {
-  max-width: 100%;
+  max-width: 150px;
   height: auto;
   display: block;
   margin: 0 auto 20px;
@@ -114,16 +152,17 @@ input:focus, select:focus {
   display: flex;
   justify-content: center;
   gap: 15px;
+  flex-wrap: wrap;
 }
 
 .theme-toggle, .lang-toggle {
   position: fixed;
   top: 10px;
-  padding: 10px 15px;
-  border-radius: 8px;
+  padding: 10px 20px;
+  border-radius: 20px;
   z-index: 1000;
-  background: linear-gradient(135deg, var(--btn), #444);
-  color: var(--text);
+  background: var(--btn);
+  color: #fff;
   border: none;
   cursor: pointer;
   font-weight: 500;
@@ -136,23 +175,22 @@ input:focus, select:focus {
 }
 
 .lang-toggle {
-  right: 120px;
+  right: 130px;
 }
 
 .theme-toggle:hover, .lang-toggle:hover {
-  background: linear-gradient(135deg, var(--hover), #27ae60);
-  color: #fff;
+  background: var(--btn-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
 .center-title {
   text-align: center;
-  font-size: 28px;
-  margin-top: 10px;
+  font-size: 1.8rem;
+  margin: 20px 0;
   font-weight: 700;
-  color: #ff4444;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: #ff007a;
+  text-shadow: 0 2px 6px rgba(255, 0, 122, 0.3);
   animation: pulse 2s infinite;
 }
 
@@ -164,19 +202,81 @@ input:focus, select:focus {
 
 .intro-text {
   text-align: center;
-  font-size: 16px;
+  font-size: 0.95rem;
   margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.swap-section .swap-card, .liquidity-section .liquidity-card {
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.swap-input, .liquidity-input {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.swap-settings {
+  margin-bottom: 15px;
+}
+
+.liquidity-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.lp-info-section .masterchef-instructions {
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.lp-info-section .masterchef-instructions p {
+  margin: 10px 0;
+  padding: 10px;
+  background: var(--card);
+  border-left: 4px solid #ff007a;
+  border-radius: 5px;
+}
+
+.lp-info-section .masterchef-instructions i {
+  margin-right: 10px;
+  color: #ff007a;
+}
+
+.lp-info-section .contracts-list {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.lp-info-section .contracts-list p {
+  margin: 8px 0;
+  padding: 8px;
+  background: var(--card);
+  border-left: 4px solid #d60067;
+  border-radius: 5px;
+}
+
+.lp-info-section .contracts-list i {
+  margin-right: 10px;
+  color: #d60067;
 }
 
 .error-message {
-  margin-top: 20px;
+  margin: 20px 0;
   padding: 15px;
-  background: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 8px;
-  color: #721c24;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 16px;
+  color: #c62828;
   box-shadow: var(--shadow);
-  animation: slideIn 0.5s ease-out;
+  text-align: center;
 }
 
 @keyframes slideIn {
@@ -187,5 +287,44 @@ input:focus, select:focus {
 #error-text {
   white-space: pre-wrap;
   word-wrap: break-word;
-  font-size: 14px;
+  font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 10px;
+  }
+  .top-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .theme-toggle, .lang-toggle {
+    top: 60px;
+    right: 10px;
+  }
+  .lang-toggle {
+    right: 130px;
+  }
+  .center-title {
+    font-size: 1.5rem;
+  }
+  .section {
+    padding: 15px;
+  }
+  .uniswap-btn {
+    padding: 10px;
+    font-size: 1rem;
+  }
+  .swap-input, .liquidity-input {
+    gap: 8px;
+  }
+  .liquidity-actions {
+    flex-direction: column;
+  }
+  .lp-info-section .masterchef-instructions p,
+  .lp-info-section .contracts-list p {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
 }
