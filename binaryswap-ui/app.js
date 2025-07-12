@@ -176,7 +176,7 @@ async function handleSwap() {
 
   const slippage = 1; // Fixed slippage for simplicity
   const deadline = Math.floor(Date.now() / 1000) + 300;
-  const fromToken = document.getElementById("fromToken").value;
+  const fromToken = document.getElementById("fromToken").textContent;
   const toToken = document.getElementById("toToken").textContent;
 
   if (fromToken === toToken) {
@@ -361,7 +361,7 @@ function toggleLanguage() {
   localStorage.language = newLang;
   updateTranslations(newLang);
   document.querySelector(".lang-toggle").innerHTML = `<i class="fas fa-globe"></i> <span data-i18n="language">${translations[newLang].language}</span>`;
-  document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${localStorage.theme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${localStorage.theme || "light"}">${translations[newLang][`theme_${localStorage.theme || "light"}`]}</span>`;
+  document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${localStorage.theme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${localStorage.theme || "dark"}">${translations[newLang][`theme_${localStorage.theme || "dark"}`]}</span>`;
   document.querySelector(".music-toggle").innerHTML = `<i class="fas fa-music"></i> <span data-i18n="music_${localStorage.music === "on" ? "on" : "off"}">${translations[newLang][`music_${localStorage.music === "on" ? "on" : "off"}`]}</span>`;
 }
 
@@ -394,19 +394,12 @@ function toggleMusic() {
 }
 
 // === Swap Tokens ===
-function syncToken() {
-  const fromToken = document.getElementById("fromToken").value;
-  const toToken = document.getElementById("toToken");
-  toToken.textContent = fromToken === "BNB" ? "0101" : "BNB";
-}
-
 function swapTokens() {
   const fromToken = document.getElementById("fromToken");
   const toToken = document.getElementById("toToken");
-  const temp = fromToken.value;
-  fromToken.value = toToken.textContent;
+  const temp = fromToken.textContent;
+  fromToken.textContent = toToken.textContent;
   toToken.textContent = temp;
-  syncToken();
 }
 
 // === Error Handling ===
@@ -464,7 +457,7 @@ function copyToClipboard(text) {
 
 // === Initialization ===
 (() => {
-  const th = localStorage.theme || "light";
+  const th = localStorage.theme || "dark"; // Default to dark mode
   document.documentElement.setAttribute("data-theme", th);
   
   const lang = localStorage.language || "en";
@@ -479,8 +472,4 @@ function copyToClipboard(text) {
   if (musicState === "on") {
     audio.play().catch(err => console.log("Autoplay blocked: ", err.message));
   }
-
-  // Initialize swap token selection
-  syncToken();
-  document.getElementById("fromToken").addEventListener("change", syncToken);
 })();
