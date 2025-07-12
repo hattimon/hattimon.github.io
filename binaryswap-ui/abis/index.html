@@ -16,14 +16,14 @@
     <div id="google_translate_element" style="position: absolute; top: 20px; left: 20px;"></div>
 
     <div class="top-links">
-      <a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">📘 Documentation</a>
-      <a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">📊 0101/WBNB Price</a>
-      <a href="https://pancakeswap.finance/bridge" target="_blank">🌉 Fast Bridge opBNB ⇄ FDUSD</a>
-      <a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">🌉 Official Bridge opBNB ⇄ BNB (7 days)</a>
+      <a href="https://binaryswap.gitbook.io/binaryswap" target="_blank">Documentation</a>
+      <a href="https://dexscreener.com/opbnb/0x506b8322e1159d06e493ebe7ffa41a24291e7ae3" target="_blank">0101/WBNB Price</a>
+      <a href="https://pancakeswap.finance/bridge" target="_blank">Fast Bridge opBNB ⇄ FDUSD</a>
+      <a href="https://opbnb-bridge.bnbchain.org/withdraw?type=official" target="_blank">Official Bridge opBNB ⇄ BNB (7 days)</a>
     </div>
 
-    <button class="theme-toggle" onclick="toggleTheme()">🌞 Light Mode</button>
-    <button class="lang-toggle" onclick="toggleLanguage()">🇵🇱 Polski</button>
+    <button class="theme-toggle" onclick="toggleTheme()">Light Mode</button>
+    <button class="lang-toggle" onclick="toggleLanguage()">Polski</button>
     <div class="center-title">BinarySwap Emergency Mode</div>
     <p class="intro-text">
       (<b>Clicking SWAP or Add/Remove LP</b> requires several subsequent clicks to approve the contract interaction for the specified amount – e.g., approving the Swap contract and confirming the Swap)<br>
@@ -50,13 +50,14 @@
         <h3>Swap</h3>
         <div class="swap-card">
           <div class="swap-input">
-            <input type="number" id="swapPercent" placeholder="Amount (1–100) %">
+            <input type="number" id="swapPercent" placeholder="Enter amount (1–100) %">
             <select id="swapDirection">
               <option value="toToken">BNB → 0101</option>
               <option value="toBNB">0101 → BNB</option>
             </select>
           </div>
           <div class="swap-settings">
+            <label>Slippage Tolerance</label>
             <select id="swapSlippage">
               <option value="1">1%</option>
               <option value="3">3%</option>
@@ -76,11 +77,11 @@
         <h3>Liquidity Pool</h3>
         <div class="liquidity-card">
           <div class="liquidity-input">
-            <input type="number" id="lpPercent" placeholder="Amount (1–100) %">
+            <input type="number" id="lpPercent" placeholder="Enter amount (1–100) %">
           </div>
           <div class="liquidity-actions">
-            <button class="uniswap-btn" onclick="addLiquidity(parseInt(lpPercent.value))">Add LP</button>
-            <button class="uniswap-btn" onclick="removeLiquidity(parseInt(lpPercent.value))">Remove LP</button>
+            <button class="uniswap-btn" onclick="addLiquidity(parseInt(lpPercent.value))">Add Liquidity</button>
+            <button class="uniswap-btn" onclick="removeLiquidity(parseInt(lpPercent.value))">Remove Liquidity</button>
           </div>
         </div>
       </div>
@@ -90,7 +91,7 @@
         <div class="masterchef-instructions">
           <p><i class="fas fa-info-circle"></i> <strong>Step 1:</strong> Visit the contract: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Copy the Contract Address and the <b>Contract ABI</b> field.</p>
           <p><i class="fas fa-external-link-alt"></i> <strong>Step 2:</strong> Open in a new tab: <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Switch to opBNB network and paste the data into the respective fields.</p>
-          <p><i class="fas fa-list-ol"></i> <strong>Step 3:</strong> Go to the <b>emergencyWithdraw</b> field and enter 0, 1, 2, 3, 4, 5, etc.<br>Depending on what you staked, Rabby Wallet will show a signing message (e.g., LP or NFT withdrawal)<br>- Approve each transaction showing a withdrawal from the contract and check the LP token amount in DeBank or above (rest can be done above😉).</p>
+          <p><i class="fas fa-list-ol"></i> <strong>Step 3:</strong> Go to the <b>emergencyWithdraw</b> field and enter 0, 1, 2, 3, 4, 5, etc.<br>Depending on what you staked, Rabby Wallet will show a signing message (e.g., LP or NFT withdrawal)<br>- Approve each transaction showing a withdrawal from the contract and check the LP token amount in DeBank or above.</p>
         </div>
         <font color="gray">
         <div class="contracts-list">
@@ -136,39 +137,42 @@
         walletContents: 'Wallet Contents',
         swap: 'Swap',
         swapDirection: 'Swap Direction',
-        slippage: 'Slippage',
+        slippage: 'Slippage Tolerance',
         liquidityPool: 'Liquidity Pool',
-        addLP: 'Add LP',
-        removeLP: 'Remove LP',
+        addLP: 'Add Liquidity',
+        removeLP: 'Remove Liquidity',
         emergency: 'MasterChef – Emergency LP, NFT Withdrawal:',
         step1: 'Step 1: Visit the contract:',
         step2: 'Step 2: Open in a new tab:',
         step3: 'Step 3: Go to the <b>emergencyWithdraw</b> field and enter 0, 1, 2, 3, 4, 5, etc.',
         disconnected: 'Disconnected',
-        intro: '(<b>Clicking SWAP or Add/Remove LP</b> requires several subsequent clicks to approve the contract interaction for the specified amount – e.g., approving the Swap contract and confirming the Swap)<br>This is a secure (SSL) backup GUI using BinarySwap\'s original contract functions.<br><font color="orange">I recommend the <a href="https://rabby.io/" target="_blank">Rabby.io</a> wallet where you can also revoke permissions.<br>For transaction history, check <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>'
+        intro: '(<b>Clicking SWAP or Add/Remove LP</b> requires several subsequent clicks to approve the contract interaction for the specified amount – e.g., approving the Swap contract and confirming the Swap)<br>This is a secure (SSL) backup GUI using BinarySwap\'s original contract functions.<br><font color="orange">I recommend the <a href="https://rabby.io/" target="_blank">Rabby.io</a> wallet where you can also revoke permissions.<br>For transaction history, check <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>',
+        enterAmount: 'Enter amount (1–100) %'
       },
       pl: {
         connect: 'Połącz/Odśwież Portfel',
         switch: 'Przełącz na opBNB',
         walletContents: 'Zawartość Portfela',
-        swap: 'Swap',
-        swapDirection: 'Zamiana',
-        slippage: 'Poślizg',
+        swap: 'Zamiana',
+        swapDirection: 'Kierunek Zamiany',
+        slippage: 'Tolerancja Poślizgu',
         liquidityPool: 'Pula Płynności',
-        addLP: 'Dodaj LP',
-        removeLP: 'Usuń LP',
+        addLP: 'Dodaj Płynność',
+        removeLP: 'Usuń Płynność',
         emergency: 'MasterChef – Awaryjna wypłata LP, NFT itp:',
         step1: 'Krok 1: Wejdź na kontrakt:',
         step2: 'Krok 2: Otwórz w nowej zakładce strone:',
         step3: 'Krok 3: Przejdź do pola <b>emergencyWithdraw</b> i wpisuj kolejno 0, 1, 2, 3, 4, 5 itd.',
         disconnected: 'Niepołączony',
-        intro: '(<b>Klikając SWAP lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – zatwierdzenie np. kontraktu Swap i potwierdzenie Swap)<br>Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br><font color="orange">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a> gdzie również cofniesz uprawnienia.<br>Do podglądu historii transakcji polecam <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>'
+        intro: '(<b>Klikając ZAMIANA lub Dodaj/Usuń LP</b> wymaga to kilku kolejnych kliknięć w celu zatwierdzenia interakcji z kontraktem na podaną sumę – np. zatwierdzenie kontraktu Zamiany i potwierdzenie Zamiany)<br>Jest to bezpieczne (SSL) zastępcze GUI korzystające z oryginalnych funkcji kontraktów BinarySwap.<br><font color="orange">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a>, gdzie możesz również cofnąć uprawnienia.<br>Do podglądu historii transakcji sprawdź <a href="https://debank.com/" target="_blank">DeBank.com</a>.</font>',
+        enterAmount: 'Wprowadź ilość (1–100) %'
       }
     };
 
     function toggleLanguage() {
       lang = lang === 'en' ? 'pl' : 'en';
-      document.querySelector('.lang-toggle').textContent = `🇬🇧 ${lang === 'en' ? 'English' : 'Polski'}`;
+      document.querySelector('.lang-toggle').textContent = `English ${lang === 'en' ? '' : 'Polski'}`;
+      document.querySelector('.theme-toggle').textContent = lang === 'en' ? 'Light Mode' : 'Tryb Jasny';
       document.querySelector('.center-title').textContent = `BinarySwap ${lang === 'en' ? 'Emergency Mode' : 'Tryb Awaryjny'}`;
       document.querySelector('.intro-text').innerHTML = translations[lang].intro;
       document.querySelectorAll('.section')[0].innerHTML = `
@@ -186,13 +190,14 @@
         <h3>${translations[lang].swap}</h3>
         <div class="swap-card">
           <div class="swap-input">
-            <input type="number" id="swapPercent" placeholder="${lang === 'en' ? 'Amount (1–100) %' : 'Ilość (1–100) %'}">
+            <input type="number" id="swapPercent" placeholder="${translations[lang].enterAmount}">
             <select id="swapDirection">
               <option value="toToken">${lang === 'en' ? 'BNB → 0101' : 'BNB → 0101'}</option>
               <option value="toBNB">${lang === 'en' ? '0101 → BNB' : '0101 → BNB'}</option>
             </select>
           </div>
           <div class="swap-settings">
+            <label>${translations[lang].slippage}</label>
             <select id="swapSlippage">
               <option value="1">1%</option>
               <option value="3">3%</option>
@@ -204,14 +209,14 @@
               <option value="100">100%</option>
             </select>
           </div>
-          <button class="uniswap-btn swap-btn" onclick="handleSwap()">${lang === 'en' ? 'Swap' : 'Swap'}</button>
+          <button class="uniswap-btn swap-btn" onclick="handleSwap()">${lang === 'en' ? 'Swap' : 'Zamiana'}</button>
         </div>
       `;
       document.querySelectorAll('.section')[3].innerHTML = `
         <h3>${translations[lang].liquidityPool}</h3>
         <div class="liquidity-card">
           <div class="liquidity-input">
-            <input type="number" id="lpPercent" placeholder="${lang === 'en' ? 'Amount (1–100) %' : 'Ilość (1–100) %'}">
+            <input type="number" id="lpPercent" placeholder="${translations[lang].enterAmount}">
           </div>
           <div class="liquidity-actions">
             <button class="uniswap-btn" onclick="addLiquidity(parseInt(lpPercent.value))">${translations[lang].addLP}</button>
@@ -222,12 +227,12 @@
       document.querySelectorAll('.section')[4].querySelector('h3').textContent = translations[lang].emergency;
       document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[0].innerHTML = `<i class="fas fa-info-circle"></i> <strong>${translations[lang].step1}</strong> Visit the contract: <a href="https://opbnbscan.com/address/0x39a786421889EB581bd105508a0D2Dc03523B903?tab=Contract&p=1" target="_blank">0x39a786421889EB581bd105508a0D2Dc03523B903</a><br>Copy the Contract Address and the <b>Contract ABI</b> field.`;
       document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[1].innerHTML = `<i class="fas fa-external-link-alt"></i> <strong>${translations[lang].step2}</strong> Open in a new tab: <a href="https://hattimon.github.io/sm-gui" target="_blank">Smart Contract Interface</a><br>Switch to opBNB network and paste the data into the respective fields.`;
-      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[2].innerHTML = `<i class="fas fa-list-ol"></i> <strong>${translations[lang].step3}</strong> Depending on what you staked, Rabby Wallet will show a signing message (e.g., LP or NFT withdrawal)<br>- Approve each transaction showing a withdrawal from the contract and check the LP token amount in DeBank or above (rest can be done above😉).`;
+      document.querySelectorAll('.section')[4].querySelectorAll('.masterchef-instructions p')[2].innerHTML = `<i class="fas fa-list-ol"></i> <strong>${translations[lang].step3}</strong> Depending on what you staked, Rabby Wallet will show a signing message (e.g., LP or NFT withdrawal)<br>- Approve each transaction showing a withdrawal from the contract and check the LP token amount in DeBank or above.`;
     }
 
     function toggleTheme() {
       document.body.dataset.theme = document.body.dataset.theme === 'light' ? 'dark' : 'light';
-      document.querySelector('.theme-toggle').textContent = document.body.dataset.theme === 'light' ? '🌞 Light Mode' : '🌙 Dark Mode';
+      document.querySelector('.theme-toggle').textContent = document.body.dataset.theme === 'light' ? 'Light Mode' : 'Tryb Jasny';
     }
   </script>
 </body>
