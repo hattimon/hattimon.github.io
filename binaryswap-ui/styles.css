@@ -109,6 +109,23 @@ button:hover {
   margin-top: 15px;
 }
 
+.swap-arrow {
+  padding: 8px;
+  font-size: 1rem;
+  line-height: 1;
+  background: var(--btn);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swap-arrow:hover {
+  background: var(--btn-hover);
+}
+
 input, select {
   margin: 5px 0;
   padding: 12px;
@@ -118,6 +135,7 @@ input, select {
   color: var(--text);
   font-family: 'Roboto', sans-serif;
   font-size: 1rem;
+  width: 100%;
   box-sizing: border-box;
   transition: all 0.3s ease;
 }
@@ -163,19 +181,17 @@ input:focus, select:focus {
 }
 
 .button-group {
+  position: fixed;
+  top: 10px;
+  right: 10px;
   display: flex;
-  justify-content: center;
   gap: 10px;
-  margin: 10px auto;
-  width: auto;
   z-index: 1000;
 }
 
 .theme-toggle, .lang-toggle, .music-toggle {
   padding: 6px 12px;
   font-size: 0.85rem;
-  width: auto;
-  white-space: nowrap;
 }
 
 .theme-toggle:hover, .lang-toggle:hover, .music-toggle:hover {
@@ -206,6 +222,10 @@ input:focus, select:focus {
   margin-bottom: 20px;
   line-height: 1.5;
   word-break: break-word;
+}
+
+.highlight-text {
+  color: var(--link);
 }
 
 .swap-section .swap-card, .liquidity-section .liquidity-card {
@@ -242,30 +262,12 @@ input:focus, select:focus {
   width: 100px;
 }
 
-.swap-arrow {
-  padding: 8px;
-  font-size: 1rem;
-  line-height: 1;
-}
-
 .swap-input, .liquidity-input {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-bottom: 15px;
   width: 100%;
-}
-
-.swap-settings {
-  margin-bottom: 15px;
-  width: 100%;
-}
-
-.swap-settings label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 0.9rem;
-  color: #666;
 }
 
 .liquidity-actions {
@@ -280,10 +282,6 @@ input:focus, select:focus {
   font-size: 0.9rem;
   line-height: 1.6;
   color: var(--text);
-}
-
-.lp-info-section .masterchef-instructions h3 {
-  color: var(--link);
 }
 
 .lp-info-section .masterchef-instructions p {
@@ -312,10 +310,6 @@ input:focus, select:focus {
   color: var(--text);
 }
 
-.lp-info-section .contracts-list h4 {
-  color: var(--link);
-}
-
 .lp-info-section .contracts-list p {
   margin: 8px 0;
   padding: 8px;
@@ -334,6 +328,10 @@ input:focus, select:focus {
 .lp-info-section .contracts-list i {
   margin-right: 10px;
   color: #3a5c2e;
+}
+
+.contract-text {
+  color: var(--text);
 }
 
 .error-message {
@@ -367,13 +365,12 @@ input:focus, select:focus {
     gap: 10px;
   }
   .button-group {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin: 10px auto;
+    top: 60px;
+    flex-direction: column;
+    right: 10px;
   }
   .button-group button {
-    margin: 5px;
+    margin: 5px 0;
   }
   .center-title {
     font-size: 1.5rem;
