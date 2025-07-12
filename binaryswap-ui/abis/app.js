@@ -213,13 +213,13 @@ function toggleTheme() {
   const html = document.documentElement;
   const light = html.getAttribute("data-theme") === "light";
   html.setAttribute("data-theme", light ? "" : "light");
-  document.querySelector(".theme-toggle").textContent = light ? "🌞 Light Mode" : "🌙 Dark Mode";
+  document.querySelector(".theme-toggle").textContent = light ? "Light Mode" : "Tryb Jasny";
   localStorage.theme = light ? "" : "light";
 }
 (() => {
   const th = localStorage.theme;
   document.documentElement.setAttribute("data-theme", th || "");
-  document.querySelector(".theme-toggle").textContent = th ? "🌙 Dark Mode" : "🌞 Light Mode";
+  document.querySelector(".theme-toggle").textContent = th ? "Tryb Jasny" : "Light Mode";
 })();
 
 // === Error Handling ===
