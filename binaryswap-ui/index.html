@@ -38,13 +38,32 @@
       <span data-i18n="gui_info">This is a secure (SSL) backup GUI using BinarySwap's original contract functions.</span><br>
       <span class="highlight-text" data-i18n="wallet_recommendation">I recommend the <a href="https://rabby.io/" target="_blank">Rabby.io</a> wallet where you can also revoke permissions.</span><br>
       <span class="highlight-text" data-i18n="transaction_history">For transaction history, check <a href="https://debank.com/" target="_blank">DeBank.com</a>.</span><br>
-      <span> ✅ Enjoying this tool or found it useful❔<br>
-      🗯 I'm grateful for any support ☕️<br>  
-     <br>
-🔗 Any EVM chain:  
-0x6D4e9Eb20b7460baE679CA1E9bA02d00697F57c2</span>
-    </p>
+   <span>
+    ✅ Enjoying this tool or found it useful❔<br>
+    🗯 I'm grateful for any support ☕️<br><br>
+    🔗 Any EVM chain:<br>
+    <span class="copy-container" onclick="copyToClipboard()" style="cursor:pointer; background:#f5f5f5; padding:6px 10px; border-radius:6px; display:inline-block; font-family:monospace;">
+      0x6D4e9Eb20b7460baE679CA1E9bA02d00697F57c2
+    </span>
+  </span>
+</p>
 
+<!-- Toast notification -->
+<div id="toast" style="position:fixed; bottom:20px; right:20px; background:#4caf50; color:white; padding:10px 16px; border-radius:8px; opacity:0; transition:opacity 0.3s ease; z-index:9999;">
+  Copied to clipboard ✅
+</div>
+
+<script>
+  function copyToClipboard() {
+    const address = '0x6D4e9Eb20b7460baE679CA1E9bA02d00697F57c2';
+    navigator.clipboard.writeText(address).then(() => {
+      const toast = document.getElementById('toast');
+      toast.style.opacity = '1';
+      setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+    });
+  }
+</script>
+  
     <div id="app-root">
       <div class="section wallet-section">
         <p><strong data-i18n="wallet_label">Wallet:</strong> <span id="wallet-address" data-i18n="disconnected">Disconnected</span></p>
