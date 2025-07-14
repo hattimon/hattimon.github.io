@@ -103,7 +103,8 @@ const translations = {
     error_approval_failed: "Token approval failed!",
     error_liquidity_failed: "Liquidity operation failed!",
     copy_button: "Copy",
-    copied: "Copied!"
+    copied: "Copied!",
+    tip_info: "✅ Enjoying this tool or found it useful❔<br>    🗯 I'm grateful for any support ☕️<br>    🔗 Any EVM chain and Coin:<br>"
   },
   pl: {
     theme_light: "Tryb Jasny",
@@ -169,7 +170,8 @@ const translations = {
     error_approval_failed: "Zatwierdzenie tokena nie powiodło się!",
     error_liquidity_failed: "Operacja płynności nie powiodła się!",
     copy_button: "Kopiuj",
-    copied: "Skopiowano!"
+    copied: "Skopiowano!",
+    tip_info: "✅ Czy korzystasz z tego narzędzia lub uznałeś je za przydatne❔<br>    🗯 Jestem wdzięczny za każde wsparcie ☕️<br>    🔗 Dowolny sieć EVM i kryptowaluta:<br>"
   }
 };
 
