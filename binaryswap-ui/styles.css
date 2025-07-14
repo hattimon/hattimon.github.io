@@ -519,6 +519,6 @@ input[readonly] {
 /* Styl dla .lp-info-section */
 .lp-info-section {
   width: 100%;
-  max-width: 450px; /* Dopasowane do .container */
+  max-width: 500px; /* Dopasowane do .container */
   box-sizing: border-box;
 }
