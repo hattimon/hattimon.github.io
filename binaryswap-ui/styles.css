@@ -431,6 +431,7 @@ input[readonly] {
 .toast-buttons {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 10px;
   margin-bottom: 10px;
 }
@@ -526,6 +527,7 @@ input[readonly] {
   .toast-buttons {
     gap: 8px;
     justify-content: center;
+    align-items: center;
   }
   .toast-copy, .toast-close {
     padding: 4px 12px;
