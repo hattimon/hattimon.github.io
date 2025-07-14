@@ -171,7 +171,7 @@ const translations = {
     error_liquidity_failed: "Operacja płynności nie powiodła się!",
     copy_button: "Kopiuj",
     copied: "Skopiowano!",
-    tip_info: "✅ Czy korzystasz z tego narzędzia lub uznałeś je za przydatne❔<br>    🗯 Jestem wdzięczny za każde wsparcie ☕️<br>    🔗 Dowolny sieć EVM i kryptowaluta:<br>"
+    tip_info: "✅ Czy korzystasz z tego narzędzia lub uznałeś je za przydatne❔<br>    🗯 Jestem wdzięczny za każde wsparcie ☕️<br>    🔗 Dowolna sieć EVM i kryptowaluta:<br>"
   }
 };
 
