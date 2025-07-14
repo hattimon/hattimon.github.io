@@ -485,13 +485,13 @@ input[readonly] {
   }
   .gif-container {
     width: 100%;
-    max-width: 100%;
+    max-width: 480;
     margin: 10px 0;
     text-align: center;
   }
   .responsive-gif {
     width: auto;
-    max-width: 400px;
+    max-width: 450px;
     height: auto;
     display: block;
     box-sizing: border-box;
@@ -502,7 +502,7 @@ input[readonly] {
 /* Styl dla kontenera GIF-a */
 .gif-container {
   width: 100%;
-  max-width: 100%;
+  max-width: 480;
   margin: 10px 0;
   text-align: center;
 }
@@ -510,7 +510,7 @@ input[readonly] {
 /* Styl dla GIF-a z ręczną wielkością */
 .responsive-gif {
   width: auto;
-  max-width: 400px; /* Dopasowane do efektywnej szerokości .container (~480px - 2x15px padding) */
+  max-width: 450px; /* Dopasowane do efektywnej szerokości .container (~480px - 2x15px padding) */
   height: auto; /* Zachowuje proporcje */
   display: block;
   box-sizing: border-box;
