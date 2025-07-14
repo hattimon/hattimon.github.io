@@ -434,6 +434,7 @@ input[readonly] {
   to { opacity: 0; transform: scale(0.8); }
 }
 
+/* Media query for mobile devices */
 @media (max-width: 480px) {
   .container {
     padding: 0 10px;
@@ -483,40 +484,36 @@ input[readonly] {
     max-width: 100%;
     font-size: 0.85rem;
   }
-  .gif-container {
+.gif-container {
     width: 100%;
-    max-width: 480;
-    margin: 10px 0;
-    text-align: center;
+    padding: 0; /* Remove extra padding to align with .container */
   }
+
   .responsive-gif {
-    width: auto;
-    max-width: 450px;
-    height: auto;
-    display: block;
-    box-sizing: border-box;
-    margin: 0 auto;
+    width: 100%; /* Full width on mobile */
+    max-width: 100%; /* Ensure it doesn't exceed container */
+    height: auto; /* Maintain aspect ratio */
   }
 }
-
+/* Ustawienia globalne */
 /* Styl dla kontenera GIF-a */
 .gif-container {
   width: 100%;
-  max-width: 480;
+  max-width: 100%; /* Align with .container's full width */
   margin: 10px 0;
   text-align: center;
+  box-sizing: border-box; /* Ensure padding/margins don't cause overflow */
 }
 
-/* Styl dla GIF-a z ręczną wielkością */
+/* Styl dla GIF-a z responsywnym skalowaniem */
 .responsive-gif {
-  width: auto;
-  max-width: 450px; /* Dopasowane do efektywnej szerokości .container (~480px - 2x15px padding) */
-  height: auto; /* Zachowuje proporcje */
+  width: 100%; /* Take full width of the parent container */
+  max-width: 100%; /* Prevent exceeding container width */
+  height: auto; /* Maintain aspect ratio */
   display: block;
-  box-sizing: border-box;
-  margin: 0 auto; /* Centrowanie */
-  border-radius: 10px; /* Zaokrąglone rogi jak w #logo */
-  box-shadow: var(--shadow);
+  margin: 0 auto; /* Center the GIF */
+  border-radius: 10px; /* Consistent with #logo */
+  box-shadow: var(--shadow); /* Consistent shadow */
 }
 
 /* Styl dla .lp-info-section */
