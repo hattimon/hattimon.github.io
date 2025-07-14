@@ -118,7 +118,7 @@ button:hover {
 
 .swap-arrow {
   padding: 8px;
-  font-size: 2rem;
+  font-size: 1rem;
   line-height: 1;
   background: var(--btn);
   border-radius: 50%;
@@ -511,6 +511,7 @@ input[readonly] {
   .swap-arrow {
     width: 40px;
     margin: 5px auto;
+    font-size: 2rem;
   }
   .liquidity-actions {
     flex-direction: column;
