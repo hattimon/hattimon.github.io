@@ -108,7 +108,7 @@ button:hover {
   font-size: 1rem;
 }
 
-.uniswap-btn:hover {
+.un unap-btn:hover {
   background: linear-gradient(90deg, #3a5c2e, #406830);
 }
 
@@ -367,6 +367,8 @@ input[readonly] {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 90%;
+  max-width: 400px;
 }
 
 .toast {
@@ -374,16 +376,16 @@ input[readonly] {
   border: 2px solid #c62828;
   border-radius: 8px;
   padding: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
   box-shadow: var(--shadow);
   color: var(--toast-text);
   font-size: 0.9rem;
-  max-width: 400px;
+  display: flex;
+  flex-direction: column;
   opacity: 0;
   transform: scale(0.8);
   transition: opacity 0.3s ease, transform 0.3s ease;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .toast.show {
@@ -399,7 +401,37 @@ input[readonly] {
 .toast-message {
   flex-grow: 1;
   word-break: break-word;
-  color: #ff0000;
+  color: var(--toast-text);
+  max-height: 20em; /* Approximately 10 lines at 2em per line */
+  overflow-y: auto;
+  line-height: 2em;
+  padding-right: 10px;
+  text-align: left;
+}
+
+/* Custom scrollbar for toast message */
+.toast-message::-webkit-scrollbar {
+  width: 6px;
+}
+
+.toast-message::-webkit-scrollbar-track {
+  background: var(--card);
+  border-radius: 4px;
+}
+
+.toast-message::-webkit-scrollbar-thumb {
+  background: var(--btn);
+  border-radius: 4px;
+}
+
+.toast-message::-webkit-scrollbar-thumb:hover {
+  background: var(--btn-hover);
+}
+
+.toast-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .toast-copy, .toast-close {
@@ -481,44 +513,55 @@ input[readonly] {
     font-size: 0.8rem;
   }
   .toast {
-    max-width: 100%;
     font-size: 0.85rem;
+    padding: 10px;
   }
-.gif-container {
+  .toast-message {
+    max-height: 15em; /* Adjusted for smaller screens */
+    line-height: 1.8em;
+  }
+  .toast-buttons {
+    gap: 8px;
+  }
+  .toast-copy, .toast-close {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+  .gif-container {
     width: 100%;
-    padding: 0; /* Remove extra padding to align with .container */
+    padding: 0;
   }
-
   .responsive-gif {
-    width: 100%; /* Full width on mobile */
-    max-width: 100%; /* Ensure it doesn't exceed container */
-    height: auto; /* Maintain aspect ratio */
+    width: 100%;
+    max-width: 100%;
+    height: auto;
   }
 }
+
 /* Ustawienia globalne */
 /* Styl dla kontenera GIF-a */
 .gif-container {
   width: 100%;
-  max-width: 100%; /* Align with .container's full width */
+  max-width: 100%;
   margin: 10px 0;
   text-align: center;
-  box-sizing: border-box; /* Ensure padding/margins don't cause overflow */
+  box-sizing: border-box;
 }
 
 /* Styl dla GIF-a z responsywnym skalowaniem */
 .responsive-gif {
-  width: 100%; /* Take full width of the parent container */
-  max-width: 100%; /* Prevent exceeding container width */
-  height: auto; /* Maintain aspect ratio */
+  width: 100%;
+  max-width: 100%;
+  height: auto;
   display: block;
-  margin: 0 auto; /* Center the GIF */
-  border-radius: 10px; /* Consistent with #logo */
-  box-shadow: var(--shadow); /* Consistent shadow */
+  margin: 0 auto;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
 }
 
 /* Styl dla .lp-info-section */
 .lp-info-section {
   width: 100%;
-  max-width: 500px; /* Dopasowane do .container */
+  max-width: 500px;
   box-sizing: border-box;
 }
