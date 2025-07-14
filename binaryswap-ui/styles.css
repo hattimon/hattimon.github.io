@@ -108,7 +108,7 @@ button:hover {
   font-size: 1rem;
 }
 
-.un unap-btn:hover {
+.uniswap-btn:hover {
   background: linear-gradient(90deg, #3a5c2e, #406830);
 }
 
@@ -378,7 +378,7 @@ input[readonly] {
   padding: 15px;
   box-shadow: var(--shadow);
   color: var(--toast-text);
-  font-size: 0.9rem;
+  font-size: 0.ninerem;
   display: flex;
   flex-direction: column;
   opacity: 0;
@@ -430,19 +430,20 @@ input[readonly] {
 
 .toast-buttons {
   display: flex;
+  justify-content: center;
   gap: 10px;
   margin-bottom: 10px;
 }
 
 .toast-copy, .toast-close {
-  padding: 6px 12px;
+  padding: 4px 8px;
   border-radius: 12px;
-  font-size: 0.8rem;
+  font-size: 0.9rem; /* Match toast message font size */
   background: var(--btn);
   color: #fff;
   border: none;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 5px;
 }
@@ -453,7 +454,7 @@ input[readonly] {
 
 .toast-close {
   font-weight: bold;
-  padding: 6px 10px;
+  padding: 4px 8px;
 }
 
 @keyframes toastShow {
@@ -522,10 +523,11 @@ input[readonly] {
   }
   .toast-buttons {
     gap: 8px;
+    justify-content: center;
   }
   .toast-copy, .toast-close {
-    padding: 5px 10px;
-    font-size: 0.75rem;
+    padding: 4px 8px;
+    font-size: 0.85rem; /* Match toast message font size on mobile */
   }
   .gif-container {
     width: 100%;
