@@ -491,7 +491,7 @@ input[readonly] {
   }
   .responsive-gif {
     width: auto;
-    max-width: 450px;
+    max-width: 480px;
     height: auto;
     display: block;
     box-sizing: border-box;
@@ -510,7 +510,7 @@ input[readonly] {
 /* Styl dla GIF-a z ręczną wielkością */
 .responsive-gif {
   width: auto;
-  max-width: 450px; /* Dopasowane do efektywnej szerokości .container (~480px - 2x15px padding) */
+  max-width: 480px; /* Dopasowane do efektywnej szerokości .container (~480px - 2x15px padding) */
   height: auto; /* Zachowuje proporcje */
   display: block;
   box-sizing: border-box;
