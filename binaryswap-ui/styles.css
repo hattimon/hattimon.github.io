@@ -508,7 +508,7 @@ input[readonly] {
 /* Styl dla GIF-a z responsywnym skalowaniem */
 .responsive-gif {
   width: 100%; /* Take full width of the parent container */
-  max-width: 100%; /* Prevent exceeding container width */
+  max-width: 480; /* Prevent exceeding container width */
   height: auto; /* Maintain aspect ratio */
   display: block;
   margin: 0 auto; /* Center the GIF */
