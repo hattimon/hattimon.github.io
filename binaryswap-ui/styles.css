@@ -486,7 +486,6 @@ input[readonly] {
   .gif-container {
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
     margin: 10px 0;
     text-align: center;
   }
@@ -504,7 +503,6 @@ input[readonly] {
 .gif-container {
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
   margin: 10px 0;
   text-align: center;
 }
@@ -523,6 +521,5 @@ input[readonly] {
 .lp-info-section {
   width: 100%;
   max-width: 480px; /* Dopasowane do .container */
-  overflow: hidden;
   box-sizing: border-box;
 }
