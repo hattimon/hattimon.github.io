@@ -484,8 +484,8 @@ input[readonly] {
     font-size: 0.85rem;
   }
   .responsive-gif {
-    max-width: 100%;
-    width: 100%;
+    max-width: 90%;
+    width: 90%;
     height: auto;
     display: block;
     box-sizing: border-box;
