@@ -483,20 +483,6 @@ input[readonly] {
     max-width: 100%;
     font-size: 0.85rem;
   }
-  .gif-container {
-    width: 100%;
-    max-width: 100%;
-    margin: 10px 0;
-    text-align: center;
-  }
-  .responsive-gif {
-    width: auto;
-    max-width: 450px;
-    height: auto;
-    display: block;
-    box-sizing: border-box;
-    margin: 0 auto;
-  }
 }
 
 /* Styl dla kontenera GIF-a */
@@ -515,6 +501,7 @@ input[readonly] {
   display: block;
   box-sizing: border-box;
   margin: 0 auto; /* Centrowanie */
+  border-radius: 10px; /* Zaokrąglone rogi jak w #logo */
 }
 
 /* Styl dla .lp-info-section */
