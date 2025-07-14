@@ -488,5 +488,6 @@ input[readonly] {
     width: 100%;
     height: auto;
     display: block;
+    box-sizing: border-box;
   }
 }
