@@ -104,7 +104,8 @@ const translations = {
     error_liquidity_failed: "Liquidity operation failed!",
     copy_button: "Copy",
     copied: "Copied!",
-    tip_info: "✅ Enjoying this tool or found it useful❔<br>    🗯 I'm grateful for any support ☕️<br>    🔗 Any EVM chain and Coin:<br>"
+    tip_info: "✅ Enjoying this tool or found it useful❔<br>    🗯 I'm grateful for any support ☕️<br>    🔗 Any EVM chain and Coin:<br>",
+    telegram_info:"Join our Telegram group"
   },
   pl: {
     theme_light: "Tryb Jasny",
@@ -171,7 +172,8 @@ const translations = {
     error_liquidity_failed: "Operacja płynności nie powiodła się!",
     copy_button: "Kopiuj",
     copied: "Skopiowano!",
-    tip_info: "✅ Czy korzystasz z tego narzędzia lub uznałeś je za przydatne❔<br>    🗯 Jestem wdzięczny za każde wsparcie ☕️<br>    🔗 Dowolna sieć EVM i kryptowaluta:<br>"
+    tip_info: "✅ Czy korzystasz z tego narzędzia lub uznałeś je za przydatne❔<br>    🗯 Jestem wdzięczny za każde wsparcie ☕️<br>    🔗 Dowolna sieć EVM i kryptowaluta:<br>",
+    telegram_info: "Dołącz do naszej grupy na Telegramie"
   }
 };
 
