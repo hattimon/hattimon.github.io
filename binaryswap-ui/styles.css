@@ -499,7 +499,7 @@ input[readonly] {
 /* Styl dla kontenera GIF-a */
 .gif-container {
   width: 100%;
-  max-width: 100%; /* Align with .container's full width */
+  max-width: 480px; /* Align with .container's full width */
   margin: 10px 0;
   text-align: center;
   box-sizing: border-box; /* Ensure padding/margins don't cause overflow */
