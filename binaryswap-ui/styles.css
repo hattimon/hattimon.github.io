@@ -446,7 +446,7 @@ input[readonly] {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  width: auto; /* Adjust width to content */
+  width: fit-content; /* Adjust width to content */
   min-width: 0; /* Prevent unwanted stretching */
 }
 
@@ -530,7 +530,7 @@ input[readonly] {
   .toast-copy, .toast-close {
     padding: 4px 12px;
     font-size: 0.85rem; /* Match toast message font size on mobile */
-    width: auto; /* Adjust width to content */
+    width: fit-content; /* Adjust width to content */
     min-width: 0; /* Prevent unwanted stretching */
   }
   .gif-container {
