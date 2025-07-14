@@ -491,7 +491,7 @@ input[readonly] {
 
   .responsive-gif {
     width: 100%; /* Full width on mobile */
-    max-width: 500; /* Ensure it doesn't exceed container */
+    max-width: 100%; /* Ensure it doesn't exceed container */
     height: auto; /* Maintain aspect ratio */
   }
 }
@@ -499,7 +499,7 @@ input[readonly] {
 /* Styl dla kontenera GIF-a */
 .gif-container {
   width: 100%;
-  max-width: 480px; /* Align with .container's full width */
+  max-width: 100%; /* Align with .container's full width */
   margin: 10px 0;
   text-align: center;
   box-sizing: border-box; /* Ensure padding/margins don't cause overflow */
