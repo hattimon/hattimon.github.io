@@ -429,44 +429,11 @@ input[readonly] {
   to { opacity: 1; transform: scale(1); }
 }
 
-@keyframes toast syatem: Skoro problem z GIF-em nadal występuje, kluczowe jest zapewnienie, że nadrzędny kontener (`.lp-info-section` lub `.container`) ma odpowiednie style ograniczające szerokość, a styl `.responsive-gif` skutecznie kontroluje rozmiar obrazu. Oto zaktualizowany plik `styles.css` z dodanymi lub zmodyfikowanymi stylami dla GIF-a, aby zapewnić jego prawidłowe skalowanie w ramce:
-
-<xaiArtifact artifact_id="ce560cd3-02ac-4a36-ba42-2ce98aec8b7b" artifact_version_id="30df9bd0-bfa6-4c2d-bbf8-e8f2edf90773" title="styles.css" contentType="text/css">
-/* ... (poprzednie style bez zmian) ... */
-
-/* Styl dla GIF-a */
-.responsive-gif {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  display: block;
-  box-sizing: border-box;
-  margin: 0 auto;
+@keyframes toastHide {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.8); }
 }
 
-/* Styl dla kontenera nadrzędnego GIF-a */
-.lp-info-section {
-  width: 100%;
-  max-width: 480px; /* Dopasowane do .container */
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.lp-info-section > div {
-  width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.lp-info-section > div > p {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  text-align: center;
-}
-
-/* Media query bez zmian, z wyjątkiem .responsive-gif */
 @media (max-width: 480px) {
   .container {
     padding: 0 10px;
@@ -516,12 +483,46 @@ input[readonly] {
     max-width: 100%;
     font-size: 0.85rem;
   }
-  .responsive-gif {
+  .gif-container {
     width: 100%;
     max-width: 100%;
+    overflow: hidden;
+    margin: 10px 0;
+    text-align: center;
+  }
+  .responsive-gif {
+    width: auto;
+    max-width: 450px;
     height: auto;
     display: block;
     box-sizing: border-box;
     margin: 0 auto;
   }
+}
+
+/* Styl dla kontenera GIF-a */
+.gif-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  margin: 10px 0;
+  text-align: center;
+}
+
+/* Styl dla GIF-a z ręczną wielkością */
+.responsive-gif {
+  width: auto;
+  max-width: 450px; /* Dopasowane do efektywnej szerokości .container (~480px - 2x15px padding) */
+  height: auto; /* Zachowuje proporcje */
+  display: block;
+  box-sizing: border-box;
+  margin: 0 auto; /* Centrowanie */
+}
+
+/* Styl dla .lp-info-section */
+.lp-info-section {
+  width: 100%;
+  max-width: 480px; /* Dopasowane do .container */
+  overflow: hidden;
+  box-sizing: border-box;
 }
