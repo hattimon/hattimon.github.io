@@ -118,7 +118,7 @@ button:hover {
 
 .swap-arrow {
   padding: 8px;
-  font-size: 1rem;
+  font-size: 2rem;
   line-height: 1;
   background: var(--btn);
   border-radius: 50%;
