@@ -90,7 +90,7 @@ const translations = {
     block_explorer: "opBNB Block Explorer",
     enter_amount: "Enter amount (1–100) %",
     error_label: "Error",
-    error_invalid_percent: "Percentage must be 1–100! The maximum deposit to the LP is 99% to avoid issues with ratios and gas.",
+    error_invalid_percent: "Please enter a percentage between 1 and 100!",
     error_no_metamask: "Install Wallet!",
     error_switch_network: "Cannot switch network:",
     error_add_network: "Cannot add opBNB network:",
@@ -108,7 +108,8 @@ const translations = {
     telegram_info: "Join our Telegram group",
     loading_swap: "Confirming on blockchain, do not click, wait for wallet prompt",
     loading_add_liquidity: "Adding liquidity on blockchain, do not click, wait for wallet prompt",
-    loading_remove_liquidity: "Removing liquidity on blockchain, do not click, wait for wallet prompt"
+    loading_remove_liquidity: "Removing liquidity on blockchain, do not click, wait for wallet prompt",
+    error_max_lp_deposit: "The maximum deposit to the LP is 99%."
   },
   pl: {
     theme_light: "Tryb Jasny",
@@ -161,7 +162,7 @@ const translations = {
     block_explorer: "Eksplorator bloków opBNB",
     enter_amount: "Wprowadź ilość (1–100) %",
     error_label: "Błąd",
-    error_invalid_percent: "Procent musi być od 1 do 100! Maksymalna wpłata do LP to 99%, aby uniknąć problemów z proporcjami i gazem.",
+    error_invalid_percent: "Proszę wpisz procent między 1 a 100!",
     error_no_metamask: "Zainstaluj Portfel!",
     error_switch_network: "Nie można przełączyć sieci:",
     error_add_network: "Nie można dodać sieci opBNB:",
@@ -179,7 +180,8 @@ const translations = {
     telegram_info: "Dołącz do naszej grupy na Telegramie",
     loading_swap: "Trwa potwierdzanie na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
     loading_add_liquidity: "Trwa dodawanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
-    loading_remove_liquidity: "Trwa usuwanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu"
+    loading_remove_liquidity: "Trwa usuwanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
+    error_max_lp_deposit: "Maksymalna wpłata do LP to 99%."
   }
 };
 
@@ -300,7 +302,7 @@ async function addLiquidity(pc) {
 
   // Sprawdzenie, czy wybrano 100%
   if (pc === 100) {
-    return showError(translations[localStorage.language || "en"].error_invalid_percent);
+    return showError(translations[localStorage.language || "en"].error_max_lp_deposit);
   }
 
   // Obliczanie ilości na podstawie procentu
@@ -592,9 +594,16 @@ function showLoadingToast(action) {
   toast.className = "toast loading-toast";
   toast.innerHTML = `
     <span class="toast-message">${translations[lang][action]}</span>
+    <button class="toast-close"><i class="fas fa-times"></i></button>
   `;
   toastContainer.appendChild(toast);
   setTimeout(() => toast.classList.add("show"), 100);
+
+  toast.querySelector(".toast-close").addEventListener("click", () => {
+    toast.classList.remove("show");
+    toast.classList.add("hide");
+    setTimeout(() => toast.remove(), 300);
+  });
 }
 
 function hideLoadingToast() {
