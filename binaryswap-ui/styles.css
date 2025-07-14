@@ -378,7 +378,7 @@ input[readonly] {
   padding: 15px;
   box-shadow: var(--shadow);
   color: var(--toast-text);
-  font-size: 0.ninerem;
+  font-size: 0.9rem;
   display: flex;
   flex-direction: column;
   opacity: 0;
@@ -436,7 +436,7 @@ input[readonly] {
 }
 
 .toast-copy, .toast-close {
-  padding: 4px 8px;
+  padding: 4px 12px;
   border-radius: 12px;
   font-size: 0.9rem; /* Match toast message font size */
   background: var(--btn);
@@ -446,6 +446,8 @@ input[readonly] {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  width: auto; /* Adjust width to content */
+  min-width: 0; /* Prevent unwanted stretching */
 }
 
 .toast-copy:hover, .toast-close:hover {
@@ -454,7 +456,7 @@ input[readonly] {
 
 .toast-close {
   font-weight: bold;
-  padding: 4px 8px;
+  padding: 4px 12px;
 }
 
 @keyframes toastShow {
@@ -526,8 +528,10 @@ input[readonly] {
     justify-content: center;
   }
   .toast-copy, .toast-close {
-    padding: 4px 8px;
+    padding: 4px 12px;
     font-size: 0.85rem; /* Match toast message font size on mobile */
+    width: auto; /* Adjust width to content */
+    min-width: 0; /* Prevent unwanted stretching */
   }
   .gif-container {
     width: 100%;
