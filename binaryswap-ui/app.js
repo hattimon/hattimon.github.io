@@ -90,7 +90,7 @@ const translations = {
     block_explorer: "opBNB Block Explorer",
     enter_amount: "Enter amount (1–100) %",
     error_label: "Error",
-    error_invalid_percent: "Percentage must be 1–100!",
+    error_invalid_percent: "Percentage must be 1–100! The maximum deposit to the LP is 99% to avoid issues with ratios and gas.",
     error_no_metamask: "Install Wallet!",
     error_switch_network: "Cannot switch network:",
     error_add_network: "Cannot add opBNB network:",
@@ -161,7 +161,7 @@ const translations = {
     block_explorer: "Eksplorator bloków opBNB",
     enter_amount: "Wprowadź ilość (1–100) %",
     error_label: "Błąd",
-    error_invalid_percent: "Procent musi być od 1 do 100!",
+    error_invalid_percent: "Procent musi być od 1 do 100! Maksymalna wpłata do LP to 99%, aby uniknąć problemów z proporcjami i gazem.",
     error_no_metamask: "Zainstaluj Portfel!",
     error_switch_network: "Nie można przełączyć sieci:",
     error_add_network: "Nie można dodać sieci opBNB:",
@@ -185,7 +185,7 @@ const translations = {
 
 async function handleSwap() {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+    return showError(translations[localStorage.language || "en"].error_connect_wallet);
   }
 
   const pc = parseInt(document.getElementById("swapPercent").value);
@@ -218,7 +218,7 @@ async function handleSwap() {
 
 async function swapBNBto0101(pc, slippage, deadline) {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+    return showError(translations[localStorage.language || "en"].error_connect_wallet);
   }
 
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
@@ -250,7 +250,7 @@ async function swapBNBto0101(pc, slippage, deadline) {
 
 async function swap0101toBNB(pc, slippage, deadline) {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+    return showError(translations[localStorage.language || "en"].error_connect_wallet);
   }
 
   const token = new ethers.Contract(addr0101, ERC20, signer);
@@ -289,7 +289,7 @@ async function swap0101toBNB(pc, slippage, deadline) {
 
 async function addLiquidity(pc) {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+    return showError(translations[localStorage.language || "en"].error_connect_wallet);
   }
 
   const t = new ethers.Contract(addr0101, ERC20, signer);
@@ -300,8 +300,7 @@ async function addLiquidity(pc) {
 
   // Sprawdzenie, czy wybrano 100%
   if (pc === 100) {
-    showError(translations[localStorage.language || "en"].error_invalid_percent + "The maximum deposit to the LP is 99% to avoid issues with ratios and gas.");
-    return;
+    return showError(translations[localStorage.language || "en"].error_invalid_percent);
   }
 
   // Obliczanie ilości na podstawie procentu
@@ -369,7 +368,7 @@ async function addLiquidity(pc) {
 
 async function removeLiquidity(pc) {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
+    return showError(translations[localStorage.language || "en"].error_connect_wallet);
   }
 
   const l = new ethers.Contract(addrLP, ERC20, signer);
@@ -547,7 +546,17 @@ function swapTokens() {
 }
 
 function showError(message) {
-  const toastContainer = document.getElementById("toast-container") || createToastContainer();
+  const toastContainer = document.getElementById("toast-container");
+  if (!toastContainer) {
+    createToastContainer();
+  }
+  const existingToasts = toastContainer.getElementsByClassName("toast");
+  for (let toast of existingToasts) {
+    if (toast.querySelector(".toast-message").textContent === message) {
+      return; // Nie twórz nowego toasta, jeśli wiadomość się powtarza
+    }
+  }
+
   const lang = localStorage.language || "en";
   const toast = document.createElement("div");
   toast.className = "toast";
