@@ -435,7 +435,7 @@ input[readonly] {
 }
 
 /* Media query for mobile devices */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .container {
     padding: 0 10px;
   }
