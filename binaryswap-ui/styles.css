@@ -491,7 +491,7 @@ input[readonly] {
 
   .responsive-gif {
     width: 100%; /* Full width on mobile */
-    max-width: 100%; /* Ensure it doesn't exceed container */
+    max-width: 480; /* Ensure it doesn't exceed container */
     height: auto; /* Maintain aspect ratio */
   }
 }
