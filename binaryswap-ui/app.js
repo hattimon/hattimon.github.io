@@ -50,7 +50,7 @@ const translations = {
     fast_bridge: "Fast Bridge opBNB ⇄ FDUSD",
     official_bridge: "Official Bridge opBNB ⇄ BNB (7 days)",
     emergency_mode: "Emergency Mode",
-    interaction_info: "(<b>Clicking SWAP or Add/Remove LP</b> requires several subsequent clicks to approve the contract interaction for the specified amount – e.g., approving the Swap contract and confirming the Swap)",
+    interaction_info: "<b>Clicking SWAP or Add/Remove LP</b> requires several subsequent clicks to approve the contract interaction for the specified amount – e.g., approving the Swap contract and confirming the Swap",
     gui_info: "This is a secure (SSL) backup GUI using BinarySwap's original contract functions.",
     wallet_recommendation: "I recommend the <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a> wallet where you can also revoke permissions.",
     transaction_history: "For transaction history, check <a href=\"https://debank.com/\" target=\"_blank\">DeBank.com</a>.",
