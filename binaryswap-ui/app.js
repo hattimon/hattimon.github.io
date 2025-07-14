@@ -90,7 +90,7 @@ const translations = {
     block_explorer: "opBNB Block Explorer",
     enter_amount: "Enter amount (1–100) %",
     error_label: "Error",
-    error_invalid_percent: "Please enter a percentage between 1 and 100!",
+    error_invalid_percent: "Percentage must be 1–100!",
     error_no_metamask: "Install Wallet!",
     error_switch_network: "Cannot switch network:",
     error_add_network: "Cannot add opBNB network:",
@@ -108,8 +108,7 @@ const translations = {
     telegram_info: "Join our Telegram group",
     loading_swap: "Confirming on blockchain, do not click, wait for wallet prompt",
     loading_add_liquidity: "Adding liquidity on blockchain, do not click, wait for wallet prompt",
-    loading_remove_liquidity: "Removing liquidity on blockchain, do not click, wait for wallet prompt",
-    error_max_lp_deposit: "The maximum deposit to the LP is 99%."
+    loading_remove_liquidity: "Removing liquidity on blockchain, do not click, wait for wallet prompt"
   },
   pl: {
     theme_light: "Tryb Jasny",
@@ -162,7 +161,7 @@ const translations = {
     block_explorer: "Eksplorator bloków opBNB",
     enter_amount: "Wprowadź ilość (1–100) %",
     error_label: "Błąd",
-    error_invalid_percent: "Proszę wpisz procent między 1 a 100!",
+    error_invalid_percent: "Procent musi być od 1 do 100!",
     error_no_metamask: "Zainstaluj Portfel!",
     error_switch_network: "Nie można przełączyć sieci:",
     error_add_network: "Nie można dodać sieci opBNB:",
@@ -180,14 +179,13 @@ const translations = {
     telegram_info: "Dołącz do naszej grupy na Telegramie",
     loading_swap: "Trwa potwierdzanie na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
     loading_add_liquidity: "Trwa dodawanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
-    loading_remove_liquidity: "Trwa usuwanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
-    error_max_lp_deposit: "Maksymalna wpłata do LP to 99%."
+    loading_remove_liquidity: "Trwa usuwanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu"
   }
 };
 
 async function handleSwap() {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet);
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
   }
 
   const pc = parseInt(document.getElementById("swapPercent").value);
@@ -220,7 +218,7 @@ async function handleSwap() {
 
 async function swapBNBto0101(pc, slippage, deadline) {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet);
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
   }
 
   const router = new ethers.Contract(routerAddr, ROUTER, signer);
@@ -252,7 +250,7 @@ async function swapBNBto0101(pc, slippage, deadline) {
 
 async function swap0101toBNB(pc, slippage, deadline) {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet);
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
   }
 
   const token = new ethers.Contract(addr0101, ERC20, signer);
@@ -291,25 +289,25 @@ async function swap0101toBNB(pc, slippage, deadline) {
 
 async function addLiquidity(pc) {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet);
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
   }
 
   const t = new ethers.Contract(addr0101, ERC20, signer);
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
   const bB = await provider.getBalance(account); // BNB balance in wei
   const bT = await t.balanceOf(account); // 0101 balance in wei
-  const gasBuffer = ethers.parseUnits("0.0001", 18); // Mały bufor na gaz
+  const gasBuffer = ethers.parseUnits("0.0001", 18); // Small gas buffer
 
-  // Sprawdzenie, czy wybrano 100%
+  // Check if 100% is selected
   if (pc === 100) {
-    return showError(translations[localStorage.language || "en"].error_max_lp_deposit);
+    return showError(translations[localStorage.language || "en"].error_invalid_percent);
   }
 
-  // Obliczanie ilości na podstawie procentu
+  // Calculate amounts based on percentage
   const vT = bT * BigInt(pc) / BigInt(100);
   let vB = bB * BigInt(pc) / BigInt(100);
 
-  // Zapewnienie bufora na gaz
+  // Ensure gas buffer
   if (vB + gasBuffer > bB) {
     vB = bB - gasBuffer;
     if (vB <= 0) {
@@ -347,7 +345,7 @@ async function addLiquidity(pc) {
     const gasCost = gasEstimate * gasPrice;
 
     if (bB < gasCost + vB) {
-      return showError(translations[localStorage.language || "en"].error_insufficient_balance + " (Nie wystarczy BNB na gaz)");
+      return showError(translations[localStorage.language || "en"].error_insufficient_balance + " (Not enough BNB for gas)");
     }
 
     const tx = await r.addLiquidityETH(
@@ -370,7 +368,7 @@ async function addLiquidity(pc) {
 
 async function removeLiquidity(pc) {
   if (!signer || !provider) {
-    return showError(translations[localStorage.language || "en"].error_connect_wallet);
+    return showError(translations[localStorage.language || "en"].error_connect_wallet + " Wallet not connected.");
   }
 
   const l = new ethers.Contract(addrLP, ERC20, signer);
@@ -548,17 +546,7 @@ function swapTokens() {
 }
 
 function showError(message) {
-  const toastContainer = document.getElementById("toast-container");
-  if (!toastContainer) {
-    createToastContainer();
-  }
-  const existingToasts = toastContainer.getElementsByClassName("toast");
-  for (let toast of existingToasts) {
-    if (toast.querySelector(".toast-message").textContent === message) {
-      return; // Nie twórz nowego toasta, jeśli wiadomość się powtarza
-    }
-  }
-
+  const toastContainer = document.getElementById("toast-container") || createToastContainer();
   const lang = localStorage.language || "en";
   const toast = document.createElement("div");
   toast.className = "toast";
@@ -594,16 +582,9 @@ function showLoadingToast(action) {
   toast.className = "toast loading-toast";
   toast.innerHTML = `
     <span class="toast-message">${translations[lang][action]}</span>
-    <button class="toast-close"><i class="fas fa-times"></i></button>
   `;
   toastContainer.appendChild(toast);
   setTimeout(() => toast.classList.add("show"), 100);
-
-  toast.querySelector(".toast-close").addEventListener("click", () => {
-    toast.classList.remove("show");
-    toast.classList.add("hide");
-    setTimeout(() => toast.remove(), 300);
-  });
 }
 
 function hideLoadingToast() {
