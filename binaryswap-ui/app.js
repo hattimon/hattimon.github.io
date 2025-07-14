@@ -543,9 +543,14 @@ function showLoadingToast(action) {
   toast.className = "toast loading-toast";
   toast.innerHTML = `
     <span class="toast-message">${translations[lang][action]}</span>
+    <button class="toast-close"><i class="fas fa-times"></i></button>
   `;
   toastContainer.appendChild(toast);
   setTimeout(() => toast.classList.add("show"), 100);
+
+  toast.querySelector(".toast-close").addEventListener("click", () => {
+    removeToast(toast);
+  });
 }
 
 function hideLoadingToast() {
