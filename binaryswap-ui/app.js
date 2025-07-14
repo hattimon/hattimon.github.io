@@ -177,9 +177,9 @@ const translations = {
     copied: "Skopiowano!",
     tip_info: "✅ Czy korzystasz z tego narzędzia lub uznałeś je za przydatne❔<br>    🗯 Jestem wdzięczny za każde wsparcie ☕️<br>    🔗 Dowolna sieć kompatybilna z Ethereum i dowolna kryptowaluta:<br>",
     telegram_info: "Dołącz do naszej grupy na Telegramie",
-    loading_swap: "Confirming on blockchain, do not click, wait for wallet prompt",
-    loading_add_liquidity: "Adding liquidity on blockchain, do not click, wait for wallet prompt",
-    loading_remove_liquidity: "Removing liquidity on blockchain, do not click, wait for wallet prompt"
+    loading_swap: "Trwa potwierdzanie na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
+    loading_add_liquidity: "Trwa dodawanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
+    loading_remove_liquidity: "Trwa usuwanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu"
   }
 };
 
@@ -294,19 +294,10 @@ async function addLiquidity(pc) {
 
   const t = new ethers.Contract(addr0101, ERC20, signer);
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
-  const bB = await provider.getBalance(account); // BNB balance in wei
-  const bT = await t.balanceOf(account); // 0101 balance in wei
+  const bB = await provider.getBalance(account), bT = await t.balanceOf(account);
+  const vB = bB * BigInt(pc) / BigInt(100), vT = bT * BigInt(pc) / BigInt(100);
 
-  // Check if 100% is selected
-  if (pc === 100) {
-    return showError(translations[localStorage.language || "en"].error_invalid_percent);
-  }
-
-  // Calculate amounts based on percentage
-  const vT = bT * BigInt(pc) / BigInt(100);
-  const vB = bT > 0 ? (vT * bB) / bT : 0; // Match BNB to 0101 value proportionally
-
-  if (vT <= 0 || vB <= 0) {
+  if (vB <= 0 || vT <= 0) {
     return showError(translations[localStorage.language || "en"].error_insufficient_balance);
   }
 
@@ -321,8 +312,8 @@ async function addLiquidity(pc) {
     const tx = await r.addLiquidityETH(
       addr0101,
       vT,
-      0, // minToken
-      0, // minLiquidity
+      0,
+      0,
       account,
       Math.floor(Date.now() / 1000) + 300,
       { value: vB }
