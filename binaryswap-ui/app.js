@@ -177,9 +177,9 @@ const translations = {
     copied: "Skopiowano!",
     tip_info: "✅ Czy korzystasz z tego narzędzia lub uznałeś je za przydatne❔<br>    🗯 Jestem wdzięczny za każde wsparcie ☕️<br>    🔗 Dowolna sieć kompatybilna z Ethereum i dowolna kryptowaluta:<br>",
     telegram_info: "Dołącz do naszej grupy na Telegramie",
-    loading_swap: "Trwa potwierdzanie na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
-    loading_add_liquidity: "Trwa dodawanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu",
-    loading_remove_liquidity: "Trwa usuwanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu"
+    loading_swap: "Confirming on blockchain, do not click, wait for wallet prompt",
+    loading_add_liquidity: "Adding liquidity on blockchain, do not click, wait for wallet prompt",
+    loading_remove_liquidity: "Removing liquidity on blockchain, do not click, wait for wallet prompt"
   }
 };
 
@@ -296,7 +296,6 @@ async function addLiquidity(pc) {
   const r = new ethers.Contract(routerAddr, ROUTER, signer);
   const bB = await provider.getBalance(account); // BNB balance in wei
   const bT = await t.balanceOf(account); // 0101 balance in wei
-  const gasBuffer = ethers.parseUnits("0.0001", 18); // Small gas buffer
 
   // Check if 100% is selected
   if (pc === 100) {
@@ -305,15 +304,7 @@ async function addLiquidity(pc) {
 
   // Calculate amounts based on percentage
   const vT = bT * BigInt(pc) / BigInt(100);
-  let vB = bB * BigInt(pc) / BigInt(100);
-
-  // Ensure gas buffer
-  if (vB + gasBuffer > bB) {
-    vB = bB - gasBuffer;
-    if (vB <= 0) {
-      return showError(translations[localStorage.language || "en"].error_insufficient_balance);
-    }
-  }
+  const vB = bT > 0 ? (vT * bB) / bT : 0; // Match BNB to 0101 value proportionally
 
   if (vT <= 0 || vB <= 0) {
     return showError(translations[localStorage.language || "en"].error_insufficient_balance);
@@ -325,27 +316,6 @@ async function addLiquidity(pc) {
     if (allowance < vT) {
       const approveTx = await t.approve(routerAddr, vT);
       await approveTx.wait();
-    }
-
-    const txData = {
-      to: routerAddr,
-      data: r.interface.encodeFunctionData("addLiquidityETH", [
-        addr0101,
-        vT,
-        0, // minToken
-        0, // minLiquidity
-        account,
-        Math.floor(Date.now() / 1000) + 300,
-      ]),
-      value: vB,
-      from: account,
-    };
-    const gasEstimate = await provider.estimateGas(txData);
-    const gasPrice = await provider.getGasPrice();
-    const gasCost = gasEstimate * gasPrice;
-
-    if (bB < gasCost + vB) {
-      return showError(translations[localStorage.language || "en"].error_insufficient_balance + " (Not enough BNB for gas)");
     }
 
     const tx = await r.addLiquidityETH(
