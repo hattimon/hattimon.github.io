@@ -8,15 +8,15 @@
   --shadow-dark: 0 4px 16px rgba(0, 212, 255, 0.3);
   --border-dark: #1b263b;
   --glow-dark: #00d4ff;
-  --bg-light: #e6f0fa;
-  --text-light: #1b263b;
-  --card-light: rgba(200, 220, 240, 0.9);
-  --btn-light: #0288d1;
-  --btn-hover-light: #0277bd;
-  --link-light: #01579b;
-  --shadow-light: 0 4px 16px rgba(2, 136, 209, 0.3);
-  --border-light: #b0bec5;
-  --glow-light: #0288d1;
+  --bg-light: #e6e6fa; /* Lavender - niebiański fiolet */
+  --text-light: #1c2526;
+  --card-light: rgba(173, 216, 230, 0.9); /* LightBlue - błękit */
+  --btn-light: #4682b4; /* SteelBlue - błękitny przycisk */
+  --btn-hover-light: #4169e1; /* RoyalBlue - głębszy błękit */
+  --link-light: #483d8b; /* DarkSlateBlue - fioletowy link */
+  --shadow-light: 0 4px 16px rgba(70, 130, 180, 0.3);
+  --border-light: #b0c4de; /* LightSteelBlue */
+  --glow-light: #87ceeb; /* SkyBlue - delikatny błękitny glow */
   --toast-bg: #ff4d4d;
   --toast-text: #ffffff;
 }
@@ -61,19 +61,19 @@
 [data-theme="light"] select,
 [data-theme="light"] textarea {
   color: var(--text);
-  background: #ffffff;
+  background: #f0f8ff; /* AliceBlue */
 }
 
 [data-theme="light"] input::placeholder,
 [data-theme="light"] textarea::placeholder {
-  color: #90a4ae;
+  color: #4682b4;
 }
 
 body {
   margin: 0;
   padding: 20px 0;
   font-family: 'Orbitron', sans-serif;
-  background: linear-gradient(135deg, var(--bg), #1b263b);
+  background: linear-gradient(135deg, var(--bg), #4682b4);
   color: var(--text);
   transition: all 0.3s ease;
   min-height: 100vh;
@@ -120,7 +120,7 @@ button {
 button:hover {
   background: var(--btn-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
+  box-shadow: 0 6px 20px rgba(70, 130, 180, 0.5);
 }
 
 .uniswap-btn {
@@ -221,7 +221,7 @@ input:focus, select:focus, textarea:focus {
 .swap-card, .liquidity-card, .network-input, .contract-input {
   padding: 20px;
   border-radius: 16px;
-  background: rgba(30, 60, 90, 0.7);
+  background: rgba(70, 130, 180, 0.7);
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -233,7 +233,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .swap-card:hover, .liquidity-card:hover, .network-input:hover, .contract-input:hover {
-  background: rgba(30, 60, 90, 0.9);
+  background: rgba(70, 130, 180, 0.9);
 }
 
 .swap-input, .liquidity-input, .network-input, .contract-input {
