@@ -411,6 +411,14 @@
   </div>
 
   <script>
+    // Wait for ethers to be loaded
+    if (typeof ethers === 'undefined') {
+      console.error('Ethers.js not loaded');
+      document.addEventListener('DOMContentLoaded', () => {
+        showError('Błąd: Biblioteka ethers.js nie została załadowana. Spróbuj odświeżyć stronę.');
+      });
+    }
+
     const routerAddress = "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f";
     const pairAddress = "0xeAe69CE0B7B0cF8A7eb2C879F4e461a2Ebfa49420";
     const daiAddress = "0x3a94C233C4c3eB47cF621a6aC2A81cB513AD5D76";
@@ -479,6 +487,7 @@
         transaction_history: "Sprawdź historię transakcji na <a href=\"https://debank.com/\" target=\"_blank\">DeBank.com</a>.",
         error_label: "Błąd",
         error_no_wallet: "Zainstaluj portfel (Rabby/MetaMask)!",
+        error_wallet_conflict: "Wykryto wiele portfeli (np. MetaMask, Zerion). Wyłącz inne rozszerzenia portfeli i użyj tylko Rabby.",
         error_switch_network: "Nie można przełączyć sieci:",
         error_add_network: "Nie można dodać sieci Arbitrum Nova:",
         error_connect_wallet: "Błąd połączenia z portfelem:",
@@ -510,6 +519,7 @@
         transaction_history: "Check transaction history on <a href=\"https://debank.com/\" target="_blank\">DeBank.com</a>.",
         error_label: "Error",
         error_no_wallet: "Install a wallet (Rabby/MetaMask)!",
+        error_wallet_conflict: "Multiple wallets detected (e.g., MetaMask, Zerion). Disable other wallet extensions and use only Rabby.",
         error_switch_network: "Cannot switch network:",
         error_add_network: "Cannot add Arbitrum Nova network:",
         error_connect_wallet: "Wallet connection error:",
@@ -530,22 +540,42 @@
     let provider, signer, account, router, pairContract, daiContract;
 
     async function connectWallet() {
-      if (!window.ethereum) {
+      // Check for multiple wallet providers and prioritize Rabby
+      let ethereumProvider = window.ethereum;
+      if (window.ethereum && window.ethereum.providers) {
+        console.log("Multiple wallet providers detected:", window.ethereum.providers);
+        const rabbyProvider = window.ethereum.providers.find(p => p.isRabby);
+        const metaMaskProvider = window.ethereum.providers.find(p => p.isMetaMask);
+        if (rabbyProvider) {
+          console.log("Selecting Rabby as provider");
+          ethereumProvider = rabbyProvider;
+        } else if (metaMaskProvider) {
+          console.log("Falling back to MetaMask");
+          ethereumProvider = metaMaskProvider;
+        } else {
+          showError(translations[localStorage.language || "pl"].error_wallet_conflict);
+          return;
+        }
+      }
+
+      if (!ethereumProvider) {
         showError(translations[localStorage.language || "pl"].error_no_wallet);
         return;
       }
+
       try {
         console.log("Próba połączenia z portfelem...");
-        provider = new ethers.BrowserProvider(window.ethereum);
+        provider = new ethers.BrowserProvider(ethereumProvider);
         await provider.send("eth_requestAccounts", []);
         signer = await provider.getSigner();
         account = await signer.getAddress();
         console.log("Połączono z adresem:", account);
-        const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+
+        const currentChainId = await ethereumProvider.request({ method: 'eth_chainId' });
         if (currentChainId !== arbitrumNova.chainId) {
           console.log("Próba przełączenia na Arbitrum Nova...");
           try {
-            await window.ethereum.request({
+            await ethereumProvider.request({
               method: 'wallet_switchEthereumChain',
               params: [{ chainId: arbitrumNova.chainId }]
             });
@@ -553,7 +583,7 @@
             if (switchError.code === 4902) {
               console.log("Sieć Arbitrum Nova nie znaleziona, dodawanie...");
               try {
-                await window.ethereum.request({
+                await ethereumProvider.request({
                   method: 'wallet_addEthereumChain',
                   params: [arbitrumNova]
                 });
@@ -567,6 +597,7 @@
             }
           }
         }
+
         router = new ethers.Contract(routerAddress, routerAbi, signer);
         pairContract = new ethers.Contract(pairAddress, erc20Abi, signer);
         daiContract = new ethers.Contract(daiAddress, erc20Abi, provider);
