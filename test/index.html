@@ -3,69 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Remove Liquidity</title>
+  <title>Remove Liquidity - Uniswap V2</title>
   <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 20px;
-      background-color: #f5f5f5;
+      font-family: 'Roboto', sans-serif;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background-color: #2a2a2a;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 500px;
     }
     h1 {
       text-align: center;
-      color: #333;
-    }
-    .container {
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: #ffffff;
     }
     .input-group {
-      margin-bottom: 15px;
+      margin-bottom: 1.2rem;
     }
     label {
       display: block;
-      margin-bottom: 5px;
-      color: #555;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #cccccc;
     }
     input {
       width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      background-color: #3a3a3a;
+      color: #ffffff;
+      font-size: 1rem;
       box-sizing: border-box;
     }
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px #00aaff;
+    }
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
     button {
-      width: 100%;
-      padding: 10px;
-      background-color: #007bff;
-      color: white;
+      flex: 1;
+      padding: 0.8rem;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
+      background: linear-gradient(45deg, #00aaff, #0077cc);
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 500;
       cursor: pointer;
-      font-size: 16px;
+      transition: background 0.3s;
     }
     button:hover {
-      background-color: #0056b3;
+      background: linear-gradient(45deg, #0099e6, #0066b3);
     }
     button:disabled {
-      background-color: #cccccc;
+      background: #555555;
       cursor: not-allowed;
     }
     #status {
-      margin-top: 15px;
-      color: #333;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #cccccc;
       word-wrap: break-word;
+      text-align: center;
+    }
+    .connected #connectButton {
+      display: none;
+    }
+    .connected #form {
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h1>Remove Liquidity</h1>
   <div class="container">
-    <button id="connectButton" onclick="connectMetaMask()">Connect MetaMask</button>
+    <h1>Remove Liquidity</h1>
+    <button id="connectButton" onclick="connectWallet()">Connect Wallet</button>
     <div id="form" style="display: none;">
       <div class="input-group">
         <label for="tokenAddress">Token Address</label>
@@ -73,7 +107,7 @@
       </div>
       <div class="input-group">
         <label for="liquidity">Liquidity Amount</label>
-        <input type="number" id="liquidity" placeholder="Amount of liquidity tokens">
+        <input type="number" id="liquidity" placeholder="Amount of LP tokens">
       </div>
       <div class="input-group">
         <label for="amountTokenMin">Minimum Token Amount</label>
@@ -83,13 +117,17 @@
         <label for="amountETHMin">Minimum ETH Amount</label>
         <input type="number" id="amountETHMin" placeholder="Minimum ETH to receive">
       </div>
-      <button id="removeButton" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
+      <div class="button-group">
+        <button id="removeButton" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
+        <button id="removeAllButton" onclick="removeAllLiquidity()" disabled>Remove 100% Liquidity</button>
+      </div>
       <div id="status"></div>
     </div>
   </div>
 
   <script>
     const routerAddress = "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f";
+    const pairAddress = "YOUR_PAIR_ADDRESS"; // Replace with your LP token pair address
     const routerAbi = [
       {
         "inputs": [
@@ -109,31 +147,49 @@
         "type": "function"
       }
     ];
+    const erc20Abi = [
+      {
+        "inputs": [
+          {"internalType": "address", "name": "account", "type": "address"}
+        ],
+        "name": "balanceOf",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
 
     let provider, signer, router;
 
-    async function connectMetaMask() {
+    async function connectWallet() {
       try {
         if (typeof window.ethereum !== 'undefined') {
           provider = new ethers.providers.Web3Provider(window.ethereum);
           await provider.send("eth_requestAccounts", []);
           signer = provider.getSigner();
           const network = await provider.getNetwork();
-          if (network.chainId !== 42170) { // Arbitrum Nova chain ID
-            alert("Please switch to Arbitrum Nova in MetaMask");
+          if (network.chainId !== 42170) {
+            alert("Please switch to Arbitrum Nova in your wallet (Rabby/MetaMask)");
             return;
           }
           router = new ethers.Contract(routerAddress, routerAbi, signer);
-          document.getElementById("connectButton").style.display = "none";
-          document.getElementById("form").style.display = "block";
+          document.body.classList.add("connected");
           document.getElementById("removeButton").disabled = false;
-          document.getElementById("status").innerText = "Connected to MetaMask";
+          document.getElementById("removeAllButton").disabled = false;
+          document.getElementById("status").innerText = `Connected: ${await signer.getAddress()}`;
         } else {
-          alert("MetaMask is not installed");
+          alert("No wallet detected. Please install Rabby or MetaMask.");
         }
       } catch (error) {
-        document.getElementById("status").innerText = "Error connecting: " + error.message;
+        document.getElementById("status").innerText = "Connection error: " + error.message;
       }
+    }
+
+    async function getLpBalance() {
+      if (!signer || !pairAddress) return "0";
+      const pairContract = new ethers.Contract(pairAddress, erc20Abi, provider);
+      const balance = await pairContract.balanceOf(await signer.getAddress());
+      return balance.toString();
     }
 
     async function removeLiquidity() {
@@ -141,7 +197,7 @@
       const liquidity = document.getElementById("liquidity").value;
       const amountTokenMin = document.getElementById("amountTokenMin").value;
       const amountETHMin = document.getElementById("amountETHMin").value;
-      const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from now
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
 
       if (!tokenAddress || !liquidity || !amountTokenMin || !amountETHMin) {
         document.getElementById("status").innerText = "Please fill all fields";
@@ -150,6 +206,7 @@
 
       try {
         document.getElementById("removeButton").disabled = true;
+        document.getElementById("removeAllButton").disabled = true;
         document.getElementById("status").innerText = "Sending transaction...";
 
         const tx = await router.removeLiquidityETH(
@@ -171,6 +228,55 @@
         document.getElementById("status").innerText = "Error: " + error.message;
       } finally {
         document.getElementById("removeButton").disabled = false;
+        document.getElementById("removeAllButton").disabled = false;
+      }
+    }
+
+    async function removeAllLiquidity() {
+      const tokenAddress = document.getElementById("tokenAddress").value;
+      const amountTokenMin = document.getElementById("amountTokenMin").value;
+      const amountETHMin = document.getElementById("amountETHMin").value;
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+
+      if (!tokenAddress || !amountTokenMin || !amountETHMin) {
+        document.getElementById("status").innerText = "Please fill token address and minimum amounts";
+        return;
+      }
+
+      try {
+        document.getElementById("removeButton").disabled = true;
+        document.getElementById("removeAllButton").disabled = true;
+        document.getElementById("status").innerText = "Fetching LP balance...";
+
+        const liquidity = await getLpBalance();
+        if (liquidity === "0") {
+          document.getElementById("status").innerText = "No liquidity tokens found";
+          return;
+        }
+
+        document.getElementById("liquidity").value = ethers.utils.formatUnits(liquidity, 18);
+        document.getElementById("status").innerText = "Sending transaction...";
+
+        const tx = await router.removeLiquidityETH(
+          tokenAddress,
+          liquidity,
+          ethers.utils.parseUnits(amountTokenMin, 18),
+          ethers.utils.parseUnits(amountETHMin, 18),
+          await signer.getAddress(),
+          deadline,
+          { gasLimit: 300000 }
+        );
+
+        document.getElementById("status").innerText = `Transaction sent: ${tx.hash}`;
+        const receipt = await tx.wait();
+        document.getElementById("status").innerText = `Liquidity removed in block ${receipt.blockNumber}\n` +
+          `Tokens: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
+          `ETH: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`;
+      } catch (error) {
+        document.getElementById("status").innerText = "Error: " + error.message;
+      } finally {
+        document.getElementById("removeButton").disabled = false;
+        document.getElementById("removeAllButton").disabled = false;
       }
     }
   </script>
