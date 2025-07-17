@@ -118,12 +118,7 @@
         <input type="number" id="amountETHMin" placeholder="e.g., 0.00026369" step="any">
       </div>
       <div class="button-group">
-        <button id="removeButton部分
-
-System: * The response was cut off due to length. Below is the completion of the `index.html` file, followed by instructions and explanations tailored to your transaction details.
-
-<xaiArtifact artifact_id="a90eb165-cb2d-4fb5-b699-36d3d883c339" artifact_version_id="958c3018-c060-46ee-b440-c0b05954d385" title="index.html" contentType="text/html">
-Button" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
+        <button id="removeButton" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
         <button id="removeAllButton" onclick="removeAllLiquidity()" disabled>Remove 100% Liquidity</button>
       </div>
       <div id="status"></div>
@@ -178,40 +173,67 @@ Button" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
 
     async function connectWallet() {
       try {
-        if (typeof window.ethereum !== 'undefined') {
-          provider = new ethers.providers.Web3Provider(window.ethereum);
-          await provider.send("eth_requestAccounts", []);
-          signer = provider.getSigner();
-          const network = await provider.getNetwork();
-          if (network.chainId !== 42170) {
-            alert("Please switch to Arbitrum Nova in your wallet (Rabby/MetaMask)");
-            return;
-          }
-          router = new ethers.Contract(routerAddress, routerAbi, signer);
-          pairContract = new ethers.Contract(pairAddress, erc20Abi, signer);
-          document.body.classList.add("connected");
-          document.getElementById("removeButton").disabled = false;
-          document.getElementById("removeAllButton").disabled = false;
-          document.getElementById("status").innerText = `Connected: ${await signer.getAddress()}`;
-        } else {
-          alert("No wallet detected. Please install Rabby or MetaMask.");
+        if (typeof window.ethereum === 'undefined') {
+          document.getElementById("status").innerText = "Nie wykryto portfela. Zainstaluj Rabby lub MetaMask.";
+          return;
         }
+
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        const network = await provider.getNetwork();
+
+        if (network.chainId !== 42170) {
+          try {
+            await window.ethereum.request({
+              method: "wallet_switchEthereumChain",
+              params: [{ chainId: "0xa4ba" }], // 42170 in hex
+            });
+          } catch (switchError) {
+            if (switchError.code === 4902) {
+              await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [
+                  {
+                    chainId: "0xa4ba",
+                    chainName: "Arbitrum Nova",
+                    nativeCurrency: {
+                      name: "Ether",
+                      symbol: "ETH",
+                      decimals: 18,
+                    },
+                    rpcUrls: ["https://nova.arbitrum.io/rpc"],
+                    blockExplorerUrls: ["https://nova.arbiscan.io"],
+                  },
+                ],
+              });
+            } else {
+              document.getElementById("status").innerText = "Błąd przełączania sieci: " + switchError.message;
+              return;
+            }
+          }
+        }
+
+        router = new ethers.Contract(routerAddress, routerAbi, signer);
+        pairContract = new ethers.Contract(pairAddress, erc20Abi, signer);
+        document.body.classList.add("connected");
+        document.getElementById("removeButton").disabled = false;
+        document.getElementById("removeAllButton").disabled = false;
+        document.getElementById("status").innerText = `Połączono: ${await signer.getAddress()}`;
       } catch (error) {
-        document.getElementById("status").innerText = "Connection error: " + error.message;
+        document.getElementById("status").innerText = "Błąd połączenia: " + error.message;
       }
     }
 
-    async function approveRouter() {
+    async function approveRouter(liquidity) {
       try {
-        const balance = await getLpBalance();
-        if (balance === "0") return false;
-        document.getElementById("status").innerText = "Approving router to spend LP tokens...";
-        const tx = await pairContract.approve(routerAddress, balance, { gasLimit: 100000 });
+        document.getElementById("status").innerText = "Zatwierdzanie routera do wydania tokenów LP...";
+        const tx = await pairContract.approve(routerAddress, liquidity, { gasLimit: 100000 });
         await tx.wait();
-        document.getElementById("status").innerText = "Router approved successfully";
+        document.getElementById("status").innerText = "Router zatwierdzony pomyślnie";
         return true;
       } catch (error) {
-        document.getElementById("status").innerText = "Approval error: " + error.message;
+        document.getElementById("status").innerText = "Błąd zatwierdzenia: " + error.message;
         return false;
       }
     }
@@ -230,25 +252,26 @@ Button" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
       const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
 
       if (!tokenAddress || !liquidity || !amountTokenMin || !amountETHMin) {
-        document.getElementById("status").innerText = "Please fill all fields";
+        document.getElementById("status").innerText = "Proszę wypełnić wszystkie pola";
         return;
       }
 
       try {
         document.getElementById("removeButton").disabled = true;
         document.getElementById("removeAllButton").disabled = true;
-        document.getElementById("status").innerText = "Checking approval...";
-        const approved = await approveRouter();
+        document.getElementById("status").innerText = "Sprawdzanie zatwierdzenia...";
+        const liquidityWei = ethers.utils.parseUnits(liquidity, 18);
+        const approved = await approveRouter(liquidityWei);
         if (!approved) {
-          document.getElementById("status").innerText = "Approval required but failed";
+          document.getElementById("status").innerText = "Wymagane zatwierdzenie nie powiodło się";
           return;
         }
 
-        document.getElementById("status").innerText = "Sending transaction...";
+        document.getElementById("status").innerText = "Odesłanie transakcji...";
 
         const tx = await router.removeLiquidityETH(
           tokenAddress,
-          ethers.utils.parseUnits(liquidity, 18),
+          liquidityWei,
           ethers.utils.parseUnits(amountTokenMin, 18),
           ethers.utils.parseUnits(amountETHMin, 18),
           await signer.getAddress(),
@@ -256,13 +279,13 @@ Button" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
           { gasLimit: 300000 }
         );
 
-        document.getElementById("status").innerText = `Transaction sent: ${tx.hash}`;
+        document.getElementById("status").innerText = `Transakce odeslána: ${tx.hash}`;
         const receipt = await tx.wait();
-        document.getElementById("status").innerText = `Liquidity removed in block ${receipt.blockNumber}\n` +
+        document.getElementById("status").innerText = `Likvidita odstraněna v bloku ${receipt.blockNumber}\n` +
           `DAI: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
           `ETH: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`;
       } catch (error) {
-        document.getElementById("status").innerText = "Error: " + error.message;
+        document.getElementById("status").innerText = "Chyba: " + error.message;
       } finally {
         document.getElementById("removeButton").disabled = false;
         document.getElementById("removeAllButton").disabled = false;
@@ -276,30 +299,30 @@ Button" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
       const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
 
       if (!tokenAddress || !amountTokenMin || !amountETHMin) {
-        document.getElementById("status").innerText = "Please fill token address and minimum amounts";
+        document.getElementById("status").innerText = "Proszę wypełnić adres tokenu i minimalne kwoty";
         return;
       }
 
       try {
         document.getElementById("removeButton").disabled = true;
         document.getElementById("removeAllButton").disabled = true;
-        document.getElementById("status").innerText = "Fetching LP balance...";
+        document.getElementById("status").innerText = "Pobieranie salda LP...";
 
         const liquidity = await getLpBalance();
         if (liquidity === "0") {
-          document.getElementById("status").innerText = "No liquidity tokens found";
+          document.getElementById("status").innerText = "Nie znaleziono tokenów likwidności";
           return;
         }
 
         document.getElementById("liquidity").value = ethers.utils.formatUnits(liquidity, 18);
-        document.getElementById("status").innerText = "Checking approval...";
-        const approved = await approveRouter();
+        document.getElementById("status").innerText = "Sprawdzanie zatwierdzenia...";
+        const approved = await approveRouter(liquidity);
         if (!approved) {
-          document.getElementById("status").innerText = "Approval aktívní, ale selhalo";
+          document.getElementById("status").innerText = "Wymagane zatwierdzenie nie powiodło się";
           return;
         }
 
-        document.getElementById("status").innerText = "Odesílání transakce...";
+        document.getElementById("status").innerText = "Odesłanie transakcji...";
 
         const tx = await router.removeLiquidityETH(
           tokenAddress,
