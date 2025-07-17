@@ -382,8 +382,8 @@
           <input type="number" id="amountETHMin" placeholder="Minimalna ilość ETH (np. 0.00026369)" step="any" data-i18n-placeholder="enter_eth_min">
         </div>
         <div class="liquidity-actions">
-          <button class="uniswap-btn" onclick="removeLiquidity()" disabled data-i18n="remove_lp">Usuń Płynność</button>
-          <button class="uniswap-btn" onclick="removeAllLiquidity()" disabled data-i18n="remove_all_lp">Usuń 100% Płynności</button>
+          <button class="uniswap-btn" id="removeButton" onclick="removeLiquidity()" disabled data-i18n="remove_lp">Usuń Płynność</button>
+          <button class="uniswap-btn" id="removeAllButton" onclick="removeAllLiquidity()" disabled data-i18n="remove_all_lp">Usuń 100% Płynności</button>
         </div>
       </div>
     </div>
@@ -513,12 +513,15 @@
         return;
       }
       try {
+        console.log("Próba połączenia z portfelem...");
         provider = new ethers.BrowserProvider(window.ethereum);
         await provider.send("eth_requestAccounts", []);
         signer = await provider.getSigner();
         account = await signer.getAddress();
+        console.log("Połączono z adresem:", account);
         const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
         if (currentChainId !== arbitrumNova.chainId) {
+          console.log("Próba przełączenia na Arbitrum Nova...");
           try {
             await window.ethereum.request({
               method: 'wallet_switchEthereumChain',
@@ -526,6 +529,7 @@
             });
           } catch (switchError) {
             if (switchError.code === 4902) {
+              console.log("Sieć Arbitrum Nova nie znaleziona, dodawanie...");
               try {
                 await window.ethereum.request({
                   method: 'wallet_addEthereumChain',
@@ -550,10 +554,13 @@
           copyToClipboard(account);
           showToast(translations[localStorage.language || "pl"].copied);
         });
-        document.getElementById("removeButton").disabled = false;
-        document.getElementById("removeAllButton").disabled = false;
+        const removeButton = document.getElementById("removeButton");
+        const removeAllButton = document.getElementById("removeAllButton");
+        if (removeButton) removeButton.disabled = false;
+        if (removeAllButton) removeAllButton.disabled = false;
         updateBalances();
       } catch (error) {
+        console.error("Błąd połączenia z portfelem:", error);
         showError(translations[localStorage.language || "pl"].error_connect_wallet + " " + error.message);
       }
     }
@@ -608,8 +615,10 @@
       }
 
       try {
-        document.getElementById("removeButton").disabled = true;
-        document.getElementById("removeAllButton").disabled = true;
+        const removeButton = document.getElementById("removeButton");
+        const removeAllButton = document.getElementById("removeAllButton");
+        if (removeButton) removeButton.disabled = true;
+        if (removeAllButton) removeAllButton.disabled = true;
         showLoadingToast("loading_remove_liquidity");
         const liquidityWei = ethers.utils.parseUnits(liquidity, 18);
         const approved = await approveRouter(liquidityWei);
@@ -626,17 +635,19 @@
           deadline,
           { gasLimit: 300000 }
         );
-        showToast(`Transakce odeslána: ${tx.hash}`);
+        showToast(`Transakcja wysłana: ${tx.hash}`);
         const receipt = await tx.wait();
-        showToast(`Likvidita odstraněna v bloku ${receipt.blockNumber}\n` +
+        showToast(`Płynność usunięta w bloku ${receipt.blockNumber}\n` +
           `DAI: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
           `ETH: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`);
         updateBalances();
       } catch (error) {
         showError(translations[localStorage.language || "pl"].error_liquidity_failed + " " + error.message);
       } finally {
-        document.getElementById("removeButton").disabled = false;
-        document.getElementById("removeAllButton").disabled = false;
+        const removeButton = document.getElementById("removeButton");
+        const removeAllButton = document.getElementById("removeAllButton");
+        if (removeButton) removeButton.disabled = false;
+        if (removeAllButton) removeAllButton.disabled = false;
         hideLoadingToast();
       }
     }
@@ -653,8 +664,10 @@
       }
 
       try {
-        document.getElementById("removeButton").disabled = true;
-        document.getElementById("removeAllButton").disabled = true;
+        const removeButton = document.getElementById("removeButton");
+        const removeAllButton = document.getElementById("removeAllButton");
+        if (removeButton) removeButton.disabled = true;
+        if (removeAllButton) removeAllButton.disabled = true;
         showLoadingToast("loading_remove_liquidity");
         const liquidity = await getLpBalance();
         if (liquidity === "0") {
@@ -676,17 +689,19 @@
           deadline,
           { gasLimit: 300000 }
         );
-        showToast(`Transakce odeslána: ${tx.hash}`);
+        showToast(`Transakcja wysłana: ${tx.hash}`);
         const receipt = await tx.wait();
-        showToast(`Likvidita odstraněna v bloku ${receipt.blockNumber}\n` +
+        showToast(`Płynność usunięta w bloku ${receipt.blockNumber}\n` +
           `DAI: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
           `ETH: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`);
         updateBalances();
       } catch (error) {
         showError(translations[localStorage.language || "pl"].error_liquidity_failed + " " + error.message);
       } finally {
-        document.getElementById("removeButton").disabled = false;
-        document.getElementById("removeAllButton").disabled = false;
+        const removeButton = document.getElementById("removeButton");
+        const removeAllButton = document.getElementById("removeAllButton");
+        if (removeButton) removeButton.disabled = false;
+        if (removeAllButton) removeAllButton.disabled = false;
         hideLoadingToast();
       }
     }
@@ -751,12 +766,13 @@
 
     function showToast(message) {
       const toastContainer = document.getElementById("toast-container") || createToastContainer();
+      const lang = localStorage.language || "pl";
       const toast = document.createElement("div");
       toast.className = "toast";
       toast.innerHTML = `
         <span class="toast-message">${message}</span>
         <div class="toast-buttons">
-          <button class="toast-copy"><i class="fas fa-copy"></i> <span data-i18n="copy_button">${translations[localStorage.language || "pl"].copy_button}</span></button>
+          <button class="toast-copy"><i class="fas fa-copy"></i> <span data-i18n="copy_button">${translations[lang].copy_button}</span></button>
           <button class="toast-close"><i class="fas fa-times"></i></button>
         </div>
       `;
@@ -765,9 +781,9 @@
       const timeout = setTimeout(() => removeToast(toast), 7000);
       toast.querySelector(".toast-copy").addEventListener("click", () => {
         copyToClipboard(message);
-        toast.querySelector(".toast-copy span").innerHTML = translations[localStorage.language || "pl"].copied;
+        toast.querySelector(".toast-copy span").innerHTML = translations[lang].copied;
         setTimeout(() => {
-          toast.querySelector(".toast-copy span").innerHTML = translations[localStorage.language || "pl"].copy_button;
+          toast.querySelector(".toast-copy span").innerHTML = translations[lang].copy_button;
         }, 2000);
       });
       toast.querySelector(".toast-close").addEventListener("click", () => {
@@ -817,7 +833,7 @@
     }
 
     function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).catch(err => console.error("Copy failed:", err));
+      navigator.clipboard.writeText(text).catch(err => console.error("Kopiowanie nie powiodło się:", err));
     }
 
     (function initialize() {
