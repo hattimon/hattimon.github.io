@@ -10,17 +10,17 @@ const translations = {
     liquidity_pool: "Liquidity Pool",
     swap: "Token Swap",
     manage_liquidity: "Manage Liquidity",
+    approve_lp: "Approve LP Token",
     configure_contract: "Configure Contract",
     add_network: "Add Network",
     network_config: "Network Configuration",
     contract_config: "Contract Configuration",
     select_network: "Select Network",
     select_percent: "Select %",
-    approve_token: "Approve Token",
     interaction_info: "<b>Connect your wallet</b>, configure the contract and network to swap tokens or manage liquidity.",
     wallet_recommendation: "Recommended wallet: <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a> (supports permission revocation).",
-    transaction_history: "Check transaction history on <a href=\"https://debank.com/\" target="_blank\">DeBank.com</a>.",
-    chainlist_info: "Find or add network parameters at <a href=\"https://chainlist.org/\" target="_blank\">Chainlist.org</a>.",
+    transaction_history: "Check transaction history on <a href=\"https://debank.com/\" target=\"_blank\">DeBank.com</a>.",
+    chainlist_info: "Find or add network parameters at <a href=\"https://chainlist.org/\" target=\"_blank\">Chainlist.org</a>.",
     error_label: "Error",
     error_no_wallet: "Install a wallet (Rabby/MetaMask)!",
     error_wallet_conflict: "Multiple wallets detected (e.g., MetaMask, Zerion). Disable other wallet extensions and use Rabby.",
@@ -36,7 +36,6 @@ const translations = {
     error_balance_fetch: "Unable to fetch balances:",
     error_invalid_percent: "Percentage must be between 1 and 100!",
     error_token_info: "Unable to fetch token info:",
-    error_invalid_chain_id: "Invalid Chain ID format:",
     copied: "Copied!",
     copy_button: "Copy",
     chain_id: "Chain ID (e.g., 42170)",
@@ -49,14 +48,14 @@ const translations = {
     contract_type: "Contract Type",
     token_a: "Token A Address (e.g., DAI)",
     token_b: "Token B Address (e.g., WETH)",
-    lp_token: "LP Token Address (e.g., 0x1234...)",
+    lp_token: "LP Token Address (e.g., 0x506b...)",
     enter_percent: "Enter % (1–100)",
     swap_amount_out_min: "Min. Output Amount (e.g., 0.1)",
     amount_token_a_min: "Min. Token A Amount (e.g., 0.475)",
     amount_token_b_min: "Min. Token B Amount (e.g., 0.00026369)",
     loading_swap: "Performing swap on blockchain, wait for wallet...",
     loading_liquidity: "Performing liquidity operation, wait for wallet...",
-    loading_approve: "Approving token, wait for wallet..."
+    loading_approve: "Approving LP token, wait for wallet..."
   },
   pl: {
     theme_light: "Tryb Jasny",
@@ -69,17 +68,17 @@ const translations = {
     liquidity_pool: "Pula Płynności",
     swap: "Zamiana Tokenów",
     manage_liquidity: "Zarządzaj Płynnością",
+    approve_lp: "Zatwierdź Token LP",
     configure_contract: "Skonfiguruj Kontrakt",
     add_network: "Dodaj Sieć",
     network_config: "Konfiguracja Sieci",
     contract_config: "Konfiguracja Kontraktu",
     select_network: "Wybierz Sieć",
     select_percent: "Wybierz %",
-    approve_token: "Zatwierdź Token",
     interaction_info: "<b>Połącz portfel</b>, skonfiguruj kontrakt i sieć, aby swapować tokeny lub zarządzać płynnością.",
-    wallet_recommendation: "Polecany portfel: <a href=\"https://rabby.io/\" target="_blank\">Rabby.io</a> (obsługuje cofanie uprawnień).",
+    wallet_recommendation: "Polecany portfel: <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a> (obsługuje cofanie uprawnień).",
     transaction_history: "Sprawdź historię transakcji na <a href=\"https://debank.com/\" target="_blank\">DeBank.com</a>.",
-    chainlist_info: "Znajdź lub dodaj parametry sieci na <a href=\"https://chainlist.org/\" target=\"_blank\">Chainlist.org</a>.",
+    chainlist_info: "Znajdź lub dodaj parametry sieci na <a href=\"https://chainlist.org/\" target="_blank\">Chainlist.org</a>.",
     error_label: "Błąd",
     error_no_wallet: "Zainstaluj portfel (Rabby/MetaMask)!",
     error_wallet_conflict: "Wykryto wiele portfeli (np. MetaMask, Zerion). Wyłącz inne rozszerzenia portfeli i użyj Rabby.",
@@ -95,7 +94,6 @@ const translations = {
     error_balance_fetch: "Nie można pobrać sald:",
     error_invalid_percent: "Procent musi być między 1 a 100!",
     error_token_info: "Nie można pobrać informacji o tokenie:",
-    error_invalid_chain_id: "Nieprawidłowy format Chain ID:",
     copied: "Skopiowano!",
     copy_button: "Kopiuj",
     chain_id: "Chain ID (np. 42170)",
@@ -108,18 +106,17 @@ const translations = {
     contract_type: "Typ kontraktu",
     token_a: "Adres Token A (np. DAI)",
     token_b: "Adres Token B (np. WETH)",
-    lp_token: "Adres Tokena LP (np. 0x1234...)",
+    lp_token: "Adres Tokena LP (np. 0x506b...)",
     enter_percent: "Wprowadź % (1–100)",
     swap_amount_out_min: "Min. ilość wyjściowa (np. 0.1)",
     amount_token_a_min: "Min. ilość Token A (np. 0.475)",
     amount_token_b_min: "Min. ilość Token B (np. 0.00026369)",
     loading_swap: "Trwa zamiana na blockchain, poczekaj na portfel...",
     loading_liquidity: "Trwa operacja płynności, poczekaj na portfel...",
-    loading_approve: "Trwa zatwierdzanie tokena, poczekaj na portfel..."
+    loading_approve: "Trwa zatwierdzanie tokena LP, poczekaj na portfel..."
   }
 };
 
-// Lista 100 popularnych sieci z Chainlist.org (przykład, pełna lista poniżej)
 const networks = {
   "1": {
     chainId: "0x1",
@@ -151,7 +148,7 @@ const networks = {
   },
   "56": {
     chainId: "0x38",
-    chainName: "Binance Smart Chain",
+    chainName: "BNB Chain",
     nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
     rpcUrls: ["https://bsc-dataseed.binance.org"],
     blockExplorerUrls: ["https://bscscan.com"]
@@ -187,11 +184,11 @@ const networks = {
   "250": {
     chainId: "0xfa",
     chainName: "Fantom",
-    nativeCurrency: { name: "Fantom", symbol: "FTM", decimals: 18 },
+    nativeCurrency: { name: "FTM", symbol: "FTM", decimals: 18 },
     rpcUrls: ["https://rpc.ftm.tools"],
     blockExplorerUrls: ["https://ftmscan.com"]
   }
-  // Dodaj więcej sieci z Chainlist.org (pełna lista w komentarzu na końcu pliku)
+  // Add more networks (up to 100) from Chainlist.org as needed
 };
 
 let provider, signer, account, routerContract, lpContract, tokenAContract, tokenBContract, lpTokenContract;
@@ -234,7 +231,9 @@ async function connectWallet() {
       showToast(translations[localStorage.language || "en"].copied);
     });
     await updateBalances();
-    updateButtonStates();
+    document.getElementById("swapButton").disabled = !routerContract || !tokenAContract || !tokenBContract;
+    document.getElementById("liquidityButton").disabled = !routerContract || !lpContract;
+    document.getElementById("approveLPButton").disabled = !lpContract || !lpTokenContract;
   } catch (error) {
     console.error("Wallet connection error:", error);
     showError(translations[localStorage.language || "en"].error_connect_wallet + " " + error.message);
@@ -254,68 +253,38 @@ function loadNetworkParams() {
 }
 
 async function addNetwork() {
-  const chainIdInput = document.getElementById("chainId").value;
+  const chainId = document.getElementById("chainId").value;
   const rpcUrl = document.getElementById("rpcUrl").value;
   const chainName = document.getElementById("chainName").value;
   const nativeCurrency = document.getElementById("nativeCurrency").value;
   const blockExplorer = document.getElementById("blockExplorer").value;
-  const lang = localStorage.language || "en";
 
-  if (!chainIdInput || !rpcUrl || !chainName || !nativeCurrency) {
-    showError(translations[lang].error_invalid_address);
-    return;
-  }
-
-  // Konwersja chainId na format szesnastkowy
-  let chainIdHex;
-  try {
-    const chainIdNum = parseInt(chainIdInput);
-    if (isNaN(chainIdNum) || chainIdNum <= 0) throw new Error("Invalid Chain ID");
-    chainIdHex = `0x${chainIdNum.toString(16)}`;
-  } catch (error) {
-    showError(translations[lang].error_invalid_chain_id + " " + error.message);
+  if (!chainId || !rpcUrl || !chainName || !nativeCurrency) {
+    showError("Please fill in all network fields");
     return;
   }
 
   const network = {
-    chainId: chainIdHex,
+    chainId: `0x${parseInt(chainId).toString(16)}`,
     chainName,
     nativeCurrency: { name: nativeCurrency, symbol: nativeCurrency, decimals: 18 },
     rpcUrls: [rpcUrl],
     blockExplorerUrls: blockExplorer ? [blockExplorer] : []
   };
 
-  if (!window.ethereum) {
-    showError(translations[lang].error_no_wallet);
-    return;
-  }
-
   try {
-    console.log("Attempting to switch to network:", network);
+    await window.ethereum.request({
+      method: 'wallet_addEthereumChain',
+      params: [network]
+    });
     await window.ethereum.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: network.chainId }]
     });
-    console.log("Network switched successfully to:", chainIdHex);
-    showToast(`Network switched to ${chainName}`);
-  } catch (switchError) {
-    console.error("Switch network error:", switchError);
-    if (switchError.code === 4902 || switchError.message.includes("Unrecognized chain ID")) {
-      try {
-        console.log("Adding new network:", network);
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [network]
-        });
-        console.log("Network added and switched to:", chainIdHex);
-        showToast(`Network ${chainName} added and switched`);
-      } catch (addError) {
-        console.error("Add network error:", addError);
-        showError(translations[lang].error_add_network + " " + addError.message);
-      }
-    } else {
-      showError(translations[lang].error_switch_network + " " + switchError.message);
-    }
+    showToast("Network added and switched successfully");
+  } catch (error) {
+    console.error("Network add/switch error:", error);
+    showError(translations[localStorage.language || "en"].error_add_network + " " + error.message);
   }
 }
 
@@ -345,10 +314,9 @@ async function configureContract() {
   tokenAAddress = document.getElementById("tokenA").value;
   tokenBAddress = document.getElementById("tokenB").value;
   lpTokenAddress = document.getElementById("lpToken").value;
-  const lang = localStorage.language || "en";
 
   if (!ethers.isAddress(contractAddress) || !ethers.isAddress(tokenAAddress) || !ethers.isAddress(tokenBAddress) || (contractType === "lp" && !ethers.isAddress(lpTokenAddress))) {
-    showError(translations[lang].error_invalid_address);
+    showError(translations[localStorage.language || "en"].error_invalid_address);
     return;
   }
 
@@ -356,12 +324,12 @@ async function configureContract() {
   try {
     abi = JSON.parse(contractAbi);
   } catch (error) {
-    showError(translations[lang].error_invalid_abi + " " + error.message);
+    showError(translations[localStorage.language || "en"].error_invalid_abi + " " + error.message);
     return;
   }
 
   if (!provider || !signer) {
-    showError(translations[lang].error_connect_wallet);
+    showError(translations[localStorage.language || "en"].error_connect_wallet);
     return;
   }
 
@@ -400,7 +368,9 @@ async function configureContract() {
       lpTokenAddress ? fetchTokenInfo(lpTokenAddress, "lpTokenName", "lpTokenSymbol") : Promise.resolve()
     ]);
     await updateBalances();
-    updateButtonStates();
+    document.getElementById("swapButton").disabled = !routerContract || !tokenAContract || !tokenBContract;
+    document.getElementById("liquidityButton").disabled = !routerContract || !lpContract;
+    document.getElementById("approveLPButton").disabled = !lpContract || !lpTokenContract;
     showToast("Contract configured successfully");
   } catch (error) {
     console.error("Contract configuration error:", error);
@@ -408,45 +378,37 @@ async function configureContract() {
   }
 }
 
-async function approveToken(tokenType) {
-  const lang = localStorage.language || "en";
-  if (!signer || !routerContract || (!tokenAContract && !tokenBContract && !lpTokenContract)) {
-    showError(translations[lang].error_connect_wallet);
+async function approveLPToken() {
+  if (!lpTokenContract || !signer || !lpContract) {
+    showError(translations[localStorage.language || "en"].error_connect_wallet);
     return;
   }
 
-  let tokenContract;
-  let amount;
-  if (tokenType === "tokenA") {
-    tokenContract = tokenAContract;
-    amount = await tokenAContract.balanceOf(account);
-  } else if (tokenType === "tokenB") {
-    tokenContract = tokenBContract;
-    amount = await tokenBContract.balanceOf(account);
-  } else if (tokenType === "lpToken") {
-    tokenContract = lpTokenContract;
-    amount = await lpTokenContract.balanceOf(account);
-  }
-
-  if (!tokenContract) {
-    showError("Token contract not configured");
-    return;
-  }
-
-  if (amount === 0n) {
-    showError(translations[lang].error_insufficient_balance);
+  const percent = parseFloat(document.getElementById("liquidityPercent").value);
+  if (isNaN(percent) || percent < 1 || percent > 100) {
+    showError(translations[localStorage.language || "en"].error_invalid_percent);
     return;
   }
 
   try {
     showLoadingToast("loading_approve");
-    const tx = await tokenContract.approve(routerContract.target, amount, { gasLimit: 100000 });
-    showToast(`Approval transaction sent: ${tx.hash}`);
-    const receipt = await tx.wait();
-    showToast(`Token approved in block ${receipt.blockNumber}`);
+    const balance = await lpTokenContract.balanceOf(account);
+    if (balance === 0n) {
+      showError(translations[localStorage.language || "en"].error_insufficient_balance);
+      return;
+    }
+    const amount = balance * BigInt(Math.floor(percent * 100)) / BigInt(10000);
+    const allowance = await lpTokenContract.allowance(account, lpContract.target);
+    if (allowance < amount) {
+      const txApprove = await lpTokenContract.approve(lpContract.target, amount, { gasLimit: 100000 });
+      const receipt = await txApprove.wait();
+      showToast(`LP token approval confirmed: ${receipt.hash}`);
+    } else {
+      showToast("LP token already approved");
+    }
   } catch (error) {
-    console.error("Approval error:", error);
-    showError(translations[lang].error_approval_failed + " " + error.message);
+    console.error("LP token approval error:", error);
+    showError(translations[localStorage.language || "en"].error_approval_failed + " " + error.message);
   } finally {
     hideLoadingToast();
   }
@@ -470,14 +432,6 @@ async function updateBalances() {
     console.error("Balance update error:", error);
     showError(translations[localStorage.language || "en"].error_balance_fetch + " " + error.message);
   }
-}
-
-function updateButtonStates() {
-  document.getElementById("swapButton").disabled = !routerContract || !tokenAContract || !tokenBContract;
-  document.getElementById("liquidityButton").disabled = !routerContract || !lpContract || !lpTokenContract;
-  document.getElementById("approveTokenAButton").disabled = !tokenAContract;
-  document.getElementById("approveTokenBButton").disabled = !tokenBContract;
-  document.getElementById("approveLpTokenButton").disabled = !lpTokenContract;
 }
 
 async function swapTokens() {
@@ -576,9 +530,8 @@ async function swapTokens() {
 }
 
 async function manageLiquidity() {
-  const lang = localStorage.language || "en";
-  if (!routerContract || !lpContract || !tokenAContract || !tokenBContract || !lpTokenContract || !signer) {
-    showError(translations[lang].error_connect_wallet);
+  if (!routerContract || !lpContract || !tokenAContract || !tokenBContract || !signer) {
+    showError(translations[localStorage.language || "en"].error_connect_wallet);
     return;
   }
 
@@ -588,7 +541,7 @@ async function manageLiquidity() {
   const amountTokenBMin = document.getElementById("amountTokenBMin").value;
 
   if (isNaN(percent) || percent < 1 || percent > 100) {
-    showError(translations[lang].error_invalid_percent);
+    showError(translations[localStorage.language || "en"].error_invalid_percent);
     return;
   }
 
@@ -597,8 +550,8 @@ async function manageLiquidity() {
     if (action === "add") {
       const balanceA = await tokenAContract.balanceOf(account);
       const balanceB = await tokenBContract.balanceOf(account);
-      if (balanceA === 0n || balanceB === 0n) {
-        showError(translations[lang].error_insufficient_balance);
+      if (balanceA === 0 || balanceB === 0) {
+        showError(translations[localStorage.language || "en"].error_insufficient_balance);
         return;
       }
 
@@ -609,10 +562,7 @@ async function manageLiquidity() {
       const approvals = [];
       if (allowanceA < amountA) approvals.push(tokenAContract.approve(routerContract.target, amountA, { gasLimit: 100000 }));
       if (allowanceB < amountB) approvals.push(tokenBContract.approve(routerContract.target, amountB, { gasLimit: 100000 }));
-      if (approvals.length > 0) {
-        const receipts = await Promise.all(approvals.map(tx => tx.wait()));
-        receipts.forEach(r => showToast(`Token approval confirmed: ${r.hash}`));
-      }
+      if (approvals.length > 0) await Promise.all(approvals.map(tx => tx.wait()));
 
       const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
       const tx = await routerContract.addLiquidity(
@@ -630,18 +580,21 @@ async function manageLiquidity() {
       const receipt = await tx.wait();
       showToast(`Liquidity added in block ${receipt.blockNumber}`);
     } else {
+      if (!lpTokenContract) {
+        showError("LP token contract not configured");
+        return;
+      }
       const balanceLP = await lpTokenContract.balanceOf(account);
-      if (balanceLP === 0n) {
-        showError(translations[lang].error_insufficient_balance);
+      if (balanceLP === 0) {
+        showError(translations[localStorage.language || "en"].error_insufficient_balance);
         return;
       }
 
       const liquidity = balanceLP * BigInt(Math.floor(percent * 100)) / BigInt(10000);
       const allowance = await lpTokenContract.allowance(account, routerContract.target);
       if (allowance < liquidity) {
-        const txApprove = await lpTokenContract.approve(routerContract.target, liquidity, { gasLimit: 100000 });
-        const receipt = await txApprove.wait();
-        showToast(`LP token approval confirmed: ${receipt.hash}`);
+        showError("LP token not approved. Please approve LP token first.");
+        return;
       }
 
       const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
@@ -662,7 +615,7 @@ async function manageLiquidity() {
     await updateBalances();
   } catch (error) {
     console.error("Liquidity operation error:", error);
-    showError(translations[lang].error_liquidity_failed + " " + error.message);
+    showError(translations[localStorage.language || "en"].error_liquidity_failed + " " + error.message);
   } finally {
     hideLoadingToast();
   }
@@ -810,7 +763,6 @@ function copyToClipboard(text) {
   updateTranslations(lang);
   document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${th === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${th}">${translations[lang][`theme_${th}`]}</span>`;
   document.querySelector(".lang-toggle").innerHTML = `<i class="fas fa-globe"></i> <span data-i18n="language">${translations[lang].language}</span>`;
-  // Wypełnij dropdown sieci
   const networkSelect = document.getElementById("networkSelect");
   Object.keys(networks).forEach(chainId => {
     const option = document.createElement("option");
@@ -819,11 +771,3 @@ function copyToClipboard(text) {
     networkSelect.appendChild(option);
   });
 })();
-
-// Pełna lista 100 sieci (skrócona dla zwięzłości, pełna dostępna na Chainlist.org)
-const additionalNetworks = {
-  "100": { chainId: "0x64", chainName: "Gnosis Chain", nativeCurrency: { name: "xDAI", symbol: "xDAI", decimals: 18 }, rpcUrls: ["https://rpc.gnosischain.com"], blockExplorerUrls: ["https://gnosisscan.io"] },
-  "1285": { chainId: "0x505", chainName: "Moonriver", nativeCurrency: { name: "MOVR", symbol: "MOVR", decimals: 18 }, rpcUrls: ["https://rpc.moonriver.moonbeam.network"], blockExplorerUrls: ["https://moonriver.moonscan.io"] },
-  // Dodaj kolejne sieci z https://chainlist.org
-};
-Object.assign(networks, additionalNetworks);
