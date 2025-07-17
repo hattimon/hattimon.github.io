@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remove Liquidity</title>
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .input-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 15px;
+      color: #333;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1>Remove Liquidity</h1>
+  <div class="container">
+    <button id="connectButton" onclick="connectMetaMask()">Connect MetaMask</button>
+    <div id="form" style="display: none;">
+      <div class="input-group">
+        <label for="tokenAddress">Token Address</label>
+        <input type="text" id="tokenAddress" placeholder="0x...">
+      </div>
+      <div class="input-group">
+        <label for="liquidity">Liquidity Amount</label>
+        <input type="number" id="liquidity" placeholder="Amount of liquidity tokens">
+      </div>
+      <div class="input-group">
+        <label for="amountTokenMin">Minimum Token Amount</label>
+        <input type="number" id="amountTokenMin" placeholder="Minimum tokens to receive">
+      </div>
+      <div class="input-group">
+        <label for="amountETHMin">Minimum ETH Amount</label>
+        <input type="number" id="amountETHMin" placeholder="Minimum ETH to receive">
+      </div>
+      <button id="removeButton" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <script>
+    const routerAddress = "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f";
+    const routerAbi = [
+      {
+        "inputs": [
+          {"internalType": "address", "name": "token", "type": "address"},
+          {"internalType": "uint256", "name": "liquidity", "type": "uint256"},
+          {"internalType": "uint256", "name": "amountTokenMin", "type": "uint256"},
+          {"internalType": "uint256", "name": "amountETHMin", "type": "uint256"},
+          {"internalType": "address", "name": "to", "type": "address"},
+          {"internalType": "uint256", "name": "deadline", "type": "uint256"}
+        ],
+        "name": "removeLiquidityETH",
+        "outputs": [
+          {"internalType": "uint256", "name": "amountToken", "type": "uint256"},
+          {"internalType": "uint256", "name": "amountETH", "type": "uint256"}
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ];
+
+    let provider, signer, router;
+
+    async function connectMetaMask() {
+      try {
+        if (typeof window.ethereum !== 'undefined') {
+          provider = new ethers.providers.Web3Provider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          signer = provider.getSigner();
+          const network = await provider.getNetwork();
+          if (network.chainId !== 42170) { // Arbitrum Nova chain ID
+            alert("Please switch to Arbitrum Nova in MetaMask");
+            return;
+          }
+          router = new ethers.Contract(routerAddress, routerAbi, signer);
+          document.getElementById("connectButton").style.display = "none";
+          document.getElementById("form").style.display = "block";
+          document.getElementById("removeButton").disabled = false;
+          document.getElementById("status").innerText = "Connected to MetaMask";
+        } else {
+          alert("MetaMask is not installed");
+        }
+      } catch (error) {
+        document.getElementById("status").innerText = "Error connecting: " + error.message;
+      }
+    }
+
+    async function removeLiquidity() {
+      const tokenAddress = document.getElementById("tokenAddress").value;
+      const liquidity = document.getElementById("liquidity").value;
+      const amountTokenMin = document.getElementById("amountTokenMin").value;
+      const amountETHMin = document.getElementById("amountETHMin").value;
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from now
+
+      if (!tokenAddress || !liquidity || !amountTokenMin || !amountETHMin) {
+        document.getElementById("status").innerText = "Please fill all fields";
+        return;
+      }
+
+      try {
+        document.getElementById("removeButton").disabled = true;
+        document.getElementById("status").innerText = "Sending transaction...";
+
+        const tx = await router.removeLiquidityETH(
+          tokenAddress,
+          ethers.utils.parseUnits(liquidity, 18),
+          ethers.utils.parseUnits(amountTokenMin, 18),
+          ethers.utils.parseUnits(amountETHMin, 18),
+          await signer.getAddress(),
+          deadline,
+          { gasLimit: 300000 }
+        );
+
+        document.getElementById("status").innerText = `Transaction sent: ${tx.hash}`;
+        const receipt = await tx.wait();
+        document.getElementById("status").innerText = `Liquidity removed in block ${receipt.blockNumber}\n` +
+          `Tokens: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
+          `ETH: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`;
+      } catch (error) {
+        document.getElementById("status").innerText = "Error: " + error.message;
+      } finally {
+        document.getElementById("removeButton").disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
