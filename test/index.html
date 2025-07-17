@@ -3,368 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Usuń Płynność - Arbswap</title>
+  <title>Uniwersalny DEX - Arbswap</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #1e2a16;
-      --text: #d0e0c0;
-      --card: rgba(74, 124, 62, 0.9);
-      --btn: #6a9c5e;
-      --btn-hover: #508c4e;
-      --link: #8ac784;
-      --shadow: 0 4px 12px rgba(30, 42, 22, 0.3);
-      --border: #7a9c70;
-      --toast-bg: #f8b0b0;
-      --toast-text: #1e2a16;
-    }
-
-    [data-theme="light"] {
-      --bg: #e0e8d5;
-      --text: #2a3d1e;
-      --card: rgba(200, 230, 180, 0.9);
-      --btn: #4a7c3e;
-      --btn-hover: #3a5c2e;
-      --link: #5a8c4a;
-      --shadow: 0 4px 12px rgba(42, 61, 30, 0.1);
-      --border: #a9c9a0;
-      --toast-bg: #ffcccb;
-      --toast-text: #2a3d1e;
-    }
-
-    [data-theme="dark"] input,
-    [data-theme="dark"] select {
-      color: var(--text);
-      background: #2a3d1e;
-    }
-
-    [data-theme="dark"] input::placeholder {
-      color: #a0b090;
-    }
-
-    body {
-      margin: 0;
-      padding: 20px 0;
-      font-family: 'Roboto', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      transition: all 0.3s ease;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      overflow-x: hidden;
-    }
-
-    .container {
-      max-width: 480px;
-      width: 100%;
-      padding: 0 15px;
-      text-align: center;
-    }
-
-    a {
-      color: var(--link);
-      text-decoration: none;
-      transition: color 0.3s ease;
-    }
-
-    a:hover {
-      color: #406830;
-    }
-
-    button {
-      margin: 5px 0;
-      padding: 8px 12px;
-      border: none;
-      border-radius: 20px;
-      background: var(--btn);
-      color: #fff;
-      cursor: pointer;
-      font-weight: 500;
-      box-shadow: var(--shadow);
-      transition: all 0.3s ease;
-      font-size: 0.9rem;
-    }
-
-    button:hover {
-      background: var(--btn-hover);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(58, 92, 46, 0.2);
-    }
-
-    .uniswap-btn {
-      background: linear-gradient(90deg, #4a7c3e, #5a8c4a);
-      border-radius: 20px;
-      padding: 10px;
-      font-size: 1rem;
-    }
-
-    .uniswap-btn:hover {
-      background: linear-gradient(90deg, #3a5c2e, #406830);
-    }
-
-    .percent-btn {
-      padding: 6px 10px;
-      font-size: 0.85rem;
-      margin: 0 5px;
-    }
-
-    input {
-      margin: 5px 0;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: var(--card);
-      color: var(--text);
-      font-family: 'Roboto', sans-serif;
-      font-size: 1rem;
-      width: 100%;
-      box-sizing: border-box;
-      transition: all 0.3s ease;
-    }
-
-    input:focus {
-      border-color: #406830;
-      outline: none;
-      box-shadow: 0 0 8px rgba(64, 104, 48, 0.3);
-    }
-
-    .section {
-      margin: 20px 0;
-      padding: 20px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      background: var(--card);
-      box-shadow: var(--shadow);
-      animation: fadeIn 0.5s ease-in-out;
-      text-align: center;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .button-group {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      display: flex;
-      gap: 10px;
-      z-index: 1000;
-    }
-
-    .theme-toggle, .lang-toggle {
-      padding: 6px 12px;
-      font-size: 0.85rem;
-    }
-
-    .center-title {
-      text-align: center;
-      font-size: 1.8rem;
-      margin: 20px 0;
-      font-weight: 700;
-      color: #406830;
-      text-shadow: 0 2px 6px rgba(64, 104, 48, 0.3);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-
-    .intro-text {
-      text-align: center;
-      font-size: 0.95rem;
-      margin-bottom: 20px;
-      line-height: 1.5;
-    }
-
-    .highlight-text {
-      color: var(--link);
-    }
-
-    .liquidity-card {
-      padding: 20px;
-      border-radius: 20px;
-      background: rgba(74, 124, 62, 0.7);
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      backdrop-filter: blur(5px);
-      transition: all 0.3s ease;
-    }
-
-    .liquidity-card:hover {
-      background: rgba(74, 124, 62, 0.85);
-    }
-
-    .liquidity-input {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 15px;
-      width: 100%;
-    }
-
-    .liquidity-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      width: 100%;
-    }
-
-    .percent-buttons {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-top: 10px;
-    }
-
-    #toast-container {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 3000;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 90%;
-      max-width: 400px;
-    }
-
-    .toast {
-      background: var(--toast-bg);
-      border: 2px solid #c62828;
-      border-radius: 8px;
-      padding: 15px;
-      box-shadow: var(--shadow);
-      color: var(--toast-text);
-      font-size: 0.9rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      opacity: 0;
-      transform: scale(0.8);
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: scale(1);
-    }
-
-    .toast.hide {
-      opacity: 0;
-      transform: scale(0.8);
-    }
-
-    .toast-message {
-      flex-grow: 1;
-      word-break: break-word;
-      color: var(--toast-text);
-      max-height: 20em;
-      overflow-y: auto;
-      line-height: 2em;
-      padding-right: 10px;
-      text-align: left;
-    }
-
-    .toast-message::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .toast-message::-webkit-scrollbar-track {
-      background: var(--card);
-      border-radius: 4px;
-    }
-
-    .toast-message::-webkit-scrollbar-thumb {
-      background: var(--btn);
-      border-radius: 4px;
-    }
-
-    .toast-message::-webkit-scrollbar-thumb:hover {
-      background: var(--btn-hover);
-    }
-
-    .toast-buttons {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-      width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .toast-copy, .toast-close {
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 0.9rem;
-      background: var(--btn);
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      width: fit-content;
-      min-width: 0;
-    }
-
-    .toast-copy:hover, .toast-close:hover {
-      background: var(--btn-hover);
-    }
-
-    .toast-close {
-      font-weight: bold;
-      padding: 4px 12px;
-    }
-
-    @media (max-width: 600px) {
-      .container {
-        padding: 0 10px;
-      }
-      .button-group {
-        top: 60px;
-        flex-direction: column;
-        right: 10px;
-      }
-      .center-title {
-        font-size: 1.5rem;
-      }
-      .section {
-        padding: 15px;
-      }
-      .uniswap-btn {
-        padding: 10px;
-        font-size: 1rem;
-      }
-      .liquidity-actions {
-        flex-direction: column;
-      }
-      .percent-buttons {
-        flex-direction: column;
-      }
-      .toast {
-        font-size: 0.85rem;
-        padding: 10px;
-      }
-      .toast-message {
-        max-height: 15em;
-        line-height: 1.8em;
-      }
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="container">
@@ -372,563 +15,88 @@
       <button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-moon"></i> <span data-i18n="theme_dark">Tryb Ciemny</span></button>
       <button class="lang-toggle" onclick="toggleLanguage()"><i class="fas fa-globe"></i> <span data-i18n="language">Polski</span></button>
     </div>
-    <div class="center-title">Usuń Płynność DAI/WETH</div>
+    <div class="center-title">Uniwersalny DEX - Swap i Płynność</div>
     <p class="intro-text">
-      <span data-i18n="interaction_info"><b>Kliknięcie „Usuń Płynność”</b> wymaga zatwierdzenia kontraktu i potwierdzenia transakcji w portfelu.</span><br>
-      <span class="highlight-text" data-i18n="wallet_recommendation">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a>, gdzie możesz również cofnąć uprawnienia.</span><br>
-      <span class="highlight-text" data-i18n="transaction_history">Sprawdź historię transakcji na <a href="https://debank.com/" target="_blank">DeBank.com</a>.</span>
+      <span data-i18n="interaction_info"><b>Połącz portfel</b>, skonfiguruj kontrakt i sieć, aby swapować tokeny lub zarządzać płynnością.</span><br>
+      <span class="highlight-text" data-i18n="wallet_recommendation">Polecam portfel <a href="https://rabby.io/" target="_blank">Rabby.io</a>.</span><br>
+      <span class="highlight-text" data-i18n="transaction_history">Sprawdź historię na <a href="https://debank.com/" target="_blank">DeBank.com</a>.</span>
     </p>
+    <div class="section network-section">
+      <h3 data-i18n="network_config">Konfiguracja Sieci</h3>
+      <div class="network-input">
+        <input type="text" id="chainId" placeholder="Chain ID (np. 42170)" data-i18n-placeholder="chain_id">
+        <input type="text" id="rpcUrl" placeholder="RPC URL (np. https://nova.arbitrum.io/rpc)" data-i18n-placeholder="rpc_url">
+        <input type="text" id="chainName" placeholder="Nazwa sieci (np. Arbitrum Nova)" data-i18n-placeholder="chain_name">
+        <input type="text" id="nativeCurrency" placeholder="Symbol waluty (np. ETH)" data-i18n-placeholder="native_currency">
+        <input type="text" id="blockExplorer" placeholder="Explorer URL (np. https://nova.arbiscan.io)" data-i18n-placeholder="block_explorer">
+        <button class="uniswap-btn" onclick="addNetwork()" data-i18n="add_network">Dodaj Sieć</button>
+      </div>
+    </div>
     <div class="section wallet-section">
       <p><strong data-i18n="wallet_label">Portfel:</strong> <span id="wallet-address" data-i18n="disconnected">Niepołączony</span></p>
       <button class="uniswap-btn" onclick="connectWallet()"><i class="fab fa-ethereum"></i> <span data-i18n="connect">Połącz Portfel</span></button>
     </div>
+    <div class="section contract-section">
+      <h3 data-i18n="contract_config">Konfiguracja Kontraktu</h3>
+      <div class="contract-input">
+        <input type="text" id="contractAddress" placeholder="Adres kontraktu (np. 0xEe01...)" data-i18n-placeholder="contract_address">
+        <textarea id="contractAbi" placeholder="Wklej ABI kontraktu (JSON)" data-i18n-placeholder="contract_abi"></textarea>
+        <select id="contractType" data-i18n-placeholder="contract_type">
+          <option value="router">Router</option>
+          <option value="lp">LP (Pula Płynności)</option>
+        </select>
+        <input type="text" id="tokenA" placeholder="Adres Token A (np. DAI)" data-i18n-placeholder="token_a">
+        <input type="text" id="tokenB" placeholder="Adres Token B (np. WETH)" data-i18n-placeholder="token_b">
+        <button class="uniswap-btn" onclick="configureContract()" data-i18n="configure_contract">Skonfiguruj Kontrakt</button>
+      </div>
+    </div>
     <div class="section wallet-content-section">
       <h3 data-i18n="wallet_contents">Zawartość Portfela</h3>
-      <p>DAI: <span id="balance-dai">–</span></p>
-      <p>ETH: <span id="balance-eth">–</span></p>
-      <p>LP (DAI/WETH): <span id="balance-lp">–</span></p>
+      <p>Token A: <span id="balance-tokenA">–</span></p>
+      <p>Token B: <span id="balance-tokenB">–</span></p>
+      <p>LP: <span id="balance-lp">–</span></p>
+    </div>
+    <div class="section swap-section">
+      <h3 data-i18n="swap">Swap Tokenów</h3>
+      <div class="swap-card">
+        <div class="swap-input">
+          <select id="swapDirection">
+            <option value="AtoB">Token A → Token B</option>
+            <option value="BtoA">Token B → Token A</option>
+          </select>
+          <select id="swapPercent" data-i18n-placeholder="select_percent">
+            <option value="25">25%</option>
+            <option value="50">50%</option>
+            <option value="75">75%</option>
+            <option value="100">100%</option>
+          </select>
+          <input type="number" id="swapAmountOutMin" placeholder="Min. ilość wyjściowa (np. 0.1)" step="any" data-i18n-placeholder="swap_amount_out_min">
+        </div>
+        <button class="uniswap-btn" id="swapButton" onclick="swapTokens()" disabled data-i18n="swap_tokens">Swap</button>
+      </div>
     </div>
     <div class="section liquidity-section">
       <h3 data-i18n="liquidity_pool">Pula Płynności</h3>
       <div class="liquidity-card">
         <div class="liquidity-input">
-          <input type="text" id="tokenAddress" value="0x3a94C233C4c3eB47cF621a6aC2A81cB513AD5D76" readonly data-i18n-placeholder="token_address">
-          <input type="number" id="liquidity" placeholder="Wprowadź ilość LP (np. 0.011017756625130489)" step="any" data-i18n-placeholder="enter_liquidity">
-          <div class="percent-buttons">
-            <button class="percent-btn" onclick="setLiquidityPercent(100)">100%</button>
-            <button class="percent-btn" onclick="setLiquidityPercent(99)">99%</button>
-          </div>
-          <input type="number" id="amountTokenMin" placeholder="Minimalna ilość DAI (np. 0.475)" step="any" data-i18n-placeholder="enter_token_min">
-          <input type="number" id="amountETHMin" placeholder="Minimalna ilość ETH (np. 0.00026369)" step="any" data-i18n-placeholder="enter_eth_min">
+          <select id="liquidityAction">
+            <option value="add">Dodaj Płynność</option>
+            <option value="remove">Usuń Płynność</option>
+          </select>
+          <select id="liquidityPercent" data-i18n-placeholder="select_percent">
+            <option value="25">25%</option>
+            <option value="50">50%</option>
+            <option value="75">75%</option>
+            <option value="100">100%</option>
+          </select>
+          <input type="number" id="amountTokenAMin" placeholder="Min. ilość Token A (np. 0.475)" step="any" data-i18n-placeholder="amount_token_a_min">
+          <input type="number" id="amountTokenBMin" placeholder="Min. ilość Token B (np. 0.00026369)" step="any" data-i18n-placeholder="amount_token_b_min">
         </div>
-        <div class="liquidity-actions">
-          <button class="uniswap-btn" id="removeButton" onclick="removeLiquidity()" disabled data-i18n="remove_lp">Usuń Płynność</button>
-          <button class="uniswap-btn" id="removeAllButton" onclick="removeAllLiquidity()" disabled data-i18n="remove_all_lp">Usuń 100% Płynności</button>
-        </div>
+        <button class="uniswap-btn" id="liquidityButton" onclick="manageLiquidity()" disabled data-i18n="manage_liquidity">Zarządzaj Płynnością</button>
       </div>
     </div>
     <div id="toast-container"></div>
   </div>
-
-  <script>
-    // Wait for ethers to be loaded
-    if (typeof ethers === 'undefined') {
-      console.error('Ethers.js not loaded');
-      document.addEventListener('DOMContentLoaded', () => {
-        showError('Błąd: Biblioteka ethers.js nie została załadowana. Spróbuj odświeżyć stronę.');
-      });
-    }
-
-    const routerAddress = "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f";
-    const pairAddress = "0xeAe69CE0B7B0cF8A7eb2C879F4e461a2Ebfa49420";
-    const daiAddress = "0x3a94C233C4c3eB47cF621a6aC2A81cB513AD5D76";
-    const arbitrumNova = {
-      chainId: "0xa4ba",
-      chainName: "Arbitrum Nova",
-      nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-      rpcUrls: ["https://nova.arbitrum.io/rpc"],
-      blockExplorerUrls: ["https://nova.arbiscan.io"]
-    };
-    const routerAbi = [
-      {
-        "inputs": [
-          {"internalType": "address", "name": "token", "type": "address"},
-          {"internalType": "uint256", "name": "liquidity", "type": "uint256"},
-          {"internalType": "uint256", "name": "amountTokenMin", "type": "uint256"},
-          {"internalType": "uint256", "name": "amountETHMin", "type": "uint256"},
-          {"internalType": "address", "name": "to", "type": "address"},
-          {"internalType": "uint256", "name": "deadline", "type": "uint256"}
-        ],
-        "name": "removeLiquidityETH",
-        "outputs": [
-          {"internalType": "uint256", "name": "amountToken", "type": "uint256"},
-          {"internalType": "uint256", "name": "amountETH", "type": "uint256"}
-        ],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      }
-    ];
-    const erc20Abi = [
-      {
-        "inputs": [
-          {"internalType": "address", "name": "account", "type": "address"}
-        ],
-        "name": "balanceOf",
-        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {"internalType": "address", "name": "spender", "type": "address"},
-          {"internalType": "uint256", "name": "amount", "type": "uint256"}
-        ],
-        "name": "approve",
-        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      }
-    ];
-
-    const translations = {
-      pl: {
-        theme_light: "Tryb Jasny",
-        theme_dark: "Tryb Ciemny",
-        language: "Polski",
-        wallet_label: "Portfel",
-        disconnected: "Niepołączony",
-        connect: "Połącz Portfel",
-        wallet_contents: "Zawartość Portfela",
-        liquidity_pool: "Pula Płynności",
-        remove_lp: "Usuń Płynność",
-        remove_all_lp: "Usuń 100% Płynności",
-        interaction_info: "<b>Kliknięcie „Usuń Płynność”</b> wymaga zatwierdzenia kontraktu i potwierdzenia transakcji w portfelu.",
-        wallet_recommendation: "Polecam portfel <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a>, gdzie możesz również cofnąć uprawnienia.",
-        transaction_history: "Sprawdź historię transakcji na <a href=\"https://debank.com/\" target=\"_blank\">DeBank.com</a>.",
-        error_label: "Błąd",
-        error_no_wallet: "Zainstaluj portfel (Rabby/MetaMask)!",
-        error_wallet_conflict: "Wykryto wiele portfeli (np. MetaMask, Zerion). Wyłącz inne rozszerzenia portfeli i użyj tylko Rabby.",
-        error_switch_network: "Nie można przełączyć sieci:",
-        error_add_network: "Nie można dodać sieci Arbitrum Nova:",
-        error_connect_wallet: "Błąd połączenia z portfelem:",
-        error_approval_failed: "Zatwierdzenie tokena nie powiodło się:",
-        error_liquidity_failed: "Operacja usunięcia płynności nie powiodła się:",
-        error_insufficient_balance: "Niewystarczające saldo LP!",
-        error_balance_fetch: "Nie można pobrać sald:",
-        copied: "Skopiowano!",
-        copy_button: "Kopiuj",
-        token_address: "Adres tokenu DAI",
-        enter_liquidity: "Wprowadź ilość LP (np. 0.011017756625130489)",
-        enter_token_min: "Minimalna ilość DAI (np. 0.475)",
-        enter_eth_min: "Minimalna ilość ETH (np. 0.00026369)",
-        loading_remove_liquidity: "Trwa usuwanie płynności na blockchain, nie klikaj, poczekaj na wywołanie portfela do podpisu"
-      },
-      en: {
-        theme_light: "Light Mode",
-        theme_dark: "Dark Mode",
-        language: "English",
-        wallet_label: "Wallet",
-        disconnected: "Disconnected",
-        connect: "Connect Wallet",
-        wallet_contents: "Wallet Contents",
-        liquidity_pool: "Liquidity Pool",
-        remove_lp: "Remove Liquidity",
-        remove_all_lp: "Remove 100% Liquidity",
-        interaction_info: "<b>Clicking 'Remove Liquidity'</b> requires approving the contract and confirming the transaction in your wallet.",
-        wallet_recommendation: "I recommend the <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a> wallet, where you can also revoke permissions.",
-        transaction_history: "Check transaction history on <a href=\"https://debank.com/\" target="_blank\">DeBank.com</a>.",
-        error_label: "Error",
-        error_no_wallet: "Install a wallet (Rabby/MetaMask)!",
-        error_wallet_conflict: "Multiple wallets detected (e.g., MetaMask, Zerion). Disable other wallet extensions and use only Rabby.",
-        error_switch_network: "Cannot switch network:",
-        error_add_network: "Cannot add Arbitrum Nova network:",
-        error_connect_wallet: "Wallet connection error:",
-        error_approval_failed: "Token approval failed:",
-        error_liquidity_failed: "Liquidity removal operation failed:",
-        error_insufficient_balance: "Insufficient LP balance!",
-        error_balance_fetch: "Unable to fetch balances:",
-        copied: "Copied!",
-        copy_button: "Copy",
-        token_address: "DAI Token Address",
-        enter_liquidity: "Enter LP amount (e.g., 0.011017756625130489)",
-        enter_token_min: "Minimum DAI amount (e.g., 0.475)",
-        enter_eth_min: "Minimum ETH amount (e.g., 0.00026369)",
-        loading_remove_liquidity: "Removing liquidity on blockchain, do not click, wait for wallet prompt"
-      }
-    };
-
-    let provider, signer, account, router, pairContract, daiContract;
-
-    async function connectWallet() {
-      // Check for multiple wallet providers and prioritize Rabby
-      let ethereumProvider = window.ethereum;
-      if (window.ethereum && window.ethereum.providers) {
-        console.log("Multiple wallet providers detected:", window.ethereum.providers);
-        const rabbyProvider = window.ethereum.providers.find(p => p.isRabby);
-        const metaMaskProvider = window.ethereum.providers.find(p => p.isMetaMask);
-        if (rabbyProvider) {
-          console.log("Selecting Rabby as provider");
-          ethereumProvider = rabbyProvider;
-        } else if (metaMaskProvider) {
-          console.log("Falling back to MetaMask");
-          ethereumProvider = metaMaskProvider;
-        } else {
-          showError(translations[localStorage.language || "pl"].error_wallet_conflict);
-          return;
-        }
-      }
-
-      if (!ethereumProvider) {
-        showError(translations[localStorage.language || "pl"].error_no_wallet);
-        return;
-      }
-
-      try {
-        console.log("Próba połączenia z portfelem...");
-        provider = new ethers.BrowserProvider(ethereumProvider);
-        await provider.send("eth_requestAccounts", []);
-        signer = await provider.getSigner();
-        account = await signer.getAddress();
-        console.log("Połączono z adresem:", account);
-
-        const currentChainId = await ethereumProvider.request({ method: 'eth_chainId' });
-        if (currentChainId !== arbitrumNova.chainId) {
-          console.log("Próba przełączenia na Arbitrum Nova...");
-          try {
-            await ethereumProvider.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: arbitrumNova.chainId }]
-            });
-          } catch (switchError) {
-            if (switchError.code === 4902) {
-              console.log("Sieć Arbitrum Nova nie znaleziona, dodawanie...");
-              try {
-                await ethereumProvider.request({
-                  method: 'wallet_addEthereumChain',
-                  params: [arbitrumNova]
-                });
-              } catch (addError) {
-                showError(translations[localStorage.language || "pl"].error_add_network + " " + addError.message);
-                return;
-              }
-            } else {
-              showError(translations[localStorage.language || "pl"].error_switch_network + " " + switchError.message);
-              return;
-            }
-          }
-        }
-
-        router = new ethers.Contract(routerAddress, routerAbi, signer);
-        pairContract = new ethers.Contract(pairAddress, erc20Abi, signer);
-        daiContract = new ethers.Contract(daiAddress, erc20Abi, provider);
-        document.getElementById("wallet-address").innerHTML = 
-          `<span class="copy-container" title="Kliknij, aby skopiować" style="cursor:pointer; background:#1e2a16; padding:6px 10px; border-radius:6px; display:inline-block; font-family:monospace;">${account.slice(0, 6)}...${account.slice(-4)}</span>`;
-        document.querySelector(".copy-container").addEventListener('click', function () {
-          copyToClipboard(account);
-          showToast(translations[localStorage.language || "pl"].copied);
-        });
-        const removeButton = document.getElementById("removeButton");
-        const removeAllButton = document.getElementById("removeAllButton");
-        if (removeButton) removeButton.disabled = false;
-        if (removeAllButton) removeAllButton.disabled = false;
-        await updateBalances();
-      } catch (error) {
-        console.error("Błąd połączenia z portfelem:", error);
-        showError(translations[localStorage.language || "pl"].error_connect_wallet + " " + error.message);
-      }
-    }
-
-    async function approveRouter(liquidity) {
-      try {
-        showLoadingToast("loading_remove_liquidity");
-        const tx = await pairContract.approve(routerAddress, liquidity, { gasLimit: 100000 });
-        await tx.wait();
-        showToast("Router zatwierdzony pomyślnie");
-        return true;
-      } catch (error) {
-        showError(translations[localStorage.language || "pl"].error_approval_failed + " " + error.message);
-        return false;
-      } finally {
-        hideLoadingToast();
-      }
-    }
-
-    async function getLpBalance() {
-      if (!signer) return "0";
-      try {
-        const balance = await pairContract.balanceOf(account);
-        return balance.toString();
-      } catch (error) {
-        console.error("Błąd pobierania salda LP:", error);
-        showError(translations[localStorage.language || "pl"].error_balance_fetch + " " + error.message);
-        return "0";
-      }
-    }
-
-    async function updateBalances() {
-      if (!signer || !provider) {
-        console.error("Brak podłączonego portfela");
-        return;
-      }
-      try {
-        const [bDAI, bLP, bETH] = await Promise.all([
-          daiContract.balanceOf(account).catch(e => { console.error("Błąd pobierania salda DAI:", e); return 0; }),
-          pairContract.balanceOf(account).catch(e => { console.error("Błąd pobierania salda LP:", e); return 0; }),
-          provider.getBalance(account).catch(e => { console.error("Błąd pobierania salda ETH:", e); return 0; })
-        ]);
-        document.getElementById("balance-dai").textContent = bDAI ? parseFloat(ethers.formatUnits(bDAI, 18)).toFixed(8) : "–";
-        document.getElementById("balance-lp").textContent = bLP ? parseFloat(ethers.formatUnits(bLP, 18)).toFixed(8) : "–";
-        document.getElementById("balance-eth").textContent = bETH ? parseFloat(ethers.formatUnits(bETH, 18)).toFixed(8) : "–";
-      } catch (error) {
-        console.error("Błąd aktualizacji sald:", error);
-        showError(translations[localStorage.language || "pl"].error_balance_fetch + " " + error.message);
-      }
-    }
-
-    async function setLiquidityPercent(percent) {
-      if (!signer) {
-        showError(translations[localStorage.language || "pl"].error_connect_wallet);
-        return;
-      }
-      try {
-        const balance = await getLpBalance();
-        if (balance === "0") {
-          showError(translations[localStorage.language || "pl"].error_insufficient_balance);
-          return;
-        }
-        const balanceFormatted = ethers.formatUnits(balance, 18);
-        const amount = (parseFloat(balanceFormatted) * (percent / 100)).toFixed(18);
-        document.getElementById("liquidity").value = amount;
-      } catch (error) {
-        console.error("Błąd ustawiania procentu LP:", error);
-        showError(translations[localStorage.language || "pl"].error_balance_fetch + " " + error.message);
-      }
-    }
-
-    async function removeLiquidity() {
-      const tokenAddress = document.getElementById("tokenAddress").value;
-      const liquidity = document.getElementById("liquidity").value;
-      const amountTokenMin = document.getElementById("amountTokenMin").value;
-      const amountETHMin = document.getElementById("amountETHMin").value;
-      const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
-
-      if (!tokenAddress || !liquidity || !amountTokenMin || !amountETHMin) {
-        showError("Proszę wypełnić wszystkie pola");
-        return;
-      }
-
-      try {
-        const removeButton = document.getElementById("removeButton");
-        const removeAllButton = document.getElementById("removeAllButton");
-        if (removeButton) removeButton.disabled = true;
-        if (removeAllButton) removeAllButton.disabled = true;
-        showLoadingToast("loading_remove_liquidity");
-        const liquidityWei = ethers.parseUnits(liquidity, 18);
-        const approved = await approveRouter(liquidityWei);
-        if (!approved) {
-          showError("Wymagane zatwierdzenie nie powiodło się");
-          return;
-        }
-        const tx = await router.removeLiquidityETH(
-          tokenAddress,
-          liquidityWei,
-          ethers.parseUnits(amountTokenMin, 18),
-          ethers.parseUnits(amountETHMin, 18),
-          account,
-          deadline,
-          { gasLimit: 300000 }
-        );
-        showToast(`Transakcja wysłana: ${tx.hash}`);
-        const receipt = await tx.wait();
-        showToast(`Płynność usunięta w bloku ${receipt.blockNumber}\n` +
-          `DAI: ${ethers.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
-          `ETH: ${ethers.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`);
-        await updateBalances();
-      } catch (error) {
-        console.error("Błąd usuwania płynności:", error);
-        showError(translations[localStorage.language || "pl"].error_liquidity_failed + " " + error.message);
-      } finally {
-        const removeButton = document.getElementById("removeButton");
-        const removeAllButton = document.getElementById("removeAllButton");
-        if (removeButton) removeButton.disabled = false;
-        if (removeAllButton) removeAllButton.disabled = false;
-        hideLoadingToast();
-      }
-    }
-
-    async function removeAllLiquidity() {
-      const tokenAddress = document.getElementById("tokenAddress").value;
-      const amountTokenMin = document.getElementById("amountTokenMin").value;
-      const amountETHMin = document.getElementById("amountETHMin").value;
-      const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
-
-      if (!tokenAddress || !amountTokenMin || !amountETHMin) {
-        showError("Proszę wypełnić adres tokenu i minimalne kwoty");
-        return;
-      }
-
-      try {
-        const removeButton = document.getElementById("removeButton");
-        const removeAllButton = document.getElementById("removeAllButton");
-        if (removeButton) removeButton.disabled = true;
-        if (removeAllButton) removeAllButton.disabled = true;
-        showLoadingToast("loading_remove_liquidity");
-        const liquidity = await getLpBalance();
-        if (liquidity === "0") {
-          showError(translations[localStorage.language || "pl"].error_insufficient_balance);
-          return;
-        }
-        document.getElementById("liquidity").value = ethers.formatUnits(liquidity, 18);
-        const approved = await approveRouter(liquidity);
-        if (!approved) {
-          showError("Wymagane zatwierdzenie nie powiodło się");
-          return;
-        }
-        const tx = await router.removeLiquidityETH(
-          tokenAddress,
-          liquidity,
-          ethers.parseUnits(amountTokenMin, 18),
-          ethers.parseUnits(amountETHMin, 18),
-          account,
-          deadline,
-          { gasLimit: 300000 }
-        );
-        showToast(`Transakcja wysłana: ${tx.hash}`);
-        const receipt = await tx.wait();
-        showToast(`Płynność usunięta w bloku ${receipt.blockNumber}\n` +
-          `DAI: ${ethers.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
-          `ETH: ${ethers.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`);
-        await updateBalances();
-      } catch (error) {
-        console.error("Błąd usuwania płynności:", error);
-        showError(translations[localStorage.language || "pl"].error_liquidity_failed + " " + error.message);
-      } finally {
-        const removeButton = document.getElementById("removeButton");
-        const removeAllButton = document.getElementById("removeAllButton");
-        if (removeButton) removeButton.disabled = false;
-        if (removeAllButton) removeAllButton.disabled = false;
-        hideLoadingToast();
-      }
-    }
-
-    function toggleTheme() {
-      const html = document.documentElement;
-      const isLight = html.getAttribute("data-theme") === "light";
-      const newTheme = isLight ? "dark" : "light";
-      html.setAttribute("data-theme", newTheme);
-      localStorage.theme = newTheme;
-      const lang = localStorage.language || "pl";
-      document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${newTheme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${newTheme}">${translations[lang][`theme_${newTheme}`]}</span>`;
-    }
-
-    function toggleLanguage() {
-      const newLang = localStorage.language === "pl" ? "en" : "pl";
-      localStorage.language = newLang;
-      updateTranslations(newLang);
-      document.querySelector(".lang-toggle").innerHTML = `<i class="fas fa-globe"></i> <span data-i18n="language">${translations[newLang].language}</span>`;
-      document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${localStorage.theme === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${localStorage.theme || "dark"}">${translations[newLang][`theme_${localStorage.theme || "dark"}`]}</span>`;
-    }
-
-    function updateTranslations(lang) {
-      document.querySelectorAll("[data-i18n]").forEach(element => {
-        const key = element.getAttribute("data-i18n");
-        element.innerHTML = translations[lang][key];
-      });
-      document.querySelectorAll("[data-i18n-placeholder]").forEach(element => {
-        const key = element.getAttribute("data-i18n-placeholder");
-        element.placeholder = translations[lang][key];
-      });
-    }
-
-    function showError(message) {
-      const toastContainer = document.getElementById("toast-container") || createToastContainer();
-      const lang = localStorage.language || "pl";
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.innerHTML = `
-        <strong data-i18n="error_label">${translations[lang].error_label}:</strong>
-        <span class="toast-message">${message}</span>
-        <div class="toast-buttons">
-          <button class="toast-copy"><i class="fas fa-copy"></i> <span data-i18n="copy_button">${translations[lang].copy_button}</span></button>
-          <button class="toast-close"><i class="fas fa-times"></i></button>
-        </div>
-      `;
-      toastContainer.appendChild(toast);
-      setTimeout(() => toast.classList.add("show"), 100);
-      const timeout = setTimeout(() => removeToast(toast), 7000);
-      toast.querySelector(".toast-copy").addEventListener("click", () => {
-        copyToClipboard(message);
-        toast.querySelector(".toast-copy span").innerHTML = translations[lang].copied;
-        setTimeout(() => {
-          toast.querySelector(".toast-copy span").innerHTML = translations[lang].copy_button;
-        }, 2000);
-      });
-      toast.querySelector(".toast-close").addEventListener("click", () => {
-        clearTimeout(timeout);
-        removeToast(toast);
-      });
-    }
-
-    function showToast(message) {
-      const toastContainer = document.getElementById("toast-container") || createToastContainer();
-      const lang = localStorage.language || "pl";
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.innerHTML = `
-        <span class="toast-message">${message}</span>
-        <div class="toast-buttons">
-          <button class="toast-copy"><i class="fas fa-copy"></i> <span data-i18n="copy_button">${translations[lang].copy_button}</span></button>
-          <button class="toast-close"><i class="fas fa-times"></i></button>
-        </div>
-      `;
-      toastContainer.appendChild(toast);
-      setTimeout(() => toast.classList.add("show"), 100);
-      const timeout = setTimeout(() => removeToast(toast), 7000);
-      toast.querySelector(".toast-copy").addEventListener("click", () => {
-        copyToClipboard(message);
-        toast.querySelector(".toast-copy span").innerHTML = translations[lang].copied;
-        setTimeout(() => {
-          toast.querySelector(".toast-copy span").innerHTML = translations[lang].copy_button;
-        }, 2000);
-      });
-      toast.querySelector(".toast-close").addEventListener("click", () => {
-        clearTimeout(timeout);
-        removeToast(toast);
-      });
-    }
-
-    function showLoadingToast(action) {
-      const toastContainer = document.getElementById("toast-container") || createToastContainer();
-      const lang = localStorage.language || "pl";
-      const toast = document.createElement("div");
-      toast.className = "toast loading-toast";
-      toast.innerHTML = `
-        <span class="toast-message">${translations[lang][action]}</span>
-        <div class="toast-buttons">
-          <button class="toast-close"><i class="fas fa-times"></i></button>
-        </div>
-      `;
-      toastContainer.appendChild(toast);
-      setTimeout(() => toast.classList.add("show"), 100);
-    }
-
-    function hideLoadingToast() {
-      const toastContainer = document.getElementById("toast-container");
-      if (toastContainer) {
-        const loadingToast = toastContainer.querySelector(".loading-toast");
-        if (loadingToast) {
-          loadingToast.classList.remove("show");
-          loadingToast.classList.add("hide");
-          setTimeout(() => loadingToast.remove(), 300);
-        }
-      }
-    }
-
-    function createToastContainer() {
-      const container = document.createElement("div");
-      container.id = "toast-container";
-      document.body.appendChild(container);
-      return container;
-    }
-
-    function removeToast(toast) {
-      toast.classList.remove("show");
-      toast.classList.add("hide");
-      setTimeout(() => toast.remove(), 300);
-    }
-
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).catch(err => console.error("Kopiowanie nie powiodło się:", err));
-    }
-
-    (function initialize() {
-      const th = localStorage.theme || "dark";
-      document.documentElement.setAttribute("data-theme", th);
-      const lang = localStorage.language || "pl";
-      updateTranslations(lang);
-      document.querySelector(".theme-toggle").innerHTML = `<i class="fas fa-${th === "light" ? "sun" : "moon"}"></i> <span data-i18n="theme_${th}">${translations[lang][`theme_${th}`]}</span>`;
-      document.querySelector(".lang-toggle").innerHTML = `<i class="fas fa-globe"></i> <span data-i18n="language">${translations[lang].language}</span>`;
-    })();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
