@@ -1,29 +1,48 @@
 :root {
-  --bg: #0d1b2a;
-  --text: #e0e1dd;
-  --card: rgba(30, 60, 90, 0.85);
-  --btn: #00d4ff;
-  --btn-hover: #00b4d8;
-  --link: #00ffcc;
-  --shadow: 0 4px 16px rgba(0, 212, 255, 0.3);
-  --border: #1b263b;
+  --bg-dark: #0d1b2a;
+  --text-dark: #e0e1dd;
+  --card-dark: rgba(30, 60, 90, 0.85);
+  --btn-dark: #00d4ff;
+  --btn-hover-dark: #00b4d8;
+  --link-dark: #00ffcc;
+  --shadow-dark: 0 4px 16px rgba(0, 212, 255, 0.3);
+  --border-dark: #1b263b;
+  --glow-dark: #00d4ff;
+  --bg-light: #e6f0fa;
+  --text-light: #1b263b;
+  --card-light: rgba(200, 220, 240, 0.9);
+  --btn-light: #0288d1;
+  --btn-hover-light: #0277bd;
+  --link-light: #01579b;
+  --shadow-light: 0 4px 16px rgba(2, 136, 209, 0.3);
+  --border-light: #b0bec5;
+  --glow-light: #0288d1;
   --toast-bg: #ff4d4d;
   --toast-text: #ffffff;
-  --glow: #00d4ff;
+}
+
+[data-theme="dark"] {
+  --bg: var(--bg-dark);
+  --text: var(--text-dark);
+  --card: var(--card-dark);
+  --btn: var(--btn-dark);
+  --btn-hover: var(--btn-hover-dark);
+  --link: var(--link-dark);
+  --shadow: var(--shadow-dark);
+  --border: var(--border-dark);
+  --glow: var(--glow-dark);
 }
 
 [data-theme="light"] {
-  --bg: #e0f7fa;
-  --text: #1b263b;
-  --card: rgba(200, 240, 255, 0.9);
-  --btn: #0288d1;
-  --btn-hover: #0277bd;
-  --link: #01579b;
-  --shadow: 0 4px 16px rgba(2, 136, 209, 0.2);
-  --border: #b0bec5;
-  --toast-bg: #ef5350;
-  --toast-text: #ffffff;
-  --glow: #0288d1;
+  --bg: var(--bg-light);
+  --text: var(--text-light);
+  --card: var(--card-light);
+  --btn: var(--btn-light);
+  --btn-hover: var(--btn-hover-light);
+  --link: var(--link-light);
+  --shadow: var(--shadow-light);
+  --border: var(--border-light);
+  --glow: var(--glow-light);
 }
 
 [data-theme="dark"] input,
@@ -36,6 +55,18 @@
 [data-theme="dark"] input::placeholder,
 [data-theme="dark"] textarea::placeholder {
   color: #778da9;
+}
+
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  color: var(--text);
+  background: #ffffff;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: #90a4ae;
 }
 
 body {
@@ -114,6 +145,7 @@ input, select, textarea {
   font-family: 'Orbitron', sans-serif;
   font-size: 0.95rem;
   width: 100%;
+  max-width: 500px;
   box-sizing: border-box;
   transition: all 0.3s ease;
 }
@@ -130,13 +162,14 @@ input:focus, select:focus, textarea:focus {
 }
 
 .section {
-  margin: 20px 0;
+  margin: 20px auto;
   padding: 25px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--card);
   box-shadow: var(--shadow);
   animation: neonGlow 1.5s ease-in-out infinite alternate;
+  max-width: 600px;
 }
 
 @keyframes neonGlow {
@@ -195,6 +228,8 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .swap-card:hover, .liquidity-card:hover, .network-input:hover, .contract-input:hover {
@@ -206,6 +241,7 @@ input:focus, select:focus, textarea:focus {
   flex-direction: column;
   gap: 12px;
   width: 100%;
+  max-width: 500px;
 }
 
 #toast-container {
