@@ -1,0 +1,327 @@
+:root {
+  --bg: #0d1b2a;
+  --text: #e0e1dd;
+  --card: rgba(30, 60, 90, 0.85);
+  --btn: #00d4ff;
+  --btn-hover: #00b4d8;
+  --link: #00ffcc;
+  --shadow: 0 4px 16px rgba(0, 212, 255, 0.3);
+  --border: #1b263b;
+  --toast-bg: #ff4d4d;
+  --toast-text: #ffffff;
+  --glow: #00d4ff;
+}
+
+[data-theme="light"] {
+  --bg: #e0f7fa;
+  --text: #1b263b;
+  --card: rgba(200, 240, 255, 0.9);
+  --btn: #0288d1;
+  --btn-hover: #0277bd;
+  --link: #01579b;
+  --shadow: 0 4px 16px rgba(2, 136, 209, 0.2);
+  --border: #b0bec5;
+  --toast-bg: #ef5350;
+  --toast-text: #ffffff;
+  --glow: #0288d1;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  color: var(--text);
+  background: #1b263b;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #778da9;
+}
+
+body {
+  margin: 0;
+  padding: 20px 0;
+  font-family: 'Orbitron', sans-serif;
+  background: linear-gradient(135deg, var(--bg), #1b263b);
+  color: var(--text);
+  transition: all 0.3s ease;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 600px;
+  width: 100%;
+  padding: 0 15px;
+  text-align: center;
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+a:hover {
+  color: var(--btn-hover);
+  text-shadow: 0 0 8px var(--glow);
+}
+
+button {
+  margin: 10px 0;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--btn);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 500;
+  box-shadow: var(--shadow), 0 0 10px var(--glow);
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+button:hover {
+  background: var(--btn-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
+}
+
+.uniswap-btn {
+  background: linear-gradient(90deg, var(--btn), var(--btn-hover));
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+}
+
+.uniswap-btn:hover {
+  background: linear-gradient(90deg, var(--btn-hover), var(--btn));
+  box-shadow: 0 0 15px var(--glow);
+}
+
+input, select, textarea {
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--glow);
+  outline: none;
+  box-shadow: 0 0 10px var(--glow);
+}
+
+.section {
+  margin: 20px 0;
+  padding: 25px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  animation: neonGlow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes neonGlow {
+  from { box-shadow: var(--shadow); }
+  to { box-shadow: 0 0 20px var(--glow); }
+}
+
+.button-group {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.theme-toggle, .lang-toggle {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+}
+
+.center-title {
+  text-align: center;
+  font-size: 2rem;
+  margin: 20px 0;
+  font-weight: 700;
+  color: var(--glow);
+  text-shadow: 0 0 10px var(--glow);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.intro-text {
+  text-align: center;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.highlight-text {
+  color: var(--link);
+}
+
+.swap-card, .liquidity-card, .network-input, .contract-input {
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(30, 60, 90, 0.7);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.swap-card:hover, .liquidity-card:hover, .network-input:hover, .contract-input:hover {
+  background: rgba(30, 60, 90, 0.9);
+}
+
+.swap-input, .liquidity-input, .network-input, .contract-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+#toast-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.toast {
+  background: var(--toast-bg);
+  border: 2px solid #c62828;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: var(--shadow);
+  color: var(--toast-text);
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.toast.hide {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.toast-message {
+  flex-grow: 1;
+  word-break: break-word;
+  color: var(--toast-text);
+  max-height: 20em;
+  overflow-y: auto;
+  line-height: 2em;
+  padding-right: 10px;
+  text-align: left;
+}
+
+.toast-message::-webkit-scrollbar {
+  width: 6px;
+}
+
+.toast-message::-webkit-scrollbar-track {
+  background: var(--card);
+  border-radius: 4px;
+}
+
+.toast-message::-webkit-scrollbar-thumb {
+  background: var(--btn);
+  border-radius: 4px;
+}
+
+.toast-message::-webkit-scrollbar-thumb:hover {
+  background: var(--btn-hover);
+}
+
+.toast-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.toast-copy, .toast-close {
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  background: var(--btn);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.toast-copy:hover, .toast-close:hover {
+  background: var(--btn-hover);
+  box-shadow: 0 0 10px var(--glow);
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 0 10px;
+  }
+  .button-group {
+    top: 60px;
+    flex-direction: column;
+    right: 10px;
+  }
+  .center-title {
+    font-size: 1.6rem;
+  }
+  .section {
+    padding: 15px;
+  }
+  .uniswap-btn {
+    padding: 10px;
+    font-size: 1rem;
+  }
+  .swap-input, .liquidity-input, .network-input, .contract-input {
+    gap: 10px;
+  }
+}
