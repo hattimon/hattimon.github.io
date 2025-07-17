@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Universal DEX - Arbswap</title>
+  <title>Uniwersalny DEX - Arbswap</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
@@ -27,7 +27,7 @@
       <div class="network-input">
         <select id="networkSelect" onchange="loadNetworkParams()">
           <option value="" data-i18n="select_network">Select Network</option>
-          <!-- Sieci zostaną dynamicznie dodane w script.js -->
+          <!-- Networks populated dynamically in script.js -->
         </select>
         <input type="text" id="chainId" placeholder="Chain ID (e.g., 42170)" data-i18n-placeholder="chain_id">
         <input type="text" id="rpcUrl" placeholder="RPC URL (e.g., https://nova.arbitrum.io/rpc)" data-i18n-placeholder="rpc_url">
@@ -44,17 +44,19 @@
     <div class="section contract-section">
       <h3 data-i18n="contract_config">Contract Configuration</h3>
       <div class="contract-input">
-        <input type="text" id="contractAddress" placeholder="Router Address (e.g., 0xEe01...)" data-i18n-placeholder="router_address">
-        <textarea id="contractAbi" placeholder="Paste Router ABI (JSON)" data-i18n-placeholder="router_abi"></textarea>
-        <input type="text" id="lpAddress" placeholder="LP Token Address (e.g., 0x506b...)" data-i18n-placeholder="lp_address">
-        <textarea id="lpAbi" placeholder="Paste LP ABI (JSON)" data-i18n-placeholder="lp_abi"></textarea>
+        <input type="text" id="contractAddress" placeholder="Contract Address (e.g., 0xEe01...)" data-i18n-placeholder="contract_address">
+        <textarea id="contractAbi" placeholder="Paste Contract ABI (JSON)" data-i18n-placeholder="contract_abi"></textarea>
+        <select id="contractType" data-i18n-placeholder="contract_type">
+          <option value="router">Router</option>
+          <option value="lp">LP (Liquidity Pool)</option>
+        </select>
         <input type="text" id="tokenA" placeholder="Token A Address (e.g., DAI)" data-i18n-placeholder="token_a">
         <p>Token A: <span id="tokenAName">–</span> (<span id="tokenASymbol">–</span>)</p>
         <input type="text" id="tokenB" placeholder="Token B Address (e.g., WETH)" data-i18n-placeholder="token_b">
         <p>Token B: <span id="tokenBName">–</span> (<span id="tokenBSymbol">–</span>)</p>
+        <input type="text" id="lpToken" placeholder="LP Token Address (e.g., 0x506b...)" data-i18n-placeholder="lp_token">
+        <p>LP Token: <span id="lpTokenName">–</span> (<span id="lpTokenSymbol">–</span>)</p>
         <button class="uniswap-btn" onclick="configureContract()" data-i18n="configure_contract">Configure Contract</button>
-        <button class="uniswap-btn" onclick="approveContract('router')" data-i18n="approve_router">Approve Router</button>
-        <button class="uniswap-btn" onclick="approveContract('lp')" data-i18n="approve_lp">Approve LP</button>
       </div>
     </div>
     <div class="section wallet-content-section">
@@ -72,7 +74,7 @@
             <option value="BtoA">Token B → Token A</option>
           </select>
           <input type="number" id="swapPercent" placeholder="Enter % (1–100)" min="1" max="100" step="any" data-i18n-placeholder="enter_percent">
-          <select id="swapPercentPreset" onchange="document.getElementById('swapPercent').value = this.value;">
+          <select id="swapPercentPreset">
             <option value="" data-i18n="select_percent">Select %</option>
             <option value="25">25%</option>
             <option value="50">50%</option>
@@ -89,11 +91,11 @@
       <div class="liquidity-card">
         <div class="liquidity-input">
           <select id="liquidityAction">
-            <option value="add" data-i18n="add_liquidity">Add Liquidity</option>
-            <option value="remove" data-i18n="remove_liquidity">Remove Liquidity</option>
+            <option value="add">Add Liquidity</option>
+            <option value="remove">Remove Liquidity</option>
           </select>
           <input type="number" id="liquidityPercent" placeholder="Enter % (1–100)" min="1" max="100" step="any" data-i18n-placeholder="enter_percent">
-          <select id="liquidityPercentPreset" onchange="document.getElementById('liquidityPercent').value = this.value;">
+          <select id="liquidityPercentPreset">
             <option value="" data-i18n="select_percent">Select %</option>
             <option value="25">25%</option>
             <option value="50">50%</option>
@@ -104,6 +106,7 @@
           <input type="number" id="amountTokenBMin" placeholder="Min. Token B Amount (e.g., 0.00026369)" step="any" data-i18n-placeholder="amount_token_b_min">
         </div>
         <button class="uniswap-btn" id="liquidityButton" onclick="manageLiquidity()" disabled data-i18n="manage_liquidity">Manage Liquidity</button>
+        <button class="uniswap-btn" id="approveLPButton" onclick="approveLPToken()" disabled data-i18n="approve_lp">Approve LP Token</button>
       </div>
     </div>
     <div id="toast-container"></div>
