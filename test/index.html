@@ -27,11 +27,7 @@
       <div class="network-input">
         <select id="networkSelect" onchange="loadNetworkParams()">
           <option value="" data-i18n="select_network">Select Network</option>
-          <option value="1">Ethereum Mainnet</option>
-          <option value="42170">Arbitrum Nova</option>
-          <option value="204">opBNB</option>
-          <option value="137">Polygon</option>
-          <!-- Więcej sieci zostanie dodanych w script.js -->
+          <!-- Sieci wypełniane dynamicznie w script.js -->
         </select>
         <input type="text" id="chainId" placeholder="Chain ID (e.g., 42170)" data-i18n-placeholder="chain_id">
         <input type="text" id="rpcUrl" placeholder="RPC URL (e.g., https://nova.arbitrum.io/rpc)" data-i18n-placeholder="rpc_url">
@@ -58,7 +54,14 @@
         <p>Token A: <span id="tokenAName">–</span> (<span id="tokenASymbol">–</span>)</p>
         <input type="text" id="tokenB" placeholder="Token B Address (e.g., WETH)" data-i18n-placeholder="token_b">
         <p>Token B: <span id="tokenBName">–</span> (<span id="tokenBSymbol">–</span>)</p>
+        <input type="text" id="lpToken" placeholder="LP Token Address (e.g., 0x1234...)" data-i18n-placeholder="lp_token">
+        <p>LP Token: <span id="lpTokenName">–</span> (<span id="lpTokenSymbol">–</span>)</p>
         <button class="uniswap-btn" onclick="configureContract()" data-i18n="configure_contract">Configure Contract</button>
+        <div class="approve-buttons">
+          <button class="uniswap-btn" id="approveTokenAButton" onclick="approveToken('tokenA')" disabled data-i18n="approve_token">Approve Token A</button>
+          <button class="uniswap-btn" id="approveTokenBButton" onclick="approveToken('tokenB')" disabled data-i18n="approve_token">Approve Token B</button>
+          <button class="uniswap-btn" id="approveLpTokenButton" onclick="approveToken('lpToken')" disabled data-i18n="approve_token">Approve LP Token</button>
+        </div>
       </div>
     </div>
     <div class="section wallet-content-section">
