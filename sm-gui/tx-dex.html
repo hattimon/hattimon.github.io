@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Analyzer DEX</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Orbitron', sans-serif;
+    }
+    .tooltip {
+      display: none;
+      position: absolute;
+      z-index: 10;
+      background-color: #1f2937;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      white-space: normal;
+      max-width: 200px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .group:hover .tooltip {
+      display: block;
+    }
+    .notification {
+      background-color: #7f1d1d;
+      color: #f87171;
+      padding: 12px 16px;
+      border-radius: 8px;
+      max-width: 600px;
+      margin: 8px auto;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      animation: slideIn 0.3s ease-out;
+    }
+    .notification-message {
+      flex: 1;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 150px;
+      overflow-y: auto;
+      padding-right: 8px;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    .notification-message::-webkit-scrollbar {
+      width: 6px;
+    }
+    .notification-message::-webkit-scrollbar-track {
+      background: #4b5563;
+      border-radius: 3px;
+    }
+    .notification-message::-webkit-scrollbar-thumb {
+      background: #facc15;
+      border-radius: 3px;
+    }
+    .notification-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    @keyframes slideIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .uniswap-btn {
+      background: linear-gradient(90deg, #ff4d4f, #f9cb28);
+      border: 1px solid #facc15;
+      color: #1f2937;
+      transition: all 0.3s ease;
+    }
+    .uniswap-btn:hover {
+      background: linear-gradient(90deg, #ff7875, #fde047);
+      border-color: #fde047;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-200 transition-colors duration-300">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const translations = {
+      en: {
+        title: 'Transaction Analyzer DEX',
+        welcome: 'Enter a transaction hash to analyze and manage swap or liquidity operations.',
+        connectWallet: 'Connect Wallet',
+        disconnectWallet: 'Disconnect Wallet',
+        txHash: 'Transaction Hash',
+        analyzeTx: 'Analyze Transaction',
+        networkConfig: 'Network Configuration',
+        selectNetwork: 'Select Network',
+        chainId: 'Chain ID',
+        rpcUrl: 'RPC URL',
+        chainName: 'Network Name',
+        nativeCurrency: 'Currency Symbol',
+        blockExplorer: 'Explorer URL',
+        addNetwork: 'Add Network',
+        contractConfig: 'Contract Configuration',
+        contractAddress: 'Contract Address',
+        contractAbi: 'Contract ABI (JSON)',
+        contractType: 'Contract Type',
+        tokenA: 'Token A Address',
+        tokenB: 'Token B Address',
+        lpToken: 'LP Token Address',
+        configureContract: 'Configure Contract',
+        walletContents: 'Wallet Contents',
+        swap: 'Token Swap',
+        swapDirection: 'Swap Direction',
+        enterPercent: 'Enter % (1–100)',
+        selectPercent: 'Select %',
+        swapAmountOutMin: 'Min. Output Amount',
+        swapTokens: 'Swap Tokens',
+        liquidityPool: 'Liquidity Pool',
+        liquidityAction: 'Liquidity Action',
+        amountTokenAMin: 'Min. Token A Amount',
+        amountTokenBMin: 'Min. Token B Amount',
+        manageLiquidity: 'Manage Liquidity',
+        approveLP: 'Approve LP Token',
+        wallet: 'Wallet',
+        network: 'Network',
+        settings: 'Settings',
+        language: 'Language',
+        theme: 'Theme',
+        interactionInfo: 'Enter a transaction hash to analyze and manage swap or liquidity operations.',
+        walletRecommendation: 'Recommended wallet: <a href="https://rabby.io/" target="_blank">Rabby.io</a> (supports permission revocation).',
+        transactionHistory: 'Check transaction history on <a href="https://debank.com/" target="_blank">DeBank.com</a>.',
+        chainlistInfo: 'Find or add network parameters at <a href="https://chainlist.org/" target="_blank">Chainlist.org</a>.',
+        loading: 'Loading...',
+        errorNoMetaMask: 'MetaMask or Rabby is not installed. Please install a wallet to use this app.',
+        errorInvalidTx: 'Invalid transaction hash or network not supported: ',
+        errorFunctionCall: 'Function call failed: ',
+        copy: 'Copy',
+        disclaimer: 'Disclaimer: This site is a graphical overlay for original contract functions to ease usage. I am not responsible for any losses incurred due to contract usage. All responsibility lies with the contract creator and the user.'
+      },
+      pl: {
+        title: 'Analizator Transakcji DEX',
+        welcome: 'Wprowadź hash transakcji, aby przeanalizować i zarządzać operacjami swap lub płynności.',
+        connectWallet: 'Połącz portfel',
+        disconnectWallet: 'Rozłącz portfel',
+        txHash: 'Hash transakcji',
+        analyzeTx: 'Analizuj transakcję',
+        networkConfig: 'Konfiguracja sieci',
+        selectNetwork: 'Wybierz sieć',
+        chainId: 'ID sieci',
+        rpcUrl: 'URL RPC',
+        chainName: 'Nazwa sieci',
+        nativeCurrency: 'Symbol waluty',
+        blockExplorer: 'URL eksploratora',
+        addNetwork: 'Dodaj sieć',
+        contractConfig: 'Konfiguracja kontraktu',
+        contractAddress: 'Adres kontraktu',
+        contractAbi: 'ABI kontraktu (JSON)',
+        contractType: 'Typ kontraktu',
+        tokenA: 'Adres tokena A',
+        tokenB: 'Adres tokena B',
+        lpToken: 'Adres tokena LP',
+        configureContract: 'Skonfiguruj kontrakt',
+        walletContents: 'Zawartość portfela',
+        swap: 'Wymiana tokenów',
+        swapDirection: 'Kierunek wymiany',
+        enterPercent: 'Wprowadź % (1–100)',
+        selectPercent: 'Wybierz %',
+        swapAmountOutMin: 'Min. ilość wyjściowa',
+        swapTokens: 'Wymień tokeny',
+        liquidityPool: 'Pula płynności',
+        liquidityAction: 'Akcja płynności',
+        amountTokenAMin: 'Min. ilość tokena A',
+        amountTokenBMin: 'Min. ilość tokena B',
+        manageLiquidity: 'Zarządzaj płynnością',
+        approveLP: 'Zatwierdź token LP',
+        wallet: 'Portfel',
+        network: 'Sieć',
+        settings: 'Ustawienia',
+        language: 'Język',
+        theme: 'Motyw',
+        interactionInfo: 'Wprowadź hash transakcji, aby przeanalizować i zarządzać operacjami swap lub płynności.',
+        walletRecommendation: 'Zalecany portfel: <a href="https://rabby.io/" target="_blank">Rabby.io</a> (obsługuje cofanie uprawnień).',
+        transactionHistory: 'Sprawdź historię transakcji na <a href="https://debank.com/" target="_blank">DeBank.com</a>.',
+        chainlistInfo: 'Znajdź lub dodaj parametry sieci na <a href="https://chainlist.org/" target="_blank">Chainlist.org</a>.',
+        loading: 'Ładowanie...',
+        errorNoMetaMask: 'MetaMask lub Rabby nie jest zainstalowany. Zainstaluj portfel, aby korzystać z aplikacji.',
+        errorInvalidTx: 'Nieprawidłowy hash transakcji lub sieć nieobsługiwana: ',
+        errorFunctionCall: 'Błąd wywołania funkcji: ',
+        copy: 'Kopiuj',
+        disclaimer: 'Zastrzeżenie: Ta strona jest graficzną nakładką na oryginalne funkcje kontraktu, ułatwiającą korzystanie. Nie ponoszę odpowiedzialności za żadne straty wynikłe z użycia kontraktu. Cała odpowiedzialność spoczywa na twórcy kontraktu oraz użytkowniku.'
+      }
+    };
+
+    const networks = [
+      { chainId: '0x1', name: 'Ethereum Mainnet', isTestnet: false, rpc: 'https://rpc.ankr.com/eth', explorer: 'https://etherscan.io' },
+      { chainId: '0x38', name: 'BNB Chain', isTestnet: false, rpc: 'https://bsc-dataseed.binance.org', explorer: 'https://bscscan.com' },
+      { chainId: '0xa4b1', name: 'Arbitrum One', isTestnet: false, rpc: 'https://arb1.arbitrum.io/rpc', explorer: 'https://arbiscan.io' },
+      { chainId: '0x89', name: 'Polygon', isTestnet: false, rpc: 'https://polygon-rpc.com', explorer: 'https://polygonscan.com' },
+      { chainId: '0xa', name: 'Optimism', isTestnet: false, rpc: 'https://mainnet.optimism.io', explorer: 'https://optimistic.etherscan.io' },
+      { chainId: '0x2105', name: 'Base', isTestnet: false, rpc: 'https://mainnet.base.org', explorer: 'https://basescan.org' },
+      { chainId: '0xa86a', name: 'Avalanche', isTestnet: false, rpc: 'https://api.avax.network/ext/bc/C/rpc', explorer: 'https://snowtrace.io' },
+      { chainId: '0xfa', name: 'Fantom', isTestnet: false, rpc: 'https://rpc.ftm.tools', explorer: 'https://ftmscan.com' },
+      { chainId: '0xcc', name: 'opBNB', isTestnet: false, rpc: 'https://opbnb-mainnet-rpc.bnbchain.org', explorer: 'https://opbnbscan.com' },
+      { chainId: '0x28c58', name: 'Taiko', isTestnet: false, rpc: 'https://rpc.mainnet.taiko.xyz', explorer: 'https://taikoscan.io' },
+      { chainId: '0xaa36a7', name: 'Sepolia Testnet', isTestnet: true, rpc: 'https://rpc.sepolia.org', explorer: 'https://sepolia.etherscan.io' },
+      { chainId: '0x5', name: 'Goerli Testnet', isTestnet: true, rpc: 'https://rpc.goerli.mudit.blog', explorer: 'https://goerli.etherscan.io' },
+      { chainId: '0x4268', name: 'Holesky Testnet', isTestnet: true, rpc: 'https://rpc.holesky.ethpandaops.io', explorer: 'https://holesky.etherscan.io' },
+      { chainId: '0x19', name: 'Cronos', isTestnet: false, rpc: 'https://evm.cronos.org', explorer: 'https://cronoscan.com' },
+      { chainId: '0xa4ec', name: 'Celo', isTestnet: false, rpc: 'https://forno.celo.org', explorer: 'https://celoscan.io' },
+      { chainId: '0x1388', name: 'Mantle', isTestnet: false, rpc: 'https://rpc.mantle.xyz', explorer: 'https://explorer.mantle.xyz' },
+      { chainId: '0x82750', name: 'Scroll', isTestnet: false, rpc: 'https://rpc.scroll.io', explorer: 'https://scrollscan.com' },
+      { chainId: '0xe708', name: 'Linea', isTestnet: false, rpc: 'https://rpc.linea.build', explorer: 'https://lineascan.build' },
+      { chainId: '0x144', name: 'zkSync Era', isTestnet: false, rpc: 'https://mainnet.era.zksync.io', explorer: 'https://explorer.zksync.io' },
+      { chainId: '0x504', name: 'Moonbeam', isTestnet: false, rpc: 'https://rpc.api.moonbeam.network', explorer: 'https://moonscan.io' },
+      { chainId: '0x64', name: 'Gnosis Chain', isTestnet: false, rpc: 'https://rpc.gnosischain.com', explorer: 'https://gnosisscan.io' },
+      { chainId: '0xe704', name: 'Metis', isTestnet: false, rpc: 'https://andromeda.metis.io/?owner=1088', explorer: 'https://andromeda-explorer.metis.io' },
+      { chainId: '0x440', name: 'Kava', isTestnet: false, rpc: 'https://evm.kava.io', explorer: 'https://explorer.kava.io' },
+      { chainId: '0x44d', name: 'Polygon zkEVM', isTestnet: false, rpc: 'https://zkevm-rpc.com', explorer: 'https://zkevm.polygonscan.com' },
+      { chainId: '0x15b', name: 'Aurora', isTestnet: false, rpc: 'https://mainnet.aurora.dev', explorer: 'https://aurorascan.dev' },
+      { chainId: '0x2019', name: 'Klaytn', isTestnet: false, rpc: 'https://public-node-api.klaytnapi.com/v1/cypress', explorer: 'https://scope.klaytn.com' },
+      { chainId: '0x3e8', name: 'Moonriver', isTestnet: false, rpc: 'https://rpc.moonriver.moonbeam.network', explorer: 'https://moonriver.moonscan.io' },
+      { chainId: '0x505', name: 'Canto', isTestnet: false, rpc: 'https://canto.slingshot.finance', explorer: 'https://tuber.build' },
+      { chainId: '0x315', name: 'Bitgert', isTestnet: false, rpc: 'https://rpc.icechain.network', explorer: 'https://brisescan.com' },
+      { chainId: '0x4e', name: 'OKT Chain', isTestnet: false, rpc: 'https://exchainrpc.okex.org', explorer: 'https://www.oklink.com/okc' },
+      { chainId: '0x106', name: 'Telos', isTestnet: false, rpc: 'https://mainnet.telos.net/evm', explorer: 'https://explorer.telos.net' },
+      { chainId: '0x5c', name: 'Hoo Smart Chain', isTestnet: false, rpc: 'https://http-mainnet.hoosmartchain.com', explorer: 'https://hooscan.com' },
+      { chainId: '0x45', name: 'Wanchain', isTestnet: false, rpc: 'https://gwan-ssl.wandevs.org:56891', explorer: 'https://wanscan.org' },
+      { chainId: '0x51', name: 'XinFin', isTestnet: false, rpc: 'https://rpc.xinfin.network', explorer: 'https://xinfin.network' },
+      { chainId: '0x3c', name: 'Vision', isTestnet: false, rpc: 'https://infragrid.v.network', explorer: 'https://visionscan.org' },
+      { chainId: '0x3d', name: 'Syscoin', isTestnet: false, rpc: 'https://rpc.syscoin.org', explorer: 'https://explorer.syscoin.org' },
+      { chainId: '0x48', name: 'Rootstock', isTestnet: false, rpc: 'https://public-node.rsk.co', explorer: 'https://explorer.rsk.co' },
+      { chainId: '0x65', name: 'TomoChain', isTestnet: false, rpc: 'https://rpc.tomochain.com', explorer: 'https://tomoscan.io' },
+      { chainId: '0x4a', name: 'Velas', isTestnet: false, rpc: 'https://evmexplorer.velas.com/rpc', explorer: 'https://evmexplorer.velas.com' },
+      { chainId: '0x2329', name: 'Core', isTestnet: false, rpc: 'https://rpc.coredao.org', explorer: 'https://scan.coredao.org' },
+      { chainId: '0x57', name: 'SmartBCH', isTestnet: false, rpc: 'https://smartbch.greyh.at', explorer: 'https://smartscan.cash' },
+      { chainId: '0x4c', name: 'Fuse', isTestnet: false, rpc: 'https://rpc.fuse.io', explorer: 'https://explorer.fuse.io' },
+      { chainId: '0x7b7', name: 'Evmos', isTestnet: false, rpc: 'https://eth.bd.evmos.org:8545', explorer: 'https://evmoscan.com' },
+      { chainId: '0x22b8', name: 'Oasis Sapphire', isTestnet: false, rpc: 'https://sapphire.oasis.io', explorer: 'https://explorer.sapphire.oasis.io' },
+      { chainId: '0x118', name: 'Astar', isTestnet: false, rpc: 'https://evm.astar.network', explorer: 'https://astarscan.io' },
+      { chainId: '0x585', name: 'Shiden', isTestnet: false, rpc: 'https://rpc.shiden.astar.network', explorer: 'https://shiden.subscan.io' },
+      { chainId: '0x1d7', name: 'KCC', isTestnet: false, rpc: 'https://rpc-mainnet.kcc.network', explorer: 'https://explorer.kcc.io' },
+      { chainId: '0x326', name: 'Meter', isTestnet: false, rpc: 'https://rpc.meter.io', explorer: 'https://scan.meter.io' },
+      { chainId: '0x1af', name: 'OneLedger', isTestnet: false, rpc: 'https://mainnet-rpc.oneledger.network', explorer: 'https://mainnet-explorer.oneledger.network' },
+      { chainId: '0x13e', name: 'ThunderCore', isTestnet: false, rpc: 'https://mainnet-rpc.thundercore.com', explorer: 'https://scan.thundercore.com' },
+      { chainId: '0xa0', name: 'xDai', isTestnet: false, rpc: 'https://rpc.xdaichain.com', explorer: 'https://blockscout.com/xdai/mainnet' },
+      { chainId: '0x152', name: 'Boba Network', isTestnet: false, rpc: 'https://mainnet.boba.network', explorer: 'https://bobascan.com' },
+      { chainId: '0x1a4', name: 'Harmony', isTestnet: false, rpc: 'https://api.harmony.one', explorer: 'https://explorer.harmony.one' },
+      { chainId: '0x2b', name: 'Energy Web Chain', isTestnet: false, rpc: 'https://rpc.energyweb.org', explorer: 'https://explorer.energyweb.org' },
+      { chainId: '0x3f', name: 'Ellipsis', isTestnet: false, rpc: 'https://rpc.ellipsis.finance', explorer: 'https://explorer.ellipsis.finance' },
+      { chainId: '0x5e', name: 'RSK Testnet', isTestnet: true, rpc: 'https://public-node.testnet.rsk.co', explorer: 'https://explorer.testnet.rsk.co' },
+      { chainId: '0x6b', name: 'Cronos Testnet', isTestnet: true, rpc: 'https://evm-t3.cronos.org', explorer: 'https://testnet.cronoscan.com' },
+      { chainId: '0x7a', name: 'Fuse Testnet', isTestnet: true, rpc: 'https://rpc.testnet.fuse.io', explorer: 'https://explorer.testnet.fuse.io' },
+      { chainId: '0x8a', name: 'Celo Testnet', isTestnet: true, rpc: 'https://alfajores-forno.celo-testnet.org', explorer: 'https://alfajores.celoscan.io' },
+      { chainId: '0x97', name: 'BNB Smart Chain Testnet', isTestnet: true, rpc: 'https://data-seed-prebsc-1-s1.binance.org:8545', explorer: 'https://testnet.bscscan.com' },
+      { chainId: '0xa0b', name: 'Polygon Mumbai', isTestnet: true, rpc: 'https://rpc-mumbai.maticvigil.com', explorer: 'https://mumbai.polygonscan.com' },
+      { chainId: '0xa7b', name: 'Avalanche Fuji', isTestnet: true, rpc: 'https://api.avax-test.network/ext/bc/C/rpc', explorer: 'https://testnet.snowtrace.io' },
+      { chainId: '0xb1c', name: 'Arbitrum Testnet', isTestnet: true, rpc: 'https://goerli-rollup.arbitrum.io/rpc', explorer: 'https://goerli.arbiscan.io' },
+      { chainId: '0xc0f', name: 'Optimism Testnet', isTestnet: true, rpc: 'https://goerli.optimism.io', explorer: 'https://goerli-optimism.etherscan.io' },
+      { chainId: '0xd1e', name: 'Base Testnet', isTestnet: true, rpc: 'https://goerli.base.org', explorer: 'https://goerli.basescan.org' },
+      { chainId: '0xe0f', name: 'Fantom Testnet', isTestnet: true, rpc: 'https://rpc.testnet.fantom.network', explorer: 'https://testnet.ftmscan.com' },
+      { chainId: '0xf00', name: 'Moonbeam Testnet', isTestnet: true, rpc: 'https://rpc.testnet.moonbeam.network', explorer: 'https://moonbase.moonscan.io' },
+      { chainId: '0x10a', name: 'Gnosis Chiado', isTestnet: true, rpc: 'https://rpc.chiadochain.net', explorer: 'https://blockscout.com/gnosis/chiado' },
+      { chainId: '0x11b', name: 'Aurora Testnet', isTestnet: true, rpc: 'https://testnet.aurora.dev', explorer: 'https://testnet.aurorascan.dev' },
+      { chainId: '0x12c', name: 'Klaytn Testnet', isTestnet: true, rpc: 'https://api.baobab.klaytn.net:8651', explorer: 'https://baobab.scope.klaytn.com' },
+      { chainId: '0x13d', name: 'Moonriver Testnet', isTestnet: true, rpc: 'https://rpc.testnet.moonriver.moonbeam.network', explorer: 'https://moonriver-testnet.moonscan.io' },
+      { chainId: '0x14e', name: 'Canto Testnet', isTestnet: true, rpc: 'https://testnet-archive.canto.io', explorer: 'https://testnet.tuber.build' },
+      { chainId: '0x15f', name: 'Bitgert Testnet', isTestnet: true, rpc: 'https://testnet-rpc.brisescan.com', explorer: 'https://testnet.brisescan.com' },
+      { chainId: '0x160', name: 'OKT Testnet', isTestnet: true, rpc: 'https://exchaintestrpc.okex.org', explorer: 'https://www.oklink.com/okc-test' },
+      { chainId: '0x161', name: 'Telos Testnet', isTestnet: true, rpc: 'https://testnet.telos.net/evm', explorer: 'https://testnet.teloscan.io' },
+      { chainId: '0x162', name: 'Hoo Testnet', isTestnet: true, rpc: 'https://http-testnet.hoosmartchain.com', explorer: 'https://testnet.hooscan.com' },
+      { chainId: '0x163', name: 'Wanchain Testnet', isTestnet: true, rpc: 'https://gwan-ssl-testnet.wandevs.org:46891', explorer: 'https://testnet.wanscan.org' },
+      { chainId: '0x164', name: 'XinFin Testnet', isTestnet: true, rpc: 'https://rpc-apothem.xinfin.network', explorer: 'https://apothem.xinfin.network' },
+      { chainId: '0x165', name: 'Vision Testnet', isTestnet: true, rpc: 'https://infragrid-test.v.network', explorer: 'https://testnet.visionscan.org' },
+      { chainId: '0x166', name: 'Syscoin Testnet', isTestnet: true, rpc: 'https://rpc-testnet.syscoin.org', explorer: 'https://testnet-explorer.syscoin.org' },
+      { chainId: '0x167', name: 'Rootstock Testnet', isTestnet: true, rpc: 'https://public-node.testnet.rsk.co', explorer: 'https://explorer.testnet.rsk.co' },
+      { chainId: '0x168', name: 'TomoChain Testnet', isTestnet: true, rpc: 'https://rpc.testnet.tomochain.com', explorer: 'https://testnet.tomoscan.io' },
+      { chainId: '0x169', name: 'Velas Testnet', isTestnet: true, rpc: 'https://evmexplorer.testnet.velas.com/rpc', explorer: 'https://evmexplorer.testnet.velas.com' },
+      { chainId: '0x16a', name: 'Core Testnet', isTestnet: true, rpc: 'https://rpc.testnet.coredao.org', explorer: 'https://scan.testnet.coredao.org' },
+      { chainId: '0x16b', name: 'SmartBCH Testnet', isTestnet: true, rpc: 'https://rpc-testnet.smartbch.org', explorer: 'https://testnet.smartscan.cash' },
+      { chainId: '0x16c', name: 'Fuse Testnet', isTestnet: true, rpc: 'https://rpc.testnet.fuse.io', explorer: 'https://explorer.testnet.fuse.io' },
+      { chainId: '0x16d', name: 'Evmos Testnet', isTestnet: true, rpc: 'https://eth.bd.evmos.dev:8545', explorer: 'https://testnet.evmoscan.com' },
+      { chainId: '0x16e', name: 'Oasis Sapphire Testnet', isTestnet: true, rpc: 'https://testnet.sapphire.oasis.io', explorer: 'https://testnet.explorer.sapphire.oasis.io' },
+      { chainId: '0x16f', name: 'Astar Testnet', isTestnet: true, rpc: 'https://rpc.testnet.astar.network', explorer: 'https://testnet.astarscan.io' },
+      { chainId: '0x170', name: 'Shiden Testnet', isTestnet: true, rpc: 'https://rpc.testnet.shiden.astar.network', explorer: 'https://testnet.shiden.subscan.io' },
+      { chainId: '0x171', name: 'KCC Testnet', isTestnet: true, rpc: 'https://rpc-testnet.kcc.network', explorer: 'https://testnet-explorer.kcc.io' },
+      { chainId: '0x172', name: 'Meter Testnet', isTestnet: true, rpc: 'https://rpc.testnet.meter.io', explorer: 'https://testnet.scan.meter.io' },
+      { chainId: '0x173', name: 'OneLedger Testnet', isTestnet: true, rpc: 'https://testnet-rpc.oneledger.network', explorer: 'https://testnet-explorer.oneledger.network' },
+      { chainId: '0x174', name: 'ThunderCore Testnet', isTestnet: true, rpc: 'https://testnet-rpc.thundercore.com', explorer: 'https://testnet-scan.thundercore.com' },
+      { chainId: '0x175', name: 'xDai Testnet', isTestnet: true, rpc: 'https://rpc.testnet.xdaichain.com', explorer: 'https://blockscout.com/xdai/testnet' },
+      { chainId: '0x176', name: 'Boba Testnet', isTestnet: true, rpc: 'https://testnet.boba.network', explorer: 'https://testnet.bobascan.com' },
+      { chainId: '0x177', name: 'Harmony Testnet', isTestnet: true, rpc: 'https://api.s0.b.hmny.io', explorer: 'https://explorer.testnet.harmony.one' },
+      { chainId: '0x178', name: 'Energy Web Testnet', isTestnet: true, rpc: 'https://rpc.testnet.energyweb.org', explorer: 'https://explorer.testnet.energyweb.org' },
+      { chainId: '0x179', name: 'Ellipsis Testnet', isTestnet: true, rpc: 'https://rpc.testnet.ellipsis.finance', explorer: 'https://testnet.explorer.ellipsis.finance' }
+    ];
+
+    function App() {
+      const [web3, setWeb3] = useState(null);
+      const [account, setAccount] = useState(null);
+      const [currentNetwork, setCurrentNetwork] = useState(null);
+      const [networkSearch, setNetworkSearch] = useState('');
+      const [language, setLanguage] = useState('en');
+      const [theme, setTheme] = useState('dark');
+      const [txHash, setTxHash] = useState('');
+      const [contractAddress, setContractAddress] = useState('');
+      const [contractAbi, setContractAbi] = useState('');
+      const [contractType, setContractType] = useState('router');
+      const [tokenA, setTokenA] = useState('');
+      const [tokenB, setTokenB] = useState('');
+      const [lpToken, setLpToken] = useState('');
+      const [tokenAInfo, setTokenAInfo] = useState({ name: '–', symbol: '–' });
+      const [tokenBInfo, setTokenBInfo] = useState({ name: '–', symbol: '–' });
+      const [lpTokenInfo, setLpTokenInfo] = useState({ name: '–', symbol: '–' });
+      const [balances, setBalances] = useState({ tokenA: '–', tokenB: '–', lp: '–' });
+      const [swapDirection, setSwapDirection] = useState('AtoB');
+      const [swapPercent, setSwapPercent] = useState('');
+      const [swapAmountOutMin, setSwapAmountOutMin] = useState('');
+      const [liquidityAction, setLiquidityAction] = useState('add');
+      const [liquidityPercent, setLiquidityPercent] = useState('');
+      const [amountTokenAMin, setAmountTokenAMin] = useState('');
+      const [amountTokenBMin, setAmountTokenBMin] = useState('');
+      const [notifications, setNotifications] = useState([]);
+      const [isLoading, setIsLoading] = useState(true);
+      const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+
+      useEffect(() => {
+        if (window.ethereum) {
+          const web3Instance = new Web3(window.ethereum);
+          setWeb3(web3Instance);
+          window.ethereum.request({ method: 'eth_requestAccounts' })
+            .then(accounts => {
+              setAccount(accounts[0]);
+              web3Instance.eth.getChainId().then(chainId => {
+                setCurrentNetwork(networks.find(n => n.chainId === `0x${parseInt(chainId).toString(16)}`) || { name: 'Unknown Network' });
+              });
+              setIsLoading(false);
+            })
+            .catch(err => {
+              setNotifications([...notifications, { id: Date.now(), message: translations[language].errorNoMetaMask }]);
+              setIsLoading(false);
+            });
+          window.ethereum.on('accountsChanged', accounts => setAccount(accounts[0] || null));
+          window.ethereum.on('chainChanged', chainId => {
+            setCurrentNetwork(networks.find(n => n.chainId === `0x${parseInt(chainId).toString(16)}`) || { name: 'Unknown Network' });
+          });
+        } else {
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].errorNoMetaMask }]);
+          setIsLoading(false);
+        }
+      }, [language]);
+
+      useEffect(() => {
+        const timers = notifications.map(notification =>
+          setTimeout(() => {
+            setNotifications(prev => prev.filter(n => n.id !== notification.id));
+          }, 7000)
+        );
+        return () => timers.forEach(clearTimeout);
+      }, [notifications]);
+
+      const connectWallet = async () => {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          setAccount(accounts[0]);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].errorNoMetaMask + err.message }]);
+        }
+      };
+
+      const disconnectWallet = () => {
+        setAccount(null);
+        setCurrentNetwork(null);
+        setBalances({ tokenA: '–', tokenB: '–', lp: '–' });
+      };
+
+      const switchNetwork = async (chainId) => {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId }]
+          });
+          setCurrentNetwork(networks.find(n => n.chainId === chainId));
+        } catch (err) {
+          if (err.code === 4902) {
+            const network = networks.find(n => n.chainId === chainId);
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: network.chainId,
+                  chainName: network.name,
+                  rpcUrls: [network.rpc],
+                  blockExplorerUrls: [network.explorer],
+                  nativeCurrency: { name: network.name, symbol: network.name.split(' ')[0], decimals: 18 }
+                }]
+              });
+              setCurrentNetwork(network);
+            } catch (addErr) {
+              setNotifications([...notifications, { id: Date.now(), message: `${translations[language].addNetwork} Chainlist.org: ${addErr.message}` }]);
+            }
+          } else {
+            setNotifications([...notifications, { id: Date.now(), message: `${translations[language].addNetwork} Chainlist.org: ${err.message}` }]);
+          }
+        }
+      };
+
+      const addNetwork = async () => {
+        try {
+          const chainId = document.getElementById('chainId').value;
+          const chainName = document.getElementById('chainName').value;
+          const rpcUrl = document.getElementById('rpcUrl').value;
+          const currency = document.getElementById('nativeCurrency').value;
+          const explorer = document.getElementById('blockExplorer').value;
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: `0x${parseInt(chainId).toString(16)}`,
+              chainName,
+              rpcUrls: [rpcUrl],
+              blockExplorerUrls: [explorer],
+              nativeCurrency: { name: currency, symbol: currency, decimals: 18 }
+            }]
+          });
+          setCurrentNetwork({ chainId: `0x${parseInt(chainId).toString(16)}`, name: chainName });
+          setNotifications([...notifications, { id: Date.now(), message: `Network ${chainName} added successfully` }]);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].addNetwork} Chainlist.org: ${err.message}` }]);
+        }
+      };
+
+      const analyzeTransaction = async () => {
+        try {
+          if (!web3.utils.isHexStrict(txHash) || txHash.length !== 66) {
+            throw new Error('Invalid transaction hash');
+          }
+          let txNetwork = currentNetwork;
+          if (!txNetwork.rpc) {
+            throw new Error('Network RPC not configured');
+          }
+          const web3Instance = new Web3(txNetwork.rpc);
+          const tx = await web3Instance.eth.getTransaction(txHash);
+          if (!tx) {
+            throw new Error('Transaction not found');
+          }
+          const txNetworkMatch = networks.find(n => n.chainId === `0x${parseInt(tx.chainId).toString(16)}`);
+          if (!txNetworkMatch) {
+            throw new Error('Transaction on unsupported network');
+          }
+          await switchNetwork(txNetworkMatch.chainId);
+          setContractAddress(tx.to);
+          const receipt = await web3Instance.eth.getTransactionReceipt(txHash);
+          const methodSignature = receipt.logs[0]?.topics[0]?.slice(0, 10);
+          let contractType = 'router';
+          if (methodSignature === '0x7ff36ab5' || methodSignature === '0x38ed1739') {
+            contractType = 'router';
+          } else if (methodSignature === '0xf305d719' || methodSignature === '0xe8e33700' || methodSignature === '0x2195995c') {
+            contractType = 'lp';
+          }
+          setContractType(contractType);
+          const response = await fetch(`${txNetworkMatch.explorer}/api?module=contract&action=getabi&address=${tx.to}`);
+          const data = await response.json();
+          if (data.status === '1') {
+            setContractAbi(data.result);
+          } else {
+            setNotifications([...notifications, { id: Date.now(), message: 'ABI not found. Please enter manually.' }]);
+          }
+          document.getElementById('contractSection').style.display = 'block';
+          setNotifications([...notifications, { id: Date.now(), message: `Transaction analyzed: ${contractType === 'router' ? 'Swap' : 'Liquidity'} operation detected` }]);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].errorInvalidTx + err.message }]);
+        }
+      };
+
+      const configureContract = async () => {
+        try {
+          const abiJson = JSON.parse(contractAbi);
+          if (!web3.utils.isAddress(contractAddress)) {
+            throw new Error('Invalid contract address');
+          }
+          const contract = new web3.eth.Contract(abiJson, contractAddress);
+          const tokenAContract = new web3.eth.Contract([
+            { "constant": true, "inputs": [], "name": "name", "outputs": [{ "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+            { "constant": true, "inputs": [], "name": "symbol", "outputs": [{ "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+            { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
+          ], tokenA);
+          const tokenBContract = new web3.eth.Contract([
+            { "constant": true, "inputs": [], "name": "name", "outputs": [{ "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+            { "constant": true, "inputs": [], "name": "symbol", "outputs": [{ "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+            { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
+          ], tokenB);
+          const lpContract = new web3.eth.Contract([
+            { "constant": true, "inputs": [], "name": "name", "outputs": [{ "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+            { "constant": true, "inputs": [], "name": "symbol", "outputs": [{ "name": "", "type": "string" }], "stateMutability": "view", "type": "function" },
+            { "constant": true, "inputs": [{ "name": "_owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }
+          ], lpToken);
+          const [tokenAName, tokenASymbol, tokenABalance, tokenBName, tokenBSymbol, tokenBBalance, lpName, lpSymbol, lpBalance] = await Promise.all([
+            tokenA ? tokenAContract.methods.name().call() : '–',
+            tokenA ? tokenAContract.methods.symbol().call() : '–',
+            tokenA && account ? tokenAContract.methods.balanceOf(account).call() : '0',
+            tokenB ? tokenBContract.methods.name().call() : '–',
+            tokenB ? tokenBContract.methods.symbol().call() : '–',
+            tokenB && account ? tokenBContract.methods.balanceOf(account).call() : '0',
+            lpToken ? lpContract.methods.name().call() : '–',
+            lpToken ? lpContract.methods.symbol().call() : '–',
+            lpToken && account ? lpContract.methods.balanceOf(account).call() : '0'
+          ]);
+          setTokenAInfo({ name: tokenAName, symbol: tokenASymbol });
+          setTokenBInfo({ name: tokenBName, symbol: tokenBSymbol });
+          setLpTokenInfo({ name: lpName, symbol: lpSymbol });
+          setBalances({
+            tokenA: web3.utils.fromWei(tokenABalance, 'ether'),
+            tokenB: web3.utils.fromWei(tokenBBalance, 'ether'),
+            lp: web3.utils.fromWei(lpBalance, 'ether')
+          });
+          document.getElementById('walletContentSection').style.display = 'block';
+          document.getElementById('swapSection').style.display = contractType === 'router' ? 'block' : 'none';
+          document.getElementById('liquiditySection').style.display = contractType === 'lp' ? 'block' : 'none';
+          document.getElementById('swapButton').disabled = false;
+          document.getElementById('liquidityButton').disabled = false;
+          document.getElementById('approveLPButton').disabled = !lpToken;
+          setNotifications([...notifications, { id: Date.now(), message: 'Contract configured successfully' }]);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].errorFunctionCall + err.message }]);
+        }
+      };
+
+      const swapTokens = async () => {
+        try {
+          const abiJson = JSON.parse(contractAbi);
+          const contract = new web3.eth.Contract(abiJson, contractAddress);
+          const amountIn = web3.utils.toWei((parseFloat(balances[swapDirection === 'AtoB' ? 'tokenA' : 'tokenB']) * (swapPercent / 100)).toString(), 'ether');
+          const amountOutMin = web3.utils.toWei(swapAmountOutMin || '0', 'ether');
+          const path = swapDirection === 'AtoB' ? [tokenA, tokenB] : [tokenB, tokenA];
+          const deadline = Math.floor(Date.now() / 1000) + 600;
+          const tx = await contract.methods.swapExactTokensForTokens(amountIn, amountOutMin, path, account, deadline).send({ from: account });
+          setNotifications([...notifications, { id: Date.now(), message: `Swap successful: ${tx.transactionHash}` }]);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].errorFunctionCall + err.message }]);
+        }
+      };
+
+      const approveLPToken = async () => {
+        try {
+          const lpContract = new web3.eth.Contract([
+            { "constant": false, "inputs": [{ "name": "_spender", "type": "address" }, { "name": "_value", "type": "uint256" }], "name": "approve", "outputs": [{ "name": "", "type": "bool" }], "stateMutability": "nonpayable", "type": "function" }
+          ], lpToken);
+          const amount = web3.utils.toWei('1000000', 'ether'); // Large approval amount
+          const tx = await lpContract.methods.approve(contractAddress, amount).send({ from: account });
+          setNotifications([...notifications, { id: Date.now(), message: `LP Token approved: ${tx.transactionHash}` }]);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].errorFunctionCall + err.message }]);
+        }
+      };
+
+      const manageLiquidity = async () => {
+        try {
+          const abiJson = JSON.parse(contractAbi);
+          const contract = new web3.eth.Contract(abiJson, contractAddress);
+          const amount = web3.utils.toWei((parseFloat(balances.lp) * (liquidityPercent / 100)).toString(), 'ether');
+          const amountAMin = web3.utils.toWei(amountTokenAMin || '0', 'ether');
+          const amountBMin = web3.utils.toWei(amountTokenBMin || '0', 'ether');
+          const deadline = Math.floor(Date.now() / 1000) + 600;
+          let tx;
+          if (liquidityAction === 'add') {
+            const amountA = web3.utils.toWei((parseFloat(balances.tokenA) * (liquidityPercent / 100)).toString(), 'ether');
+            const amountB = web3.utils.toWei((parseFloat(balances.tokenB) * (liquidityPercent / 100)).toString(), 'ether');
+            tx = await contract.methods.addLiquidity(tokenA, tokenB, amountA, amountB, amountAMin, amountBMin, account, deadline).send({ from: account });
+          } else {
+            tx = await contract.methods.removeLiquidity(tokenA, tokenB, amount, amountAMin, amountBMin, account, deadline).send({ from: account });
+          }
+          setNotifications([...notifications, { id: Date.now(), message: `${liquidityAction === 'add' ? 'Liquidity added' : 'Liquidity removed'}: ${tx.transactionHash}` }]);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].errorFunctionCall + err.message }]);
+        }
+      };
+
+      const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        setNotifications([...notifications, { id: Date.now(), message: translations[language].copy }]);
+      };
+
+      const filteredNetworks = networks.filter(network =>
+        network.name.toLowerCase().includes(networkSearch.toLowerCase()) ||
+        network.chainId.toLowerCase().includes(networkSearch.toLowerCase())
+      );
+
+      if (isLoading) {
+        return (
+          <div className="container mx-auto p-4 max-w-4xl">
+            <h1 className="text-3xl font-bold mb-6 text-center text-yellow-400"><i className="fas fa-spinner fa-spin mr-2"></i>{translations[language].loading}</h1>
+            <p className="text-center text-gray-400">{translations[language].loading}</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className={`container mx-auto p-4 max-w-4xl ${theme === 'dark' ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-900'} transition-colors duration-300`}>
+          <header className="mb-8 text-center">
+            <h1 className="text-4xl font-bold text-yellow-400"><i className="fas fa-terminal mr-2"></i>{translations[language].title}</h1>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="bg-gray-800 p-4 rounded-lg shadow-lg bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
+              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-wallet mr-2"></i>{translations[language].wallet}</h2>
+              {!account ? (
+                <button
+                  className="w-full uniswap-btn text-white px-4 py-2 rounded h-10 flex items-center justify-center"
+                  onClick={connectWallet}
+                >
+                  <i className="fas fa-wallet mr-2"></i>{translations[language].connectWallet}
+                </button>
+              ) : (
+                <button
+                  className="w-full bg-red-600 text-white px-4 py-2 rounded border border-yellow-600 hover:bg-red-500 hover:border-yellow-400 transition h-10 flex items-center justify-center"
+                  onClick={disconnectWallet}
+                >
+                  <i className="fas fa-sign-out-alt mr-2"></i>{translations[language].disconnectWallet}
+                </button>
+              )}
+              {account && <p className="text-sm mt-2 break-all">{account}</p>}
+            </div>
+
+            <div className="bg-gray-800 p-4 rounded-lg shadow-lg bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
+              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-network-wired mr-2"></i>{translations[language].network}</h2>
+              <select
+                className="w-full bg-gray-700 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 mb-2"
+                value={currentNetwork?.chainId || ''}
+                onChange={e => switchNetwork(e.target.value)}
+              >
+                <option value="">{translations[language].selectNetwork}</option>
+                {filteredNetworks.sort((a, b) => a.name.localeCompare(b.name)).map(network => (
+                  <option key={network.chainId} value={network.chainId}>
+                    {network.name} ({network.isTestnet ? 'Testnet' : 'Mainnet'})
+                  </option>
+                ))}
+              </select>
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  className="w-full p-2 bg-gray-700 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                  placeholder={translations[language].selectNetwork}
+                  value={networkSearch}
+                  onChange={e => setNetworkSearch(e.target.value)}
+                />
+                <i className="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 p-4 rounded-lg shadow-lg bg-gradient-to-r from-gray-800 to-gray-700 hover:shadow-xl transition-shadow">
+              <h2 className="text-lg font-semibold mb-2 text-yellow-400"><i className="fas fa-cog mr-2"></i>{translations[language].settings}</h2>
+              <select
+                className="w-full bg-gray-700 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 mb-2"
+                value={language}
+                onChange={e => setLanguage(e.target.value)}
+              >
+                <option value="en">English</option>
+                <option value="pl">Polski</option>
+              </select>
+              <select
+                className="w-full bg-gray-700 text-gray-200 p-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 mb-2"
+                value={theme}
+                onChange={e => setTheme(e.target.value)}
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+              <button
+                className="w-full bg-gray-700 text-gray-200 px-4 py-2 rounded border border-yellow-600 hover:border-yellow-400 transition h-10 flex items-center justify-center"
+                onClick={() => setIsMobileView(!isMobileView)}
+              >
+                <i className="fas fa-mobile-alt mr-2"></i>{isMobileView ? translations[language].desktopView : translations[language].mobileView}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-lg mb-4 text-center text-gray-400"><i className="fas fa-info-circle mr-2"></i>{translations[language].welcome}</p>
+          <p className="text-sm mb-4 text-center text-yellow-500" dangerouslySetInnerHTML={{ __html: translations[language].walletRecommendation }}></p>
+          <p className="text-sm mb-4 text-center text-yellow-500" dangerouslySetInnerHTML={{ __html: translations[language].transactionHistory }}></p>
+          <p className="text-sm mb-4 text-center text-yellow-500" dangerouslySetInnerHTML={{ __html: translations[language].chainlistInfo }}></p>
+
+          <div className="mb-6">
+            <label className="block text-lg font-medium mb-2 text-yellow-400"><i className="fas fa-hashtag mr-2"></i>{translations[language].txHash}</label>
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                className="w-full p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].txHash}
+                value={txHash}
+                onChange={e => setTxHash(e.target.value)}
+              />
+              <button
+                className="uniswap-btn text-white px-4 py-2 rounded h-10 flex items-center justify-center"
+                onClick={analyzeTransaction}
+              >
+                <i className="fas fa-search mr-2"></i>{translations[language].analyzeTx}
+              </button>
+            </div>
+          </div>
+
+          <div id="networkSection" className="mb-6" style={{ display: 'none' }}>
+            <h2 className="text-xl font-bold mb-4 text-yellow-400"><i className="fas fa-network-wired mr-2"></i>{translations[language].networkConfig}</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <input
+                type="text"
+                id="chainId"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].chainId}
+              />
+              <input
+                type="text"
+                id="rpcUrl"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].rpcUrl}
+              />
+              <input
+                type="text"
+                id="chainName"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].chainName}
+              />
+              <input
+                type="text"
+                id="nativeCurrency"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].nativeCurrency}
+              />
+              <input
+                type="text"
+                id="blockExplorer"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].blockExplorer}
+              />
+              <button
+                className="uniswap-btn text-white px-4 py-2 rounded h-10 flex items-center justify-center"
+                onClick={addNetwork}
+              >
+                <i className="fas fa-plus mr-2"></i>{translations[language].addNetwork}
+              </button>
+            </div>
+          </div>
+
+          <div id="contractSection" className="mb-6" style={{ display: 'none' }}>
+            <h2 className="text-xl font-bold mb-4 text-yellow-400"><i className="fas fa-code mr-2"></i>{translations[language].contractConfig}</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <input
+                type="text"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].contractAddress}
+                value={contractAddress}
+                onChange={e => setContractAddress(e.target.value)}
+              />
+              <textarea
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200"
+                rows="6"
+                placeholder={translations[language].contractAbi}
+                value={contractAbi}
+                onChange={e => setContractAbi(e.target.value)}
+              />
+              <select
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                value={contractType}
+                onChange={e => setContractType(e.target.value)}
+              >
+                <option value="router">{translations[language].swap}</option>
+                <option value="lp">{translations[language].liquidityPool}</option>
+              </select>
+              <input
+                type="text"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].tokenA}
+                value={tokenA}
+                onChange={e => setTokenA(e.target.value)}
+              />
+              <p className="text-sm text-gray-400">Token A: {tokenAInfo.name} ({tokenAInfo.symbol})</p>
+              <input
+                type="text"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].tokenB}
+                value={tokenB}
+                onChange={e => setTokenB(e.target.value)}
+              />
+              <p className="text-sm text-gray-400">Token B: {tokenBInfo.name} ({tokenBInfo.symbol})</p>
+              <input
+                type="text"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].lpToken}
+                value={lpToken}
+                onChange={e => setLpToken(e.target.value)}
+              />
+              <p className="text-sm text-gray-400">LP Token: {lpTokenInfo.name} ({lpTokenInfo.symbol})</p>
+              <button
+                className="uniswap-btn text-white px-4 py-2 rounded h-10 flex items-center justify-center"
+                onClick={configureContract}
+              >
+                <i className="fas fa-cog mr-2"></i>{translations[language].configureContract}
+              </button>
+            </div>
+          </div>
+
+          <div id="walletContentSection" className="mb-6" style={{ display: 'none' }}>
+            <h2 className="text-xl font-bold mb-4 text-yellow-400"><i className="fas fa-wallet mr-2"></i>{translations[language].walletContents}</h2>
+            <p className="text-sm text-gray-400">Token A: {balances.tokenA}</p>
+            <p className="text-sm text-gray-400">Token B: {balances.tokenB}</p>
+            <p className="text-sm text-gray-400">LP: {balances.lp}</p>
+          </div>
+
+          <div id="swapSection" className="mb-6" style={{ display: 'none' }}>
+            <h2 className="text-xl font-bold mb-4 text-yellow-400"><i className="fas fa-exchange-alt mr-2"></i>{translations[language].swap}</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <select
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                value={swapDirection}
+                onChange={e => setSwapDirection(e.target.value)}
+              >
+                <option value="AtoB">Token A → Token B</option>
+                <option value="BtoA">Token B → Token A</option>
+              </select>
+              <input
+                type="number"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].enterPercent}
+                value={swapPercent}
+                onChange={e => setSwapPercent(e.target.value)}
+              />
+              <select
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                onChange={e => setSwapPercent(e.target.value)}
+              >
+                <option value="">{translations[language].selectPercent}</option>
+                <option value="25">25%</option>
+                <option value="50">50%</option>
+                <option value="75">75%</option>
+                <option value="100">100%</option>
+              </select>
+              <input
+                type="number"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].swapAmountOutMin}
+                value={swapAmountOutMin}
+                onChange={e => setSwapAmountOutMin(e.target.value)}
+              />
+              <button
+                id="swapButton"
+                className="uniswap-btn text-white px-4 py-2 rounded h-10 flex items-center justify-center"
+                onClick={swapTokens}
+                disabled
+              >
+                <i className="fas fa-exchange-alt mr-2"></i>{translations[language].swapTokens}
+              </button>
+            </div>
+          </div>
+
+          <div id="liquiditySection" className="mb-6" style={{ display: 'none' }}>
+            <h2 className="text-xl font-bold mb-4 text-yellow-400"><i className="fas fa-water mr-2"></i>{translations[language].liquidityPool}</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <select
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                value={liquidityAction}
+                onChange={e => setLiquidityAction(e.target.value)}
+              >
+                <option value="add">{translations[language].liquidityAction} - Add</option>
+                <option value="remove">{translations[language].liquidityAction} - Remove</option>
+              </select>
+              <input
+                type="number"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].enterPercent}
+                value={liquidityPercent}
+                onChange={e => setLiquidityPercent(e.target.value)}
+              />
+              <select
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                onChange={e => setLiquidityPercent(e.target.value)}
+              >
+                <option value="">{translations[language].selectPercent}</option>
+                <option value="25">25%</option>
+                <option value="50">50%</option>
+                <option value="75">75%</option>
+                <option value="100">100%</option>
+              </select>
+              <input
+                type="number"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].amountTokenAMin}
+                value={amountTokenAMin}
+                onChange={e => setAmountTokenAMin(e.target.value)}
+              />
+              <input
+                type="number"
+                className="p-2 bg-gray-800 border border-yellow-600 rounded focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-200 h-10"
+                placeholder={translations[language].amountTokenBMin}
+                value={amountTokenBMin}
+                onChange={e => setAmountTokenBMin(e.target.value)}
+              />
+              <button
+                id="liquidityButton"
+                className="uniswap-btn text-white px-4 py-2 rounded h-10 flex items-center justify-center"
+                onClick={manageLiquidity}
+                disabled
+              >
+                <i className="fas fa-water mr-2"></i>{translations[language].manageLiquidity}
+              </button>
+              <button
+                id="approveLPButton"
+                className="uniswap-btn text-white px-4 py-2 rounded h-10 flex items-center justify-center"
+                onClick={approveLPToken}
+                disabled
+              >
+                <i className="fas fa-check mr-2"></i>{translations[language].approveLP}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-sm text-center text-yellow-500 mt-4" dangerouslySetInnerHTML={{ __html: translations[language].disclaimer }}></p>
+
+          <div className="fixed bottom-0 left-0 right-0 space-y-2 p-4">
+            {notifications.map(notification => (
+              <div key={notification.id} className="notification">
+                <span className="notification-message">{notification.message}</span>
+                <div className="notification-actions">
+                  <button
+                    className="text-yellow-400 hover:text-yellow-200"
+                    onClick={() => copyToClipboard(notification.message)}
+                  >
+                    <i className="fas fa-copy"></i> {translations[language].copy}
+                  </button>
+                  <button
+                    className="text-yellow-400 hover:text-yellow-200"
+                    onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    try {
+      ReactDOM.render(<App />, document.getElementById('root'));
+    } catch (err) {
+      document.getElementById('root').innerHTML = `
+        <div style="text-align: center; padding: 20px; color: #f87171;">
+          <h1>Rendering Error</h1>
+          <p>${err.message}</p>
+          <p>Check the browser console (F12) or ensure all CDN scripts are accessible.</p>
+          <p>Ensure you have an internet connection and MetaMask/Rabby installed.</p>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
