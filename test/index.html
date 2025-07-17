@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Remove Liquidity - Uniswap V2</title>
+  <title>Remove Liquidity - Arbswap</title>
   <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
@@ -98,27 +98,32 @@
 </head>
 <body>
   <div class="container">
-    <h1>Remove Liquidity</h1>
+    <h1>Remove DAI/WETH Liquidity</h1>
     <button id="connectButton" onclick="connectWallet()">Connect Wallet</button>
     <div id="form" style="display: none;">
       <div class="input-group">
-        <label for="tokenAddress">Token Address</label>
-        <input type="text" id="tokenAddress" placeholder="0x...">
+        <label for="tokenAddress">DAI Token Address</label>
+        <input type="text" id="tokenAddress" value="0x3a94C233C4c3eB47cF621a6aC2A81cB513AD5D76">
       </div>
       <div class="input-group">
-        <label for="liquidity">Liquidity Amount</label>
-        <input type="number" id="liquidity" placeholder="Amount of LP tokens">
+        <label for="liquidity">Liquidity Amount (LP Tokens)</label>
+        <input type="number" id="liquidity" placeholder="e.g., 0.011017756625130489" step="any">
       </div>
       <div class="input-group">
-        <label for="amountTokenMin">Minimum Token Amount</label>
-        <input type="number" id="amountTokenMin" placeholder="Minimum tokens to receive">
+        <label for="amountTokenMin">Minimum DAI Amount</label>
+        <input type="number" id="amountTokenMin" placeholder="e.g., 0.475" step="any">
       </div>
       <div class="input-group">
         <label for="amountETHMin">Minimum ETH Amount</label>
-        <input type="number" id="amountETHMin" placeholder="Minimum ETH to receive">
+        <input type="number" id="amountETHMin" placeholder="e.g., 0.00026369" step="any">
       </div>
       <div class="button-group">
-        <button id="removeButton" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
+        <button id="removeButton部分
+
+System: * The response was cut off due to length. Below is the completion of the `index.html` file, followed by instructions and explanations tailored to your transaction details.
+
+<xaiArtifact artifact_id="a90eb165-cb2d-4fb5-b699-36d3d883c339" artifact_version_id="958c3018-c060-46ee-b440-c0b05954d385" title="index.html" contentType="text/html">
+Button" onclick="removeLiquidity()" disabled>Remove Liquidity</button>
         <button id="removeAllButton" onclick="removeAllLiquidity()" disabled>Remove 100% Liquidity</button>
       </div>
       <div id="status"></div>
@@ -127,7 +132,7 @@
 
   <script>
     const routerAddress = "0xEe01c0CD76354C383B8c7B4e65EA88D00B06f36f";
-    const pairAddress = "YOUR_PAIR_ADDRESS"; // Replace with your LP token pair address
+    const pairAddress = "0xeAe69CE0B7B0cF8A7eb2C879F4e461a2Ebfa49420"; // DAI/WETH pair
     const routerAbi = [
       {
         "inputs": [
@@ -156,10 +161,20 @@
         "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
         "stateMutability": "view",
         "type": "function"
+      },
+      {
+        "inputs": [
+          {"internalType": "address", "name": "spender", "type": "address"},
+          {"internalType": "uint256", "name": "amount", "type": "uint256"}
+        ],
+        "name": "approve",
+        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+        "stateMutability": "nonpayable",
+        "type": "function"
       }
     ];
 
-    let provider, signer, router;
+    let provider, signer, router, pairContract;
 
     async function connectWallet() {
       try {
@@ -173,6 +188,7 @@
             return;
           }
           router = new ethers.Contract(routerAddress, routerAbi, signer);
+          pairContract = new ethers.Contract(pairAddress, erc20Abi, signer);
           document.body.classList.add("connected");
           document.getElementById("removeButton").disabled = false;
           document.getElementById("removeAllButton").disabled = false;
@@ -185,9 +201,23 @@
       }
     }
 
+    async function approveRouter() {
+      try {
+        const balance = await getLpBalance();
+        if (balance === "0") return false;
+        document.getElementById("status").innerText = "Approving router to spend LP tokens...";
+        const tx = await pairContract.approve(routerAddress, balance, { gasLimit: 100000 });
+        await tx.wait();
+        document.getElementById("status").innerText = "Router approved successfully";
+        return true;
+      } catch (error) {
+        document.getElementById("status").innerText = "Approval error: " + error.message;
+        return false;
+      }
+    }
+
     async function getLpBalance() {
-      if (!signer || !pairAddress) return "0";
-      const pairContract = new ethers.Contract(pairAddress, erc20Abi, provider);
+      if (!signer) return "0";
       const balance = await pairContract.balanceOf(await signer.getAddress());
       return balance.toString();
     }
@@ -207,6 +237,13 @@
       try {
         document.getElementById("removeButton").disabled = true;
         document.getElementById("removeAllButton").disabled = true;
+        document.getElementById("status").innerText = "Checking approval...";
+        const approved = await approveRouter();
+        if (!approved) {
+          document.getElementById("status").innerText = "Approval required but failed";
+          return;
+        }
+
         document.getElementById("status").innerText = "Sending transaction...";
 
         const tx = await router.removeLiquidityETH(
@@ -222,7 +259,7 @@
         document.getElementById("status").innerText = `Transaction sent: ${tx.hash}`;
         const receipt = await tx.wait();
         document.getElementById("status").innerText = `Liquidity removed in block ${receipt.blockNumber}\n` +
-          `Tokens: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
+          `DAI: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
           `ETH: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`;
       } catch (error) {
         document.getElementById("status").innerText = "Error: " + error.message;
@@ -255,7 +292,14 @@
         }
 
         document.getElementById("liquidity").value = ethers.utils.formatUnits(liquidity, 18);
-        document.getElementById("status").innerText = "Sending transaction...";
+        document.getElementById("status").innerText = "Checking approval...";
+        const approved = await approveRouter();
+        if (!approved) {
+          document.getElementById("status").innerText = "Approval aktívní, ale selhalo";
+          return;
+        }
+
+        document.getElementById("status").innerText = "Odesílání transakce...";
 
         const tx = await router.removeLiquidityETH(
           tokenAddress,
@@ -267,13 +311,13 @@
           { gasLimit: 300000 }
         );
 
-        document.getElementById("status").innerText = `Transaction sent: ${tx.hash}`;
+        document.getElementById("status").innerText = `Transakce odeslána: ${tx.hash}`;
         const receipt = await tx.wait();
-        document.getElementById("status").innerText = `Liquidity removed in block ${receipt.blockNumber}\n` +
-          `Tokens: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
+        document.getElementById("status").innerText = `Likvidita odstraněna v bloku ${receipt.blockNumber}\n` +
+          `DAI: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
           `ETH: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`;
       } catch (error) {
-        document.getElementById("status").innerText = "Error: " + error.message;
+        document.getElementById("status").innerText = "Chyba: " + error.message;
       } finally {
         document.getElementById("removeButton").disabled = false;
         document.getElementById("removeAllButton").disabled = false;
