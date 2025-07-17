@@ -106,6 +106,12 @@
       background: linear-gradient(90deg, #3a5c2e, #406830);
     }
 
+    .percent-btn {
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      margin: 0 5px;
+    }
+
     input {
       margin: 5px 0;
       padding: 12px;
@@ -212,6 +218,13 @@
       gap: 10px;
       justify-content: center;
       width: 100%;
+    }
+
+    .percent-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 10px;
     }
 
     #toast-container {
@@ -339,6 +352,9 @@
       .liquidity-actions {
         flex-direction: column;
       }
+      .percent-buttons {
+        flex-direction: column;
+      }
       .toast {
         font-size: 0.85rem;
         padding: 10px;
@@ -378,6 +394,10 @@
         <div class="liquidity-input">
           <input type="text" id="tokenAddress" value="0x3a94C233C4c3eB47cF621a6aC2A81cB513AD5D76" readonly data-i18n-placeholder="token_address">
           <input type="number" id="liquidity" placeholder="Wprowadź ilość LP (np. 0.011017756625130489)" step="any" data-i18n-placeholder="enter_liquidity">
+          <div class="percent-buttons">
+            <button class="percent-btn" onclick="setLiquidityPercent(100)">100%</button>
+            <button class="percent-btn" onclick="setLiquidityPercent(99)">99%</button>
+          </div>
           <input type="number" id="amountTokenMin" placeholder="Minimalna ilość DAI (np. 0.475)" step="any" data-i18n-placeholder="enter_token_min">
           <input type="number" id="amountETHMin" placeholder="Minimalna ilość ETH (np. 0.00026369)" step="any" data-i18n-placeholder="enter_eth_min">
         </div>
@@ -465,6 +485,7 @@
         error_approval_failed: "Zatwierdzenie tokena nie powiodło się:",
         error_liquidity_failed: "Operacja usunięcia płynności nie powiodła się:",
         error_insufficient_balance: "Niewystarczające saldo LP!",
+        error_balance_fetch: "Nie można pobrać sald:",
         copied: "Skopiowano!",
         copy_button: "Kopiuj",
         token_address: "Adres tokenu DAI",
@@ -486,7 +507,7 @@
         remove_all_lp: "Remove 100% Liquidity",
         interaction_info: "<b>Clicking 'Remove Liquidity'</b> requires approving the contract and confirming the transaction in your wallet.",
         wallet_recommendation: "I recommend the <a href=\"https://rabby.io/\" target=\"_blank\">Rabby.io</a> wallet, where you can also revoke permissions.",
-        transaction_history: "Check transaction history on <a href=\"https://debank.com/\" target=\"_blank\">DeBank.com</a>.",
+        transaction_history: "Check transaction history on <a href=\"https://debank.com/\" target="_blank\">DeBank.com</a>.",
         error_label: "Error",
         error_no_wallet: "Install a wallet (Rabby/MetaMask)!",
         error_switch_network: "Cannot switch network:",
@@ -495,6 +516,7 @@
         error_approval_failed: "Token approval failed:",
         error_liquidity_failed: "Liquidity removal operation failed:",
         error_insufficient_balance: "Insufficient LP balance!",
+        error_balance_fetch: "Unable to fetch balances:",
         copied: "Copied!",
         copy_button: "Copy",
         token_address: "DAI Token Address",
@@ -558,7 +580,7 @@
         const removeAllButton = document.getElementById("removeAllButton");
         if (removeButton) removeButton.disabled = false;
         if (removeAllButton) removeAllButton.disabled = false;
-        updateBalances();
+        await updateBalances();
       } catch (error) {
         console.error("Błąd połączenia z portfelem:", error);
         showError(translations[localStorage.language || "pl"].error_connect_wallet + " " + error.message);
@@ -582,23 +604,53 @@
 
     async function getLpBalance() {
       if (!signer) return "0";
-      const balance = await pairContract.balanceOf(account);
-      return balance.toString();
+      try {
+        const balance = await pairContract.balanceOf(account);
+        return balance.toString();
+      } catch (error) {
+        console.error("Błąd pobierania salda LP:", error);
+        showError(translations[localStorage.language || "pl"].error_balance_fetch + " " + error.message);
+        return "0";
+      }
     }
 
     async function updateBalances() {
-      if (!signer || !provider) return;
+      if (!signer || !provider) {
+        console.error("Brak podłączonego portfela");
+        return;
+      }
       try {
         const [bDAI, bLP, bETH] = await Promise.all([
-          daiContract.balanceOf(account),
-          pairContract.balanceOf(account),
-          provider.getBalance(account)
+          daiContract.balanceOf(account).catch(e => { console.error("Błąd pobierania salda DAI:", e); return 0; }),
+          pairContract.balanceOf(account).catch(e => { console.error("Błąd pobierania salda LP:", e); return 0; }),
+          provider.getBalance(account).catch(e => { console.error("Błąd pobierania salda ETH:", e); return 0; })
         ]);
-        document.getElementById("balance-dai").textContent = parseFloat(ethers.formatUnits(bDAI, 18)).toFixed(8);
-        document.getElementById("balance-lp").textContent = parseFloat(ethers.formatUnits(bLP, 18)).toFixed(8);
-        document.getElementById("balance-eth").textContent = parseFloat(ethers.formatUnits(bETH, 18)).toFixed(8);
+        document.getElementById("balance-dai").textContent = bDAI ? parseFloat(ethers.formatUnits(bDAI, 18)).toFixed(8) : "–";
+        document.getElementById("balance-lp").textContent = bLP ? parseFloat(ethers.formatUnits(bLP, 18)).toFixed(8) : "–";
+        document.getElementById("balance-eth").textContent = bETH ? parseFloat(ethers.formatUnits(bETH, 18)).toFixed(8) : "–";
       } catch (error) {
         console.error("Błąd aktualizacji sald:", error);
+        showError(translations[localStorage.language || "pl"].error_balance_fetch + " " + error.message);
+      }
+    }
+
+    async function setLiquidityPercent(percent) {
+      if (!signer) {
+        showError(translations[localStorage.language || "pl"].error_connect_wallet);
+        return;
+      }
+      try {
+        const balance = await getLpBalance();
+        if (balance === "0") {
+          showError(translations[localStorage.language || "pl"].error_insufficient_balance);
+          return;
+        }
+        const balanceFormatted = ethers.formatUnits(balance, 18);
+        const amount = (parseFloat(balanceFormatted) * (percent / 100)).toFixed(18);
+        document.getElementById("liquidity").value = amount;
+      } catch (error) {
+        console.error("Błąd ustawiania procentu LP:", error);
+        showError(translations[localStorage.language || "pl"].error_balance_fetch + " " + error.message);
       }
     }
 
@@ -620,7 +672,7 @@
         if (removeButton) removeButton.disabled = true;
         if (removeAllButton) removeAllButton.disabled = true;
         showLoadingToast("loading_remove_liquidity");
-        const liquidityWei = ethers.utils.parseUnits(liquidity, 18);
+        const liquidityWei = ethers.parseUnits(liquidity, 18);
         const approved = await approveRouter(liquidityWei);
         if (!approved) {
           showError("Wymagane zatwierdzenie nie powiodło się");
@@ -629,8 +681,8 @@
         const tx = await router.removeLiquidityETH(
           tokenAddress,
           liquidityWei,
-          ethers.utils.parseUnits(amountTokenMin, 18),
-          ethers.utils.parseUnits(amountETHMin, 18),
+          ethers.parseUnits(amountTokenMin, 18),
+          ethers.parseUnits(amountETHMin, 18),
           account,
           deadline,
           { gasLimit: 300000 }
@@ -638,10 +690,11 @@
         showToast(`Transakcja wysłana: ${tx.hash}`);
         const receipt = await tx.wait();
         showToast(`Płynność usunięta w bloku ${receipt.blockNumber}\n` +
-          `DAI: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
-          `ETH: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`);
-        updateBalances();
+          `DAI: ${ethers.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
+          `ETH: ${ethers.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`);
+        await updateBalances();
       } catch (error) {
+        console.error("Błąd usuwania płynności:", error);
         showError(translations[localStorage.language || "pl"].error_liquidity_failed + " " + error.message);
       } finally {
         const removeButton = document.getElementById("removeButton");
@@ -674,7 +727,7 @@
           showError(translations[localStorage.language || "pl"].error_insufficient_balance);
           return;
         }
-        document.getElementById("liquidity").value = ethers.utils.formatUnits(liquidity, 18);
+        document.getElementById("liquidity").value = ethers.formatUnits(liquidity, 18);
         const approved = await approveRouter(liquidity);
         if (!approved) {
           showError("Wymagane zatwierdzenie nie powiodło się");
@@ -683,8 +736,8 @@
         const tx = await router.removeLiquidityETH(
           tokenAddress,
           liquidity,
-          ethers.utils.parseUnits(amountTokenMin, 18),
-          ethers.utils.parseUnits(amountETHMin, 18),
+          ethers.parseUnits(amountTokenMin, 18),
+          ethers.parseUnits(amountETHMin, 18),
           account,
           deadline,
           { gasLimit: 300000 }
@@ -692,10 +745,11 @@
         showToast(`Transakcja wysłana: ${tx.hash}`);
         const receipt = await tx.wait();
         showToast(`Płynność usunięta w bloku ${receipt.blockNumber}\n` +
-          `DAI: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
-          `ETH: ${ethers.utils.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`);
-        updateBalances();
+          `DAI: ${ethers.formatUnits(receipt.events[receipt.events.length - 1].args.amountToken, 18)}\n` +
+          `ETH: ${ethers.formatUnits(receipt.events[receipt.events.length - 1].args.amountETH, 18)}`);
+        await updateBalances();
       } catch (error) {
+        console.error("Błąd usuwania płynności:", error);
         showError(translations[localStorage.language || "pl"].error_liquidity_failed + " " + error.message);
       } finally {
         const removeButton = document.getElementById("removeButton");
