@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meow AI - Cat Expert Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #d4a574 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 25px;
+            padding: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .language-btn {
+            background: none;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin: 0 2px;
+        }
+
+        .language-btn.active {
+            background: linear-gradient(135deg, #ff9a56, #ff6b35);
+            color: white;
+            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+        }
+
+        .language-btn:hover:not(.active) {
+            background: rgba(255, 154, 86, 0.2);
+        }
+
+        .title {
+            font-size: 3rem;
+            color: #8b4513;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .cat-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a0522d;
+            margin-bottom: 20px;
+        }
+
+        .chat-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: fadeInUp 0.8s ease-out;
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            max-height: 500px;
+            scrollbar-width: thin;
+            scrollbar-color: #ff9a56 #f0f0f0;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #ff9a56;
+            border-radius: 3px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: messageSlideIn 0.5s ease-out;
+        }
+
+        .user-message {
+            text-align: right;
+        }
+
+        .bot-message {
+            text-align: left;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .user-message .message-bubble {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message .message-bubble {
+            background: linear-gradient(135deg, #ff9a56, #ff6b35);
+            color: white;
+            border-bottom-left-radius: 5px;
+        }
+
+        .bot-message .message-bubble::before {
+            content: "🐱";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+        }
+
+        .input-container {
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-top: 1px solid rgba(255, 154, 86, 0.2);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid transparent;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #ff9a56;
+            box-shadow: 0 0 20px rgba(255, 154, 86, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #ff9a56, #ff6b35);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+            min-width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+        }
+
+        .send-btn:active {
+            transform: translateY(0) scale(0.95);
+        }
+
+        .typing-indicator {
+            display: none;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .typing-bubble {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 15px 20px;
+            border-radius: 20px;
+            border-bottom-left-radius: 5px;
+            position: relative;
+        }
+
+        .typing-bubble::before {
+            content: "🐱";
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+        }
+
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff9a56;
+            animation: typingDots 1.4s infinite ease-in-out;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        .welcome-message {
+            text-align: center;
+            padding: 30px;
+            color: #8b4513;
+            font-size: 1.1rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes messageSlideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes typingDots {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .title {
+                font-size: 2rem;
+            }
+
+            .cat-icon {
+                font-size: 3rem;
+            }
+
+            .language-selector {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-bottom: 20px;
+            }
+
+            .message-bubble {
+                max-width: 85%;
+            }
+
+            .chat-messages {
+                padding: 20px;
+                max-height: 400px;
+            }
+
+            .input-container {
+                padding: 15px;
+            }
+
+            .bot-message .message-bubble::before {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-selector">
+            <button class="language-btn active" data-lang="en">🇬🇧 EN</button>
+            <button class="language-btn" data-lang="pl">🇵🇱 PL</button>
+        </div>
+
+        <div class="header">
+            <div class="cat-icon">🐱</div>
+            <h1 class="title" data-text="title">Meow AI</h1>
+            <p class="subtitle" data-text="subtitle">Your Friendly Feline Expert</p>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-message" data-text="welcome">
+                    Welcome to Meow AI! 🐾 I'm your friendly cat expert assistant. Ask me anything about cats - their health, behavior, nutrition, breeds, or any other feline-related questions!
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-bubble">
+                    <div class="typing-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        class="message-input" 
+                        id="messageInput" 
+                        data-placeholder="askAboutCats"
+                        placeholder="Ask me about cats..."
+                    >
+                    <button class="send-btn" id="sendBtn">
+                        ➤
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Language translations
+        const translations = {
+            en: {
+                title: "Meow AI",
+                subtitle: "Your Friendly Feline Expert",
+                welcome: "Welcome to Meow AI! 🐾 I'm your friendly cat expert assistant. Ask me anything about cats - their health, behavior, nutrition, breeds, or any other feline-related questions!",
+                askAboutCats: "Ask me about cats...",
+                responses: {
+                    health: "Cats need regular vet checkups, proper nutrition, and plenty of fresh water. Common health signs to watch for include changes in appetite, behavior, or litter box habits. Always consult your vet for health concerns! 🏥",
+                    behavior: "Cat behavior is fascinating! Purring usually means contentment, kneading shows affection, and scratching is natural territory marking. Each cat has unique personality traits. Understanding their body language helps build stronger bonds! 😸",
+                    nutrition: "Cats are obligate carnivores requiring high-quality protein. Feed age-appropriate food, maintain regular meal schedules, and always provide fresh water. Avoid toxic foods like chocolate, onions, and grapes. Consult your vet for dietary advice! 🍽️",
+                    breeds: "There are over 40 recognized cat breeds! From playful Maine Coons to elegant Siamese, each breed has unique characteristics. Persian cats are known for long fur, while Bengal cats have wild-like patterns. What breed interests you most? 🐈",
+                    default: "That's a great cat question! 🐱 As a feline expert, I'd recommend observing your cat's individual needs and consulting with your veterinarian for the best advice. Every cat is unique and special in their own way! Is there something specific about cats you'd like to know more about?"
+                }
+            },
+            pl: {
+                title: "Meow AI",
+                subtitle: "Twój Przyjazny Ekspert od Kotów",
+                welcome: "Witaj w Meow AI! 🐾 Jestem twoim przyjaznym asystentem-ekspertem od kotów. Pytaj mnie o wszystko dotyczące kotów - ich zdrowie, zachowanie, żywienie, rasy lub inne koci tematy!",
+                askAboutCats: "Zapytaj mnie o koty...",
+                responses: {
+                    health: "Koty potrzebują regularnych wizyt u weterynarza, odpowiedniego żywienia i dużo świeżej wody. Ważne objawy zdrowotne to zmiany w apetycie, zachowaniu lub korzystaniu z kuwety. Zawsze skonsultuj się z weterynarzem! 🏥",
+                    behavior: "Zachowanie kotów jest fascynujące! Mruczenie oznacza zazwyczaj zadowolenie, gniecenie łapkami pokazuje uczucie, a drapanie to naturalne oznaczanie terytorium. Każdy kot ma unikalne cechy osobowości! 😸",
+                    nutrition: "Koty to obligatoryjne mięsożercy wymagające wysokiej jakości białka. Karm pokarmem odpowiednim do wieku, utrzymuj regularne pory posiłków i zapewniaj świeżą wodę. Unikaj toksycznych produktów jak czekolada czy cebula! 🍽️",
+                    breeds: "Istnieje ponad 40 uznanych ras kotów! Od playfulnych Maine Coonów do eleganckich kotów syjamskich - każda rasa ma unikalne cechy. Persy słyną z długiej sierści, a Bengale z dzikich wzorów. Która rasa cię interesuje? 🐈",
+                    default: "To świetne pytanie o koty! 🐱 Jako ekspert od kotów polecam obserwowanie indywidualnych potrzeb twojego kota i konsultacje z weterynarzem. Każdy kot jest wyjątkowy na swój sposób! Czy jest coś konkretnego o kotach, o czym chciałbyś dowiedzieć się więcej?"
+                }
+            }
+        };
+
+        let currentLang = 'en';
+        let chatMessages = [];
+
+        // DOM elements
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessagesContainer = document.getElementById('chatMessages');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const languageBtns = document.querySelectorAll('.language-btn');
+
+        // Initialize app
+        function init() {
+            updateLanguage();
+            setupEventListeners();
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            sendBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            languageBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const lang = e.target.dataset.lang;
+                    switchLanguage(lang);
+                });
+            });
+        }
+
+        // Switch language
+        function switchLanguage(lang) {
+            currentLang = lang;
+            
+            // Update active button
+            languageBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.lang === lang);
+            });
+
+            updateLanguage();
+            
+            // Re-render messages in new language
+            renderMessages();
+        }
+
+        // Update UI text based on current language
+        function updateLanguage() {
+            const elements = document.querySelectorAll('[data-text]');
+            elements.forEach(el => {
+                const key = el.dataset.text;
+                if (translations[currentLang][key]) {
+                    el.textContent = translations[currentLang][key];
+                }
+            });
+
+            // Update placeholder
+            const placeholder = document.querySelector('[data-placeholder]');
+            if (placeholder) {
+                placeholder.placeholder = translations[currentLang].askAboutCats;
+            }
+        }
+
+        // Send message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            messageInput.value = '';
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            // Simulate bot response
+            setTimeout(() => {
+                hideTypingIndicator();
+                const response = generateResponse(message);
+                addMessage(response, 'bot');
+            }, 1500 + Math.random() * 1000);
+        }
+
+        // Add message to chat
+        function addMessage(content, sender) {
+            const message = {
+                content: content,
+                sender: sender,
+                timestamp: Date.now()
+            };
+
+            chatMessages.push(message);
+            renderMessage(message);
+            scrollToBottom();
+        }
+
+        // Render single message
+        function renderMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.sender}-message`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            bubbleDiv.textContent = message.content;
+            
+            messageDiv.appendChild(bubbleDiv);
+            chatMessagesContainer.appendChild(messageDiv);
+        }
+
+        // Render all messages
+        function renderMessages() {
+            // Clear current messages except welcome
+            const messages = chatMessagesContainer.querySelectorAll('.message');
+            messages.forEach(msg => msg.remove());
+
+            // Re-render all chat messages
+            chatMessages.forEach(message => {
+                renderMessage(message);
+            });
+        }
+
+        // Generate bot response
+        function generateResponse(userMessage) {
+            const msg = userMessage.toLowerCase();
+            const responses = translations[currentLang].responses;
+
+            if (msg.includes('health') || msg.includes('zdrowie') || msg.includes('sick') || msg.includes('chory') || msg.includes('vet') || msg.includes('weterynarz')) {
+                return responses.health;
+            } else if (msg.includes('behavior') || msg.includes('zachowanie') || msg.includes('purr') || msg.includes('mruczenie') || msg.includes('scratch') || msg.includes('drapanie')) {
+                return responses.behavior;
+            } else if (msg.includes('food') || msg.includes('nutrition') || msg.includes('żywienie') || msg.includes('pokarm') || msg.includes('eat') || msg.includes('jeść')) {
+                return responses.nutrition;
+            } else if (msg.includes('breed') || msg.includes('rasa') || msg.includes('persian') || msg.includes('perski') || msg.includes('siamese') || msg.includes('syjamski')) {
+                return responses.breeds;
+            } else {
+                return responses.default;
+            }
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            scrollToBottom();
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+
+        // Scroll chat to bottom
+        function scrollToBottom() {
+            setTimeout(() => {
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            }, 100);
+        }
+
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
