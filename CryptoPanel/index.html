@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Krypto Dashboard – Kafelki, portfel, rejestracja</title>
+  <title>Krypto Dashboard – SPA z nowoczesnym stosem (symulacja monorepo)</title>
   <style>
     :root{
       --bg:#0b1020;
@@ -21,7 +21,7 @@
       --safe-right: env(safe-area-inset-right);
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html,body,#root{height:100%}
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial;
@@ -30,7 +30,28 @@
         radial-gradient(60vw 60vw at 10% -10%, rgba(106,169,255,0.15), transparent 60%),
         radial-gradient(50vw 50vw at 110% 10%, rgba(255,92,122,0.12), transparent 60%),
         linear-gradient(180deg, #090d1a, #0b1020 30%, #0b1020 100%);
-      overflow: auto; /* cała strona przewijalna */
+      overflow:auto;
+    }
+    .panel{
+      background: linear-gradient(180deg, rgba(16,24,50,0.75), rgba(16,24,50,0.5));
+      border:1px solid var(--border);border-radius:var(--radius);box-shadow: var(--shadow);padding:14px;
+    }
+    .btn{
+      background:linear-gradient(180deg, #6aa9ff, #3b7be6);
+      color:#071024;border:none;padding:10px 12px;border-radius:10px;font-weight:700;
+      cursor:pointer;box-shadow: 0 6px 18px rgba(106,169,255,0.35);
+      transition: transform .08s ease, box-shadow .2s ease; font-size:13px;
+    }
+    .btn.small{padding:6px 8px;font-size:12px;border-radius:8px}
+    .btn:active{transform: translateY(1px); box-shadow: 0 3px 10px rgba(106,169,255,0.3)}
+    .btn.alt{
+      background:linear-gradient(180deg, #1e2b55, #142043);
+      color:var(--text);border:1px solid var(--border); box-shadow:none; font-weight:600;
+    }
+    .input, select{
+      background:linear-gradient(180deg, #0c1430, #0b132a);
+      border:1px solid var(--border);color:var(--text);
+      padding:10px;border-radius:10px;outline:none;font-size:13px;
     }
     header{
       display:flex;align-items:center;justify-content:space-between;
@@ -47,48 +68,17 @@
       position:relative;
     }
     .logo:after{content:"";position:absolute;inset:5px;border-radius:8px;background:var(--panel);box-shadow: inset 0 0 12px rgba(0,0,0,0.45)}
-    .brand h1{font-size:18px;margin:0;letter-spacing:0.4px}
     .muted{color:var(--muted)}
     .row{
       display:grid;grid-template-columns: 320px 1fr;gap:18px;
       padding:18px clamp(12px, 3vw, 22px) 22px clamp(12px, 3vw, 22px);
       align-items:start;
     }
-    aside{
-      display:flex;flex-direction:column;gap:14px;
-      position:sticky;top:70px;height:auto; /* bez pasków */
-      overflow: visible; /* panel bez własnego scrolla */
-      padding-right:0;
-    }
-    .panel{
-      background: linear-gradient(180deg, rgba(16,24,50,0.75), rgba(16,24,50,0.5));
-      border:1px solid var(--border);border-radius:var(--radius);box-shadow: var(--shadow);padding:14px;
-    }
-    .panel h3{margin:0 0 10px 0;font-size:14px;color:var(--muted);font-weight:600;letter-spacing:0.5px}
-    .btn{
-      background:linear-gradient(180deg, #6aa9ff, #3b7be6);
-      color:#071024;border:none;padding:10px 12px;border-radius:10px;font-weight:700;
-      cursor:pointer;box-shadow: 0 6px 18px rgba(106,169,255,0.35);
-      transition: transform .08s ease, box-shadow .2s ease; font-size:13px;
-    }
-    .btn.small{padding:6px 8px;font-size:12px;border-radius:8px}
-    .btn:active{transform: translateY(1px); box-shadow: 0 3px 10px rgba(106,169,255,0.3)}
-    .btn.alt{
-      background:linear-gradient(180deg, #1e2b55, #142043);
-      color:var(--text);border:1px solid var(--border); box-shadow:none; font-weight:600;
-    }
-    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-    .field label{font-size:12px;color:var(--muted)}
-    .input, select, textarea{
-      background:linear-gradient(180deg, #0c1430, #0b132a);
-      border:1px solid var(--border);color:var(--text);
-      padding:10px;border-radius:10px;outline:none;font-size:13px;
-    }
+    aside{display:flex;flex-direction:column;gap:14px;position:sticky;top:70px}
     .kpis{display:grid;grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px}
     .kpi{padding:12px;border-radius:12px;border:1px solid var(--border);background: linear-gradient(180deg, rgba(24,36,80,0.6), rgba(15,26,61,0.45))}
     .kpi .label{font-size:12px;color:var(--muted)}
     .kpi .value{font-size:18px;font-weight:800;margin-top:4px; display:block; line-height:1.2}
-    .kpi .delta{font-size:12px;margin-top:6px; display:block; line-height:1.2}
     .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
     .table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:12px;border:1px solid var(--border)}
     .table th, .table td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
@@ -97,12 +87,10 @@
     .tabs{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
     .tab{padding:8px 10px;border-radius:10px;border:1px solid var(--border);cursor:pointer;background:linear-gradient(180deg, #0c1430, #0b132a);color:var(--muted);font-size:12px}
     .tab.active{color:var(--text);border-color:#3856b7; box-shadow: inset 0 0 0 1px rgba(106,169,255,0.25)}
-    footer{padding:18px;color:var(--muted);font-size:12px;text-align:center}
-
     .canvas{
       position:relative;border-radius:12px;border:1px solid var(--border);
       background: linear-gradient(180deg, rgba(24,36,80,0.35), rgba(12,18,40,0.45));
-      min-height: 520px;overflow:auto; /* płótno może przewijać się gdy ogromne */
+      min-height: 520px;overflow:auto;
     }
     .tile{
       position:absolute;background: radial-gradient(120% 120% at -10% -10%, rgba(106,169,255,0.12), transparent 40%), #0b1330;
@@ -128,21 +116,12 @@
       display:grid;grid-template-columns: 1fr repeat(3, max-content);gap:10px;
       align-items:center;padding:8px;border-top:1px solid var(--border);font-size:12px;background: rgba(10,16,36,0.35)
     }
-
-    .two-col{display:grid;grid-template-columns: 1fr 1fr;gap:12px}
-    .wallet{
-      display:grid;grid-template-columns: 1fr 1fr;gap:12px;
-    }
-    .wallet .metric{border:1px solid var(--border);border-radius:12px;padding:10px;background:linear-gradient(180deg, rgba(24,36,80,0.6), rgba(15,26,61,0.45))}
-    .wallet h4{margin:0 0 6px 0;font-size:13px;color:var(--muted)}
     .chip-list{display:flex;flex-wrap:wrap;gap:6px}
     .chip{border:1px solid var(--border);padding:6px 8px;border-radius:999px;font-size:12px;background:linear-gradient(180deg,#0c1430,#0b132a)}
-    .hidden{display:none !important}
-
-    /* Mobilne dopasowanie */
+    .two-col{display:grid;grid-template-columns: 1fr 1fr;gap:12px}
+    .wallet{display:grid;grid-template-columns: 1fr 1fr;gap:12px}
     @media (max-width: 1100px){
       .row{grid-template-columns: 1fr;gap:14px}
-      aside{position:relative;height:auto}
       .kpis{grid-template-columns: repeat(2, minmax(0,1fr))}
       .canvas{min-height:420px}
       .two-col{grid-template-columns: 1fr}
@@ -150,286 +129,705 @@
       header{gap:10px;flex-wrap:wrap}
     }
     @media (max-width: 560px){
-      .brand h1{font-size:16px}
       .toolbar .actions .btn.small{padding:5px 7px;font-size:11px}
       .tile{border-radius:10px}
       .panel{padding:12px}
     }
+    /* Modal */
+    .modal{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,0.5);z-index:100}
+    .hidden{display:none !important}
   </style>
   <script type="importmap">
     {
       "imports": {
+        "preact": "https://cdn.jsdelivr.net/npm/preact@10.19.6/dist/preact.module.js",
+        "htm": "https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.module.js",
         "uuid": "https://cdn.jsdelivr.net/npm/uuid@9.0.1/dist/esm-browser/index.js"
       }
     }
   </script>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      <div class="logo" aria-hidden="true"></div>
-      <div>
-        <h1>Krypto Dashboard</h1>
-        <div class="muted" style="font-size:12px">Kafelki z magnesem, portfel, proste konto użytkownika.</div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <span id="status" class="muted" style="font-size:12px">Ładowanie...</span>
-      <button id="addBtcTile" class="btn">Dodaj BTC</button>
-      <button id="btnAuth" class="btn alt">Zaloguj/Rejestruj</button>
-    </div>
-  </header>
-
-  <div class="row">
-    <aside>
-      <div class="panel">
-        <h3>Dodaj kafelek</h3>
-        <div class="field"><label>Symbol (np. BTC, ETH)</label><input id="symbolInput" class="input" placeholder="BTC" inputmode="latin-name" /></div>
-        <div class="two-col">
-          <button id="addTile" class="btn">Dodaj wykres</button>
-          <button id="autoLayout" class="btn alt">Auto-układ</button>
-        </div>
-        <div class="field" style="margin-top:8px">
-          <label>Tryb kafelków</label>
-          <select id="layoutMode" class="input">
-            <option value="fit">Dopasuj do siatki</option>
-            <option value="cascade">Kaskada</option>
-          </select>
-        </div>
-        <div class="two-col" style="margin-top:8px">
-          <button id="lockAll" class="btn alt">Zablokuj</button>
-          <button id="clearAll" class="btn alt">Wyczyść</button>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>Aktualnie dodane krypto</h3>
-        <div id="addedList" class="chip-list"></div>
-      </div>
-
-      <div class="panel">
-        <h3>Top ceny (symulowane)</h3>
-        <table class="table" id="pricesTable">
-          <thead>
-            <tr><th>Token</th><th>Cena</th><th>24h</th><th></th></tr>
-          </thead>
-          <tbody></tbody>
-          <tfoot><tr><td colspan="4" class="muted" style="padding:10px">Brak danych</td></tr></tfoot>
-        </table>
-      </div>
-
-      <div class="panel">
-        <h3>Portfel i statystyki</h3>
-        <div class="wallet">
-          <div class="metric">
-            <h4>Wartość portfela</h4>
-            <div class="value" id="walletValue" style="font-weight:800;font-size:18px">—</div>
-            <div id="walletDelta" class="delta muted">zmiana 24h: —</div>
-          </div>
-          <div class="metric">
-            <h4>Zmienność</h4>
-            <div id="walletVol" class="value" style="font-weight:800;font-size:18px">—</div>
-            <div class="delta muted">sigma (symulacja)</div>
-          </div>
-          <div class="metric" style="grid-column: 1/-1">
-            <h4>Wykres wartości</h4>
-            <div class="tabs" id="intervalTabs">
-              <button class="tab active" data-int="5m">5m</button>
-              <button class="tab" data-int="15m">15m</button>
-              <button class="tab" data-int="30m">30m</button>
-              <button class="tab" data-int="1H">1H</button>
-              <button class="tab" data-int="4H">4H</button>
-              <button class="tab" data-int="D1">D1</button>
-              <button class="tab" data-int="W">W</button>
-              <button class="tab" data-int="M">M</button>
-            </div>
-            <canvas id="walletChart" height="140" style="width:100%;display:block;border:1px solid var(--border);border-radius:10px;background:linear-gradient(180deg, rgba(24,36,80,0.25), rgba(12,18,40,0.35))"></canvas>
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <main style="display:flex;flex-direction:column;gap:18px">
-      <section class="panel">
-        <h3 style="margin-top:0">Płótno kafelków</h3>
-        <div id="canvas" class="canvas"></div>
-      </section>
-
-      <section class="panel">
-        <h3 style="margin-top:0">Szybkie dodawanie</h3>
-        <div style="display:flex;flex-wrap:wrap;gap:8px">
-          <button class="btn small" data-quick="BTC">BTC</button>
-          <button class="btn small" data-quick="ETH">ETH</button>
-          <button class="btn small" data-quick="SOL">SOL</button>
-          <button class="btn small" data-quick="BNB">BNB</button>
-          <button class="btn small" data-quick="XRP">XRP</button>
-          <button class="btn small" data-quick="DOGE">DOGE</button>
-          <button class="btn small" data-quick="ADA">ADA</button>
-          <button class="btn small" data-quick="ARB">ARB</button>
-          <button class="btn small" data-quick="APT">APT</button>
-          <button class="btn small" data-quick="SUI">SUI</button>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <footer>
-    Symulowane ceny i wykresy generowane lokalnie (bez zewnętrznych multimediów). Kafelki z przyciąganiem do krawędzi okna oraz auto-powiększaniem płótna.
-  </footer>
-
-  <!-- Modal auth -->
-  <div id="authModal" class="hidden" style="position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,0.5);z-index:100">
-    <div class="panel" style="width:min(440px, calc(100vw - 32px));max-width:100%">
-      <h3>Konto użytkownika</h3>
-      <div class="tabs" id="authTabs">
-        <button class="tab active" data-mode="login">Logowanie</button>
-        <button class="tab" data-mode="register">Rejestracja</button>
-      </div>
-      <form id="authForm">
-        <div class="field">
-          <label>Email</label>
-          <input class="input" id="authEmail" type="email" required placeholder="you@example.com" inputmode="email">
-        </div>
-        <div class="field">
-          <label>Hasło</label>
-          <input class="input" id="authPass" type="password" required minlength="4" placeholder="••••">
-        </div>
-        <div class="two-col">
-          <button class="btn" type="submit">Dalej</button>
-          <button class="btn alt" type="button" id="authCancel">Anuluj</button>
-        </div>
-        <div id="authMsg" class="muted" style="margin-top:8px;font-size:12px"></div>
-      </form>
-    </div>
-  </div>
+  <div id="root"></div>
 
   <script type="module">
+    import { h, render, Fragment } from "preact";
+    import htm from "htm";
     import { v4 as uuidv4 } from "uuid";
+    const html = htm.bind(h);
 
-    // UI refs
-    const ui = {
-      status: document.getElementById("status"),
-      canvas: document.getElementById("canvas"),
-      pricesTable: document.getElementById("pricesTable"),
-      symbolInput: document.getElementById("symbolInput"),
-      addTile: document.getElementById("addTile"),
-      addBtcTile: document.getElementById("addBtcTile"),
-      autoLayout: document.getElementById("autoLayout"),
-      layoutMode: document.getElementById("layoutMode"),
-      lockAll: document.getElementById("lockAll"),
-      clearAll: document.getElementById("clearAll"),
-      addedList: document.getElementById("addedList"),
-      walletValue: document.getElementById("walletValue"),
-      walletDelta: document.getElementById("walletDelta"),
-      walletVol: document.getElementById("walletVol"),
-      walletChart: document.getElementById("walletChart"),
-      intervalTabs: document.getElementById("intervalTabs"),
-      btnAuth: document.getElementById("btnAuth"),
-      authModal: document.getElementById("authModal"),
-      authTabs: document.getElementById("authTabs"),
-      authForm: document.getElementById("authForm"),
-      authEmail: document.getElementById("authEmail"),
-      authPass: document.getElementById("authPass"),
-      authCancel: document.getElementById("authCancel"),
-      authMsg: document.getElementById("authMsg")
-    };
+    // In-memory "backend" simulation (Express/Prisma/Redis/BullMQ placeholders)
+    // It mimics endpoints and models, but persists locally to keep the app runnable offline.
 
-    // State
-    const defaultTileSize = { w: 360, h: 260 };
-    let tiles = []; // {id,symbol,x,y,w,h,locked}
-    let isLocked = false;
+    const DB_KEY = "kd_db_v1";
+    const defaultDB = { users: [], tokens: [], txs: [], pricesCache: {}, ohlcCache: {} };
+    const db = loadDB();
 
-    // Simulated price engine (procedural, no external APIs)
+    function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY)) || structuredClone(defaultDB);}catch{ return structuredClone(defaultDB);} }
+    function saveDB(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+
+    // Simple crypto-hash placeholder (bcrypt-like interface)
+    function hashPass(p){ let h=2166136261; for(const c of p){ h^=c.charCodeAt(0); h=(h*16777619)>>>0;} return h.toString(16); }
+    function verifyPass(p, hash){ return hashPass(p)===hash; }
+
+    // JWT-like token (unsigned, local demo)
+    function makeToken(payload){ return btoa(JSON.stringify({ ...payload, iat: Date.now() })); }
+    function readToken(tok){ try{ return JSON.parse(atob(tok)); }catch{ return null; } }
+
+    // Price engine (procedural instead of CoinGecko + Redis cache)
     const basePrices = { BTC: 65000, ETH: 3000, SOL: 150, BNB: 550, XRP: 0.6, DOGE: 0.12, ADA: 0.5, ARB: 1.2, APT: 8, SUI: 1.4 };
     const lastPrice = { ...basePrices };
     const lastChange = Object.fromEntries(Object.keys(basePrices).map(s=>[s,0]));
     function stepPrices(){
-      // random walk with mild mean reversion
       for(const s of Object.keys(lastPrice)){
         const p = lastPrice[s];
-        const drift = (basePrices[s] - p) * 0.001;
-        const shock = (Math.random()-0.5) * p * 0.004;
+        const drift = (basePrices[s]-p)*0.001;
+        const shock = (Math.random()-0.5)*p*0.004;
         const np = Math.max(0.0000001, p + drift + shock);
         lastChange[s] = ((np - p) / p) * 100;
         lastPrice[s] = np;
       }
-    }
-    function getPrices(symbols){
-      const out = {};
-      for(const s of symbols){
-        if(lastPrice[s]==null){ lastPrice[s]=1; basePrices[s]=1; lastChange[s]=0; }
-        out[s] = { price: lastPrice[s], ch24: (Math.sin(Date.now()/3600000 + s.length)*2) + lastChange[s] };
+      // update cache
+      const now = Date.now();
+      for(const s of Object.keys(lastPrice)){
+        db.pricesCache[s] = { price: lastPrice[s], ch24: lastChange[s], ts: now };
       }
-      return out;
-    }
-
-    // Render prices table
-    function renderPrices(){
-      const tbody = ui.pricesTable.querySelector("tbody");
-      const tfoot = ui.pricesTable.querySelector("tfoot");
-      tbody.innerHTML = "";
-      const syms = Object.keys(basePrices);
-      const data = getPrices(syms);
-      const entries = syms.map(sym => ({ sym, ...data[sym] }));
-      if(entries.length===0){ tfoot.style.display=""; return; }
-      tfoot.style.display="none";
-      for(const row of entries){
-        const tr = document.createElement("tr");
-        const cls = row.ch24>0?"good": row.ch24<0?"bad":"muted";
-        tr.innerHTML = `
-          <td><strong>${row.sym}</strong></td>
-          <td>$${Number(row.price).toLocaleString(undefined,{maximumFractionDigits:6})}</td>
-          <td class="${cls}">${(row.ch24>=0?"+":"") + row.ch24.toFixed(2)}%</td>
-          <td><button class="btn small alt" data-add="${row.sym}">Kafelek</button></td>
-        `;
-        tbody.appendChild(tr);
+      // basic OHLC synth
+      for(const s of Object.keys(lastPrice)){
+        const series = db.ohlcCache[s] || [];
+        const last = series[series.length-1];
+        const t = Math.floor(now/60000)*60000; // minute
+        const price = lastPrice[s];
+        if(!last || last.t !== t){
+          const candle = { t, o: price*(1+(Math.random()-0.5)*0.01), h: price*1.01, l: price*0.99, c: price, v: Math.random()*1000+100 };
+          series.push(candle);
+          if(series.length>300) series.shift();
+        }else{
+          last.c = price;
+          last.h = Math.max(last.h, price);
+          last.l = Math.min(last.l, price);
+          last.v += Math.random()*100;
+        }
+        db.ohlcCache[s] = series;
       }
-      tbody.querySelectorAll("button[data-add]").forEach(b=>{
-        b.addEventListener("click", ()=> addTile(b.dataset.add));
-      });
+      saveDB();
     }
+    setInterval(stepPrices, 1000);
 
-    // Procedural mini-chart renderer for wallet (no externals)
-    const intervals = ["5m","15m","30m","1H","4H","D1","W","M"];
-    const intervalMap = {
-      "5m": 60, "15m": 90, "30m": 120, "1H": 150, "4H": 180, "D1": 210, "W": 230, "M": 250
+    // Backend-like services
+    const backend = {
+      async register({email, password}){
+        if(db.users.some(u=>u.email===email)) throw new Error("Użytkownik istnieje");
+        const user = { id: uuidv4(), email, password: hashPass(password), createdAt: Date.now(), updatedAt: Date.now(), dashboardSettings: {} };
+        db.users.push(user); saveDB();
+        return { token: makeToken({ uid: user.id, email }) };
+      },
+      async login({email, password}){
+        const user = db.users.find(u=>u.email===email);
+        if(!user || !verifyPass(password, user.password)) throw new Error("Błędne dane");
+        return { token: makeToken({ uid: user.id, email }) };
+      },
+      async me(token){ const data = readToken(token); if(!data) throw new Error("Brak tokenu"); const user = db.users.find(u=>u.id===data.uid); if(!user) throw new Error("Nie znaleziono"); return { id:user.id, email:user.email }; },
+      async addManualToken(token, { symbol, amount, purchasePrice, network }){
+        const me = await backend.me(token);
+        symbol = symbol.toUpperCase();
+        const id = uuidv4();
+        const existing = db.tokens.find(t=>t.userId===me.id && t.symbol===symbol);
+        if(existing){
+          // average price
+          const totalCost = existing.purchasePrice * existing.amount + purchasePrice * amount;
+          const totalAmt = existing.amount + amount;
+          existing.amount = totalAmt;
+          existing.purchasePrice = totalCost / (totalAmt || 1);
+          existing.updatedAt = Date.now();
+        }else{
+          db.tokens.push({ id, userId: me.id, symbol, amount, purchasePrice, network: network||null, createdAt: Date.now(), updatedAt: Date.now() });
+        }
+        // record transaction
+        db.txs.push({ id: uuidv4(), userId: me.id, symbol, type:"BUY", amount, price: purchasePrice, timestamp: Date.now(), createdAt: Date.now() });
+        saveDB();
+        return { ok:true };
+      },
+      async sellToken(token, { symbol, amount, price }){
+        const me = await backend.me(token);
+        symbol = symbol.toUpperCase();
+        const existing = db.tokens.find(t=>t.userId===me.id && t.symbol===symbol);
+        if(!existing || existing.amount < amount) throw new Error("Za mało sztuk");
+        existing.amount -= amount;
+        existing.updatedAt = Date.now();
+        db.txs.push({ id: uuidv4(), userId: me.id, symbol, type:"SELL", amount, price, timestamp: Date.now(), createdAt: Date.now() });
+        saveDB();
+        return { ok:true };
+      },
+      async portfolio(token){
+        const me = await backend.me(token);
+        const items = db.tokens.filter(t=>t.userId===me.id && t.amount>0);
+        const prices = await backend.prices(items.map(i=>i.symbol));
+        const list = items.map(it=>{
+          const cp = prices[it.symbol]?.price || 0;
+          const value = cp * it.amount;
+          const pnl = (cp - it.purchasePrice) * it.amount;
+          const pnlPct = (cp / (it.purchasePrice||1) - 1) * 100;
+          return {
+            symbol: it.symbol,
+            amount: it.amount,
+            avgPurchasePrice: it.purchasePrice,
+            currentPrice: cp,
+            value,
+            profitLoss: pnl,
+            profitLossPercent: pnlPct
+          };
+        });
+        const totalValue = list.reduce((s,x)=>s+x.value,0);
+        const totalPnl = list.reduce((s,x)=>s+x.profitLoss,0);
+        const totalCost = list.reduce((s,x)=> s + x.avgPurchasePrice * x.amount, 0);
+        const totalPnlPct = totalCost>0 ? (totalValue/totalCost - 1)*100 : 0;
+        return { items: list, totals: { totalValue, totalPnl, totalPnlPct } };
+      },
+      async prices(symbols){
+        const out = {};
+        for(const s of symbols){
+          if(!db.pricesCache[s]) db.pricesCache[s] = { price: lastPrice[s]||1, ch24: lastChange[s]||0, ts: Date.now() };
+          out[s] = { ...db.pricesCache[s] };
+        }
+        saveDB();
+        return out;
+      },
+      async ohlc(symbol, interval="1h"){ // interval ignored in demo
+        symbol = symbol.toUpperCase();
+        return db.ohlcCache[symbol] || [];
+      }
     };
-    let walletHistory = []; // array of values
-    let currentInterval = "5m";
-    function generateWalletHistory(points=120){
-      const total = computeWalletValue();
-      const vol = Math.max(0.005, computeWalletVol());
+
+    // Global app state (Zustand-like super light)
+    const state = {
+      token: localStorage.getItem("kd_auth") || "",
+      setToken(tok){ state.token = tok; localStorage.setItem("kd_auth", tok||""); rerender(); },
+
+      tiles: [], // {id,symbol,x,y,w,h,locked,interval}
+      addTile(sym){
+        const gap=16, defW=360, defH=260;
+        const idx = state.tiles.length;
+        state.tiles = state.tiles.concat({ id: uuidv4(), symbol: sym.toUpperCase(), x: gap + (idx%2)*(defW+gap), y: gap + Math.floor(idx/2)*(defH+gap), w:defW, h:defH, locked:false, interval:"1h" });
+        rerender();
+        setTimeout(()=>fitCanvas(),0);
+      },
+      updateTile(id, patch){
+        state.tiles = state.tiles.map(t=> t.id===id? { ...t, ...patch }: t);
+        rerender();
+        setTimeout(()=>fitCanvas(),0);
+      },
+      removeTile(id){ state.tiles = state.tiles.filter(t=>t.id!==id); rerender(); setTimeout(()=>fitCanvas(),0); },
+      lockAll(flag){ state.tiles = state.tiles.map(t=>({...t, locked: flag})); rerender(); },
+      clear(){ state.tiles = []; rerender(); setTimeout(()=>fitCanvas(),0); },
+
+      pricesTable: [],
+      portfolio: { items: [], totals: { totalValue: 0, totalPnl: 0, totalPnlPct: 0 } },
+
+      async refreshPortfolio(){
+        if(!state.token){ state.portfolio = { items: [], totals: { totalValue: 0, totalPnl: 0, totalPnlPct: 0 } }; rerender(); return; }
+        try{
+          const res = await backend.portfolio(state.token);
+          state.portfolio = res;
+          rerender();
+        }catch(e){ console.warn(e); }
+      },
+      async refreshPrices(){
+        const syms = Object.keys(basePrices);
+        const map = await backend.prices(syms);
+        state.pricesTable = syms.map(s=> ({ symbol:s, price: map[s].price, ch24: map[s].ch24 }));
+        rerender();
+      }
+    };
+
+    // Wallet mini-chart
+    let walletHistory = [];
+    let walletInterval = "D1";
+    function computeWalletValue(){
+      const syms = [...new Set(state.tiles.map(t=>t.symbol))];
+      if(syms.length===0) return 0;
+      let sum = 0;
+      const map = db.pricesCache;
+      for(const s of syms){ sum += (map[s]?.price || lastPrice[s] || 0); }
+      return sum;
+    }
+    function computeWalletVol(){
+      const syms = [...new Set(state.tiles.map(t=>t.symbol))];
+      if(syms.length===0) return 0.01;
+      const vals = syms.map(s=>db.pricesCache[s]?.ch24 || 0);
+      const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+      const variance = vals.reduce((a,b)=>a+Math.pow(b-avg,2),0)/vals.length;
+      return Math.sqrt(variance)/100;
+    }
+    function generateWalletHistory(points=180){
+      const total = computeWalletValue() || 1000;
+      const vol = Math.max(0.004, computeWalletVol());
       const arr = [];
-      let v = total || 1000;
+      let v = total;
       for(let i=0;i<points;i++){
-        const rnd = (Math.random()-0.5)*2;
-        v = Math.max(0, v * (1 + rnd*vol*0.2));
+        v = Math.max(0, v * (1 + (Math.random()-0.5)*vol*0.2));
         arr.push(v);
       }
-      // normalize to end at current total
-      const scale = (total||v)/ (arr[arr.length-1]||1);
+      const scale = total/(arr[arr.length-1]||1);
       walletHistory = arr.map(x=>x*scale);
     }
+
+    // Canvas helpers
+    function fitCanvas(){
+      const canvas = document.getElementById("canvas");
+      if(!canvas) return;
+      const gap=16, defW=360, defH=260;
+      let maxR=0, maxB=0;
+      for(const t of state.tiles){
+        maxR = Math.max(maxR, (t.x||0)+(t.w||defW));
+        maxB = Math.max(maxB, (t.y||0)+(t.h||defH));
+      }
+      canvas.style.minWidth = Math.ceil(maxR + gap)+"px";
+      canvas.style.minHeight = Math.ceil(maxB + gap)+"px";
+    }
+
+    // Components
+    function Header(){
+      const user = state.token ? readToken(state.token) : null;
+      return html`
+        <header>
+          <div class="brand">
+            <div class="logo" aria-hidden="true"></div>
+            <div>
+              <h1 style="margin:0;font-size:18px">Krypto Dashboard</h1>
+              <div class="muted" style="font-size:12px">Nowoczesny SPA, kafelki, portfel i wykresy (wersja demonstracyjna offline)</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span class="muted" style="font-size:12px">${user? `Zalogowano: ${user.email}` : "Niezalogowany"}</span>
+            <button class="btn" onClick=${()=>state.addTile("BTC")}>Dodaj BTC</button>
+            ${user
+              ? html`<button class="btn alt" onClick=${()=>{ state.setToken(""); }}>Wyloguj</button>`
+              : html`<button class="btn alt" onClick=${()=> openAuth() }>Zaloguj/Rejestracja</button>`
+            }
+          </div>
+        </header>
+      `;
+    }
+
+    function PricesPanel(){
+      return html`
+        <div class="panel">
+          <h3 style="margin:0 0 10px 0;color:var(--muted)">Top ceny (symulowane)</h3>
+          <table class="table">
+            <thead><tr><th>Token</th><th>Cena</th><th>24h</th><th></th></tr></thead>
+            <tbody>
+              ${state.pricesTable.map(row=>{
+                const cls = row.ch24>0?"good": row.ch24<0?"bad":"muted";
+                return html`<tr key=${row.symbol}>
+                  <td><strong>${row.symbol}</strong></td>
+                  <td>$${Number(row.price).toLocaleString(undefined,{maximumFractionDigits:6})}</td>
+                  <td class=${cls}>${(row.ch24>=0?"+":"") + row.ch24.toFixed(2)}%</td>
+                  <td><button class="btn small alt" onClick=${()=>state.addTile(row.symbol)}>Kafelek</button></td>
+                </tr>`;
+              })}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function PortfolioPanel(){
+      const p = state.portfolio;
+      return html`
+        <div class="panel">
+          <h3 style="margin:0 0 10px 0;color:var(--muted)">Portfel i statystyki</h3>
+          <div class="wallet">
+            <div class="kpi">
+              <div class="label">Wartość portfela</div>
+              <div class="value">$${(p.totals.totalValue||0).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Zysk / Strata</div>
+              <div class="value ${p.totals.totalPnl>=0?"good":"bad"}">$${(p.totals.totalPnl||0).toLocaleString(undefined,{maximumFractionDigits:2})} (${(p.totals.totalPnlPct||0).toFixed(2)}%)</div>
+            </div>
+            <div style="grid-column:1/-1">
+              <div class="tabs" id="walletTabs">
+                ${["5m","15m","30m","1H","4H","D1","W","M"].map(int => html`
+                  <button class=${"tab "+(walletInterval===int?"active":"")} onClick=${()=>{ walletInterval=int; generateWalletHistory(180); rerender(); }}>${int}</button>
+                `)}
+              </div>
+              <canvas id="walletChart" height="140" style="width:100%;display:block;border:1px solid var(--border);border-radius:10px;background:linear-gradient(180deg, rgba(24,36,80,0.25), rgba(12,18,40,0.35))"></canvas>
+            </div>
+          </div>
+          <div style="margin-top:12px;overflow:auto">
+            <table class="table">
+              <thead>
+                <tr><th>Token</th><th>Ilość</th><th>Śr. cena zakupu</th><th>Aktualna cena</th><th>Wartość</th><th>Zysk/Strata</th></tr>
+              </thead>
+              <tbody>
+                ${p.items.map(it=>{
+                  const cls = it.profitLoss>=0 ? "good":"bad";
+                  return html`<tr key=${it.symbol}>
+                    <td>${it.symbol}</td>
+                    <td>${it.amount.toFixed(6)}</td>
+                    <td>$${it.avgPurchasePrice.toFixed(4)}</td>
+                    <td>$${it.currentPrice.toFixed(4)}</td>
+                    <td>$${it.value.toFixed(2)}</td>
+                    <td class=${cls}>$${it.profitLoss.toFixed(2)} (${it.profitLossPercent.toFixed(2)}%)</td>
+                  </tr>`;
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function AddTokenForm(){
+      let form = { symbol: "BTC", amount: "0.1", price: "65000", network: "" };
+      const set = (k,v)=>{ form = { ...form, [k]: v }; };
+      const submit = async (e)=> {
+        e.preventDefault();
+        if(!state.token) return alert("Zaloguj się");
+        try{
+          await backend.addManualToken(state.token, { symbol: form.symbol, amount: parseFloat(form.amount), purchasePrice: parseFloat(form.price), network: form.network });
+          await state.refreshPortfolio();
+          alert("Dodano / zaktualizowano pozycję");
+        }catch(err){ alert(err.message||String(err)); }
+      };
+      return html`
+        <div class="panel">
+          <h3 style="margin-top:0;color:var(--muted)">Ręczne dodanie coina</h3>
+          <form onSubmit=${submit}>
+            <div class="two-col">
+              <div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Symbol</div>
+                <input class="input" value=${form.symbol} onInput=${e=>set("symbol", e.currentTarget.value.toUpperCase())} placeholder="BTC"/>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Ilość</div>
+                <input type="number" step="any" class="input" value=${form.amount} onInput=${e=>set("amount", e.currentTarget.value)} placeholder="0.0"/>
+              </div>
+            </div>
+            <div class="two-col" style="margin-top:10px">
+              <div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Cena zakupu (USD)</div>
+                <input type="number" step="any" class="input" value=${form.price} onInput=${e=>set("price", e.currentTarget.value)} placeholder="0.0"/>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Sieć (opcjonalnie)</div>
+                <input class="input" value=${form.network} onInput=${e=>set("network", e.currentTarget.value)} placeholder="Ethereum, Solana..."/>
+              </div>
+            </div>
+            <div class="two-col" style="margin-top:12px">
+              <button class="btn" type="submit">Dodaj / Uśrednij</button>
+              <button class="btn alt" type="button" onClick=${()=>{ state.addTile(form.symbol); }}>Dodaj kafelek</button>
+            </div>
+          </form>
+        </div>
+      `;
+    }
+
+    function SellTokenForm(){
+      let form = { symbol: "BTC", amount: "0.05", price: "65000" };
+      const set = (k,v)=>{ form = { ...form, [k]: v }; };
+      const submit = async (e)=>{
+        e.preventDefault();
+        if(!state.token) return alert("Zaloguj się");
+        try{
+          await backend.sellToken(state.token, { symbol: form.symbol, amount: parseFloat(form.amount), price: parseFloat(form.price) });
+          await state.refreshPortfolio();
+          alert("Sprzedano");
+        }catch(err){ alert(err.message||String(err)); }
+      };
+      const mySymbols = [...new Set(db.tokens.filter(t=> state.token && t.userId===readToken(state.token)?.uid && t.amount>0).map(t=>t.symbol))];
+      return html`
+        <div class="panel">
+          <h3 style="margin-top:0;color:var(--muted)">Sprzedaż coina</h3>
+          <form onSubmit=${submit}>
+            <div class="two-col">
+              <div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Symbol</div>
+                <input class="input" value=${form.symbol} list="mySymbols" onInput=${e=>set("symbol", e.currentTarget.value.toUpperCase())}/>
+                <datalist id="mySymbols">
+                  ${mySymbols.map(s=> html`<option value=${s} />`)}
+                </datalist>
+              </div>
+              <div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Ilość</div>
+                <input type="number" step="any" class="input" value=${form.amount} onInput=${e=>set("amount", e.currentTarget.value)} />
+              </div>
+            </div>
+            <div class="two-col" style="margin-top:10px">
+              <div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Cena sprzedaży (USD)</div>
+                <input type="number" step="any" class="input" value=${form.price} onInput=${e=>set("price", e.currentTarget.value)} />
+              </div>
+              <div></div>
+            </div>
+            <div class="two-col" style="margin-top:12px">
+              <button class="btn" type="submit">Sprzedaj</button>
+              <button class="btn alt" type="button" onClick=${()=>{ state.addTile(form.symbol); }}>Dodaj kafelek</button>
+            </div>
+          </form>
+        </div>
+      `;
+    }
+
+    function Sidebar(){
+      const added = [...new Set(state.tiles.map(t=>t.symbol))];
+      let layoutMode = "fit";
+      const autoLayout = (mode)=>{
+        const gap=16, W = document.getElementById("canvas")?.clientWidth || 960;
+        const colW=360, rowH=260;
+        let x=gap,y=gap,maxH=rowH;
+        state.tiles = state.tiles.map((t,idx)=>{
+          if(mode==="fit"){
+            if(x + colW + gap > W){ x=gap; y+= maxH + gap; maxH=rowH; }
+            const nt = { ...t, x, y, w: colW, h: rowH }; x += colW + gap; return nt;
+          }else{
+            return { ...t, x: gap + (idx*24)%Math.max(24,(W - colW - gap)), y: gap + idx*28, w: colW, h: rowH };
+          }
+        });
+        rerender();
+        setTimeout(()=>fitCanvas(),0);
+      };
+      const toggleLockAll = ()=>{
+        const locked = state.tiles.some(t=>!t.locked);
+        state.lockAll(locked);
+      };
+      return html`
+        <aside>
+          <div class="panel">
+            <h3 style="margin:0 0 10px 0;color:var(--muted)">Dodaj kafelek</h3>
+            <div class="two-col">
+              <input id="symIn" class="input" placeholder="BTC" value="BTC"/>
+              <button class="btn" onClick=${()=>{ const v=document.getElementById("symIn").value||"BTC"; state.addTile(v); }}>Dodaj wykres</button>
+            </div>
+            <div class="two-col" style="margin-top:8px">
+              <select class="input" onChange=${e=> layoutMode = e.currentTarget.value }>
+                <option value="fit">Dopasuj do siatki</option>
+                <option value="cascade">Kaskada</option>
+              </select>
+              <button class="btn alt" onClick=${()=>autoLayout(layoutMode)}>Auto-układ</button>
+            </div>
+            <div class="two-col" style="margin-top:8px">
+              <button class="btn alt" onClick=${toggleLockAll}>Przełącz blokadę</button>
+              <button class="btn alt" onClick=${()=> state.clear()}>Wyczyść</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3 style="margin:0 0 10px 0;color:var(--muted)">Aktualnie dodane krypto</h3>
+            <div class="chip-list">
+              ${added.map(s=> html`<span class="chip">${s}</span>`)}
+              ${added.length===0 && html`<span class="muted" style="font-size:12px">Brak</span>`}
+            </div>
+          </div>
+
+          ${PricesPanel()}
+          ${AddTokenForm()}
+          ${SellTokenForm()}
+        </aside>
+      `;
+    }
+
+    function Tile({tile}){
+      // draggable and resizable
+      const onPointerDown = (e)=>{
+        if(tile.locked) return;
+        const el = e.currentTarget.parentElement.parentElement; // tile root
+        el.setPointerCapture(e.pointerId);
+        drag = { sx:e.clientX, sy:e.clientY, ox: tile.x, oy: tile.y, id: tile.id };
+      };
+      const onMove = (e)=>{
+        if(!drag || drag.id!==tile.id) return;
+        const grid=8, magnet=16;
+        const nx = Math.max(0, drag.ox + (e.clientX - drag.sx));
+        const ny = Math.max(0, drag.oy + (e.clientY - drag.sy));
+        let gx = Math.round(nx/grid)*grid;
+        let gy = Math.round(ny/grid)*grid;
+        const canvas = document.getElementById("canvas");
+        const cw = Math.max(canvas.clientWidth, canvas.scrollWidth);
+        const ch = Math.max(canvas.clientHeight, canvas.scrollHeight);
+        const w = tile.w, h= tile.h;
+        if(Math.abs(gx - 0) <= magnet) gx = 0;
+        if(Math.abs((gx + w) - cw) <= magnet) gx = Math.max(0, cw - w);
+        if(Math.abs(gy - 0) <= magnet) gy = 0;
+        if(Math.abs((gy + h) - ch) <= magnet) gy = Math.max(0, ch - h);
+        state.updateTile(tile.id, { x: gx, y: gy });
+      };
+      const onUp = ()=>{ drag=null; };
+
+      const onResizeDown = (e)=>{
+        if(tile.locked) return;
+        e.stopPropagation();
+        const el = e.currentTarget;
+        el.setPointerCapture(e.pointerId);
+        resize = { sx:e.clientX, sy:e.clientY, ow: tile.w, oh: tile.h, id: tile.id };
+      };
+      const onResizeMove = (e)=>{
+        if(!resize || resize.id!==tile.id) return;
+        const grid=8;
+        const nw = Math.max(260, resize.ow + (e.clientX - resize.sx));
+        const nh = Math.max(180, resize.oh + (e.clientY - resize.sy));
+        const rw = Math.round(nw/grid)*grid;
+        const rh = Math.round(nh/grid)*grid;
+        state.updateTile(tile.id, { w: rw, h: rh });
+      };
+      const onResizeUp = ()=>{ resize=null; };
+
+      return html`
+        <div class=${"tile"+(tile.locked?" locked":"")} style=${{ left: tile.x+"px", top: tile.y+"px", width: tile.w+"px", height: tile.h+"px" }}>
+          <div class="toolbar" onPointerDown=${onPointerDown} onPointerMove=${onMove} onPointerUp=${onUp}>
+            <div class="title">${tile.symbol} — $${(db.pricesCache[tile.symbol]?.price||lastPrice[tile.symbol]||0).toLocaleString(undefined,{maximumFractionDigits:6})}</div>
+            <div class="actions">
+              <button class="btn small alt" onClick=${()=> state.addTile(tile.symbol)}>Duplikuj</button>
+              <button class="btn small" onClick=${()=> state.updateTile(tile.id, { locked: !tile.locked })}>${tile.locked?"Odblokuj":"Zablokuj"}</button>
+              <button class="btn small alt" onClick=${()=> state.removeTile(tile.id)}>Usuń</button>
+            </div>
+          </div>
+          <div class="content">
+            <div class="tv-holder" id=${"tv_"+tile.id}>${MiniLine(tile.symbol)}</div>
+          </div>
+          <div class="resizer" onPointerDown=${onResizeDown} onPointerMove=${onResizeMove} onPointerUp=${onResizeUp}></div>
+          <div class="statline">
+            ${(()=>{
+              const ch = db.pricesCache[tile.symbol]?.ch24 || 0;
+              return html`<div><strong>${tile.symbol}</strong></div>
+                <div class="muted">Cena: <strong>$${(db.pricesCache[tile.symbol]?.price||0).toLocaleString(undefined,{maximumFractionDigits:6})}</strong></div>
+                <div class=${ch>0?"good":ch<0?"bad":"muted"}>24h: <strong>${(ch>=0?"+":"") + ch.toFixed(2)}%</strong></div>
+                <div class="muted"></div>`;
+            })()}
+          </div>
+        </div>
+      `;
+    }
+    let drag=null, resize=null;
+
+    function MiniLine(symbol){
+      // SVG sparkline
+      const seed = Math.abs([...symbol].reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0), 0))%1000 + Date.now()/2000;
+      const pts = [];
+      let v = 40 + Math.sin(seed)*6;
+      for(let i=0;i<40;i++){
+        v += (Math.random()-0.5)*2.2;
+        v = Math.min(55, Math.max(8, v));
+        pts.push([4 + i*(92/39), v]);
+      }
+      const d = pts.map((p,i)=> (i? "L":"M")+p[0].toFixed(2)+","+(60-p[1]).toFixed(2)).join(" ");
+      return html`
+        <svg viewBox="0 0 100 60" width="100%" height="100%">
+          ${Array.from({length:5}).map((_,i)=>{
+            const y = 10 + i*10;
+            return html`<line x1="4" x2="96" y1=${y} y2=${y} stroke="rgba(255,255,255,0.08)" stroke-width="0.6" />`;
+          })}
+          <path d=${d} fill="none" stroke="#6aa9ff" stroke-width="1.5" />
+        </svg>
+      `;
+    }
+
+    function Dashboard(){
+      return html`
+        ${Header()}
+        <div class="row">
+          ${Sidebar()}
+          <main style="display:flex;flex-direction:column;gap:18px">
+            <section class="panel">
+              <h3 style="margin-top:0;color:var(--muted)">Płótno kafelków</h3>
+              <div id="canvas" class="canvas">
+                ${state.tiles.map(t=> html`<${Tile} key=${t.id} tile=${t} />`)}
+              </div>
+            </section>
+
+            <section class="panel">
+              <h3 style="margin-top:0;color:var(--muted)">Szybkie dodawanie</h3>
+              <div style="display:flex;flex-wrap:wrap;gap:8px">
+                ${["BTC","ETH","SOL","BNB","XRP","DOGE","ADA","ARB","APT","SUI"].map(s=> html`
+                  <button class="btn small" onClick=${()=>state.addTile(s)}>${s}</button>
+                `)}
+              </div>
+            </section>
+
+            ${PortfolioPanel()}
+            ${PricesPanel()}
+          </main>
+        </div>
+        <footer style="padding:18px;color:var(--muted);font-size:12px;text-align:center">
+          Wersja demonstracyjna bez zewnętrznych API. Backend/Prisma/Redis/Queue zasymulowane lokalnie. Dane i wykresy generowane proceduralnie.
+        </footer>
+        ${AuthModal()}
+      `;
+    }
+
+    // Auth modal
+    let authOpen = false;
+    let authMode = "login";
+    function openAuth(){ authOpen=true; rerender(); }
+    function closeAuth(){ authOpen=false; rerender(); }
+    function AuthModal(){
+      if(!authOpen) return null;
+      let email = "";
+      let pass = "";
+      const submit = async (e)=>{
+        e.preventDefault();
+        try{
+          if(authMode==="register"){
+            const res = await backend.register({ email, password: pass });
+            state.setToken(res.token);
+          }else{
+            const res = await backend.login({ email, password: pass });
+            state.setToken(res.token);
+          }
+          await state.refreshPortfolio();
+          closeAuth();
+        }catch(err){ alert(err.message||String(err)); }
+      };
+      return html`
+        <div class="modal">
+          <div class="panel" style="width:min(440px, calc(100vw - 32px))">
+            <h3 style="margin:0 0 10px 0;color:var(--muted)">Konto użytkownika</h3>
+            <div class="tabs">
+              <button class=${"tab "+(authMode==="login"?"active":"")} onClick=${()=>{authMode="login"; rerender();}}>Logowanie</button>
+              <button class=${"tab "+(authMode==="register"?"active":"")} onClick=${()=>{authMode="register"; rerender();}}>Rejestracja</button>
+            </div>
+            <form onSubmit=${submit}>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Email</div>
+              <input class="input" type="email" required placeholder="you@example.com" onInput=${e=> email = e.currentTarget.value } />
+              <div style="font-size:12px;color:var(--muted);margin:10px 0 6px">Hasło</div>
+              <input class="input" type="password" required minlength="4" placeholder="••••" onInput=${e=> pass = e.currentTarget.value } />
+              <div class="two-col" style="margin-top:12px">
+                <button class="btn" type="submit">Dalej</button>
+                <button class="btn alt" type="button" onClick=${closeAuth}>Anuluj</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render/app loop
+    function rerender(){
+      render(html`<${Dashboard}/>`, document.getElementById("root"));
+      drawWalletChart();
+      fitCanvas();
+    }
+
     function drawWalletChart(){
-      const c = ui.walletChart;
+      const c = document.getElementById("walletChart");
+      if(!c) return;
       const ctx = c.getContext("2d");
-      // resize for DPR
       const dpr = window.devicePixelRatio || 1;
       const rect = c.getBoundingClientRect();
       c.width = Math.max(320, rect.width * dpr);
       c.height = Math.max(160, 160 * dpr);
+      ctx.setTransform(1,0,0,1,0,0);
       ctx.scale(dpr, dpr);
       ctx.clearRect(0,0,rect.width, c.height/dpr);
-      // axes
+      // grid
       ctx.strokeStyle = "rgba(255,255,255,0.08)";
-      ctx.lineWidth = 1;
       for(let i=0;i<6;i++){
         const y = (i/5)*(c.height/dpr-20)+10;
         ctx.beginPath(); ctx.moveTo(8,y); ctx.lineTo(rect.width-8,y); ctx.stroke();
       }
-      // line
       if(walletHistory.length<2) return;
-      const data = walletHistory.slice(-Math.floor(intervalMap[currentInterval]/2));
+      const data = walletHistory.slice(-120);
       const min = Math.min(...data), max = Math.max(...data);
       const pad = 14;
       ctx.beginPath();
@@ -444,7 +842,6 @@
       ctx.strokeStyle = "rgba(106,169,255,1)";
       ctx.lineWidth = 2;
       ctx.stroke();
-      // fill
       ctx.lineTo(rect.width-pad, c.height/dpr-pad);
       ctx.lineTo(pad, c.height/dpr-pad);
       ctx.closePath();
@@ -454,397 +851,33 @@
       ctx.globalAlpha = 1;
     }
 
-    // Tiles and canvas behaviour
-    function updateAddedList(){
-      const uniq = [...new Set(tiles.map(t=>t.symbol))];
-      ui.addedList.innerHTML = "";
-      uniq.forEach(s=>{
-        const div = document.createElement("span");
-        div.className = "chip";
-        div.textContent = s;
-        ui.addedList.appendChild(div);
-      });
-    }
-
-    function createTileEl(tile){
-      const el = document.createElement("div");
-      el.className = "tile" + ((isLocked || tile.locked) ? " locked" : "");
-      Object.assign(el.style, {
-        left: (tile.x||0)+"px",
-        top: (tile.y||0)+"px",
-        width: (tile.w||defaultTileSize.w)+"px",
-        height: (tile.h||defaultTileSize.h)+"px"
-      });
-      el.dataset.id = tile.id;
-
-      const toolbar = document.createElement("div");
-      toolbar.className = "toolbar";
-      const title = document.createElement("div");
-      title.className = "title";
-      const priceObj = getPrices([tile.symbol])[tile.symbol];
-      const priceTxt = priceObj ? `$${Number(priceObj.price).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
-      title.textContent = `${tile.symbol} — ${priceTxt}`;
-      const actions = document.createElement("div");
-      actions.className = "actions";
-
-      const btnDup = document.createElement("button");
-      btnDup.className = "btn small alt"; btnDup.textContent = "Duplikuj";
-      btnDup.addEventListener("click",(e)=>{ e.stopPropagation(); addTile(tile.symbol); });
-
-      const btnLock = document.createElement("button");
-      btnLock.className = "btn small"; btnLock.textContent = tile.locked ? "Odblokuj" : "Zablokuj";
-      btnLock.addEventListener("click",(e)=>{ e.stopPropagation(); toggleLockTile(tile.id); });
-
-      const btnDel = document.createElement("button");
-      btnDel.className = "btn small alt"; btnDel.textContent = "Usuń";
-      btnDel.addEventListener("click",(e)=>{ e.stopPropagation(); removeTile(tile.id); });
-
-      actions.append(btnDup, btnLock, btnDel);
-      toolbar.append(title, actions);
-
-      const content = document.createElement("div");
-      content.className = "content";
-      const holder = document.createElement("div");
-      holder.className = "tv-holder";
-      holder.id = `tv_${tile.id}`;
-      content.appendChild(holder);
-
-      // simple procedural chart placeholder
-      holder.appendChild(makeMiniChartSVG(tile.symbol));
-
-      const stat = document.createElement("div");
-      stat.className = "statline";
-      const ch = priceObj?.ch24 ?? 0;
-      const cls = ch>0?"good": ch<0?"bad":"muted";
-      stat.innerHTML = `
-        <div><strong>${tile.symbol}</strong></div>
-        <div class="muted">Cena: <strong>${priceTxt}</strong></div>
-        <div class="${cls}">24h: <strong>${(ch>=0?"+":"") + ch.toFixed(2)}%</strong></div>
-        <div class="muted"></div>
-      `;
-
-      const res = document.createElement("div");
-      res.className = "resizer";
-
-      el.append(toolbar, content, res, stat);
-
-      // drag + magnet
-      if(!(isLocked || tile.locked)){
-        let drag=null, resize=null;
-        const magnet = 16; // px do przyciągania
-        const grid = 8; // siatka
-        toolbar.addEventListener("pointerdown", (e)=>{
-          el.setPointerCapture(e.pointerId);
-          drag = { sx:e.clientX, sy:e.clientY, ox: tile.x||0, oy: tile.y||0 };
-        });
-        el.addEventListener("pointermove", (e)=>{
-          if(drag){
-            const nx = Math.max(0, drag.ox + (e.clientX - drag.sx));
-            const ny = Math.max(0, drag.oy + (e.clientY - drag.sy));
-            // snap to grid
-            let gx = Math.round(nx/grid)*grid;
-            let gy = Math.round(ny/grid)*grid;
-            // magnet to canvas edges
-            const cw = Math.max(ui.canvas.clientWidth, ui.canvas.scrollWidth);
-            const ch = Math.max(ui.canvas.clientHeight, ui.canvas.scrollHeight);
-            const w = parseInt(el.style.width)||defaultTileSize.w;
-            const h = parseInt(el.style.height)||defaultTileSize.h;
-            if(Math.abs(gx - 0) <= magnet) gx = 0;
-            if(Math.abs((gx + w) - cw) <= magnet) gx = Math.max(0, cw - w);
-            if(Math.abs(gy - 0) <= magnet) gy = 0;
-            if(Math.abs((gy + h) - ch) <= magnet) gy = Math.max(0, ch - h);
-            el.style.left = gx+"px"; el.style.top = gy+"px";
-          }
-          if(resize){
-            const nw = Math.max(260, resize.ow + (e.clientX - resize.sx));
-            const nh = Math.max(180, resize.oh + (e.clientY - resize.sy));
-            // snap resize to grid
-            const rw = Math.round(nw/grid)*grid;
-            const rh = Math.round(nh/grid)*grid;
-            el.style.width = rw+"px"; el.style.height = rh+"px";
-          }
-        });
-        el.addEventListener("pointerup", ()=>{
-          if(drag){
-            const id = tile.id;
-            const t = tiles.find(t=>t.id===id);
-            t.x = parseInt(el.style.left); t.y = parseInt(el.style.top);
-            drag = null;
-            expandCanvasToFit(); // dopasuj płótno po ruchu
-          }
-          if(resize){
-            const id = tile.id;
-            const t = tiles.find(t=>t.id===id);
-            t.w = parseInt(el.style.width); t.h = parseInt(el.style.height);
-            resize = null;
-            expandCanvasToFit();
-          }
-        });
-        res.addEventListener("pointerdown", (e)=>{
-          e.stopPropagation();
-          el.setPointerCapture(e.pointerId);
-          resize = { sx:e.clientX, sy:e.clientY, ow: tile.w||defaultTileSize.w, oh: tile.h||defaultTileSize.h };
-        });
-      }
-
-      return el;
-    }
-
-    function makeMiniChartSVG(symbol){
-      const box = document.createElementNS("http://www.w3.org/2000/svg","svg");
-      box.setAttribute("viewBox","0 0 100 60");
-      box.setAttribute("width","100%");
-      box.setAttribute("height","100%");
-      // bg grid
-      for(let i=0;i<5;i++){
-        const y = 10 + i*10;
-        const line = document.createElementNS("http://www.w3.org/2000/svg","line");
-        line.setAttribute("x1","4"); line.setAttribute("x2","96");
-        line.setAttribute("y1",y); line.setAttribute("y2",y);
-        line.setAttribute("stroke","rgba(255,255,255,0.08)");
-        line.setAttribute("stroke-width","0.6");
-        box.appendChild(line);
-      }
-      // path
-      const seed = Math.abs([...symbol].reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0), 0))%1000 + Date.now()/2000;
-      const pts = [];
-      let v = 40 + Math.sin(seed)*6;
-      for(let i=0;i<40;i++){
-        v += (Math.random()-0.5)*2.2;
-        v = Math.min(55, Math.max(8, v));
-        pts.push([4 + i*(92/39), v]);
-      }
-      const d = pts.map((p,i)=> (i? "L":"M")+p[0].toFixed(2)+","+(60-p[1]).toFixed(2)).join(" ");
-      const path = document.createElementNS("http://www.w3.org/2000/svg","path");
-      path.setAttribute("d", d);
-      path.setAttribute("fill","none");
-      path.setAttribute("stroke","#6aa9ff");
-      path.setAttribute("stroke-width","1.5");
-      box.appendChild(path);
-      return box;
-    }
-
-    function renderTiles(){
-      ui.canvas.innerHTML = "";
-      tiles.forEach(t => {
-        const el = createTileEl(t);
-        ui.canvas.appendChild(el);
-      });
-      expandCanvasToFit();
-      updateAddedList();
-    }
-
-    function addTile(symbol){
-      const sym = (symbol || ui.symbolInput.value || "BTC").toUpperCase().replace(/[^A-Z0-9]/g,"");
-      const gap = 16;
-      const cols = Math.max(1, Math.floor((ui.canvas.clientWidth - gap) / (defaultTileSize.w + gap)));
-      const idx = tiles.length;
-      const x = gap + (idx % cols) * (defaultTileSize.w + gap);
-      const y = gap + Math.floor(idx / cols) * (defaultTileSize.h + gap);
-      tiles.push({ id: uuidv4(), symbol: sym, x, y, w: defaultTileSize.w, h: defaultTileSize.h, locked: false });
-      renderTiles();
-    }
-    function removeTile(id){
-      tiles = tiles.filter(t=>t.id!==id);
-      renderTiles();
-    }
-    function toggleLockTile(id){
-      const t = tiles.find(t=>t.id===id);
-      if(!t) return;
-      t.locked = !t.locked;
-      renderTiles();
-    }
-    function toggleLockAll(){
-      isLocked = !isLocked;
-      tiles.forEach(t=> t.locked = isLocked);
-      renderTiles();
-      ui.lockAll.textContent = isLocked ? "Odblokuj" : "Zablokuj";
-    }
-
-    function autoLayout(mode="fit"){
-      const gap = 16;
-      const W = ui.canvas.clientWidth || 960;
-      const colW = defaultTileSize.w, rowH = defaultTileSize.h;
-      let x=gap, y=gap, maxH=rowH;
-      tiles.forEach((t, idx)=>{
-        if(mode==="fit"){
-          if(x + colW + gap > W){ x=gap; y+= maxH + gap; maxH=rowH; }
-          t.x = x; t.y = y; t.w = colW; t.h = rowH; x += colW + gap;
-        }else{
-          t.x = gap + (idx*24)%Math.max(24, (W - colW - gap));
-          t.y = gap + idx*28;
-          t.w = colW; t.h = rowH;
-        }
-      });
-      renderTiles();
-    }
-
-    function expandCanvasToFit(){
-      // płótno rozszerza się aby wszystkie kafelki były widoczne
-      const gap = 16;
-      let maxRight = 0, maxBottom = 0;
-      tiles.forEach(t=>{
-        maxRight = Math.max(maxRight, (t.x||0) + (t.w||defaultTileSize.w));
-        maxBottom = Math.max(maxBottom, (t.y||0) + (t.h||defaultTileSize.h));
-      });
-      const targetW = Math.max(ui.canvas.clientWidth, Math.ceil(maxRight + gap));
-      const targetH = Math.max(ui.canvas.clientHeight, Math.ceil(maxBottom + gap));
-      ui.canvas.style.minWidth = targetW + "px";
-      ui.canvas.style.minHeight = targetH + "px";
-    }
-
-    // Wallet calculations
-    function computeWalletValue(){
-      let sum = 0;
-      // simple 1 unit per tile for demo
-      for(const t of tiles){
-        const p = getPrices([t.symbol])[t.symbol]?.price || 0;
-        sum += p;
-      }
-      return sum;
-    }
-    function computeWalletVol(){
-      // pseudo volatility based on price stddev of added symbols
-      const syms = [...new Set(tiles.map(t=>t.symbol))];
-      if(syms.length===0) return 0.01;
-      const vals = syms.map(s=>getPrices([s])[s].ch24);
-      const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
-      const variance = vals.reduce((a,b)=>a+Math.pow(b-avg,2),0)/vals.length;
-      return Math.sqrt(variance)/100; // convert %
-    }
-    function updateWalletStats(){
-      const v = computeWalletValue();
-      const ch = (Math.random()-0.5)*2 + (tiles.length? getPrices([tiles[0].symbol])[tiles[0].symbol].ch24 : 0)/10;
-      const vol = computeWalletVol();
-      ui.walletValue.textContent = "$" + (v||0).toLocaleString(undefined,{maximumFractionDigits:2});
-      const cls = ch>0?"good": ch<0?"bad":"muted";
-      ui.walletDelta.className = "delta " + cls;
-      ui.walletDelta.textContent = "zmiana 24h: " + (ch>=0?"+":"") + ch.toFixed(2) + "%";
-      ui.walletVol.textContent = (vol*100).toFixed(2) + "%";
-    }
-
-    // Auth (localStorage demo)
-    const LS_USER = "kd_user";
-    function getUser(){ try{ return JSON.parse(localStorage.getItem(LS_USER) || "null"); } catch{ return null; } }
-    function setUser(u){ localStorage.setItem(LS_USER, JSON.stringify(u)); refreshAuthUI(); }
-    function clearUser(){ localStorage.removeItem(LS_USER); refreshAuthUI(); }
-    function refreshAuthUI(){
-      const u = getUser();
-      ui.btnAuth.textContent = u ? ("Wyloguj ("+u.email+")") : "Zaloguj/Rejestruj";
-    }
-    ui.btnAuth.addEventListener("click", ()=>{
-      const u = getUser();
-      if(u){ clearUser(); return; }
-      ui.authModal.classList.remove("hidden");
-      ui.authMsg.textContent = "";
-    });
-    ui.authCancel.addEventListener("click", ()=> ui.authModal.classList.add("hidden"));
-    ui.authTabs.addEventListener("click", (e)=>{
-      if(e.target.matches(".tab")){
-        ui.authTabs.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-        e.target.classList.add("active");
-        ui.authForm.dataset.mode = e.target.dataset.mode;
-      }
-    });
-    ui.authForm.addEventListener("submit", (e)=>{
-      e.preventDefault();
-      const mode = ui.authForm.dataset.mode || "login";
-      const email = ui.authEmail.value.trim();
-      const pass = ui.authPass.value;
-      if(!email || pass.length<4){ ui.authMsg.textContent = "Podaj poprawne dane."; return; }
-      const user = getUser();
-      if(mode==="register"){
-        setUser({ email, passHash: simpleHash(pass) });
-        ui.authMsg.textContent = "Zarejestrowano i zalogowano.";
-        setTimeout(()=> ui.authModal.classList.add("hidden"), 600);
-      }else{
-        if(user && user.email===email && user.passHash===simpleHash(pass)){
-          ui.authMsg.textContent = "Zalogowano.";
-          setTimeout(()=> ui.authModal.classList.add("hidden"), 400);
-        }else{
-          ui.authMsg.textContent = "Błędny email lub hasło.";
-        }
-      }
-      refreshAuthUI();
-    });
-    function simpleHash(str){
-      let h = 2166136261;
-      for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = (h * 16777619)>>>0; }
-      return h.toString(16);
-    }
-
-    // Events
-    ui.addTile.addEventListener("click", ()=> addTile());
-    ui.addBtcTile.addEventListener("click", ()=> addTile("BTC"));
-    ui.autoLayout.addEventListener("click", ()=> autoLayout(ui.layoutMode.value));
-    ui.lockAll.addEventListener("click", ()=> toggleLockAll());
-    ui.clearAll.addEventListener("click", ()=> { tiles = []; renderTiles(); });
-
-    document.querySelectorAll("[data-quick]").forEach(b=>{
-      b.addEventListener("click", ()=> addTile(b.getAttribute("data-quick")));
-    });
-
-    // Animation / refresh loops
-    function tick(){
-      stepPrices();
-      renderPrices();
-      updateWalletStats();
-      if(walletHistory.length===0 || Math.random()<0.2) generateWalletHistory(180);
-      // update wallet chart slowly
-      if(walletHistory.length>0){
-        walletHistory.push(computeWalletValue()||walletHistory[walletHistory.length-1]);
-        if(walletHistory.length>240) walletHistory.shift();
-      }
+    // periodic updates
+    function loop(){
+      // prices and portfolio refresh
+      state.refreshPrices();
+      state.refreshPortfolio();
+      // wallet history drift
+      if(walletHistory.length===0 || Math.random()<0.25) generateWalletHistory(180);
+      walletHistory.push(computeWalletValue()||walletHistory[walletHistory.length-1]||0);
+      if(walletHistory.length>240) walletHistory.shift();
       drawWalletChart();
-      // update titles and inline charts for tiles
-      tiles.forEach(t=>{
-        const el = ui.canvas.querySelector(`.tile[data-id="${t.id}"]`);
-        if(!el) return;
-        const priceObj = getPrices([t.symbol])[t.symbol];
-        const priceTxt = priceObj ? `$${Number(priceObj.price).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
-        el.querySelector(".title").textContent = `${t.symbol} — ${priceTxt}`;
-        const holder = el.querySelector(".tv-holder");
-        holder.innerHTML = ""; holder.appendChild(makeMiniChartSVG(t.symbol));
-        const ch = priceObj?.ch24 ?? 0;
-        const cls = ch>0?"good": ch<0?"bad":"muted";
-        const stat = el.querySelector(".statline");
-        stat.innerHTML = `
-          <div><strong>${t.symbol}</strong></div>
-          <div class="muted">Cena: <strong>${priceTxt}</strong></div>
-          <div class="${cls}">24h: <strong>${(ch>=0?"+":"") + ch.toFixed(2)}%</strong></div>
-          <div class="muted"></div>
-        `;
-      });
-      requestAnimationFrame(()=>setTimeout(tick, 800)); // ~1.25 FPS to be light for mobile
+      // tiles mini-line rerender (cheap via rerender)
+      rerender();
+      setTimeout(loop, 1200);
     }
 
-    ui.intervalTabs.addEventListener("click",(e)=>{
-      if(!e.target.matches(".tab")) return;
-      ui.intervalTabs.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-      e.target.classList.add("active");
-      currentInterval = e.target.dataset.int;
+    // bootstrap
+    (function init(){
+      stepPrices(); // seed
+      state.addTile("BTC");
+      state.addTile("ETH");
+      state.refreshPrices();
+      state.refreshPortfolio();
       generateWalletHistory(180);
-      drawWalletChart();
-    });
-
-    window.addEventListener("resize", ()=>{
-      expandCanvasToFit();
-      drawWalletChart();
-    }, { passive:true });
-
-    // Init
-    function init(){
-      refreshAuthUI();
-      renderPrices();
-      renderTiles();
-      generateWalletHistory(180);
-      drawWalletChart();
-      ui.status.textContent = "OK";
-      // preload a few tiles on mobile for showcase
-      if(tiles.length===0){ addTile("BTC"); addTile("ETH"); }
-      tick();
-    }
-    init();
+      rerender();
+      loop();
+      window.addEventListener("resize", ()=>{ fitCanvas(); drawWalletChart(); });
+    })();
   </script>
 </body>
 </html>
