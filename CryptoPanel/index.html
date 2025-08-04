@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Krypto Dashboard – Surowe okna TradingView + logowanie Google/MetaMask (offline)</title>
+  <title>Krypto Dashboard – Interaktywny panel z wykresami (offline, GitHub Pages ready)</title>
   <style>
     :root{
       --bg:#0b1020;
@@ -91,7 +91,6 @@
       min-height: 520px;overflow:auto;
     }
 
-    /* SUROWE OKNA TRADINGVIEW: minimalny chrome, żadnego przechwytywania kursora na hover */
     .tile{
       position:absolute;
       background: #0b1330;
@@ -107,21 +106,16 @@
       display:flex;align-items:center;justify-content:space-between;gap:6px;
       padding:6px 8px;border-bottom:1px solid var(--border);
       background:#0c1230;
-      /* krytyczne: brak aktywacji drag na hover */
       cursor: default;
       user-select:none;
     }
-    .grabber{
-      display:flex;align-items:center;gap:6px;
-    }
+    .grabber{display:flex;align-items:center;gap:6px}
     .grab-handle{
       width:14px;height:14px;border-radius:3px;border:1px dashed rgba(255,255,255,0.25);
       background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
       cursor: grab;
     }
-    .title{
-      font-size:12px;color:var(--muted)
-    }
+    .title{font-size:12px;color:var(--muted)}
     .actions{display:flex;gap:6px;flex-wrap:wrap}
     .content{position:relative;flex:1;min-height:140px}
     .tv-holder{position:absolute;inset:0}
@@ -168,7 +162,7 @@
     const html = htm.bind(h);
 
     // In-memory DB
-    const DB_KEY = "kd_db_v3_tv_raw";
+    const DB_KEY = "kd_db_v4_tv_raw";
     const defaultDB = { users: [], wallets: {}, tokens: [], txs: [], pricesCache: {}, ohlcCache: {} };
     const db = loadDB();
     function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY)) || structuredClone(defaultDB);}catch{ return structuredClone(defaultDB);} }
@@ -225,7 +219,14 @@
       }
       saveDB();
     }
-    setInterval(stepPrices, 1000);
+    // Warm up OHLC for first view
+    if(!Object.keys(db.ohlcCache).length){
+      for(const s of Object.keys(basePrices)){
+        db.ohlcCache[s] = [];
+      }
+      for(let i=0;i<120;i++){ stepPrices(); }
+    }
+    setInterval(()=>{ stepPrices(); state.refreshPrices(); for(const t of state.tiles){ const api = tvCharts[t.id]; if(api) api.redraw(); } drawWalletChart(true); }, 1000);
 
     // Backend mock
     const backend = {
@@ -240,7 +241,6 @@
         if(!user || !verifyPass(password, user.password)) throw new Error("Błędne dane");
         return { token: makeToken({ uid: user.id, email }) };
       },
-      // "Google" offline mock: popup with email field, marks provider
       async loginGoogle(){
         const email = prompt("Podaj email Google (demo offline):", "user@gmail.com");
         if(!email) throw new Error("Anulowano");
@@ -251,7 +251,6 @@
         }
         return { token: makeToken({ uid: user.id, email, provider: "google" }) };
       },
-      // MetaMask-like offline mock: uses window.ethereum when dostępne; w innej sytuacji generuje lokalny portfel i pseudo-balance
       async loginMetaMask(){
         let addr;
         if(window.ethereum && typeof window.ethereum.request==="function"){
@@ -263,18 +262,14 @@
           }
         }
         if(!addr){
-          // offline fallback: wygeneruj pseudo-adres
           addr = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b=>b.toString(16).padStart(2,"0")).join("");
         }
-        // Zapisz/uaktualnij użytkownika portfelowego
         let user = db.users.find(u=>u.email===addr);
         if(!user){
           user = { id: uuidv4(), email: addr, password: "", createdAt: Date.now(), updatedAt: Date.now(), provider: "metamask" };
           db.users.push(user);
         }
-        // Zbuduj demo-balances jak w debank (bez społeczności)
         const balances = Object.keys(basePrices).slice(0,6).map(sym=>{
-          // pseudo-balance zależny od adresu
           const seed = addr.slice(2,10);
           let x = 0; for(const c of seed) x += c.charCodeAt(0);
           const amount = ((x % 100)/10 + Math.random()).toFixed(4);
@@ -319,7 +314,6 @@
       },
       async portfolio(token){
         const me = await backend.me(token);
-        // scal: ręczne pozycje + portfel z MetaMask mock
         const manualItems = db.tokens.filter(t=>t.userId===me.id && t.amount>0);
         const wallet = db.wallets[me.id]?.balances || [];
         const combined = new Map();
@@ -328,7 +322,7 @@
           const cur = combined.get(key) || { symbol:key, amount:0, avgPurchasePrice:0, _cost:0 };
           cur.amount += it.amount;
           cur._cost += it.amount * it.purchasePrice;
-          cur.avgPurchasePrice = cur._cost / cur.amount;
+          cur.avgPurchasePrice = cur._cost / (cur.amount || 1);
           combined.set(key, cur);
         }
         for(const w of wallet){
@@ -402,10 +396,10 @@
       const syms = [...new Set(state.tiles.map(t=>t.symbol))];
       let sum = 0;
       for(const s of syms){ sum += (db.pricesCache[s]?.price || lastPrice[s] || 0); }
-      return sum;
+      return sum || 1000;
     }
     function generateWalletHistory(points=180){
-      const total = computeWalletValue() || 1000;
+      const total = computeWalletValue();
       const vol = 0.006;
       const arr = [];
       let v = total;
@@ -478,7 +472,7 @@
         return Math.min(count-1, Math.max(0, i));
       }
 
-      // Zoom/pan with wheel and drag on canvas only (not on hover)
+      // Zoom/pan
       let isPanning = false;
       let panStartX = 0, panStartView = 0;
       canvas.addEventListener("wheel", (e)=>{
@@ -669,7 +663,7 @@
             <div class="logo" aria-hidden="true"></div>
             <div>
               <h1 style="margin:0;font-size:18px">Krypto Dashboard</h1>
-              <div class="muted" style="font-size:12px">Surowe okna TradingView; drag tylko po kliknięciu w górny pasek</div>
+              <div class="muted" style="font-size:12px">Profesjonalny panel z surowymi oknami wykresów, drag po uchwycie</div>
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -726,7 +720,7 @@
                   <button class=${"tab "+(walletInterval===int?"active":"")} onClick=${()=>{ walletInterval=int; generateWalletHistory(180); rerender(); }}>${int}</button>
                 `)}
               </div>
-              <canvas id="walletChart" height="140" style="width:100%;display:block;border:1px solid var(--border);border-radius:10px;background:linear-gradient(180deg, rgba(24,36,80,0.25), rgba(12,18,40,0.35))"></canvas>
+              <canvas id="walletChart" height="160" style="width:100%;display:block;border:1px solid var(--border);border-radius:10px;background:linear-gradient(180deg, rgba(24,36,80,0.25), rgba(12,18,40,0.35))"></canvas>
             </div>
           </div>
           <div style="margin-top:12px;overflow:auto">
@@ -898,12 +892,9 @@
       `;
     }
 
-    // Tile with "raw" TV window behavior: drag ONLY when grabbing the handle in toolbar
+    // Tile with "raw" TV window behavior
     function Tile({tile}){
-      // DRAG: aktywne wyłącznie po kliknięciu w uchwyt .grab-handle
-      const onToolbarPointerDown = (e)=>{
-        // ignorujemy, toolbar sam w sobie nie zaczyna drag
-      };
+      const onToolbarPointerDown = ()=>{};
       const onGrabDown = (e)=>{
         const tileRoot = e.currentTarget.closest(".tile");
         tileRoot.setPointerCapture(e.pointerId);
@@ -937,7 +928,6 @@
       };
       const onResizeUp = ()=>{ resize=null; };
 
-      // mount/refresh chart
       setTimeout(async ()=>{
         const holder = document.getElementById("tv_"+tile.id);
         if(!holder) return;
@@ -1019,7 +1009,7 @@
           </main>
         </div>
         <footer style="padding:18px;color:var(--muted);font-size:12px;text-align:center">
-          Demo offline. Surowe okna TV; przeciągasz tylko po kliknięciu w uchwyt na górnym pasku. Logowanie: hasło/Google (mock), MetaMask (real lub mock). Tokeny jak w DeBank (bez społeczności/postów).
+          Demo offline. Działa w 100% na GitHub Pages. Wykresy świecowe, narzędzia (crosshair, trend, linia, prostokąt, fibo), drag/resize okien. Logowanie: hasło/Google (mock), MetaMask (real lub mock). Dane są proceduralnie generowane lokalnie.
         </footer>
         ${AuthModal()}
       `;
@@ -1100,33 +1090,83 @@
       fitCanvas();
     }
 
-    function drawWalletChart(){
+    function drawWalletChart(live=false){
       const c = document.getElementById("walletChart");
       if(!c) return;
       const ctx = c.getContext("2d");
       const dpr = window.devicePixelRatio || 1;
       const rect = c.getBoundingClientRect();
-      c.width = Math.max(320, rect.width * dpr);
-      c.height = Math.max(160, 160 * dpr);
+      const widthCSS = Math.max(320, rect.width);
+      const heightCSS = 160;
+      c.width = widthCSS * dpr;
+      c.height = heightCSS * dpr;
       ctx.setTransform(1,0,0,1,0,0);
       ctx.scale(dpr, dpr);
-      ctx.clearRect(0,0,rect.width, c.height/dpr);
+      ctx.clearRect(0,0,widthCSS,heightCSS);
+
+      // grid
       ctx.strokeStyle = "rgba(255,255,255,0.08)";
       for(let i=0;i<6;i++){
-        const y = (i/5)*(c.height/dpr-20)+10;
-        ctx.beginPath(); ctx.moveTo(8,y); ctx.lineTo(rect.width-8,y); ctx.stroke();
+        const y = (i/5)*(heightCSS-20)+10;
+        ctx.beginPath(); ctx.moveTo(8,y); ctx.lineTo(widthCSS-8,y); ctx.stroke();
       }
-      if(walletHistory.length<2) return;
+
+      if(walletHistory.length<2) generateWalletHistory(180);
+      if(live){
+        const base = computeWalletValue();
+        walletHistory.push(base*(0.98+Math.random()*0.04));
+        if(walletHistory.length>240) walletHistory.shift();
+      }
       const data = walletHistory.slice(-120);
       const min = Math.min(...data), max = Math.max(...data);
       const pad = 14;
+
+      const grad = ctx.createLinearGradient(0,0,0,heightCSS);
+      grad.addColorStop(0,"rgba(106,169,255,0.9)");
+      grad.addColorStop(1,"rgba(106,169,255,0.15)");
+
+      // area
       ctx.beginPath();
       data.forEach((v,i)=>{
-        const x = pad + i*( (rect.width-2*pad)/(data.length-1) );
-        const y = (c.height/dpr - pad) - ((v-min)/(max-min||1))*(c.height/dpr - 2*pad);
+        const x = pad + i*( (widthCSS-2*pad)/(data.length-1) );
+        const y = (heightCSS - pad) - ((v-min)/(max-min||1))*(heightCSS - 2*pad);
         if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       });
-      const grad = ctx.createLinearGradient(0,0,0,c.height/dpr);
-      grad.addColorStop(0,"rgba(106,169,255,0.9)");
-      grad.addColorStop(1,"rgba(106,169,255,0.2)");
-      ctx.strokeStyle = "rgba(106,169,255,1
+      const lastX = pad + (data.length-1)*( (widthCSS-2*pad)/(data.length-1) );
+      const lastY = (heightCSS - pad) - ((data[data.length-1]-min)/(max-min||1))*(heightCSS - 2*pad);
+      ctx.lineTo(lastX, heightCSS - pad);
+      ctx.lineTo(pad, heightCSS - pad);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(106,169,255,0.12)";
+      ctx.fill();
+
+      // line
+      ctx.beginPath();
+      data.forEach((v,i)=>{
+        const x = pad + i*( (widthCSS-2*pad)/(data.length-1) );
+        const y = (heightCSS - pad) - ((v-min)/(max-min||1))*(heightCSS - 2*pad);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // last point dot
+      ctx.fillStyle = "#6aa9ff";
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 3, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // Initial
+    (async function init(){
+      await state.refreshPrices();
+      await state.refreshPortfolio();
+      if(state.tiles.length===0){ state.addTile("BTC"); }
+      generateWalletHistory(180);
+      rerender();
+    })();
+
+  </script>
+</body>
+</html>
