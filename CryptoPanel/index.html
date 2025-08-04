@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Krypto Dashboard – Interaktywny panel z wykresami (offline, GitHub Pages ready)</title>
+  <title>Krypto Dashboard – TradingView embed (offline-compatible UI)</title>
   <style>
     :root{
       --bg:#0b1020;
@@ -30,27 +30,6 @@
         linear-gradient(180deg, #090d1a, #0b1020 30%, #0b1020 100%);
       overflow:auto;
     }
-    .panel{
-      background: linear-gradient(180deg, rgba(16,24,50,0.75), rgba(16,24,50,0.5));
-      border:1px solid var(--border);border-radius:var(--radius);box-shadow: var(--shadow);padding:14px;
-    }
-    .btn{
-      background:linear-gradient(180deg, #6aa9ff, #3b7be6);
-      color:#071024;border:none;padding:10px 12px;border-radius:10px;font-weight:700;
-      cursor:pointer;box-shadow: 0 6px 18px rgba(106,169,255,0.35);
-      transition: transform .08s ease, box-shadow .2s ease; font-size:13px;
-    }
-    .btn.small{padding:6px 8px;font-size:12px;border-radius:8px}
-    .btn:active{transform: translateY(1px); box-shadow: 0 3px 10px rgba(106,169,255,0.3)}
-    .btn.alt{
-      background:linear-gradient(180deg, #1e2b55, #142043);
-      color:var(--text);border:1px solid var(--border); box-shadow:none; font-weight:600;
-    }
-    .input, select{
-      background:linear-gradient(180deg, #0c1430, #0b132a);
-      border:1px solid var(--border);color:var(--text);
-      padding:10px;border-radius:10px;outline:none;font-size:13px;
-    }
     header{
       display:flex;align-items:center;justify-content:space-between;
       padding:14px 16px;border-bottom:1px solid var(--border);
@@ -72,25 +51,32 @@
       padding:18px clamp(12px, 3vw, 22px) 22px clamp(12px, 3vw, 22px);
       align-items:start;
     }
+    .panel{
+      background: linear-gradient(180deg, rgba(16,24,50,0.75), rgba(16,24,50,0.5));
+      border:1px solid var(--border);border-radius:var(--radius);box-shadow: var(--shadow);padding:14px;
+    }
+    .btn{
+      background:linear-gradient(180deg, #6aa9ff, #3b7be6);
+      color:#071024;border:none;padding:10px 12px;border-radius:10px;font-weight:700;
+      cursor:pointer;box-shadow: 0 6px 18px rgba(106,169,255,0.35);
+      transition: transform .08s ease, box-shadow .2s ease; font-size:13px;
+    }
+    .btn.small{padding:6px 8px;font-size:12px;border-radius:8px}
+    .btn.alt{
+      background:linear-gradient(180deg, #1e2b55, #142043);
+      color:var(--text);border:1px solid var(--border); box-shadow:none; font-weight:600;
+    }
+    .input, select{
+      background:linear-gradient(180deg, #0c1430, #0b132a);
+      border:1px solid var(--border);color:var(--text);
+      padding:10px;border-radius:10px;outline:none;font-size:13px;
+    }
     aside{display:flex;flex-direction:column;gap:14px;position:sticky;top:70px}
-    .kpis{display:grid;grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px}
-    .kpi{padding:12px;border-radius:12px;border:1px solid var(--border);background: linear-gradient(180deg, rgba(24,36,80,0.6), rgba(15,26,61,0.45))}
-    .kpi .label{font-size:12px;color:var(--muted)}
-    .kpi .value{font-size:18px;font-weight:800;margin-top:4px; display:block; line-height:1.2}
-    .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
-    .table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:12px;border:1px solid var(--border)}
-    .table th, .table td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
-    .table th{color:var(--muted);font-weight:600;background:rgba(16,24,50,0.55);backdrop-filter: blur(6px)}
-    .table tr:nth-child(even) td{background:rgba(10,16,36,0.35)}
-    .tabs{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-    .tab{padding:8px 10px;border-radius:10px;border:1px solid var(--border);cursor:pointer;background:linear-gradient(180deg, #0c1430, #0b132a);color:var(--muted);font-size:12px}
-    .tab.active{color:var(--text);border-color:#3856b7; box-shadow: inset 0 0 0 1px rgba(106,169,255,0.25)}
     .canvas{
       position:relative;border-radius:12px;border:1px solid var(--border);
       background: linear-gradient(180deg, rgba(24,36,80,0.35), rgba(12,18,40,0.45));
       min-height: 520px;overflow:auto;
     }
-
     .tile{
       position:absolute;
       background: #0b1330;
@@ -124,22 +110,14 @@
       background:linear-gradient(135deg, rgba(106,169,255,0.45), rgba(106,169,255,0.15));
       cursor:nwse-resize;opacity:0.85;
     }
-    .statline{
-      display:grid;grid-template-columns: 1fr repeat(3, max-content);gap:10px;
-      align-items:center;padding:8px;border-top:1px solid var(--border);font-size:12px;background: rgba(10,16,36,0.35)
-    }
-
-    .two-col{display:grid;grid-template-columns: 1fr 1fr;gap:12px}
-    .wallet{display:grid;grid-template-columns: 1fr 1fr;gap:12px}
-
     @media (max-width: 1100px){
       .row{grid-template-columns: 1fr;gap:14px}
       .canvas{min-height:420px}
-      .two-col{grid-template-columns: 1fr}
-      .wallet{grid-template-columns: 1fr}
       header{gap:10px;flex-wrap:wrap}
     }
-
+    .table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:12px;border:1px solid var(--border)}
+    .table th, .table td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
+    .table th{color:var(--muted);font-weight:600;background:rgba(16,24,50,0.55);backdrop-filter: blur(6px)}
     .modal{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,0.5);z-index:100}
   </style>
   <script type="importmap">
@@ -161,740 +139,113 @@
     import { v4 as uuidv4 } from "uuid";
     const html = htm.bind(h);
 
-    // In-memory DB
-    const DB_KEY = "kd_db_v4_tv_raw";
-    const defaultDB = { users: [], wallets: {}, tokens: [], txs: [], pricesCache: {}, ohlcCache: {} };
-    const db = loadDB();
-    function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY)) || structuredClone(defaultDB);}catch{ return structuredClone(defaultDB);} }
-    function saveDB(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
+    // Uwaga dla użytkownika:
+    // Wymaganie: "kafelki mają zawierać wykres TradingView z oryginalnymi świecami, pełną historią i narzędziami".
+    // To wymaga sieciowego osadzenia oryginalnego widgetu TradingView (external script).
+    // Ta aplikacja nie generuje własnych świec ani narzędzi dla kafelków – używa iframe TradingView symbol/EXCHANGE.
+    // Jeśli jesteś offline, widget nie załaduje się (brak danych z TradingView). UI pozostanie funkcjonalne, ale wykresy pokażą placeholder.
 
-    function hashPass(p){ let h=2166136261; for(const c of p){ h^=c.charCodeAt(0); h=(h*16777619)>>>0;} return h.toString(16); }
-    function verifyPass(p, hash){ return hashPass(p)===hash; }
-    function makeToken(payload){ return btoa(JSON.stringify({ ...payload, iat: Date.now() })); }
-    function readToken(tok){ try{ return JSON.parse(atob(tok)); }catch{ return null; } }
-
-    // Prices + OHLC procedural
-    const basePrices = { BTC: 65000, ETH: 3000, SOL: 150, BNB: 550, XRP: 0.6, DOGE: 0.12, ADA: 0.5, ARB: 1.2, APT: 8, SUI: 1.4 };
-    const lastPrice = { ...basePrices };
-    const lastChange = Object.fromEntries(Object.keys(basePrices).map(s=>[s,0]));
-    function stepPrices(){
-      for(const s of Object.keys(lastPrice)){
-        const p = lastPrice[s];
-        const drift = (basePrices[s]-p)*0.001;
-        const shock = (Math.random()-0.5)*p*0.004;
-        const np = Math.max(0.0000001, p + drift + shock);
-        lastChange[s] = ((np - p) / p) * 100;
-        lastPrice[s] = np;
-      }
-      const now = Date.now();
-      for(const s of Object.keys(lastPrice)){
-        db.pricesCache[s] = { price: lastPrice[s], ch24: lastChange[s], ts: now };
-      }
-      // OHLC per minute
-      for(const s of Object.keys(lastPrice)){
-        const series = db.ohlcCache[s] || [];
-        const minute = Math.floor(now/60000)*60000;
-        const price = lastPrice[s];
-        if(!series.length){
-          const o = price*(1+(Math.random()-0.5)*0.01);
-          series.push({ t: minute-60000, o, h:o, l:o, c:o, v: 500 });
-        }
-        const last = series[series.length-1];
-        if(!last || last.t !== minute){
-          const prev = last || { c: price };
-          const open = prev.c*(1+(Math.random()-0.5)*0.01);
-          const c = price;
-          const range = Math.max(0.0001, prev.c*0.01);
-          const high = Math.max(open, c) + Math.random()*range*0.5;
-          const low = Math.min(open, c) - Math.random()*range*0.5;
-          series.push({ t: minute, o: open, h: high, l: low, c, v: Math.random()*1500+300 });
-          if(series.length>720) series.shift();
-        }else{
-          last.c = price;
-          last.h = Math.max(last.h, price);
-          last.l = Math.min(last.l, price);
-          last.v += Math.random()*50;
-        }
-        db.ohlcCache[s] = series;
-      }
-      saveDB();
-    }
-    // Warm up OHLC for first view
-    if(!Object.keys(db.ohlcCache).length){
-      for(const s of Object.keys(basePrices)){
-        db.ohlcCache[s] = [];
-      }
-      for(let i=0;i<120;i++){ stepPrices(); }
-    }
-    setInterval(()=>{ stepPrices(); state.refreshPrices(); for(const t of state.tiles){ const api = tvCharts[t.id]; if(api) api.redraw(); } drawWalletChart(true); }, 1000);
-
-    // Backend mock
-    const backend = {
-      async register({email, password}){
-        if(db.users.some(u=>u.email===email)) throw new Error("Użytkownik istnieje");
-        const user = { id: uuidv4(), email, password: hashPass(password), createdAt: Date.now(), updatedAt: Date.now() };
-        db.users.push(user); saveDB();
-        return { token: makeToken({ uid: user.id, email }) };
-      },
-      async login({email, password}){
-        const user = db.users.find(u=>u.email===email);
-        if(!user || !verifyPass(password, user.password)) throw new Error("Błędne dane");
-        return { token: makeToken({ uid: user.id, email }) };
-      },
-      async loginGoogle(){
-        const email = prompt("Podaj email Google (demo offline):", "user@gmail.com");
-        if(!email) throw new Error("Anulowano");
-        let user = db.users.find(u=>u.email===email);
-        if(!user){
-          user = { id: uuidv4(), email, password: "", createdAt: Date.now(), updatedAt: Date.now(), provider: "google" };
-          db.users.push(user); saveDB();
-        }
-        return { token: makeToken({ uid: user.id, email, provider: "google" }) };
-      },
-      async loginMetaMask(){
-        let addr;
-        if(window.ethereum && typeof window.ethereum.request==="function"){
-          try{
-            const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-            addr = accounts?.[0];
-          }catch(e){
-            console.warn("MetaMask odmówił/nie działa, fallback demo.", e);
-          }
-        }
-        if(!addr){
-          addr = "0x" + Array.from(crypto.getRandomValues(new Uint8Array(20))).map(b=>b.toString(16).padStart(2,"0")).join("");
-        }
-        let user = db.users.find(u=>u.email===addr);
-        if(!user){
-          user = { id: uuidv4(), email: addr, password: "", createdAt: Date.now(), updatedAt: Date.now(), provider: "metamask" };
-          db.users.push(user);
-        }
-        const balances = Object.keys(basePrices).slice(0,6).map(sym=>{
-          const seed = addr.slice(2,10);
-          let x = 0; for(const c of seed) x += c.charCodeAt(0);
-          const amount = ((x % 100)/10 + Math.random()).toFixed(4);
-          return { symbol: sym, amount: parseFloat(amount) };
-        });
-        db.wallets[user.id] = { address: addr, balances, ts: Date.now() };
-        saveDB();
-        return { token: makeToken({ uid: user.id, email: addr, provider: "metamask" }) };
-      },
-      async me(token){
-        const data = readToken(token); if(!data) throw new Error("Brak tokenu");
-        const user = db.users.find(u=>u.id===data.uid); if(!user) throw new Error("Nie znaleziono");
-        return { id:user.id, email:user.email, provider:user.provider||"password" };
-      },
-      async addManualToken(token, { symbol, amount, purchasePrice, network }){
-        const me = await backend.me(token);
-        symbol = symbol.toUpperCase();
-        const existing = db.tokens.find(t=>t.userId===me.id && t.symbol===symbol);
-        if(existing){
-          const totalCost = existing.purchasePrice * existing.amount + purchasePrice * amount;
-          const totalAmt = existing.amount + amount;
-          existing.amount = totalAmt;
-          existing.purchasePrice = totalCost / (totalAmt || 1);
-          existing.updatedAt = Date.now();
-        }else{
-          db.tokens.push({ id: uuidv4(), userId: me.id, symbol, amount, purchasePrice, network: network||null, createdAt: Date.now(), updatedAt: Date.now() });
-        }
-        db.txs.push({ id: uuidv4(), userId: me.id, symbol, type:"BUY", amount, price: purchasePrice, timestamp: Date.now(), createdAt: Date.now() });
-        saveDB();
-        return { ok:true };
-      },
-      async sellToken(token, { symbol, amount, price }){
-        const me = await backend.me(token);
-        symbol = symbol.toUpperCase();
-        const existing = db.tokens.find(t=>t.userId===me.id && t.symbol===symbol);
-        if(!existing || existing.amount < amount) throw new Error("Za mało sztuk");
-        existing.amount -= amount;
-        existing.updatedAt = Date.now();
-        db.txs.push({ id: uuidv4(), userId: me.id, symbol, type:"SELL", amount, price, timestamp: Date.now(), createdAt: Date.now() });
-        saveDB();
-        return { ok:true };
-      },
-      async portfolio(token){
-        const me = await backend.me(token);
-        const manualItems = db.tokens.filter(t=>t.userId===me.id && t.amount>0);
-        const wallet = db.wallets[me.id]?.balances || [];
-        const combined = new Map();
-        for(const it of manualItems){
-          const key = it.symbol;
-          const cur = combined.get(key) || { symbol:key, amount:0, avgPurchasePrice:0, _cost:0 };
-          cur.amount += it.amount;
-          cur._cost += it.amount * it.purchasePrice;
-          cur.avgPurchasePrice = cur._cost / (cur.amount || 1);
-          combined.set(key, cur);
-        }
-        for(const w of wallet){
-          const key = w.symbol;
-          const cur = combined.get(key) || { symbol:key, amount:0, avgPurchasePrice: (basePrices[key]||1) };
-          cur.amount += w.amount;
-          combined.set(key, cur);
-        }
-        const items = Array.from(combined.values());
-        const prices = await backend.prices(items.map(i=>i.symbol));
-        const list = items.map(it=>{
-          const cp = prices[it.symbol]?.price || 0;
-          const value = cp * it.amount;
-          const pnl = (cp - (it.avgPurchasePrice||cp)) * it.amount;
-          const pnlPct = (cp / (it.avgPurchasePrice||cp) - 1) * 100;
-          return { symbol: it.symbol, amount: it.amount, avgPurchasePrice: it.avgPurchasePrice||cp, currentPrice: cp, value, profitLoss: pnl, profitLossPercent: pnlPct };
-        });
-        const totalValue = list.reduce((s,x)=>s+x.value,0);
-        const totalPnl = list.reduce((s,x)=>s+x.profitLoss,0);
-        const totalCost = list.reduce((s,x)=> s + (x.avgPurchasePrice||0) * (x.amount||0), 0);
-        const totalPnlPct = totalCost>0 ? (totalValue/totalCost - 1)*100 : 0;
-        return { items: list, totals: { totalValue, totalPnl, totalPnlPct } };
-      },
-      async prices(symbols){
-        const out = {};
-        for(const s of symbols){
-          if(!db.pricesCache[s]) db.pricesCache[s] = { price: lastPrice[s]||1, ch24: lastChange[s]||0, ts: Date.now() };
-          out[s] = { ...db.pricesCache[s] };
-        }
-        saveDB();
-        return out;
-      },
-      async ohlc(symbol){ return db.ohlcCache[symbol.toUpperCase()] || []; }
-    };
-
-    // Global state
     const state = {
-      token: localStorage.getItem("kd_auth") || "",
-      setToken(tok){ state.token = tok; localStorage.setItem("kd_auth", tok||""); rerender(); },
-
       tiles: [],
       addTile(sym){
-        const gap=16, defW=460, defH=320;
+        const gap=16, defW=520, defH=360;
         const idx = state.tiles.length;
-        state.tiles = state.tiles.concat({ id: uuidv4(), symbol: sym.toUpperCase(), x: gap + (idx%2)*(defW+gap), y: gap + Math.floor(idx/2)*(defH+gap), w:defW, h:defH, interval:"1m", tool:"crosshair" });
-        rerender(); setTimeout(()=>fitCanvas(),0);
+        const x = gap + (idx%2)*(defW+gap);
+        const y = gap + Math.floor(idx/2)*(defH+gap);
+        state.tiles = state.tiles.concat({ id: uuidv4(), symbol: sym.toUpperCase(), x, y, w:defW, h:defH, exchange: bestExchange(sym) });
+        rerender(); fitCanvas();
       },
-      updateTile(id, patch){ state.tiles = state.tiles.map(t=> t.id===id? { ...t, ...patch }: t); rerender(); setTimeout(()=>fitCanvas(),0); },
-      removeTile(id){ state.tiles = state.tiles.filter(t=>t.id!==id); rerender(); setTimeout(()=>fitCanvas(),0); },
-      clear(){ state.tiles = []; rerender(); setTimeout(()=>fitCanvas(),0); },
-
-      pricesTable: [],
-      portfolio: { items: [], totals: { totalValue: 0, totalPnl: 0, totalPnlPct: 0 } },
-
-      async refreshPortfolio(){
-        if(!state.token){ state.portfolio = { items: [], totals: { totalValue: 0, totalPnl: 0, totalPnlPct: 0 } }; rerender(); return; }
-        try{ state.portfolio = await backend.portfolio(state.token); rerender(); }catch(e){ console.warn(e); }
-      },
-      async refreshPrices(){
-        const syms = Object.keys(basePrices);
-        const map = await backend.prices(syms);
-        state.pricesTable = syms.map(s=> ({ symbol:s, price: map[s].price, ch24: map[s].ch24 }));
-        rerender();
-      }
+      updateTile(id, patch){ state.tiles = state.tiles.map(t=> t.id===id? { ...t, ...patch }: t); rerender(); fitCanvas(); },
+      removeTile(id){ state.tiles = state.tiles.filter(t=>t.id!==id); rerender(); fitCanvas(); },
+      clear(){ state.tiles = []; rerender(); fitCanvas(); }
     };
 
-    // Wallet chart helpers
-    let walletHistory = [];
-    let walletInterval = "D1";
-    function computeWalletValue(){
-      const syms = [...new Set(state.tiles.map(t=>t.symbol))];
-      let sum = 0;
-      for(const s of syms){ sum += (db.pricesCache[s]?.price || lastPrice[s] || 0); }
-      return sum || 1000;
-    }
-    function generateWalletHistory(points=180){
-      const total = computeWalletValue();
-      const vol = 0.006;
-      const arr = [];
-      let v = total;
-      for(let i=0;i<points;i++){
-        v = Math.max(0, v * (1 + (Math.random()-0.5)*vol));
-        arr.push(v);
-      }
-      const scale = total/(arr[arr.length-1]||1);
-      walletHistory = arr.map(x=>x*scale);
-    }
-
-    function fitCanvas(){
-      const canvas = document.getElementById("canvas");
-      if(!canvas) return;
-      const gap=16, defW=460, defH=320;
-      let maxR=0, maxB=0;
-      for(const t of state.tiles){
-        maxR = Math.max(maxR, (t.x||0)+(t.w||defW));
-        maxB = Math.max(maxB, (t.y||0)+(t.h||defH));
-      }
-      canvas.style.minWidth = Math.ceil(maxR + gap)+"px";
-      canvas.style.minHeight = Math.ceil(maxB + gap)+"px";
-    }
-
-    // TV-like chart
-    function drawCandleChart(root, series, opts){
-      if(!root) return;
-      root.innerHTML = "";
-      const dpr = devicePixelRatio || 1;
-
-      const canvas = document.createElement("canvas");
-      canvas.style.cssText = "position:absolute;inset:0;display:block;background:#0b1128";
-      root.appendChild(canvas);
-      const ctx = canvas.getContext("2d");
-
-      let width=0, height=0;
-      const padLeft = 48, padBottom = 18, padTop = 6, padRight = 6;
-      let viewStart = Math.max(0, series.length - 150);
-      let viewEnd = series.length;
-      let mouse = { x:0, y:0, over:false };
-      let toolState = { mode: opts.tool||"crosshair", drawings:[], cur:null };
-
-      function resize(){
-        const rect = root.getBoundingClientRect();
-        width = Math.max(200, rect.width);
-        height = Math.max(120, rect.height);
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-        ctx.setTransform(1,0,0,1,0,0);
-        ctx.scale(dpr, dpr);
-        draw();
-      }
-      const prices = ()=> series.slice(viewStart, viewEnd).map(c=>[c.o,c.h,c.l,c.c]).flat();
-      function yFor(price, min, max){
-        const h = height - padBottom - padTop;
-        return Math.round((padTop + h) - (price-min)/Math.max(1e-9,(max-min))*(h)) ;
-      }
-      function priceFor(y, min, max){
-        const h = height - padBottom - padTop;
-        return min + ( ((padTop + h) - y) / Math.max(1e-9,(h)) ) * (max-min);
-      }
-      function xFor(i, count){
-        const w = width - padLeft - padRight;
-        if(count<=1) return padLeft + w/2;
-        return Math.round(padLeft + i*(w/(count-1)));
-      }
-      function indexForX(x, count){
-        const w = width - padLeft - padRight;
-        const i = Math.round((x - padLeft) / (w/Math.max(1, count-1)));
-        return Math.min(count-1, Math.max(0, i));
-      }
-
-      // Zoom/pan
-      let isPanning = false;
-      let panStartX = 0, panStartView = 0;
-      canvas.addEventListener("wheel", (e)=>{
-        e.preventDefault();
-        const delta = Math.sign(e.deltaY);
-        const count = Math.max(5, viewEnd - viewStart);
-        const centerIdx = Math.round(viewStart + (viewEnd-viewStart)*( (mouse.x - padLeft)/Math.max(1, (width-padLeft)) ));
-        const zoom = Math.max(20, Math.min(600, count + delta*10));
-        const left = Math.max(0, centerIdx - Math.floor(zoom*0.6));
-        const right = Math.min(series.length, left + zoom);
-        viewStart = Math.max(0, right - zoom);
-        viewEnd = right;
-        draw();
-      }, { passive:false });
-
-      canvas.addEventListener("pointerdown", (e)=>{
-        canvas.setPointerCapture(e.pointerId);
-        const x = e.offsetX, y = e.offsetY;
-        if(toolState.mode==="crosshair"){
-          isPanning = true; panStartX = x; panStartView = viewStart;
-        }else{
-          startDrawing(x,y);
-        }
-      });
-      canvas.addEventListener("pointermove", (e)=>{
-        mouse = { x: e.offsetX, y: e.offsetY, over:true };
-        if(isPanning){
-          const dx = mouse.x - panStartX;
-          const count = viewEnd - viewStart;
-          const w = width - padLeft - padRight;
-          const barsMove = Math.round(-dx / Math.max(1, w/(count-1)));
-          viewStart = Math.max(0, Math.min(series.length-count, panStartView + barsMove));
-          viewEnd = viewStart + count;
-        }else if(toolState.cur){
-          updateDrawing(mouse.x, mouse.y);
-        }
-        draw();
-      });
-      const stopPan = ()=>{ isPanning=false; if(toolState.cur) finalizeDrawing(); };
-      canvas.addEventListener("pointerup", stopPan);
-      canvas.addEventListener("pointerleave", ()=>{ mouse.over=false; draw(); });
-
-      function startDrawing(x,y){
-        const count = viewEnd - viewStart;
-        const vals = prices(); const min = Math.min(...vals), max = Math.max(...vals);
-        const idx = indexForX(x, count); const price = priceFor(y, min, max);
-        if(toolState.mode==="trend") toolState.cur = { mode:"trend", points:[{x,y,idx,price}], color:"#6aa9ff" };
-        if(toolState.mode==="hline") toolState.cur = { mode:"hline", points:[{x, y, idx, price}], color:"#ffcc66" };
-        if(toolState.mode==="rect") toolState.cur = { mode:"rect", points:[{x,y,idx,price}], color:"rgba(106,169,255,0.2)" };
-        if(toolState.mode==="fib") toolState.cur = { mode:"fib", points:[{x,y,idx,price}], levels:[0,0.236,0.382,0.5,0.618,0.786,1] };
-      }
-      function updateDrawing(x,y){
-        const count = viewEnd - viewStart;
-        const vals = prices(); const min = Math.min(...vals), max = Math.max(...vals);
-        const idx = indexForX(x, count); const price = priceFor(y, min, max);
-        const cur = toolState.cur; if(!cur) return;
-        if(cur.mode==="trend") cur.points[1] = { x,y,idx,price };
-        if(cur.mode==="hline") cur.points[0] = { x, y, idx, price };
-        if(cur.mode==="rect") cur.points[1] = { x,y,idx,price };
-        if(cur.mode==="fib") cur.points[1] = { x,y,idx,price };
-      }
-      function finalizeDrawing(){ toolState.drawings.push(toolState.cur); toolState.cur=null; }
-
-      function formatPrice(v){
-        const abs = Math.abs(v);
-        if(abs >= 1000) return "$"+abs.toLocaleString(undefined,{maximumFractionDigits:2});
-        if(abs >= 1) return "$"+v.toFixed(2);
-        if(abs >= 0.01) return "$"+v.toFixed(4);
-        return "$"+v.toFixed(6);
-      }
-
-      function draw(){
-        ctx.clearRect(0,0,width,height);
-        ctx.fillStyle = "#0b1128";
-        ctx.fillRect(0,0,width,height);
-
-        const windowData = series.slice(viewStart, viewEnd);
-        if(windowData.length<2) return;
-
-        const vals = prices();
-        const min = Math.min(...vals), max = Math.max(...vals);
-        const count = windowData.length;
-
-        // grid
-        ctx.strokeStyle = "rgba(255,255,255,0.06)";
-        ctx.lineWidth = 1;
-        for(let i=0;i<6;i++){
-          const y = padTop + i*((height-padBottom-padTop)/5);
-          ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(width-padRight, y); ctx.stroke();
-        }
-
-        // y labels
-        ctx.fillStyle = "rgba(231,236,255,0.85)";
-        ctx.font = "11px ui-sans-serif";
-        ctx.textAlign = "right"; ctx.textBaseline = "middle";
-        for(let i=0;i<=5;i++){
-          const v = min + (i/5)*(max-min);
-          const y = yFor(v, min, max);
-          ctx.fillText(formatPrice(v), padLeft-6, y);
-        }
-
-        // candles
-        const barW = Math.max(2, Math.floor((width - padLeft - padRight)/count * 0.7));
-        for(let i=0;i<count;i++){
-          const c = windowData[i];
-          const x = xFor(i, count);
-          const openY = yFor(c.o, min, max);
-          const closeY = yFor(c.c, min, max);
-          const highY = yFor(c.h, min, max);
-          const lowY = yFor(c.l, min, max);
-          const up = c.c >= c.o;
-          ctx.strokeStyle = up ? "rgba(39,217,128,1)" : "rgba(255,92,122,1)";
-          ctx.fillStyle = up ? "rgba(39,217,128,0.2)" : "rgba(255,92,122,0.2)";
-          ctx.beginPath(); ctx.moveTo(x, highY); ctx.lineTo(x, lowY); ctx.stroke();
-          const bodyTop = Math.min(openY, closeY);
-          const bodyH = Math.max(1, Math.abs(closeY - openY));
-          ctx.fillRect(x - Math.floor(barW/2), bodyTop, barW, bodyH);
-          ctx.strokeRect(x - Math.floor(barW/2), bodyTop, barW, bodyH);
-        }
-
-        // drawings
-        const drawLine = (p1, p2, color)=>{
-          ctx.strokeStyle = color; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
-        };
-        const drawRect = (p1, p2, color)=>{
-          const x = Math.min(p1.x,p2.x), y=Math.min(p1.y,p2.y), w=Math.abs(p2.x-p1.x), h=Math.abs(p2.y-p1.y);
-          ctx.fillStyle = color; ctx.strokeStyle="rgba(106,169,255,0.6)"; ctx.lineWidth=1.5;
-          ctx.fillRect(x,y,w,h); ctx.strokeRect(x,y,w,h);
-        };
-        const drawFib = (p1,p2,levels)=>{
-          const top = p1.y, bottom = p2.y;
-          const left = Math.min(p1.x,p2.x), right = Math.max(p1.x,p2.x);
-          levels.forEach((lv)=>{
-            const y = top + (bottom-top)*lv;
-            ctx.strokeStyle = "rgba(255,204,102,0.9)"; ctx.lineWidth=1;
-            ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
-          });
-        };
-        const renderDrawing = d=>{
-          if(d.mode==="trend" && d.points.length>=2) drawLine(d.points[0], d.points[1], d.color);
-          if(d.mode==="hline" && d.points.length>=1) drawLine({x:padLeft, y:d.points[0].y},{x:width-padRight,y:d.points[0].y}, "#ffcc66");
-          if(d.mode==="rect" && d.points.length>=2) drawRect(d.points[0], d.points[1], d.color);
-          if(d.mode==="fib" && d.points.length>=2) drawFib(d.points[0], d.points[1], d.levels||[0,0.236,0.382,0.5,0.618,0.786,1]);
-        };
-        toolState.drawings.forEach(renderDrawing);
-        if(toolState.cur) renderDrawing(toolState.cur);
-
-        // crosshair
-        if(mouse.over){
-          const i = Math.min(count-1, Math.max(0, indexForX(mouse.x, count)));
-          const x = xFor(i, count);
-          const price = priceFor(mouse.y, min, max);
-          ctx.strokeStyle = "rgba(231,236,255,0.25)";
-          ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(padLeft, mouse.y); ctx.lineTo(width-padRight, mouse.y); ctx.stroke();
-          ctx.beginPath(); ctx.moveTo(x, padTop); ctx.lineTo(x, height-padBottom); ctx.stroke();
-          const box = formatPrice(price);
-          ctx.fillStyle = "rgba(16,24,50,0.9)";
-          ctx.strokeStyle = "rgba(106,169,255,0.6)";
-          ctx.lineWidth = 1;
-          ctx.fillRect(2, mouse.y-8, padLeft-6, 16);
-          ctx.strokeRect(2, mouse.y-8, padLeft-6, 16);
-          ctx.fillStyle = "rgba(231,236,255,0.95)";
-          ctx.font = "11px ui-sans-serif";
-          ctx.textAlign="left"; ctx.textBaseline="middle";
-          ctx.fillText(box, 8, mouse.y);
-        }
-      }
-
-      resize();
-      new ResizeObserver(resize).observe(root);
-
-      return {
-        setTool(id){ toolState.mode=id; draw(); },
-        setSeries(newSeries){ series = newSeries; viewEnd = series.length; viewStart = Math.max(0, viewEnd-150); draw(); },
-        redraw: ()=> draw()
+    // Mapowanie symbolu na zalecaną giełdę w TradingView (możesz rozwinąć)
+    function bestExchange(sym){
+      const map = {
+        BTC: "BINANCE",
+        ETH: "BINANCE",
+        SOL: "BINANCE",
+        BNB: "BINANCE",
+        XRP: "BINANCE",
+        DOGE: "BINANCE",
+        ADA: "BINANCE",
+        ARB: "BINANCE",
+        APT: "BINANCE",
+        SUI: "BINANCE"
       };
+      return map[sym] || "BINANCE";
     }
 
-    // UI components
     function Header(){
-      const user = state.token ? readToken(state.token) : null;
-      const who = user ? (user.provider==="metamask" ? `MM: ${user.email.slice(0,10)}…` : user.email) : "Niezalogowany";
       return html`
         <header>
           <div class="brand">
             <div class="logo" aria-hidden="true"></div>
             <div>
-              <h1 style="margin:0;font-size:18px">Krypto Dashboard</h1>
-              <div class="muted" style="font-size:12px">Profesjonalny panel z surowymi oknami wykresów, drag po uchwycie</div>
+              <h1 style="margin:0;font-size:18px">Krypto Dashboard – TradingView</h1>
+              <div class="muted" style="font-size:12px">Kafelki osadzają oryginalny widget TradingView (pełna historia, narzędzia TV)</div>
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <span class="muted" style="font-size:12px">${who}</span>
             <button class="btn" onClick=${()=>state.addTile("BTC")}>Dodaj BTC</button>
-            ${user
-              ? html`<button class="btn alt" onClick=${()=>{ state.setToken(""); }}>Wyloguj</button>`
-              : html`<button class="btn alt" onClick=${()=> openAuth() }>Zaloguj</button>`
-            }
+            <button class="btn alt" onClick=${()=>state.addTile("ETH")}>Dodaj ETH</button>
           </div>
         </header>
       `;
     }
 
-    function PricesPanel(){
-      return html`
-        <div class="panel">
-          <h3 style="margin:0 0 10px 0;color:var(--muted)">Ceny (symulowane)</h3>
-          <table class="table">
-            <thead><tr><th>Token</th><th>Cena</th><th>24h</th><th></th></tr></thead>
-            <tbody>
-              ${state.pricesTable.map(row=>{
-                const cls = row.ch24>0?"good": row.ch24<0?"bad":"muted";
-                return html`<tr key=${row.symbol}>
-                  <td><strong>${row.symbol}</strong></td>
-                  <td>$${Number(row.price).toLocaleString(undefined,{maximumFractionDigits:6})}</td>
-                  <td class=${cls}>${(row.ch24>=0?"+":"") + row.ch24.toFixed(2)}%</td>
-                  <td><button class="btn small alt" onClick=${()=>state.addTile(row.symbol)}>Kafelek</button></td>
-                </tr>`;
-              })}
-            </tbody>
-          </table>
-        </div>
-      `;
-    }
-
-    function PortfolioPanel(){
-      const p = state.portfolio;
-      return html`
-        <div class="panel">
-          <h3 style="margin:0 0 10px 0;color:var(--muted)">Portfel</h3>
-          <div class="wallet">
-            <div class="kpi">
-              <div class="label">Wartość</div>
-              <div class="value">$${(p.totals.totalValue||0).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
-            </div>
-            <div class="kpi">
-              <div class="label">PnL</div>
-              <div class="value ${p.totals.totalPnl>=0?"good":"bad"}">$${(p.totals.totalPnl||0).toLocaleString(undefined,{maximumFractionDigits:2})} (${(p.totals.totalPnlPct||0).toFixed(2)}%)</div>
-            </div>
-            <div style="grid-column:1/-1">
-              <div class="tabs" id="walletTabs">
-                ${["5m","15m","30m","1H","4H","D1","W","M"].map(int => html`
-                  <button class=${"tab "+(walletInterval===int?"active":"")} onClick=${()=>{ walletInterval=int; generateWalletHistory(180); rerender(); }}>${int}</button>
-                `)}
-              </div>
-              <canvas id="walletChart" height="160" style="width:100%;display:block;border:1px solid var(--border);border-radius:10px;background:linear-gradient(180deg, rgba(24,36,80,0.25), rgba(12,18,40,0.35))"></canvas>
-            </div>
-          </div>
-          <div style="margin-top:12px;overflow:auto">
-            <table class="table">
-              <thead>
-                <tr><th>Token</th><th>Ilość</th><th>Śr. zakup</th><th>Akt. cena</th><th>Wartość</th><th>Zysk/Strata</th></tr>
-              </thead>
-              <tbody>
-                ${p.items.map(it=>{
-                  const cls = it.profitLoss>=0 ? "good":"bad";
-                  return html`<tr key=${it.symbol}>
-                    <td>${it.symbol}</td>
-                    <td>${it.amount.toFixed(6)}</td>
-                    <td>$${it.avgPurchasePrice.toFixed(4)}</td>
-                    <td>$${it.currentPrice.toFixed(4)}</td>
-                    <td>$${it.value.toFixed(2)}</td>
-                    <td class=${cls}>$${it.profitLoss.toFixed(2)} (${it.profitLossPercent.toFixed(2)}%)</td>
-                  </tr>`;
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    function AddTokenForm(){
-      let form = { symbol: "BTC", amount: "0.1", price: "65000", network: "" };
-      const set = (k,v)=>{ form = { ...form, [k]: v }; };
-      const submit = async (e)=> {
-        e.preventDefault();
-        if(!state.token) return alert("Zaloguj się");
-        try{
-          await backend.addManualToken(state.token, { symbol: form.symbol, amount: parseFloat(form.amount), purchasePrice: parseFloat(form.price), network: form.network });
-          await state.refreshPortfolio();
-          alert("Dodano / uśredniono pozycję");
-        }catch(err){ alert(err.message||String(err)); }
-      };
-      return html`
-        <div class="panel">
-          <h3 style="margin-top:0;color:var(--muted)">Ręczne dodanie coina</h3>
-          <form onSubmit=${submit}>
-            <div class="two-col">
-              <div>
-                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Symbol</div>
-                <input class="input" value=${form.symbol} onInput=${e=>set("symbol", e.currentTarget.value.toUpperCase())} placeholder="BTC"/>
-              </div>
-              <div>
-                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Ilość</div>
-                <input type="number" step="any" class="input" value=${form.amount} onInput=${e=>set("amount", e.currentTarget.value)} placeholder="0.0"/>
-              </div>
-            </div>
-            <div class="two-col" style="margin-top:10px">
-              <div>
-                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Cena zakupu (USD)</div>
-                <input type="number" step="any" class="input" value=${form.price} onInput=${e=>set("price", e.currentTarget.value)} placeholder="0.0"/>
-              </div>
-              <div>
-                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Sieć (opcjonalnie)</div>
-                <input class="input" value=${form.network} onInput=${e=>set("network", e.currentTarget.value)} placeholder="Ethereum, Solana..."/>
-              </div>
-            </div>
-            <div class="two-col" style="margin-top:12px">
-              <button class="btn" type="submit">Dodaj / Uśrednij</button>
-              <button class="btn alt" type="button" onClick=${()=>{ state.addTile(form.symbol); }}>Dodaj kafelek</button>
-            </div>
-          </form>
-        </div>
-      `;
-    }
-
-    function SellTokenForm(){
-      let form = { symbol: "BTC", amount: "0.05", price: "65000" };
-      const set = (k,v)=>{ form = { ...form, [k]: v }; };
-      const submit = async (e)=>{
-        e.preventDefault();
-        if(!state.token) return alert("Zaloguj się");
-        try{
-          await backend.sellToken(state.token, { symbol: form.symbol, amount: parseFloat(form.amount), price: parseFloat(form.price) });
-          await state.refreshPortfolio();
-          alert("Sprzedano");
-        }catch(err){ alert(err.message||String(err)); }
-      };
-      const mySymbols = [...new Set(db.tokens.filter(t=> state.token && t.userId===readToken(state.token)?.uid && t.amount>0).map(t=>t.symbol))];
-      return html`
-        <div class="panel">
-          <h3 style="margin-top:0;color:var(--muted)">Sprzedaż coina</h3>
-          <form onSubmit=${submit}>
-            <div class="two-col">
-              <div>
-                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Symbol</div>
-                <input class="input" value=${form.symbol} list="mySymbols" onInput=${e=>set("symbol", e.currentTarget.value.toUpperCase())}/>
-                <datalist id="mySymbols">
-                  ${mySymbols.map(s=> html`<option value=${s} />`)}
-                </datalist>
-              </div>
-              <div>
-                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Ilość</div>
-                <input type="number" step="any" class="input" value=${form.amount} onInput=${e=>set("amount", e.currentTarget.value)} />
-              </div>
-            </div>
-            <div class="two-col" style="margin-top:10px">
-              <div>
-                <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Cena sprzedaży (USD)</div>
-                <input type="number" step="any" class="input" value=${form.price} onInput=${e=>set("price", e.currentTarget.value)} />
-              </div>
-              <div></div>
-            </div>
-            <div class="two-col" style="margin-top:12px">
-              <button class="btn" type="submit">Sprzedaj</button>
-              <button class="btn alt" type="button" onClick=${()=>{ state.addTile(form.symbol); }}>Dodaj kafelek</button>
-            </div>
-          </form>
-        </div>
-      `;
-    }
-
     function Sidebar(){
-      const added = [...new Set(state.tiles.map(t=>t.symbol))];
-      let layoutMode = "fit";
-      const autoLayout = (mode)=>{
-        const gap=16, W = document.getElementById("canvas")?.clientWidth || 960;
-        const colW=460, rowH=320;
-        let x=gap,y=gap,maxH=rowH;
-        state.tiles = state.tiles.map((t,idx)=>{
-          if(mode==="fit"){
-            if(x + colW + gap > W){ x=gap; y+= maxH + gap; maxH=rowH; }
-            const nt = { ...t, x, y, w: colW, h: rowH }; x += colW + gap; return nt;
-          }else{
-            return { ...t, x: gap + (idx*24)%Math.max(24,(W - colW - gap)), y: gap + idx*28, w: colW, h: rowH };
-          }
-        });
-        rerender();
-        setTimeout(()=>fitCanvas(),0);
-      };
       return html`
         <aside>
           <div class="panel">
-            <h3 style="margin:0 0 10px 0;color:var(--muted)">Dodaj kafelek</h3>
-            <div class="two-col">
-              <input id="symIn" class="input" placeholder="BTC" value="BTC"/>
-              <button class="btn" onClick=${()=>{ const v=document.getElementById("symIn").value||"BTC"; state.addTile(v); }}>Dodaj wykres</button>
+            <h3 style="margin:0 0 10px 0;color:var(--muted)">Dodaj kafelek TradingView</h3>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+              <input id="symIn" class="input" placeholder="BTC" value="BTC" />
+              <button class="btn" onClick=${()=>{
+                const v = (document.getElementById("symIn").value || "BTC").toUpperCase();
+                state.addTile(v);
+              }}>Dodaj</button>
             </div>
-            <div class="two-col" style="margin-top:8px">
-              <select class="input" onChange=${e=> layoutMode = e.currentTarget.value }>
-                <option value="fit">Dopasuj do siatki</option>
-                <option value="cascade">Kaskada</option>
-              </select>
-              <button class="btn alt" onClick=${()=>autoLayout(layoutMode)}>Auto-układ</button>
+            <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+              ${["BTC","ETH","SOL","BNB","XRP","DOGE","ADA","ARB","APT","SUI"].map(s => html`
+                <button class="btn small alt" onClick=${()=>state.addTile(s)}>${s}</button>
+              `)}
             </div>
-            <div class="two-col" style="margin-top:8px">
-              <button class="btn alt" onClick=${()=> state.clear()}>Wyczyść</button>
-              <span></span>
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button class="btn alt" onClick=${()=>state.clear()}>Wyczyść</button>
             </div>
+            <p class="muted" style="font-size:12px;margin-top:12px">
+              Uwaga: Widget TradingView ładuje się z sieci. Offline pokaże się placeholder.
+            </p>
           </div>
 
           <div class="panel">
-            <h3 style="margin:0 0 10px 0;color:var(--muted)">Aktualnie dodane krypto</h3>
-            <div style="display:flex;flex-wrap:wrap;gap:6px">
-              ${added.map(s=> html`<span style="border:1px solid var(--border);padding:6px 8px;border-radius:999px;font-size:12px;background:linear-gradient(180deg,#0c1430,#0b132a)">${s}</span>`)}
-              ${added.length===0 && html`<span class="muted" style="font-size:12px">Brak</span>`}
-            </div>
+            <h3 style="margin:0 0 10px 0;color:var(--muted)">Wskazówki</h3>
+            <ul style="margin:0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.5">
+              <li>Pełne narzędzia i historia pochodzą z TradingView (oryginalny interfejs).</li>
+              <li>Przeciągaj okno za uchwyt po lewej stronie belki.</li>
+              <li>Zmieniaj rozmiar uchwytem w prawym dolnym rogu.</li>
+            </ul>
           </div>
-
-          ${PricesPanel()}
-          ${AddTokenForm()}
-          ${SellTokenForm()}
         </aside>
       `;
     }
 
-    // Tile with "raw" TV window behavior
+    function fitCanvas(){
+      const gap=16;
+      const canvas = document.getElementById("canvas");
+      if(!canvas) return;
+      let maxR=0, maxB=0;
+      for(const t of state.tiles){
+        maxR = Math.max(maxR, (t.x||0)+(t.w||0));
+        maxB = Math.max(maxB, (t.y||0)+(t.h||0));
+      }
+      canvas.style.minWidth = Math.ceil(maxR + gap)+"px";
+      canvas.style.minHeight = Math.ceil(maxB + gap)+"px";
+    }
+
     function Tile({tile}){
-      const onToolbarPointerDown = ()=>{};
       const onGrabDown = (e)=>{
         const tileRoot = e.currentTarget.closest(".tile");
         tileRoot.setPointerCapture(e.pointerId);
@@ -918,69 +269,110 @@
       const onResizeMove = (e)=>{
         if(!resize || resize.id!==tile.id) return;
         const grid=8;
-        const nw = Math.max(360, resize.ow + (e.clientX - resize.sx));
-        const nh = Math.max(220, resize.oh + (e.clientY - resize.sy));
+        const nw = Math.max(440, resize.ow + (e.clientX - resize.sx));
+        const nh = Math.max(260, resize.oh + (e.clientY - resize.sy));
         const rw = Math.round(nw/grid)*grid;
         const rh = Math.round(nh/grid)*grid;
         state.updateTile(tile.id, { w: rw, h: rh });
-        const api = tvCharts[tile.id];
-        if(api) api.redraw();
+        // wysyłamy event do iframe, by przeliczył rozmiar (widget auto-fit)
+        const frame = document.getElementById("tvf_"+tile.id);
+        if(frame) requestAnimationFrame(()=>{ frame.style.width = "100%"; frame.style.height = "100%"; });
       };
       const onResizeUp = ()=>{ resize=null; };
 
-      setTimeout(async ()=>{
-        const holder = document.getElementById("tv_"+tile.id);
-        if(!holder) return;
-        const data = await backend.ohlc(tile.symbol);
-        let api = tvCharts[tile.id];
-        if(!api){
-          api = drawCandleChart(holder, data, { tool: tile.tool });
-          tvCharts[tile.id] = api;
-        }else{
-          api.setSeries(data);
+      // Konstrukcja bezpośredniego osadzenia: używamy oficjalnego lightweight widgetu embed w iframe (tools on)
+      // Uwaga: Pełny "Charting Library" wymaga licencji; tu używamy publicznego widgetu z narzędziami TV.
+      const sym = `${tile.exchange}:${tile.symbol}USDT`;
+
+      // Placeholder offline (prosty komunikat; nie rysujemy własnych świec)
+      const offlineHtml = `
+        <div style="display:grid;place-items:center;height:100%;color:#b7c3ff;background:#0b1128">
+          <div style="text-align:center;max-width:360px;font: 13px ui-sans-serif,system-ui">
+            <div style="margin-bottom:10px;font-weight:700;color:#e7ecff">${sym}</div>
+            <div>Brak połączenia z TradingView. Aby zobaczyć oryginalny wykres z pełną historią i narzędziami, połącz się z Internetem.</div>
+          </div>
+        </div>
+      `.trim();
+
+      // Generujemy dokument do iframe, który ładuje oficjalny widget TradingView (external). Jeśli CSP/HTTPS zablokuje, zostanie offline placeholder.
+      const iframe = html`<iframe id=${"tvf_"+tile.id} title=${"tv_"+tile.symbol}
+                          style="border:0;display:block;width:100%;height:100%;background:#0b1128"
+                          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                          loading="lazy"></iframe>`;
+
+      // Po wyrenderowaniu Preact, wypełnimy iframe odpowiednią treścią
+      setTimeout(()=>{
+        const frame = document.getElementById("tvf_"+tile.id);
+        if(!frame) return;
+        try{
+          const doc = frame.contentDocument || frame.contentWindow?.document;
+          if(!doc) throw new Error("no doc");
+          doc.open();
+          doc.write(`<!DOCTYPE html><html><head>
+            <meta charset="utf-8"/>
+            <meta name="viewport" content="width=device-width,initial-scale=1"/>
+            <style>
+              html,body,#container{height:100%;margin:0;background:#0b1128}
+            </style>
+          </head><body>
+            <div id="container"></div>
+            <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async><\/script>
+            <script>
+              // Gdy skrypt się załaduje, spróbuje zainicjować widget na #container przy użyciu poniższej konfiguracji:
+              window.addEventListener('DOMContentLoaded', function(){
+                try{
+                  new window.TradingView.widget({
+                    autosize: true,
+                    symbol: ${JSON.stringify(sym)},
+                    interval: "60",
+                    timezone: "Etc/UTC",
+                    theme: "dark",
+                    style: "1",
+                    locale: "pl",
+                    enable_publishing: false,
+                    allow_symbol_change: true,
+                    withdateranges: true,
+                    details: true,
+                    hotlist: false,
+                    calendar: false,
+                    hide_side_toolbar: false,
+                    studies: [],
+                    container_id: "container"
+                  });
+                }catch(e){
+                  document.body.innerHTML = ${JSON.stringify(offlineHtml)};
+                }
+              });
+            <\/script>
+          </body></html>`);
+          doc.close();
+        }catch(e){
+          // Jeśli nie uda się wstawić widgetu (np. offline), pokaż placeholder w dokumencie nadrzędnym:
+          const holder = document.getElementById("ctn_"+tile.id);
+          if(holder) holder.innerHTML = offlineHtml;
         }
       }, 0);
 
       return html`
         <div class="tile" style=${{ left: tile.x+"px", top: tile.y+"px", width: tile.w+"px", height: tile.h+"px" }}>
-          <div class="toolbar" onPointerDown=${onToolbarPointerDown} onPointerMove=${onMove} onPointerUp=${onUp}>
+          <div class="toolbar" onPointerMove=${onMove} onPointerUp=${onUp}>
             <div class="grabber">
               <div class="grab-handle" title="Przeciągnij okno" onPointerDown=${onGrabDown} onPointerMove=${onMove} onPointerUp=${onUp}></div>
-              <div class="title">${tile.symbol} — $${(db.pricesCache[tile.symbol]?.price||lastPrice[tile.symbol]||0).toLocaleString(undefined,{maximumFractionDigits:6})}</div>
+              <div class="title">${tile.exchange}:${tile.symbol}USDT — TradingView</div>
             </div>
             <div class="actions">
               <button class="btn small alt" onClick=${()=> state.addTile(tile.symbol)}>Duplikuj</button>
-              <button class="btn small alt" onClick=${()=> cycleTool(tile.id)}>Narzędzie</button>
               <button class="btn small alt" onClick=${()=> state.removeTile(tile.id)}>Usuń</button>
             </div>
           </div>
           <div class="content">
-            <div class="tv-holder" id=${"tv_"+tile.id}></div>
+            <div class="tv-holder" id=${"ctn_"+tile.id}>${iframe}</div>
           </div>
           <div class="resizer" title="Zmień rozmiar" onPointerDown=${onResizeDown} onPointerMove=${onResizeMove} onPointerUp=${onResizeUp}></div>
-          <div class="statline">
-            ${(()=>{
-              const ch = db.pricesCache[tile.symbol]?.ch24 || 0;
-              return html`<div><strong>${tile.symbol}</strong></div>
-                <div class="muted">Cena: <strong>$${(db.pricesCache[tile.symbol]?.price||0).toLocaleString(undefined,{maximumFractionDigits:6})}</strong></div>
-                <div class=${ch>0?"good":ch<0?"bad":"muted"}>24h: <strong>${(ch>=0?"+":"") + ch.toFixed(2)}%</strong></div>
-                <div class="muted"></div>`;
-            })()}
-          </div>
         </div>
       `;
     }
     let drag=null, resize=null;
-    const tvCharts = {}; // id -> api
-    function cycleTool(tileId){
-      const tile = state.tiles.find(t=>t.id===tileId);
-      const order = ["crosshair","trend","hline","rect","fib"];
-      const idx = order.indexOf(tile.tool||"crosshair");
-      const next = order[(idx+1)%order.length];
-      state.updateTile(tileId, { tool: next });
-      const api = tvCharts[tileId];
-      if(api) api.setTool(next);
-    }
 
     function Dashboard(){
       return html`
@@ -989,184 +381,54 @@
           ${Sidebar()}
           <main style="display:flex;flex-direction:column;gap:18px">
             <section class="panel">
-              <h3 style="margin-top:0;color:var(--muted)">Płótno kafelków (surowe okna)</h3>
+              <h3 style="margin-top:0;color:var(--muted)">Płótno kafelków (TradingView)</h3>
               <div id="canvas" class="canvas">
                 ${state.tiles.map(t=> html`<${Tile} key=${t.id} tile=${t} />`)}
               </div>
             </section>
 
             <section class="panel">
-              <h3 style="margin-top:0;color:var(--muted)">Szybkie dodawanie</h3>
+              <h3 style="margin-top:0;color:var(--muted)">Przykładowe symbole</h3>
               <div style="display:flex;flex-wrap:wrap;gap:8px">
                 ${["BTC","ETH","SOL","BNB","XRP","DOGE","ADA","ARB","APT","SUI"].map(s=> html`
                   <button class="btn small" onClick=${()=>state.addTile(s)}>${s}</button>
                 `)}
               </div>
+              <div class="muted" style="font-size:12px;margin-top:8px">
+                Wykresy pochodzą bezpośrednio z TradingView (pełne świece, historia i narzędzia).
+              </div>
             </section>
 
-            ${PortfolioPanel()}
-            ${PricesPanel()}
+            <section class="panel">
+              <h3 style="margin-top:0;color:var(--muted)">FAQ</h3>
+              <table class="table">
+                <tbody>
+                  <tr><th>Czy generujemy własne świece/narzędzia?</th><td>Nie. Kafelki osadzają oficjalny widget TradingView.</td></tr>
+                  <tr><th>Historia danych</th><td>Dostarczana przez TradingView dla wybranego symbolu/giełdy.</td></tr>
+                  <tr><th>Offline</th><td>Widget nie działa bez sieci. Pokazujemy jedynie placeholder informacyjny.</td></tr>
+                </tbody>
+              </table>
+            </section>
           </main>
         </div>
         <footer style="padding:18px;color:var(--muted);font-size:12px;text-align:center">
-          Demo offline. Działa w 100% na GitHub Pages. Wykresy świecowe, narzędzia (crosshair, trend, linia, prostokąt, fibo), drag/resize okien. Logowanie: hasło/Google (mock), MetaMask (real lub mock). Dane są proceduralnie generowane lokalnie.
+          Kafelki używają oryginalnego widgetu TradingView (oraz jego narzędzi i pełnej historii). Brak lokalnej generacji świec i narzędzi.
         </footer>
-        ${AuthModal()}
       `;
     }
 
-    // Auth modal with Google + MetaMask buttons
-    let authOpen = false;
-    let authMode = "login";
-    function openAuth(){ authOpen=true; rerender(); }
-    function closeAuth(){ authOpen=false; rerender(); }
-    function AuthModal(){
-      if(!authOpen) return null;
-      let email = "";
-      let pass = "";
-      const submit = async (e)=>{
-        e.preventDefault();
-        try{
-          if(authMode==="register"){
-            const res = await backend.register({ email, password: pass });
-            state.setToken(res.token);
-          }else{
-            const res = await backend.login({ email, password: pass });
-            state.setToken(res.token);
-          }
-          await state.refreshPortfolio();
-          closeAuth();
-        }catch(err){ alert(err.message||String(err)); }
-      };
-      const onGoogle = async ()=>{
-        try{
-          const res = await backend.loginGoogle();
-          state.setToken(res.token);
-          await state.refreshPortfolio();
-          closeAuth();
-        }catch(e){ alert(e.message||String(e)); }
-      };
-      const onMetaMask = async ()=>{
-        try{
-          const res = await backend.loginMetaMask();
-          state.setToken(res.token);
-          await state.refreshPortfolio();
-          closeAuth();
-        }catch(e){ alert(e.message||String(e)); }
-      };
-      return html`
-        <div class="modal">
-          <div class="panel" style="width:min(460px, calc(100vw - 32px))">
-            <h3 style="margin:0 0 10px 0;color:var(--muted)">Konto użytkownika</h3>
-            <div class="tabs">
-              <button class=${"tab "+(authMode==="login"?"active":"")} onClick=${()=>{authMode="login"; rerender();}}>Logowanie</button>
-              <button class=${"tab "+(authMode==="register"?"active":"")} onClick=${()=>{authMode="register"; rerender();}}>Rejestracja</button>
-            </div>
-
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-              <button class="btn alt" type="button" onClick=${onGoogle}>Zaloguj Google</button>
-              <button class="btn alt" type="button" onClick=${onMetaMask}>Zaloguj MetaMask</button>
-            </div>
-
-            <form onSubmit=${submit}>
-              <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Email</div>
-              <input class="input" type="email" required placeholder="you@example.com" onInput=${e=> email = e.currentTarget.value } />
-              <div style="font-size:12px;color:var(--muted);margin:10px 0 6px">Hasło</div>
-              <input class="input" type="password" required minlength="4" placeholder="••••" onInput=${e=> pass = e.currentTarget.value } />
-              <div class="two-col" style="margin-top:12px">
-                <button class="btn" type="submit">Dalej</button>
-                <button class="btn alt" type="button" onClick=${closeAuth}>Anuluj</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      `;
-    }
-
-    // Render/app loop
     function rerender(){
       render(html`<${Dashboard}/>`, document.getElementById("root"));
-      drawWalletChart();
       fitCanvas();
     }
 
-    function drawWalletChart(live=false){
-      const c = document.getElementById("walletChart");
-      if(!c) return;
-      const ctx = c.getContext("2d");
-      const dpr = window.devicePixelRatio || 1;
-      const rect = c.getBoundingClientRect();
-      const widthCSS = Math.max(320, rect.width);
-      const heightCSS = 160;
-      c.width = widthCSS * dpr;
-      c.height = heightCSS * dpr;
-      ctx.setTransform(1,0,0,1,0,0);
-      ctx.scale(dpr, dpr);
-      ctx.clearRect(0,0,widthCSS,heightCSS);
-
-      // grid
-      ctx.strokeStyle = "rgba(255,255,255,0.08)";
-      for(let i=0;i<6;i++){
-        const y = (i/5)*(heightCSS-20)+10;
-        ctx.beginPath(); ctx.moveTo(8,y); ctx.lineTo(widthCSS-8,y); ctx.stroke();
+    (function init(){
+      if(state.tiles.length===0){
+        state.addTile("BTC");
+        state.addTile("ETH");
       }
-
-      if(walletHistory.length<2) generateWalletHistory(180);
-      if(live){
-        const base = computeWalletValue();
-        walletHistory.push(base*(0.98+Math.random()*0.04));
-        if(walletHistory.length>240) walletHistory.shift();
-      }
-      const data = walletHistory.slice(-120);
-      const min = Math.min(...data), max = Math.max(...data);
-      const pad = 14;
-
-      const grad = ctx.createLinearGradient(0,0,0,heightCSS);
-      grad.addColorStop(0,"rgba(106,169,255,0.9)");
-      grad.addColorStop(1,"rgba(106,169,255,0.15)");
-
-      // area
-      ctx.beginPath();
-      data.forEach((v,i)=>{
-        const x = pad + i*( (widthCSS-2*pad)/(data.length-1) );
-        const y = (heightCSS - pad) - ((v-min)/(max-min||1))*(heightCSS - 2*pad);
-        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      });
-      const lastX = pad + (data.length-1)*( (widthCSS-2*pad)/(data.length-1) );
-      const lastY = (heightCSS - pad) - ((data[data.length-1]-min)/(max-min||1))*(heightCSS - 2*pad);
-      ctx.lineTo(lastX, heightCSS - pad);
-      ctx.lineTo(pad, heightCSS - pad);
-      ctx.closePath();
-      ctx.fillStyle = "rgba(106,169,255,0.12)";
-      ctx.fill();
-
-      // line
-      ctx.beginPath();
-      data.forEach((v,i)=>{
-        const x = pad + i*( (widthCSS-2*pad)/(data.length-1) );
-        const y = (heightCSS - pad) - ((v-min)/(max-min||1))*(heightCSS - 2*pad);
-        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-      });
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // last point dot
-      ctx.fillStyle = "#6aa9ff";
-      ctx.beginPath();
-      ctx.arc(lastX, lastY, 3, 0, Math.PI*2);
-      ctx.fill();
-    }
-
-    // Initial
-    (async function init(){
-      await state.refreshPrices();
-      await state.refreshPortfolio();
-      if(state.tiles.length===0){ state.addTile("BTC"); }
-      generateWalletHistory(180);
       rerender();
     })();
-
   </script>
 </body>
 </html>
