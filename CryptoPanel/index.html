@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Krypto Dashboard – Tryb offline z lokalnym wykresem + TradingView (gdy online)</title>
+  <title>Krypto Dashboard – Świece z darmowego API + tryb offline</title>
   <style>
     :root{
       --bg:#0b1020;
@@ -104,7 +104,6 @@
     .title{font-size:12px;color:var(--muted)}
     .actions{display:flex;gap:6px;flex-wrap:wrap}
     .content{position:relative;flex:1;min-height:140px}
-    .tv-holder{position:absolute;inset:0}
     .resizer{
       position:absolute;right:6px;bottom:6px;width:14px;height:14px;border-radius:4px;border:1px solid var(--border);
       background:linear-gradient(135deg, rgba(106,169,255,0.45), rgba(106,169,255,0.15));
@@ -118,13 +117,13 @@
     .table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:12px;border:1px solid var(--border)}
     .table th, .table td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
     .table th{color:var(--muted);font-weight:600;background:rgba(16,24,50,0.55);backdrop-filter: blur(6px)}
-    .modal{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,0.5);z-index:100}
-    /* Offline canvas styles */
-    .offwrap{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr}
-    .offhdr{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border);background:#0b122a}
+    /* Offline/online canvas styles */
+    .offwrap,.onwrap{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr}
+    .offhdr,.onhdr{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border);background:#0b122a}
     .badge{font-size:11px;padding:2px 6px;border-radius:6px;background:#1a2b55;color:#9ec1ff;border:1px solid rgba(106,169,255,0.35)}
     canvas.chart{width:100%;height:100%;display:block;background:linear-gradient(180deg,#0b1128,#0a1024)}
     .legend{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.35);padding:6px 8px;border-radius:8px;font-size:12px;color:#cfe0ff;border:1px solid rgba(255,255,255,0.1)}
+    .status{font-size:12px;color:#9ec1ff}
   </style>
   <script type="importmap">
     {
@@ -145,47 +144,244 @@
     import { v4 as uuidv4 } from "uuid";
     const html = htm.bind(h);
 
-    // Detekcja łączności – jeżeli offline lub nie osiągalny TradingView, pokazujemy lokalny wykres (proceduralny).
-    let online = navigator.onLine;
-    window.addEventListener("online", ()=>{ online = true; rerender(); });
-    window.addEventListener("offline", ()=>{ online = false; rerender(); });
+    // Strategia danych świecowych:
+    // 1) Gdy online – pobieramy świece z darmowego API Binance Futures klines (bardzo długa historia, brak klucza).
+    // 2) Gdy offline lub błąd – generujemy syntetyczne świece lokalnie.
+    //
+    // Dlaczego Binance:
+    // - Darmowe i bez klucza API
+    // - Długie historie (limit 1500 na request; można "stronicować" po timestampach)
+    // - Stabilne endpointy
+    // Uwaga: Cross-origin działa w przeglądarce, brak potrzeby serwera.
 
-    // Funkcja testująca dostępność domeny TradingView w bezpieczny sposób (HEAD na zasób statyczny).
-    async function checkTradingViewReachable(timeout=2500){
-      if(!navigator.onLine) return false;
-      const controller = new AbortController();
-      const t = setTimeout(()=>controller.abort(), timeout);
-      try{
-        // lekki zasób: ping.gif – jeśli blokada sieci/CSP, złapiemy błąd i przełączymy na offline chart
-        const res = await fetch("https://s3.tradingview.com/tv.js", { method:"HEAD", mode:"no-cors", signal: controller.signal });
-        clearTimeout(t);
-        // no-cors nie zwróci statusu, ale brak wyjątku sugeruje, że połączenie możliwe
-        return true;
-      }catch(e){
-        clearTimeout(t);
-        return false;
+    const INTERVALS = {
+      "1m": "1m", "5m": "5m", "15m": "15m", "1h": "1h", "4h": "4h", "1d": "1d"
+    };
+
+    function tvToBinanceSymbol(sym){ // "BINANCE:BTCUSDT" -> "BTCUSDT"
+      const parts = String(sym).split(":");
+      const pair = parts[1] || parts[0] || "BTCUSDT";
+      return pair.replace("/", "");
+    }
+
+    async function fetchBinanceKlines(symbol="BTCUSDT", interval="1h", limit=500, startTime){
+      const params = new URLSearchParams({ symbol, interval, limit: String(limit) });
+      if(startTime) params.set("startTime", String(startTime));
+      const url = "https://fapi.binance.com/fapi/v1/klines?" + params.toString();
+      const res = await fetch(url);
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      const arr = await res.json();
+      // Mapowanie do OHLC
+      return arr.map(k => ({
+        t: k[0],
+        o: Number(k[1]),
+        h: Number(k[2]),
+        l: Number(k[3]),
+        c: Number(k[4])
+      }));
+    }
+
+    // Paginacja by uzyskać długą historię
+    async function fetchLongHistory(symbol, interval, candlesWanted=1200){
+      const CHUNK = 1000;
+      let out = [];
+      let startTime = undefined;
+      for(let i=0;i<4 && out.length < candlesWanted;i++){
+        const batch = await fetchBinanceKlines(symbol, interval, Math.min(CHUNK, candlesWanted - out.length), startTime);
+        if(!batch.length) break;
+        out = batch.concat(out); // budujemy od początku historii
+        // kolejny skok wstecz:
+        const firstTs = batch[0].t;
+        startTime = firstTs - 1; // wszystko wcześniej od najstarszej świecy
+      }
+      return out;
+    }
+
+    // Syntetyczne świece – fallback offline
+    function seededRandom(seed){
+      let h = 2166136261 ^ seed.length;
+      for (let i=0;i<seed.length;i++){
+        h ^= seed.charCodeAt(i);
+        h += (h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24);
+      }
+      return ()=> {
+        h += 0x6D2B79F5;
+        let t = Math.imul(h ^ (h>>>15), 1 | h);
+        t ^= t + Math.imul(t ^ (t>>>7), 61 | t);
+        return ((t ^ (t>>>14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function genOHLC(symbol, points=240, startTs=Date.now()-points*3600_000, stepMs=3600_000){
+      const rnd = seededRandom(symbol+"-ohlc");
+      const data = [];
+      let price = 100 + Math.floor(rnd()*1000);
+      for(let i=0;i<points;i++){
+        const drift = (rnd()-0.5)*2.0;
+        const vol = 0.8 + rnd()*1.6;
+        const open = price;
+        let high = open + Math.abs(drift*5*vol) + rnd()*3;
+        let low  = open - Math.abs(drift*5*vol) - rnd()*3;
+        if(low<1) low = 1;
+        let close = open + drift*4*vol + (rnd()-0.5)*2;
+        if(close<1) close=1;
+        high = Math.max(high, open, close);
+        low = Math.min(low, open, close);
+        data.push({ t: startTs + i*stepMs, o:open, h:high, l:low, c:close });
+        price = close;
+      }
+      return data;
+    }
+
+    function drawCandles(canvas, data){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      const wpx = Math.max(10, Math.floor(rect.width * dpr));
+      const hpx = Math.max(10, Math.floor(rect.height * dpr));
+      if(canvas.width!==wpx) canvas.width = wpx;
+      if(canvas.height!==hpx) canvas.height = hpx;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0,0,rect.width,rect.height);
+
+      const padL=48, padR=10, padT=10, padB=22;
+      const w = rect.width - padL - padR;
+      const h = rect.height - padT - padB;
+      if(w<=0 || h<=0 || data.length===0) return;
+
+      let min = Infinity, max = -Infinity;
+      for(const d of data){ if(d.l<min) min=d.l; if(d.h>max) max=d.h; }
+      const y = (v)=> padT + (max - v) * (h / (max - min || 1));
+      const candleW = Math.max(2, Math.floor(w / data.length * 0.6));
+      const step = w / data.length;
+
+      // grid
+      const lines = 5;
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = 1;
+      for(let i=0;i<=lines;i++){
+        const gy = padT + (h/lines)*i;
+        ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(padL+w, gy); ctx.stroke();
+      }
+
+      // axis labels
+      ctx.fillStyle = "#9db4ff";
+      ctx.font = "11px ui-sans-serif, system-ui";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for(let i=0;i<=lines;i++){
+        const gy = padT + (h/lines)*i;
+        const val = (max - (max-min)*(i/lines)).toFixed(2);
+        ctx.fillText(val, padL-6, gy);
+      }
+
+      // candles
+      for(let i=0;i<data.length;i++){
+        const d = data[i];
+        const cx = padL + i*step + step*0.5;
+        const up = d.c >= d.o;
+        const color = up ? "#27d980" : "#ff5c7a";
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        // wick
+        ctx.beginPath();
+        ctx.moveTo(cx, y(d.h));
+        ctx.lineTo(cx, y(d.l));
+        ctx.stroke();
+        // body
+        const bo = y(d.o), bc = y(d.c);
+        const top = Math.min(bo, bc), height = Math.max(2, Math.abs(bc - bo));
+        ctx.fillRect(cx - candleW/2, top, candleW, height);
       }
     }
 
+    // Komponent wykresu świecowego: Online (Binance) lub Offline (syntetyczne)
+    function CandlesView({symbol, interval, id}){
+      const symNoPrefix = tvToBinanceSymbol(symbol);
+      const holderId = "onoff_"+id;
+      setTimeout(async ()=>{
+        const holder = document.getElementById(holderId);
+        if(!holder) return;
+
+        const buildCanvas = (modeLabel)=>{
+          holder.innerHTML = `
+            <div class="${modeLabel==="Online"?"onwrap":"offwrap"}">
+              <div class="${modeLabel==="Online"?"onhdr":"offhdr"}">
+                <span class="badge">${modeLabel==="Online" ? "Dane z Binance" : "Tryb offline"}</span>
+                <span class="status">${symbol} — interwał ${interval}</span>
+              </div>
+              <div style="position:relative">
+                <canvas id="c${id}" class="chart"></canvas>
+                <div class="legend">OHLC — ${modeLabel}</div>
+              </div>
+            </div>
+          `;
+          return document.getElementById("c"+id);
+        };
+
+        let data = [];
+        let mode = "Online";
+        try{
+          // Pobierz długą historię (ok. 1200 świec)
+          data = await fetchLongHistory(symNoPrefix, interval, 1200);
+          if(!data || data.length===0) throw new Error("Brak danych");
+        }catch(e){
+          mode = "Offline";
+          // krok w ms dla danego interwału
+          const stepMap = { "1m":60_000, "5m":300_000, "15m":900_000, "1h":3_600_000, "4h":14_400_000, "1d":86_400_000 };
+          const step = stepMap[interval] || 3_600_000;
+          data = genOHLC(symbol, 300, Date.now()-300*step, step);
+        }
+
+        const canvas = buildCanvas(mode);
+        const redraw = ()=> drawCandles(canvas, data);
+        redraw();
+        const ro = new ResizeObserver(redraw);
+        ro.observe(canvas);
+
+        // Auto-refresh online co 20s na ostatnie świece
+        if(mode==="Online"){
+          const timer = setInterval(async ()=>{
+            try{
+              const last = data[data.length-1]?.t || 0;
+              const updates = await fetchBinanceKlines(symNoPrefix, interval, 500, last);
+              if(updates.length){
+                // scal: usuń świecę o tym samym timestampie i dołącz nowe
+                const set = new Map(data.map(d=>[d.t,d]));
+                for(const u of updates) set.set(u.t, u);
+                data = Array.from(set.values()).sort((a,b)=>a.t-b.t);
+                // utnij do 1500 aby nie rosnąć bez końca
+                if(data.length>1500) data = data.slice(data.length-1500);
+                redraw();
+              }
+            }catch(e){}
+          }, 20000);
+          canvas._cleanup = ()=>{ try{ ro.disconnect(); }catch{} clearInterval(timer); };
+        }else{
+          const timer = setInterval(redraw, 2000);
+          canvas._cleanup = ()=>{ try{ ro.disconnect(); }catch{} clearInterval(timer); };
+        }
+      }, 0);
+
+      return html`<div class="tv-holder" id=${holderId}></div>`;
+    }
+
+    // ----------------- UI / Tiles -----------------
     const state = {
       tiles: [],
       addTile(sym){
-        const gap=16, defW=520, defH=360;
+        const gap=16, defW=560, defH=380;
         const idx = state.tiles.length;
         const x = gap + (idx%2)*(defW+gap);
         const y = gap + Math.floor(idx/2)*(defH+gap);
-        state.tiles = state.tiles.concat({ id: uuidv4(), symbol: sym.toUpperCase(), x, y, w:defW, h:defH, exchange: bestExchange(sym) });
+        state.tiles = state.tiles.concat({ id: uuidv4(), symbol: sym.toUpperCase(), x, y, w:defW, h:defH, exchange: "BINANCE", interval:"1h" });
         rerender(); fitCanvas();
       },
       updateTile(id, patch){ state.tiles = state.tiles.map(t=> t.id===id? { ...t, ...patch }: t); rerender(); fitCanvas(); },
       removeTile(id){ state.tiles = state.tiles.filter(t=>t.id!==id); rerender(); fitCanvas(); },
       clear(){ state.tiles = []; rerender(); fitCanvas(); }
     };
-
-    function bestExchange(sym){
-      const map = { BTC:"BINANCE", ETH:"BINANCE", SOL:"BINANCE", BNB:"BINANCE", XRP:"BINANCE", DOGE:"BINANCE", ADA:"BINANCE", ARB:"BINANCE", APT:"BINANCE", SUI:"BINANCE" };
-      return map[sym] || "BINANCE";
-    }
 
     function Header(){
       return html`
@@ -195,7 +391,7 @@
             <div>
               <h1 style="margin:0;font-size:18px">Krypto Dashboard</h1>
               <div class="muted" style="font-size:12px">
-                Działa offline: lokalny wykres. Gdy online: automatycznie ładuje TradingView.
+                Świece z darmowego API (Binance). Gdy offline – syntetyczny wykres.
               </div>
             </div>
           </div>
@@ -224,11 +420,8 @@
                 <button class="btn small alt" onClick=${()=>state.addTile(s)}>${s}</button>
               `)}
             </div>
-            <div style="margin-top:10px;display:flex;gap:8px">
-              <button class="btn alt" onClick=${()=>state.clear()}>Wyczyść</button>
-            </div>
             <p class="muted" style="font-size:12px;margin-top:12px">
-              Jeśli TradingView jest niedostępny, widzisz lokalny wykres świecowy z danych syntetycznych.
+              Najdłuższa historia: Binance klines (bez klucza). Offline – syntetyczny wykres świec.
             </p>
           </div>
 
@@ -237,7 +430,7 @@
             <ul style="margin:0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.5">
               <li>Przeciągaj kafel za uchwyt po lewej stronie belki.</li>
               <li>Zmieniaj rozmiar uchwytem w prawym dolnym rogu.</li>
-              <li>Automatyczne przełączanie między TradingView a lokalnym wykresem.</li>
+              <li>Interwały: 1m/5m/15m/1h/4h/1d (w menu kafla).</li>
             </ul>
           </div>
         </aside>
@@ -255,131 +448,6 @@
       }
       canvas.style.minWidth = Math.ceil(maxR + gap)+"px";
       canvas.style.minHeight = Math.ceil(maxB + gap)+"px";
-    }
-
-    // Proceduralne dane świecowe (placebo offline) – deterministyczne, zależne od symbolu
-    function seededRandom(seed){
-      let h = 2166136261 ^ seed.length;
-      for (let i=0;i<seed.length;i++){
-        h ^= seed.charCodeAt(i);
-        h += (h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24);
-      }
-      return ()=> {
-        h += 0x6D2B79F5;
-        let t = Math.imul(h ^ (h>>>15), 1 | h);
-        t ^= t + Math.imul(t ^ (t>>>7), 61 | t);
-        return ((t ^ (t>>>14)) >>> 0) / 4294967296;
-      };
-    }
-
-    function genOHLC(symbol, points=240){
-      const rnd = seededRandom(symbol+"-ohlc");
-      const data = [];
-      let price = 100 + Math.floor(rnd()*1000);
-      for(let i=0;i<points;i++){
-        const drift = (rnd()-0.5)*2.0;
-        const vol = 0.8 + rnd()*1.6;
-        const open = price;
-        let high = open + Math.abs(drift*5*vol) + rnd()*3;
-        let low  = open - Math.abs(drift*5*vol) - rnd()*3;
-        if(low<1) low = 1;
-        let close = open + drift*4*vol + (rnd()-0.5)*2;
-        if(close<1) close=1;
-        high = Math.max(high, open, close);
-        low = Math.min(low, open, close);
-        const up = close>=open;
-        data.push({ o:open, h:high, l:low, c:close, up });
-        price = close;
-      }
-      return data;
-    }
-
-    function drawCandles(canvas, data){
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.floor(rect.width * dpr);
-      canvas.height = Math.floor(rect.height * dpr);
-      const ctx = canvas.getContext("2d");
-      ctx.scale(dpr, dpr);
-      ctx.clearRect(0,0,rect.width,rect.height);
-
-      const padL=40, padR=10, padT=10, padB=20;
-      const w = rect.width - padL - padR;
-      const h = rect.height - padT - padB;
-      if(w<=0 || h<=0 || data.length===0) return;
-
-      let min = Infinity, max = -Infinity;
-      for(const d of data){ if(d.l<min) min=d.l; if(d.h>max) max=d.h; }
-      const y = (v)=> padT + (max - v) * (h / (max - min || 1));
-      const candleW = Math.max(3, Math.floor(w / data.length * 0.7));
-      const step = w / data.length;
-
-      // grid
-      const lines = 5;
-      ctx.strokeStyle = "rgba(255,255,255,0.06)";
-      ctx.lineWidth = 1;
-      for(let i=0;i<=lines;i++){
-        const gy = padT + (h/lines)*i;
-        ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(padL+w, gy); ctx.stroke();
-      }
-
-      // axis labels
-      ctx.fillStyle = "#9db4ff";
-      ctx.font = "11px ui-sans-serif, system-ui";
-      ctx.textAlign = "right";
-      ctx.textBaseline = "middle";
-      for(let i=0;i<=lines;i++){
-        const gy = padT + (h/lines)*i;
-        const val = (max - (max-min)*(i/lines)).toFixed(2);
-        ctx.fillText(val, padL-6, gy);
-      }
-
-      // candles
-      for(let i=0;i<data.length;i++){
-        const d = data[i];
-        const cx = padL + i*step + step*0.5;
-        ctx.strokeStyle = d.up ? "#27d980" : "#ff5c7a";
-        ctx.fillStyle = d.up ? "#27d980" : "#ff5c7a";
-        // wick
-        ctx.beginPath();
-        ctx.moveTo(cx, y(d.h));
-        ctx.lineTo(cx, y(d.l));
-        ctx.stroke();
-        // body
-        const bo = y(d.o), bc = y(d.c);
-        const top = Math.min(bo, bc), height = Math.max(2, Math.abs(bc - bo));
-        ctx.fillRect(cx - candleW/2, top, candleW, height);
-      }
-    }
-
-    function OfflineChart({symbol, id}){
-      // Kontener offline: canvas + prosta legenda
-      setTimeout(()=>{
-        const canvas = document.getElementById("offc_"+id);
-        if(!canvas) return;
-        const redraw = ()=>{
-          const data = genOHLC(symbol, 200);
-          drawCandles(canvas, data);
-        };
-        redraw();
-        const ro = new ResizeObserver(redraw);
-        ro.observe(canvas);
-        const t = setInterval(redraw, 2000); // delikatne "odświeżanie"
-        canvas._cleanup = ()=>{ try{ ro.disconnect(); }catch{} clearInterval(t); };
-      }, 0);
-
-      return html`
-        <div class="offwrap">
-          <div class="offhdr">
-            <span class="badge">Tryb offline</span>
-            <span style="font-size:12px;color:var(--muted)">${symbol} — lokalny wykres świecowy</span>
-          </div>
-          <div style="position:relative">
-            <canvas id=${"offc_"+id} class="chart"></canvas>
-            <div class="legend">Otw/Wys/Nis/Zam – dane syntetyczne</div>
-          </div>
-        </div>
-      `;
     }
 
     function Tile({tile}){
@@ -411,95 +479,28 @@
         const rw = Math.round(nw/grid)*grid;
         const rh = Math.round(nh/grid)*grid;
         state.updateTile(tile.id, { w: rw, h: rh });
-        const frame = document.getElementById("tvf_"+tile.id);
-        if(frame) requestAnimationFrame(()=>{ frame.style.width = "100%"; frame.style.height = "100%"; });
       };
       const onResizeUp = ()=>{ resize=null; };
 
       const sym = `${tile.exchange}:${tile.symbol}USDT`;
-
-      // Render: jeśli TV osiągalny -> iframe z TV, w przeciwnym wypadku lokalny wykres
-      const content = html`<div class="tv-holder" id=${"ctn_"+tile.id}></div>`;
-
-      // Wstrzyknięcie po renderze
-      setTimeout(async ()=>{
-        const holder = document.getElementById("ctn_"+tile.id);
-        if(!holder) return;
-        // spróbuj wykryć dostępność TradingView
-        const tvOk = await checkTradingViewReachable();
-        if(tvOk){
-          // IFRAME z widgetem TradingView
-          const iframe = document.createElement("iframe");
-          iframe.id = "tvf_"+tile.id;
-          iframe.title = "tv_"+tile.symbol;
-          iframe.style.cssText = "border:0;display:block;width:100%;height:100%;background:#0b1128";
-          iframe.sandbox = "allow-scripts allow-same-origin allow-popups allow-forms";
-          iframe.loading = "lazy";
-          holder.innerHTML = "";
-          holder.appendChild(iframe);
-          try{
-            const doc = iframe.contentDocument || iframe.contentWindow?.document;
-            doc.open();
-            doc.write(`<!DOCTYPE html><html><head>
-              <meta charset="utf-8"/>
-              <meta name="viewport" content="width=device-width,initial-scale=1"/>
-              <style>html,body,#container{height:100%;margin:0;background:#0b1128}</style>
-            </head><body>
-              <div id="container"></div>
-              <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async><\/script>
-              <script>
-                window.addEventListener('DOMContentLoaded', function(){
-                  try{
-                    new window.TradingView.widget({
-                      autosize: true,
-                      symbol: ${JSON.stringify(sym)},
-                      interval: "60",
-                      timezone: "Etc/UTC",
-                      theme: "dark",
-                      style: "1",
-                      locale: "pl",
-                      enable_publishing: false,
-                      allow_symbol_change: true,
-                      withdateranges: true,
-                      details: true,
-                      hotlist: false,
-                      calendar: false,
-                      hide_side_toolbar: false,
-                      studies: [],
-                      container_id: "container"
-                    });
-                  }catch(e){
-                    document.body.innerHTML = '<div style="display:grid;place-items:center;height:100%;color:#b7c3ff;background:#0b1128">Nie udało się zainicjować TradingView.</div>';
-                  }
-                });
-              <\/script>
-            </body></html>`);
-            doc.close();
-          }catch(e){
-            // fallback do lokalnego wykresu
-            holder.innerHTML = "";
-            render(html`<${OfflineChart} symbol=${sym} id=${tile.id}/>`, holder);
-          }
-        }else{
-          holder.innerHTML = "";
-          render(html`<${OfflineChart} symbol=${sym} id=${tile.id}/>`, holder);
-        }
-      }, 0);
 
       return html`
         <div class="tile" style=${{ left: tile.x+"px", top: tile.y+"px", width: tile.w+"px", height: tile.h+"px" }}>
           <div class="toolbar" onPointerMove=${onMove} onPointerUp=${onUp}>
             <div class="grabber">
               <div class="grab-handle" title="Przeciągnij okno" onPointerDown=${onGrabDown} onPointerMove=${onMove} onPointerUp=${onUp}></div>
-              <div class="title">${sym} — Wykres</div>
+              <div class="title">${sym} — Świece (${tile.interval})</div>
             </div>
             <div class="actions">
+              <select class="input" value=${tile.interval} onChange=${(e)=>state.updateTile(tile.id,{interval:e.currentTarget.value})}>
+                ${Object.keys(INTERVALS).map(iv => html`<option value=${iv} selected=${tile.interval===iv}>${iv}</option>`)}
+              </select>
               <button class="btn small alt" onClick=${()=> state.addTile(tile.symbol)}>Duplikuj</button>
               <button class="btn small alt" onClick=${()=> state.removeTile(tile.id)}>Usuń</button>
             </div>
           </div>
           <div class="content">
-            ${content}
+            ${html`<${CandlesView} symbol=${sym} interval=${tile.interval} id=${tile.id} />`}
           </div>
           <div class="resizer" title="Zmień rozmiar" onPointerDown=${onResizeDown} onPointerMove=${onResizeMove} onPointerUp=${onResizeUp}></div>
         </div>
@@ -521,31 +522,17 @@
             </section>
 
             <section class="panel">
-              <h3 style="margin-top:0;color:var(--muted)">Przykładowe symbole</h3>
-              <div style="display:flex;flex-wrap:wrap;gap:8px">
-                ${["BTC","ETH","SOL","BNB","XRP","DOGE","ADA","ARB","APT","SUI"].map(s=> html`
-                  <button class="btn small" onClick=${()=>state.addTile(s)}>${s}</button>
-                `)}
-              </div>
-              <div class="muted" style="font-size:12px;margin-top:8px">
-                Gdy połączenie z TradingView jest niedostępne, zobaczysz lokalny wykres świecowy (syntetyczny).
-              </div>
-            </section>
-
-            <section class="panel">
-              <h3 style="margin-top:0;color:var(--muted)">FAQ</h3>
-              <table class="table">
-                <tbody>
-                  <tr><th>Co z komunikatem "Brak połączenia z TradingView"?</th><td>Teraz, gdy TV niedostępny, wyświetlamy lokalny wykres zamiast pustego komunikatu.</td></tr>
-                  <tr><th>Czy to prawdziwe dane?</th><td>Offline używa danych syntetycznych. Po odzyskaniu łącza ładuje się wykres TradingView z prawdziwymi danymi.</td></tr>
-                  <tr><th>Przełączanie</th><td>Automatyczne: aplikacja sprawdza dostępność TV i przełącza widok.</td></tr>
-                </tbody>
-              </table>
+              <h3 style="margin-top:0;color:var(--muted)">Proponowane źródło danych</h3>
+              <ul style="margin:0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.5">
+                <li>Binance Futures klines: najdłuższe historie, brak klucza, stabilne API.</li>
+                <li>W razie braku sieci lub błędu – automatyczny fallback na lokalne świece syntetyczne.</li>
+                <li>Interwały: 1m, 5m, 15m, 1h, 4h, 1d. Historia 1200+ świec przez paginację.</li>
+              </ul>
             </section>
           </main>
         </div>
         <footer style="padding:18px;color:var(--muted);font-size:12px;text-align:center">
-          Tryb hybrydowy: lokalny wykres offline + TradingView online.
+          Dane z darmowego API Binance. Offline: syntetyczny wykres świecowy. Brak zewnętrznych assetów, wszystko lokalnie w JS.
         </footer>
       `;
     }
