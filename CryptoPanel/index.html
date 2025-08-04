@@ -3,12 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Krypto Dashboard – Lokalny zapis (konto + dashboard)</title>
+  <title>Krypto Dashboard – TradingView kafelki + ceny z CoinGecko</title>
   <style>
     :root{
       --bg:#0b1020;
       --panel:#101832;
-      --panel-2:#0f1a3d;
       --text:#e7ecff;
       --muted:#b7c3ff;
       --accent:#6aa9ff;
@@ -24,11 +23,11 @@
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial;
+      color:var(--text);
       background:
         radial-gradient(60vw 60vw at 10% -10%, rgba(106,169,255,0.15), transparent 60%),
         radial-gradient(50vw 50vw at 110% 10%, rgba(255,92,122,0.12), transparent 60%),
         linear-gradient(180deg, #090d1a, #0b1020 30%, #0b1020 100%);
-      color:var(--text);
     }
     header{
       display:flex;align-items:center;justify-content:space-between;
@@ -47,7 +46,7 @@
     .logo:after{content:"";position:absolute;inset:5px;border-radius:8px;background:var(--panel);box-shadow: inset 0 0 12px rgba(0,0,0,0.45)}
     .brand h1{font-size:18px;margin:0;letter-spacing:0.4px}
     .muted{color:var(--muted)}
-    .row{display:grid;grid-template-columns: 300px 1fr;gap:18px;padding:18px;align-items:start}
+    .row{display:grid;grid-template-columns: 320px 1fr;gap:18px;padding:18px;align-items:start}
     aside{display:flex;flex-direction:column;gap:14px;position:sticky;top:76px;height:calc(100dvh - 90px);overflow:auto;padding-right:4px}
     .panel{
       background: linear-gradient(180deg, rgba(16,24,50,0.75), rgba(16,24,50,0.5));
@@ -87,91 +86,48 @@
     .tab{padding:8px 10px;border-radius:10px;border:1px solid var(--border);cursor:pointer;background:linear-gradient(180deg, #0c1430, #0b132a);color:var(--muted);font-size:12px}
     .tab.active{color:var(--text);border-color:#3856b7; box-shadow: inset 0 0 0 1px rgba(106,169,255,0.25)}
     footer{padding:18px;color:var(--muted);font-size:12px;text-align:center}
-    .two-col{display:grid;grid-template-columns: 1fr 1fr;gap:12px}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border-radius:999px;border:1px solid var(--border);font-size:12px;background:#0b1330}
 
     .canvas{
-      position:relative;
-      border-radius:12px;
-      border:1px solid var(--border);
+      position:relative;border-radius:12px;border:1px solid var(--border);
       background: linear-gradient(180deg, rgba(24,36,80,0.35), rgba(12,18,40,0.45));
-      min-height: 520px;
-      overflow:hidden;
+      min-height: 520px;overflow:hidden;
     }
     .tile{
-      position:absolute;
-      background: radial-gradient(120% 120% at -10% -10%, rgba(106,169,255,0.12), transparent 40%), #0b1330;
-      border:1px solid var(--border);
-      border-radius:12px;
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      display:flex;flex-direction:column;
+      position:absolute;background: radial-gradient(120% 120% at -10% -10%, rgba(106,169,255,0.12), transparent 40%), #0b1330;
+      border:1px solid var(--border);border-radius:12px;box-shadow: var(--shadow);overflow:hidden;display:flex;flex-direction:column;
     }
     .tile.locked{box-shadow:none}
     .tile .toolbar{
-      display:flex;align-items:center;justify-content:space-between;
-      gap:8px;padding:8px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-bottom:1px solid var(--border);
       background: linear-gradient(180deg, rgba(16,24,50,0.75), rgba(16,24,50,0.35));
-      cursor: move;
-      user-select:none;
+      cursor: move;user-select:none;
     }
     .tile.locked .toolbar{cursor:default}
     .toolbar .title{font-size:12px;color:var(--muted)}
     .toolbar .actions{display:flex;gap:6px}
-    .statline{
-      display:grid;grid-template-columns: 1fr repeat(4, max-content);gap:10px;
-      align-items:center;padding:8px;border-top:1px solid var(--border);font-size:12px;
-      background: rgba(10,16,36,0.35)
-    }
-    .content{position:relative;flex:1;min-height:120px}
-    .content canvas{position:absolute;inset:0;width:100%;height:100%}
+    .content{position:relative;flex:1;min-height:140px}
+    .tv-holder{position:absolute;inset:0}
     .resizer{position:absolute;right:6px;bottom:6px;width:14px;height:14px;border-radius:4px;border:1px solid var(--border);
-      background:linear-gradient(135deg, rgba(106,169,255,0.45), rgba(106,169,255,0.15));
-      cursor: nwse-resize;opacity:0.85;
+      background:linear-gradient(135deg, rgba(106,169,255,0.45), rgba(106,169,255,0.15));cursor: nwse-resize;opacity:0.85;
     }
     .locked .resizer{display:none}
-    .ghost{position:absolute;border:1px dashed #6aa9ff;background:rgba(106,169,255,0.08);border-radius:12px;pointer-events:none}
-    .controls{display:flex;gap:8px;flex-wrap:wrap}
-    .panel.flexcol{display:flex;flex-direction:column;gap:12px}
-    /* Stats-only layout: each field separate, never overlapping */
-    .stats-only{display:grid; gap:8px; max-height:400px; overflow:auto}
-    .mini-row{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:8px;
-      border:1px solid var(--border);
-      border-radius:10px;
-      padding:10px;
-      background:linear-gradient(180deg, rgba(24,36,80,0.35), rgba(12,18,40,0.35));
+    .statline{
+      display:grid;grid-template-columns: 1fr repeat(3, max-content);gap:10px;
+      align-items:center;padding:8px;border-top:1px solid var(--border);font-size:12px;background: rgba(10,16,36,0.35)
     }
-    .mini-row > .cell{display:flex; justify-content:space-between; align-items:center; gap:10px; min-width:0}
-    .mini-row .label{font-size:11px;color:var(--muted)}
-    .mini-row .value{font-weight:700; white-space:nowrap}
-    .badge{font-size:11px;color:var(--muted)}
-    .hr{height:1px;background:var(--border);margin:8px 0}
-    .hint{font-size:12px;color:var(--muted)}
-    @media (min-width: 560px){
-      .mini-row{grid-template-columns: repeat(2, minmax(0,1fr))}
-    }
-    @media (min-width: 860px){
-      .mini-row{grid-template-columns: repeat(3, minmax(0,1fr))}
-    }
+
+    .two-col{display:grid;grid-template-columns: 1fr 1fr;gap:12px}
     @media (max-width: 1100px){
       .row{grid-template-columns: 1fr}
       aside{position:relative;height:auto}
       .kpis{grid-template-columns: repeat(2, minmax(0,1fr))}
       .canvas{min-height:420px}
+      .two-col{grid-template-columns: 1fr}
     }
-
-    /* Ensure KPI value and delta are separated and never overlap */
-    .kpi .value, .kpi .delta{display:block}
-    .kpi .value{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-    .kpi .delta{white-space:nowrap}
   </style>
   <script type="importmap">
     {
       "imports": {
-        "chart.js": "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js",
         "uuid": "https://cdn.jsdelivr.net/npm/uuid@9.0.1/dist/esm-browser/index.js"
       }
     }
@@ -183,400 +139,255 @@
       <div class="logo" aria-hidden="true"></div>
       <div>
         <h1>Krypto Dashboard</h1>
-      <div class="muted" style="font-size:12px">Wszystko zapisane lokalnie: konta, pozycje i układ kafelków</div>
+        <div class="muted" style="font-size:12px">Kafelki z wykresami TradingView. Ceny z CoinGecko (bez kluczy).</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
-      <span id="currentUser" class="pill">Gość</span>
-      <button id="demoData" class="btn">Załaduj demo</button>
+      <span id="status" class="muted" style="font-size:12px">Ładowanie...</span>
+      <button id="addBtcTile" class="btn">Dodaj BTC</button>
     </div>
   </header>
 
   <div class="row">
     <aside>
       <div class="panel">
-        <h3>Użytkownik (lokalny storage)</h3>
-        <div class="field"><label>Email</label><input id="email" class="input" placeholder="you@example.com" /></div>
-        <div class="field"><label>Hasło</label><input id="password" class="input" type="password" placeholder="••••••••" /></div>
-        <div class="controls">
-          <button id="register" class="btn alt">Zarejestruj</button>
-          <button id="login" class="btn">Zaloguj</button>
-          <button id="logout" class="btn alt">Wyloguj</button>
-        </div>
-        <div class="hr"></div>
-        <div class="hint">Dane są zapisywane w localStorage (per przeglądarka). Sesja w sessionStorage.</div>
-      </div>
-
-      <div class="panel">
-        <h3>Pozycja ręczna</h3>
+        <h3>Dodaj kafelek</h3>
+        <div class="field"><label>Symbol (np. BTC, ETH)</label><input id="symbolInput" class="input" placeholder="BTC" /></div>
         <div class="two-col">
-          <div class="field"><label>Symbol</label><input id="mSymbol" class="input" placeholder="BTC" /></div>
-          <div class="field"><label>Ilość</label><input id="mAmount" type="number" step="any" class="input" placeholder="0.123" /></div>
-        </div>
-        <div class="field"><label>Śr. cena zakupu (USD)</label><input id="mAvgPrice" type="number" step="any" class="input" placeholder="30000" /></div>
-        <div class="controls">
-          <button id="addManual" class="btn">Dodaj pozycję</button>
-          <button id="addTile" class="btn alt">Dodaj kafelek z wykresem</button>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>Konfiguracja kafelków</h3>
-        <div class="controls">
-          <button id="lockToggle" class="btn">Zablokuj kafelki</button>
-          <button id="clearTiles" class="btn alt">Usuń wszystkie kafelki</button>
+          <button id="addTile" class="btn">Dodaj wykres</button>
+          <button id="autoLayout" class="btn alt">Auto-układ</button>
         </div>
         <div class="field" style="margin-top:8px">
-          <label>Auto-układ</label>
-          <select id="autoLayout">
+          <label>Tryb kafelków</label>
+          <select id="layoutMode" class="input">
             <option value="fit">Dopasuj do siatki</option>
             <option value="cascade">Kaskada</option>
           </select>
         </div>
-        <button id="applyLayout" class="btn small" style="margin-top:6px">Zastosuj</button>
+        <div class="two-col" style="margin-top:8px">
+          <button id="lockAll" class="btn alt">Zablokuj</button>
+          <button id="clearAll" class="btn alt">Wyczyść</button>
+        </div>
       </div>
 
-      <div class="panel flexcol">
-        <h3>Backup/Restore (eksport/ import JSON)</h3>
-        <div class="controls">
-          <button id="exportAll" class="btn">Eksportuj całą bazę</button>
-          <button id="exportUser" class="btn alt">Eksportuj aktywnego użytkownika</button>
-        </div>
-        <div class="field">
-          <label>Import JSON</label>
-          <textarea id="importBox" rows="4" placeholder='Wklej tu JSON bazy lub użytkownika'></textarea>
-        </div>
-        <div class="controls">
-          <button id="importAll" class="btn">Importuj (nadpisuje)</button>
-          <button id="importMerge" class="btn alt">Importuj i scal</button>
-        </div>
-        <div class="hint">Umożliwia przeniesienie danych między przeglądarkami/urządzeniami ręcznie.</div>
+      <div class="panel">
+        <h3>Top ceny (z CoinGecko)</h3>
+        <table class="table" id="pricesTable">
+          <thead>
+            <tr><th>Token</th><th>Cena</th><th>24h</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot><tr><td colspan="4" class="muted" style="padding:10px">Brak danych</td></tr></tfoot>
+        </table>
       </div>
 
-      <div class="panel flexcol">
-        <h3>Panel statystyk</h3>
-        <div id="statsOnly" class="stats-only"></div>
-        <div style="border-top:1px solid var(--border);padding-top:8px">
-          <div class="badge">Podsumowanie portfela</div>
-          <div id="sumStats" style="font-weight:700;margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">$0.00 | P/L $0.00 (0.00%)</div>
+      <div class="panel">
+        <h3>KPIs</h3>
+        <div class="kpis">
+          <div class="kpi">
+            <div class="label">Liczba kafelków</div>
+            <div class="value" id="kpiTiles">0</div>
+            <div class="delta muted">aktywnych wykresów</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Ostatnia aktualizacja</div>
+            <div class="value" id="kpiUpdated">—</div>
+            <div class="delta muted">ceny co 30s</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Źródło danych</div>
+            <div class="value">CoinGecko</div>
+            <div class="delta muted">bez API key</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Wykresy</div>
+            <div class="value">TradingView</div>
+            <div class="delta muted">widget</div>
+          </div>
         </div>
       </div>
     </aside>
 
     <main style="display:flex;flex-direction:column;gap:18px">
       <section class="panel">
-        <div class="kpis">
-          <div class="kpi">
-            <div class="label">Wartość portfela</div>
-            <div class="value" id="kpiValue">$0.00</div>
-            <div class="delta" id="kpiDelta">$0.00 (0.00%)</div>
-          </div>
-          <div class="kpi">
-            <div class="label">Zysk/Strata dzienna</div>
-            <div class="value" id="kpiDaily" class="good">$0.00</div>
-            <div class="delta muted">symulacja</div>
-          </div>
-          <div class="kpi">
-            <div class="label">Liczba pozycji</div>
-            <div class="value" id="kpiPositions">0</div>
-            <div class="delta muted">unikalne coiny</div>
-          </div>
-          <div class="kpi">
-            <div class="label">Kafelki</div>
-            <div class="value" id="kpiTiles">0</div>
-            <div class="delta muted">wykresy na płótnie</div>
-          </div>
-        </div>
+        <h3 style="margin-top:0">Płótno kafelków</h3>
+        <div id="canvas" class="canvas"></div>
       </section>
 
       <section class="panel">
-        <div class="tabs" id="tabs">
-          <div class="tab active" data-tab="all">Wszystkie</div>
-          <div class="tab" data-tab="manual">Ręczne</div>
-          <div class="tab" data-tab="exchanges">Giełdy</div>
-          <div class="tab" data-tab="wallets">Portfele</div>
-        </div>
-
-        <div class="two-col" style="align-items:start">
-          <div style="overflow:auto">
-            <h3>Pozycje</h3>
-            <table class="table" id="positionsTable">
-              <thead>
-                <tr>
-                  <th>Token</th>
-                  <th>Ilość</th>
-                  <th>Śr. cena</th>
-                  <th>Aktualna</th>
-                  <th>Wartość</th>
-                  <th>P/L $</th>
-                  <th>P/L %</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-              <tfoot>
-                <tr><td colspan="8" class="muted" style="padding:10px">Brak danych. Dodaj pozycję lub wczytaj demo.</td></tr>
-              </tfoot>
-            </table>
-          </div>
-
-          <div style="min-width:420px">
-            <h3>Płótno kafelków</h3>
-            <div id="canvas" class="canvas"></div>
-          </div>
+        <h3 style="margin-top:0">Szybkie dodawanie</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <button class="btn small" data-quick="BTC">BTC</button>
+          <button class="btn small" data-quick="ETH">ETH</button>
+          <button class="btn small" data-quick="SOL">SOL</button>
+          <button class="btn small" data-quick="BNB">BNB</button>
+          <button class="btn small" data-quick="XRP">XRP</button>
+          <button class="btn small" data-quick="DOGE">DOGE</button>
+          <button class="btn small" data-quick="ADA">ADA</button>
+          <button class="btn small" data-quick="ARB">ARB</button>
+          <button class="btn small" data-quick="APT">APT</button>
+          <button class="btn small" data-quick="SUI">SUI</button>
         </div>
       </section>
     </main>
   </div>
 
   <footer>
-    Aplikacja działa w 100% lokalnie (localStorage + sessionStorage). Wykresy i ceny są generowane proceduralnie, bez zewnętrznych API.
+    Wykresy są osadzane przez widget TradingView. Ceny pobierane z publicznego API CoinGecko. Brak zewnętrznych zasobów multimedialnych – wszystko działa lokalnie w przeglądarce.
   </footer>
 
   <script type="module">
     import { v4 as uuidv4 } from "uuid";
-    const ChartJS = window.Chart;
 
-    // RNG and synthetic prices
-    const seedRandom = (seed)=>{let t=seed;return ()=>{t+=0x6D2B79F5;let r=Math.imul(t^(t>>>15),1|t);r^=r+Math.imul(r^(r>>>7),61|r);return ((r^(r>>>14))>>>0)/4294967296}};
-    const symbolToSeed = (sym)=>{let s=0;for(let i=0;i<sym.length;i++) s=(s*31+sym.charCodeAt(i))|0;return Math.abs(s)};
-    const synthPrice = (symbol)=>{
-      const baseSeed = symbolToSeed(symbol);
-      const rnd = seedRandom(baseSeed + Math.floor(Date.now()/60000));
-      const base = 10 + (baseSeed % 5000)/10;
-      const vol = (baseSeed % 100)/100;
-      const jitter = (rnd()*2-1)*base*0.03*(0.3+vol);
-      return Math.max(0.0001, +(base + jitter).toFixed(4));
-    };
-    const synthSparkline = (symbol, points=120)=>{
-      const baseSeed = symbolToSeed(symbol);
-      const rnd = seedRandom(baseSeed);
-      const base = 10 + (baseSeed % 5000)/10;
-      let val = base;
-      const out=[];
-      for(let i=points-1;i>=0;i--){
-        const noise = (rnd()*2-1) * base * 0.02;
-        val = Math.max(0.0001, val + noise);
-        out.push({ t: Date.now() - i*30000, v: +val.toFixed(4) });
-      }
-      return out;
-    };
-
-    // Local "DB"
-    const dbKey = "kdash-v2";
-    const defaultState = {
-      users: [],
-      sessions: [],
-      profiles: {},
-      portfolios: {},
-      tiles: {}
-    };
-    const saveDB = (db)=> localStorage.setItem(dbKey, JSON.stringify(db));
-    const loadDB = ()=> { try{ return JSON.parse(localStorage.getItem(dbKey)) || structuredClone(defaultState); }catch{ return structuredClone(defaultState);} };
-    let DB = loadDB();
-
-    const hash = (s)=>{let h=0;for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i);h|=0}return "h"+Math.abs(h)};
-
-    const getSessionUser = ()=>{
-      const token = sessionStorage.getItem("session");
-      if(!token) return null;
-      const s = DB.sessions.find(s=>s.token===token && s.exp>Date.now());
-      if(!s) return null;
-      return DB.users.find(u=>u.id===s.userId) || null;
-    };
-    const signUp = (email, password)=>{
-      if(DB.users.some(u=>u.email===email)) throw new Error("Email już istnieje");
-      const id = uuidv4();
-      DB.users.push({ id, email, passHash: hash(password), createdAt: Date.now() });
-      DB.profiles[id] = { displayName: email.split("@")[0], avatarColor: `hsl(${Math.abs(hash(email).length*37)%360} 70% 60%)` };
-      DB.portfolios[id] = { manual: [], exchanges: [], wallets: [] };
-      DB.tiles[id] = [];
-      saveDB(DB);
-      return id;
-    };
-    const login = (email,password)=>{
-      const u = DB.users.find(u=>u.email===email && u.passHash===hash(password));
-      if(!u) throw new Error("Nieprawidłowe dane logowania");
-      const token = uuidv4();
-      DB.sessions.push({ token, userId: u.id, exp: Date.now()+ 1000*60*60*24 });
-      saveDB(DB);
-      sessionStorage.setItem("session", token);
-      return u;
-    };
-    const logout = ()=> sessionStorage.removeItem("session");
-
-    const addManual = (uid, symbol, amount, avgPrice)=>{
-      DB.portfolios[uid].manual.push({ id: uuidv4(), source: "manual", symbol: symbol.toUpperCase(), amount:+amount, avgPrice:+avgPrice });
-      saveDB(DB);
-    };
-    const synthExchangePositions = (ex)=> {
-      const syms = ["BTC","ETH","SOL","BNB","ARB","APT","SUI","XRP","POL","DOGE","ADA"];
-      const rnd = seedRandom(symbolToSeed(ex.alias||"EX"));
-      const n = 2 + Math.floor(rnd()*3);
-      const out=[];
-      for(let i=0;i<n;i++){
-        const sym = syms[Math.floor(rnd()*syms.length)];
-        const amount = +(rnd()*5).toFixed(4);
-        const avgPrice = +(synthPrice(sym) * (0.8 + rnd()*0.4)).toFixed(4);
-        out.push({ id: uuidv4(), source:"exchange", symbol:sym, amount, avgPrice, meta:{exchange:ex.alias} });
-      }
-      return out;
-    };
-    const synthWalletPositions = (w)=>{
-      const chainMap = {"ethereum":"ETH","bnb":"BNB","arbitrum":"ARB","polygon":"POL","solana":"SOL","aptos":"APT","sui":"SUI","algorand":"ALGO","xrp":"XRP"};
-      const sym = chainMap[(w.chain||"").toLowerCase()] || "ETH";
-      const rnd = seedRandom(symbolToSeed(w.address||w.chain||"W"));
-      const amount = +(rnd()*10).toFixed(4);
-      const avgPrice = +(synthPrice(sym) * (0.7 + rnd()*0.6)).toFixed(4);
-      return [{ id: uuidv4(), source:"wallet", symbol:sym, amount, avgPrice, meta:{chain:w.chain,address:w.address} }];
-    };
-    const addExchange = (uid, alias, key, secret)=>{
-      DB.portfolios[uid].exchanges = DB.portfolios[uid].exchanges||[];
-      DB.portfolios[uid].exchanges.push({ id: uuidv4(), alias, encKey:btoa(key||""), encSecret:btoa(secret||"") });
-      saveDB(DB);
-    };
-    const addWallet = (uid, chain, address)=>{
-      DB.portfolios[uid].wallets = DB.portfolios[uid].wallets||[];
-      DB.portfolios[uid].wallets.push({ id: uuidv4(), chain, address });
-      saveDB(DB);
-    };
-
-    const aggregate = (uid, scope="all")=>{
-      const p = DB.portfolios[uid] || {manual:[],exchanges:[],wallets:[]};
-      let positions = [];
-      if(scope==="all" || scope==="manual") positions = positions.concat(p.manual);
-      if(scope==="all" || scope==="exchanges") positions = positions.concat(p.exchanges.flatMap(synthExchangePositions));
-      if(scope==="all" || scope==="wallets") positions = positions.concat(p.wallets.flatMap(synthWalletPositions));
-
-      const map = new Map();
-      for(const pos of positions){
-        const m = map.get(pos.symbol) || {symbol:pos.symbol, amount:0, cost:0, sources:new Set(), items:[]};
-        m.amount += pos.amount; m.cost += pos.amount*pos.avgPrice; m.sources.add(pos.source); m.items.push(pos);
-        map.set(pos.symbol, m);
-      }
-      const rows=[]; let totalValue=0, totalCost=0;
-      for(const [sym,m] of map){
-        const price = synthPrice(sym);
-        const avgPrice = m.amount>0 ? m.cost/m.amount : 0;
-        const value = m.amount*price;
-        const pl = value - m.cost;
-        const plPct = avgPrice>0 ? (price/avgPrice - 1)*100 : 0;
-        totalValue += value; totalCost += m.cost;
-        rows.push({symbol:sym, amount:m.amount, avgPrice, price, value, pl, plPct, sources:[...m.sources]});
-      }
-      rows.sort((a,b)=>b.value-a.value);
-      const plTotal = totalValue-totalCost;
-      const plPct = totalCost>0 ? (totalValue/totalCost - 1)*100 : 0;
-      return { rows, totals:{value:totalValue, pl:plTotal, plPct} };
-    };
-
+    // State
     const ui = {
-      currentUser: document.getElementById("currentUser"),
-      email: document.getElementById("email"),
-      password: document.getElementById("password"),
-      register: document.getElementById("register"),
-      login: document.getElementById("login"),
-      logout: document.getElementById("logout"),
-      demoData: document.getElementById("demoData"),
-      mSymbol: document.getElementById("mSymbol"),
-      mAmount: document.getElementById("mAmount"),
-      mAvgPrice: document.getElementById("mAvgPrice"),
-      addManual: document.getElementById("addManual"),
-      addTile: document.getElementById("addTile"),
-      positionsTable: document.getElementById("positionsTable"),
+      status: document.getElementById("status"),
       canvas: document.getElementById("canvas"),
-      lockToggle: document.getElementById("lockToggle"),
-      clearTiles: document.getElementById("clearTiles"),
-      autoLayout: document.getElementById("autoLayout"),
-      applyLayout: document.getElementById("applyLayout"),
-      tabs: document.getElementById("tabs"),
-      statsOnly: document.getElementById("statsOnly"),
-      sumStats: document.getElementById("sumStats"),
-      kpiValue: document.getElementById("kpiValue"),
-      kpiDelta: document.getElementById("kpiDelta"),
-      kpiDaily: document.getElementById("kpiDaily"),
-      kpiPositions: document.getElementById("kpiPositions"),
+      pricesTable: document.getElementById("pricesTable"),
       kpiTiles: document.getElementById("kpiTiles"),
-      exportAll: document.getElementById("exportAll"),
-      exportUser: document.getElementById("exportUser"),
-      importBox: document.getElementById("importBox"),
-      importAll: document.getElementById("importAll"),
-      importMerge: document.getElementById("importMerge")
+      kpiUpdated: document.getElementById("kpiUpdated"),
+      symbolInput: document.getElementById("symbolInput"),
+      addTile: document.getElementById("addTile"),
+      addBtcTile: document.getElementById("addBtcTile"),
+      autoLayout: document.getElementById("autoLayout"),
+      layoutMode: document.getElementById("layoutMode"),
+      lockAll: document.getElementById("lockAll"),
+      clearAll: document.getElementById("clearAll")
     };
 
-    const fmtUSD = (v)=>"$"+(Math.abs(v)>=100000? v.toLocaleString(undefined,{maximumFractionDigits:0}) : v.toLocaleString(undefined,{maximumFractionDigits:2}));
-    const col = (v)=> v>0?"good": v<0?"bad":"muted";
-
-    const defaultTileSize = { w: 320, h: 200 };
-    const getTiles = (uid)=> DB.tiles[uid] || [];
-    const setTiles = (uid, tiles)=> { DB.tiles[uid]=tiles; saveDB(DB); };
-
-    let activeTab = "all";
-    let dragState = null;
-    let resizeState = null;
+    const defaultTileSize = { w: 360, h: 260 };
+    let tiles = []; // {id,symbol,x,y,w,h,locked}
     let isLocked = false;
-    let charts = new Map();
 
-    const destroyChart = (tileId)=>{
-      const c = charts.get(tileId);
-      if(c){ try{ c.destroy(); }catch{} charts.delete(tileId); }
+    // CoinGecko simple price IDs mapping
+    const symbolToId = {
+      BTC: "bitcoin", ETH:"ethereum", SOL:"solana", BNB:"binancecoin", XRP:"ripple",
+      DOGE:"dogecoin", ADA:"cardano", ARB:"arbitrum", APT:"aptos", SUI:"sui"
     };
+    const idToSymbol = Object.fromEntries(Object.entries(symbolToId).map(([k,v])=>[v,k]));
 
-    const createTileEl = (tile, aggRow)=>{
+    // Fetch prices from CoinGecko
+    async function fetchPrices(symbols){
+      const ids = symbols
+        .map(s=>symbolToId[s.toUpperCase()])
+        .filter(Boolean);
+      if(ids.length===0) return {};
+      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(ids.join(','))}&vs_currencies=usd&include_24hr_change=true`;
+      const r = await fetch(url, { headers: { "accept": "application/json" } });
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      const json = await r.json();
+      const out = {};
+      for(const [id, obj] of Object.entries(json)){
+        const sym = idToSymbol[id] || id.toUpperCase();
+        out[sym] = { price: obj.usd, ch24: obj.usd_24h_change };
+      }
+      return out;
+    }
+
+    // Price cache and periodic refresh
+    let priceCache = {};
+    async function refreshPriceTable(){
+      try{
+        ui.status.textContent = "Aktualizuję ceny...";
+        const syms = Object.keys(symbolToId);
+        const data = await fetchPrices(syms);
+        priceCache = {...priceCache, ...data};
+        renderPrices(data);
+        ui.kpiUpdated.textContent = new Date().toLocaleTimeString();
+        ui.status.textContent = "OK";
+      }catch(e){
+        ui.status.textContent = "Błąd pobierania cen";
+      }
+    }
+    function renderPrices(data){
+      const tbody = ui.pricesTable.querySelector("tbody");
+      const tfoot = ui.pricesTable.querySelector("tfoot");
+      tbody.innerHTML = "";
+      const entries = Object.keys(symbolToId).map(sym => ({ sym, ...data[sym] })).filter(x=>x.price!=null);
+      if(entries.length===0){ tfoot.style.display=""; return; }
+      tfoot.style.display="none";
+      for(const row of entries){
+        const tr = document.createElement("tr");
+        const cls = row.ch24>0?"good": row.ch24<0?"bad":"muted";
+        tr.innerHTML = `
+          <td><strong>${row.sym}</strong></td>
+          <td>$${Number(row.price).toLocaleString(undefined,{maximumFractionDigits:6})}</td>
+          <td class="${cls}">${(row.ch24>=0?"+":"") + row.ch24.toFixed(2)}%</td>
+          <td><button class="btn small alt" data-add="${row.sym}">Kafelek</button></td>
+        `;
+        tbody.appendChild(tr);
+      }
+      tbody.querySelectorAll("button[data-add]").forEach(b=>{
+        b.addEventListener("click", ()=> addTile(b.dataset.add));
+      });
+    }
+
+    // TradingView widget loader (no external assets other than script)
+    function ensureTVScript(){
+      return new Promise((resolve, reject)=>{
+        if(window.TradingView?.widget){ resolve(); return; }
+        const s = document.createElement("script");
+        s.src = "https://s3.tradingview.com/tv.js";
+        s.async = true;
+        s.onload = ()=> resolve();
+        s.onerror = ()=> reject(new Error("Nie udało się załadować TradingView"));
+        document.head.appendChild(s);
+      });
+    }
+
+    // Tile lifecycle
+    function createTileEl(tile){
       const el = document.createElement("div");
-      el.className = "tile";
-      if(isLocked || tile.locked) el.classList.add("locked");
-      el.style.left = (tile.x||0)+"px";
-      el.style.top = (tile.y||0)+"px";
-      el.style.width = (tile.w||defaultTileSize.w)+"px";
-      el.style.height = (tile.h||defaultTileSize.h)+"px";
+      el.className = "tile" + ((isLocked || tile.locked) ? " locked" : "");
+      Object.assign(el.style, {
+        left: (tile.x||0)+"px",
+        top: (tile.y||0)+"px",
+        width: (tile.w||defaultTileSize.w)+"px",
+        height: (tile.h||defaultTileSize.h)+"px"
+      });
       el.dataset.id = tile.id;
 
       const toolbar = document.createElement("div");
       toolbar.className = "toolbar";
       const title = document.createElement("div");
       title.className = "title";
-      title.textContent = `${tile.symbol} — ${fmtUSD(aggRow?.price||synthPrice(tile.symbol))}`;
+      const priceObj = priceCache[tile.symbol];
+      const priceTxt = priceObj ? `$${Number(priceObj.price).toLocaleString(undefined,{maximumFractionDigits:6})}` : "—";
+      title.textContent = `${tile.symbol} — ${priceTxt}`;
       const actions = document.createElement("div");
       actions.className = "actions";
 
-      const btnAdd = document.createElement("button");
-      btnAdd.className = "btn small alt";
-      btnAdd.textContent = "+ duplikuj";
-      btnAdd.addEventListener("click",(e)=>{ e.stopPropagation(); addTileForSymbol(tile.symbol); });
+      const btnDup = document.createElement("button");
+      btnDup.className = "btn small alt"; btnDup.textContent = "Duplikuj";
+      btnDup.addEventListener("click",(e)=>{ e.stopPropagation(); addTile(tile.symbol); });
 
       const btnLock = document.createElement("button");
-      btnLock.className = "btn small";
-      btnLock.textContent = tile.locked? "Odblokuj" : "Zablokuj";
-      btnLock.addEventListener("click",(e)=>{
-        e.stopPropagation();
-        toggleLockTile(tile.id);
-      });
+      btnLock.className = "btn small"; btnLock.textContent = tile.locked ? "Odblokuj" : "Zablokuj";
+      btnLock.addEventListener("click",(e)=>{ e.stopPropagation(); toggleLockTile(tile.id); });
 
-      const btnClose = document.createElement("button");
-      btnClose.className = "btn small alt";
-      btnClose.textContent = "Usuń";
-      btnClose.addEventListener("click",(e)=>{ e.stopPropagation(); removeTile(tile.id); });
+      const btnDel = document.createElement("button");
+      btnDel.className = "btn small alt"; btnDel.textContent = "Usuń";
+      btnDel.addEventListener("click",(e)=>{ e.stopPropagation(); removeTile(tile.id); });
 
-      actions.append(btnAdd, btnLock, btnClose);
+      actions.append(btnDup, btnLock, btnDel);
       toolbar.append(title, actions);
 
       const content = document.createElement("div");
       content.className = "content";
-      const canvas = document.createElement("canvas");
-      content.appendChild(canvas);
+      const holder = document.createElement("div");
+      holder.className = "tv-holder";
+      holder.id = `tv_${tile.id}`;
+      content.appendChild(holder);
 
       const stat = document.createElement("div");
       stat.className = "statline";
-      const avg = aggRow?.avgPrice || 0;
-      const price = aggRow?.price || synthPrice(tile.symbol);
-      const pct = avg>0 ? ((price/avg-1)*100) : 0;
+      const ch = priceObj?.ch24 ?? 0;
+      const cls = ch>0?"good": ch<0?"bad":"muted";
       stat.innerHTML = `
         <div><strong>${tile.symbol}</strong></div>
-        <div class="badge">Śr. zakup: <strong>${fmtUSD(avg)}</strong></div>
-        <div class="badge">Aktualna: <strong>${fmtUSD(price)}</strong></div>
-        <div class="badge ${col(pct)}">Zmiana: <strong>${(pct>=0?"+":"") + pct.toFixed(2)}%</strong></div>
-        <div></div>
+        <div class="muted">Cena: <strong>${priceTxt}</strong></div>
+        <div class="${cls}">24h: <strong>${(ch>=0?"+":"") + ch.toFixed(2)}%</strong></div>
+        <div class="muted"></div>
       `;
 
       const res = document.createElement("div");
@@ -584,369 +395,156 @@
 
       el.append(toolbar, content, res, stat);
 
+      // drag
       if(!(isLocked || tile.locked)){
-        toolbar.addEventListener("pointerdown",(e)=>{
-          const id = tile.id;
+        let drag=null, resize=null;
+        toolbar.addEventListener("pointerdown", (e)=>{
           el.setPointerCapture(e.pointerId);
-          dragState = { id, startX:e.clientX, startY:e.clientY, origX: tile.x||0, origY: tile.y||0 };
+          drag = { sx:e.clientX, sy:e.clientY, ox: tile.x||0, oy: tile.y||0 };
         });
-        el.addEventListener("pointermove",(e)=>{
-          if(!dragState || dragState.id!==tile.id) return;
-          const dx = e.clientX - dragState.startX;
-          const dy = e.clientY - dragState.startY;
-          const nx = Math.max(0, dragState.origX + dx);
-          const ny = Math.max(0, dragState.origY + dy);
-          el.style.left = nx+"px";
-          el.style.top = ny+"px";
-        });
-        el.addEventListener("pointerup",(e)=>{
-          if(dragState && dragState.id===tile.id){
-            const cu = getSessionUser(); if(!cu) return;
-            const tiles = getTiles(cu.id).map(t=> t.id===tile.id ? {...t, x: parseInt(el.style.left), y: parseInt(el.style.top)} : t);
-            setTiles(cu.id, tiles);
+        el.addEventListener("pointermove", (e)=>{
+          if(drag){
+            const nx = Math.max(0, drag.ox + (e.clientX - drag.sx));
+            const ny = Math.max(0, drag.oy + (e.clientY - drag.sy));
+            el.style.left = nx+"px"; el.style.top = ny+"px";
           }
-          dragState=null;
+          if(resize){
+            const nw = Math.max(260, resize.ow + (e.clientX - resize.sx));
+            const nh = Math.max(180, resize.oh + (e.clientY - resize.sy));
+            el.style.width = nw+"px"; el.style.height = nh+"px";
+          }
         });
-
-        res.addEventListener("pointerdown",(e)=>{
+        el.addEventListener("pointerup", ()=>{
+          if(drag){
+            const id = tile.id;
+            const t = tiles.find(t=>t.id===id);
+            t.x = parseInt(el.style.left); t.y = parseInt(el.style.top);
+            drag = null;
+          }
+          if(resize){
+            const id = tile.id;
+            const t = tiles.find(t=>t.id===id);
+            t.w = parseInt(el.style.width); t.h = parseInt(el.style.height);
+            resize = null;
+          }
+        });
+        res.addEventListener("pointerdown", (e)=>{
           e.stopPropagation();
           el.setPointerCapture(e.pointerId);
-          resizeState = { id: tile.id, startX: e.clientX, startY: e.clientY, origW: tile.w||defaultTileSize.w, origH: tile.h||defaultTileSize.h };
-        });
-        el.addEventListener("pointermove",(e)=>{
-          if(!resizeState || resizeState.id!==tile.id) return;
-          const dw = e.clientX - resizeState.startX;
-          const dh = e.clientY - resizeState.startY;
-          const nw = Math.max(220, resizeState.origW + dw);
-          const nh = Math.max(160, resizeState.origH + dh);
-          el.style.width = nw+"px";
-          el.style.height = nh+"px";
-          const chart = charts.get(tile.id);
-          if(chart){ chart.resize(); }
-        });
-        el.addEventListener("pointerup",()=>{
-          if(resizeState && resizeState.id===tile.id){
-            const cu = getSessionUser(); if(!cu) return;
-            const tiles = getTiles(cu.id).map(t=> t.id===tile.id ? {...t, w: parseInt(el.style.width), h: parseInt(el.style.height)} : t);
-            setTiles(cu.id, tiles);
-          }
-          resizeState=null;
+          resize = { sx:e.clientX, sy:e.clientY, ow: tile.w||defaultTileSize.w, oh: tile.h||defaultTileSize.h };
         });
       }
 
-      const data = synthSparkline(tile.symbol, 120);
-      const labels = data.map(d=> new Date(d.t));
-      const values = data.map(d=> d.v);
-      const ctx = canvas.getContext("2d");
-      const grad = ctx.createLinearGradient(0,0,0,200);
-      grad.addColorStop(0, "rgba(106,169,255,0.35)");
-      grad.addColorStop(1, "rgba(106,169,255,0.02)");
-      const chart = new ChartJS(canvas, {
-        type:"line",
-        data:{ labels, datasets:[{ label: tile.symbol, data: values, fill:true, borderColor:"#6aa9ff", backgroundColor:grad, tension:0.3, pointRadius:0 }] },
-        options:{
-          plugins:{ legend:{display:false} },
-          scales:{ x:{display:false}, y:{display:false} },
-          animation:false,
-          responsive:true,
-          maintainAspectRatio:false
-        }
+      // Render TradingView widget
+      ensureTVScript().then(()=>{
+        const sym = mapToTradingViewSymbol(tile.symbol);
+        // Clean holder
+        holder.innerHTML = "";
+        // TradingView widget config
+        new window.TradingView.widget({
+          autosize: true,
+          symbol: sym,
+          interval: "60",
+          timezone: "Etc/UTC",
+          theme: "dark",
+          style: "1",
+          locale: "pl",
+          toolbar_bg: "rgba(0,0,0,0)",
+          hide_top_toolbar: true,
+          hide_legend: true,
+          allow_symbol_change: false,
+          container_id: holder.id
+        });
+      }).catch(()=>{
+        holder.innerHTML = "<div style='padding:10px' class='muted'>Błąd widgetu TradingView</div>";
       });
-      charts.set(tile.id, chart);
 
       return el;
-    };
+    }
 
-    const renderTiles = ()=>{
-      const u = getSessionUser(); if(!u){ document.getElementById("canvas").innerHTML=""; return; }
-      document.getElementById("canvas").innerHTML = "";
-      const agg = aggregate(u.id, activeTab);
-      const rowsBySym = Object.fromEntries(agg.rows.map(r=>[r.symbol, r]));
-      const tiles = getTiles(u.id);
-      tiles.forEach(tile=>{
-        const el = createTileEl(tile, rowsBySym[tile.symbol]);
-        document.getElementById("canvas").appendChild(el);
+    function mapToTradingViewSymbol(sym){
+      // Mapowanie popularnych par na Binance
+      const map = {
+        BTC: "BINANCE:BTCUSDT",
+        ETH: "BINANCE:ETHUSDT",
+        SOL: "BINANCE:SOLUSDT",
+        BNB: "BINANCE:BNBUSDT",
+        XRP: "BINANCE:XRPUSDT",
+        DOGE: "BINANCE:DOGEUSDT",
+        ADA: "BINANCE:ADAUSDT",
+        ARB: "BINANCE:ARBUSDT",
+        APT: "BINANCE:APTUSDT",
+        SUI: "BINANCE:SUIUSDT"
+      };
+      return map[sym.toUpperCase()] || `BINANCE:${sym.toUpperCase()}USDT`;
+    }
+
+    function renderTiles(){
+      ui.canvas.innerHTML = "";
+      tiles.forEach(t => {
+        const el = createTileEl(t);
+        ui.canvas.appendChild(el);
       });
-      ui.kpiTiles.textContent = tiles.length;
-    };
+      ui.kpiTiles.textContent = String(tiles.length);
+    }
 
-    const addTileForSymbol = (symbol)=>{
-      const u = getSessionUser(); if(!u) return alert("Zaloguj się.");
-      const tiles = getTiles(u.id);
-      const x = 20 + (tiles.length%3)* (defaultTileSize.w + 16);
-      const y = 20 + Math.floor(tiles.length/3) * (defaultTileSize.h + 16);
-      tiles.push({ id: uuidv4(), symbol: symbol.toUpperCase(), x, y, w: defaultTileSize.w, h: defaultTileSize.h, locked: false });
-      setTiles(u.id, tiles);
+    function addTile(symbol){
+      const sym = (symbol || ui.symbolInput.value || "BTC").toUpperCase();
+      const x = 16 + (tiles.length % 3) * (defaultTileSize.w + 16);
+      const y = 16 + Math.floor(tiles.length / 3) * (defaultTileSize.h + 16);
+      tiles.push({ id: uuidv4(), symbol: sym, x, y, w: defaultTileSize.w, h: defaultTileSize.h, locked: false });
       renderTiles();
-    };
-    const removeTile = (id)=>{
-      const u = getSessionUser(); if(!u) return;
-      destroyChart(id);
-      const tiles = getTiles(u.id).filter(t=>t.id!==id);
-      setTiles(u.id, tiles);
+    }
+    function removeTile(id){
+      tiles = tiles.filter(t=>t.id!==id);
       renderTiles();
-    };
-    const toggleLockAll = ()=>{
-      const u = getSessionUser(); if(!u) return;
+    }
+    function toggleLockTile(id){
+      const t = tiles.find(t=>t.id===id);
+      if(!t) return;
+      t.locked = !t.locked;
+      renderTiles();
+    }
+    function toggleLockAll(){
       isLocked = !isLocked;
-      const tiles = getTiles(u.id).map(t=> ({...t, locked: isLocked}));
-      setTiles(u.id, tiles);
-      ui.lockToggle.textContent = isLocked? "Odblokuj kafelki" : "Zablokuj kafelki";
+      tiles.forEach(t=> t.locked = isLocked);
       renderTiles();
-    };
-    const toggleLockTile = (id)=>{
-      const u = getSessionUser(); if(!u) return;
-      const tiles = getTiles(u.id).map(t=> t.id===id ? ({...t, locked: !t.locked}) : t);
-      setTiles(u.id, tiles);
-      renderTiles();
-    };
+      ui.lockAll.textContent = isLocked ? "Odblokuj" : "Zablokuj";
+    }
 
-    const autoLayoutTiles = (mode="fit")=>{
-      const u = getSessionUser(); if(!u) return;
-      const tiles = getTiles(u.id);
-      const W = ui.canvas.clientWidth || 800;
+    function autoLayout(mode="fit"){
+      const W = ui.canvas.clientWidth || 960;
       const gap = 16;
       const colW = defaultTileSize.w, rowH = defaultTileSize.h;
       let x=gap, y=gap, maxH=rowH;
-
       tiles.forEach((t, idx)=>{
         if(mode==="fit"){
-          if(x + colW + gap > W){ x=gap; y+= maxH + gap; maxH = rowH; }
-          t.x = x; t.y = y; t.w = colW; t.h = rowH;
-          x += colW + gap;
+          if(x + colW + gap > W){ x=gap; y+= maxH + gap; maxH=rowH; }
+          t.x = x; t.y = y; t.w = colW; t.h = rowH; x += colW + gap;
         }else{
           t.x = gap + (idx*24)%Math.max(24, (W - colW - gap));
           t.y = gap + idx*28;
           t.w = colW; t.h = rowH;
         }
       });
-      setTiles(u.id, tiles);
       renderTiles();
-    };
+    }
 
-    const renderTable = (rows)=>{
-      const tbody = ui.positionsTable.querySelector("tbody");
-      const tfoot = ui.positionsTable.querySelector("tfoot");
-      tbody.innerHTML = "";
-      if(rows.length===0){ tfoot.style.display=""; return; }
-      tfoot.style.display="none";
-      for(const r of rows){
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${r.symbol}</strong> <span class="muted" style="font-size:11px">[${r.sources.join(", ")}]</span></td>
-          <td>${r.amount.toFixed(6)}</td>
-          <td>${fmtUSD(r.avgPrice)}</td>
-          <td>${fmtUSD(r.price)}</td>
-          <td>${fmtUSD(r.value)}</td>
-          <td class="${col(r.pl)}">${(r.pl>=0?"+":"") + fmtUSD(r.pl)}</td>
-          <td class="${col(r.plPct)}">${(r.plPct>=0?"+":"") + r.plPct.toFixed(2)}%</td>
-          <td><button class="btn small alt" data-add="${r.symbol}">Kafelek</button></td>
-        `;
-        tbody.appendChild(tr);
-      }
-      tbody.querySelectorAll("button[data-add]").forEach(b=>{
-        b.addEventListener("click", ()=> addTileForSymbol(b.dataset.add));
-      });
-    };
+    // Events
+    ui.addTile.addEventListener("click", ()=> addTile());
+    ui.addBtcTile.addEventListener("click", ()=> addTile("BTC"));
+    ui.autoLayout.addEventListener("click", ()=> autoLayout(ui.layoutMode.value));
+    ui.lockAll.addEventListener("click", ()=> toggleLockAll());
+    ui.clearAll.addEventListener("click", ()=> { tiles = []; renderTiles(); });
 
-    const renderStatsPanel = (rows, totals)=>{
-      ui.statsOnly.innerHTML = "";
-      for(const r of rows){
-        const row = document.createElement("div");
-        row.className = "mini-row";
-        row.innerHTML = `
-          <div class="cell"><span class="label">Token</span><span class="value"><strong>${r.symbol}</strong></span></div>
-          <div class="cell"><span class="label">Ilość</span><span class="value"><strong>${r.amount.toFixed(6)}</strong></span></div>
-          <div class="cell"><span class="label">Śr. cena</span><span class="value"><strong>${fmtUSD(r.avgPrice)}</strong></span></div>
-          <div class="cell"><span class="label">Aktualna</span><span class="value"><strong>${fmtUSD(r.price)}</strong></span></div>
-          <div class="cell"><span class="label">Wartość</span><span class="value"><strong>${fmtUSD(r.value)}</strong></span></div>
-          <div class="cell"><span class="label">P/L %</span><span class="value ${col(r.plPct)}"><strong>${(r.plPct>=0?"+":"") + r.plPct.toFixed(2)}%</strong></span></div>
-        `;
-        ui.statsOnly.appendChild(row);
-      }
-      ui.sumStats.textContent = `${fmtUSD(totals.value)} | P/L ${(totals.pl>=0?"+":"") + fmtUSD(totals.pl)} (${totals.plPct.toFixed(2)}%)`;
-    };
-
-    const renderKPIs = (agg)=>{
-      ui.kpiValue.textContent = fmtUSD(agg.totals.value);
-      ui.kpiDelta.textContent = `${fmtUSD(agg.totals.pl)} (${agg.totals.plPct.toFixed(2)}%)`;
-      ui.kpiDelta.className = "delta " + col(agg.totals.pl);
-      const daily = agg.totals.value * (Math.sin(Date.now()/1000/60) * 0.005);
-      ui.kpiDaily.textContent = (daily>=0?"+":"") + fmtUSD(daily);
-      ui.kpiDaily.className = "value " + col(daily);
-      ui.kpiPositions.textContent = agg.rows.length;
-    };
-
-    ui.tabs.addEventListener("click",(e)=>{
-      const el = e.target.closest(".tab");
-      if(!el) return;
-      document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t===el));
-      activeTab = el.dataset.tab;
-      update();
+    document.querySelectorAll("[data-quick]").forEach(b=>{
+      b.addEventListener("click", ()=> addTile(b.getAttribute("data-quick")));
     });
 
-    const refreshUser = ()=>{
-      const u = getSessionUser();
-      if(u){
-        const p = DB.profiles[u.id];
-        ui.currentUser.textContent = p?.displayName || u.email;
-        ui.currentUser.style.background = p ? p.avatarColor : "";
-      }else{
-        ui.currentUser.textContent="Gość";
-        ui.currentUser.style.background="";
-      }
-    };
-
-    const download = (filename, text)=>{
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([text],{type:"application/json"}));
-      a.download = filename;
-      a.click();
-      setTimeout(()=> URL.revokeObjectURL(a.href), 1000);
-    };
-    ui.exportAll.addEventListener("click", ()=>{
-      download("kdash-export-all.json", JSON.stringify(DB, null, 2));
-    });
-    ui.exportUser.addEventListener("click", ()=>{
-      const u = getSessionUser(); if(!u) return alert("Zaloguj się.");
-      const pack = {
-        users:[DB.users.find(x=>x.id===u.id)],
-        profiles:{ [u.id]: DB.profiles[u.id] },
-        portfolios:{ [u.id]: DB.portfolios[u.id] },
-        tiles:{ [u.id]: DB.tiles[u.id] }
-      };
-      download(`kdash-user-${u.id}.json`, JSON.stringify(pack, null, 2));
-    });
-    ui.importAll.addEventListener("click", ()=>{
-      try{
-        const parsed = JSON.parse(ui.importBox.value);
-        if(!parsed || typeof parsed!=="object") throw new Error("Niepoprawny JSON");
-        DB = Object.assign(structuredClone(defaultState), parsed);
-        saveDB(DB);
-        sessionStorage.removeItem("session");
-        alert("Zaimportowano całą bazę. Zaloguj się ponownie.");
-        refreshUser(); update();
-      }catch(e){ alert("Błąd importu: "+e.message); }
-    });
-    ui.importMerge.addEventListener("click", ()=>{
-      try{
-        const pack = JSON.parse(ui.importBox.value);
-        if(!pack || typeof pack!=="object") throw new Error("Niepoprawny JSON");
-        (pack.users||[]).forEach(nu=>{
-          const exists = DB.users.find(u=>u.email===nu.email);
-          if(!exists){
-            DB.users.push(nu);
-            if(pack.profiles?.[nu.id]) DB.profiles[nu.id]=pack.profiles[nu.id];
-            if(pack.portfolios?.[nu.id]) DB.portfolios[nu.id]=pack.portfolios[nu.id];
-            if(pack.tiles?.[nu.id]) DB.tiles[nu.id]=pack.tiles[nu.id];
-          }
-        });
-        saveDB(DB);
-        alert("Zaimportowano i scalono. Zaloguj się na odpowiednie konto.");
-        refreshUser(); update();
-      }catch(e){ alert("Błąd importu: "+e.message); }
-    });
-
-    ui.register.addEventListener("click", ()=>{
-      try{
-        const email = ui.email.value.trim(), pass = ui.password.value;
-        if(!email || !pass) throw new Error("Podaj email i hasło.");
-        signUp(email, pass); login(email, pass); refreshUser(); update();
-        alert("Utworzono konto (lokalnie) i zalogowano.");
-      }catch(e){ alert(e.message); }
-    });
-    ui.login.addEventListener("click", ()=>{
-      try{ login(ui.email.value.trim(), ui.password.value); refreshUser(); update(); }
-      catch(e){ alert(e.message); }
-    });
-    ui.logout.addEventListener("click", ()=>{ logout(); refreshUser(); update(); });
-
-    ui.addManual.addEventListener("click", ()=>{
-      const u = getSessionUser(); if(!u) return alert("Zaloguj się.");
-      const sym = ui.mSymbol.value.trim().toUpperCase();
-      const amt = parseFloat(ui.mAmount.value);
-      const ap = parseFloat(ui.mAvgPrice.value);
-      if(!sym || !(amt>0) || !(ap>0)) return alert("Podaj poprawne wartości.");
-      addManual(u.id, sym, amt, ap);
-      ui.mSymbol.value=""; ui.mAmount.value=""; ui.mAvgPrice.value="";
-      update();
-    });
-
-    ui.addTile.addEventListener("click", ()=>{
-      const sym = (ui.mSymbol.value.trim().toUpperCase()) || "BTC";
-      addTileForSymbol(sym);
-    });
-
-    ui.lockToggle.addEventListener("click", ()=> toggleLockAll());
-    ui.clearTiles.addEventListener("click", ()=>{
-      const u = getSessionUser(); if(!u) return;
-      getTiles(u.id).forEach(t=> destroyChart(t.id));
-      setTiles(u.id, []);
-      renderTiles();
-    });
-    ui.applyLayout.addEventListener("click", ()=> autoLayoutTiles(ui.autoLayout.value));
-
-    document.getElementById("positionsTable").addEventListener("dblclick",(e)=>{
-      const td = e.target.closest("td"); if(!td) return;
-      const tr = td.parentElement;
-      const symCell = tr?.children?.[0];
-      if(!symCell) return;
-      const sym = symCell.textContent.trim().split(" ")[0];
-      if(sym) addTileForSymbol(sym);
-    });
-
-    document.getElementById("demoData").addEventListener("click", ()=>{
-      try{
-        let u = DB.users.find(x=>x.email==="demo@user.local");
-        if(!u){
-          signUp("demo@user.local","demo1234");
-          u = DB.users.find(x=>x.email==="demo@user.local");
-          addManual(u.id,"BTC",0.25,30000);
-          addManual(u.id,"ETH",1.5,2000);
-          addManual(u.id,"SOL",10,20);
-          addExchange(u.id,"Binance DEMO","key","secret");
-          addWallet(u.id,"Solana","DEMO-SOL");
-          setTiles(u.id, [
-            {id:uuidv4(), symbol:"BTC", x:16, y:16, w:360, h:220, locked:false},
-            {id:uuidv4(), symbol:"ETH", x:396, y:16, w:360, h:220, locked:false},
-            {id:uuidv4(), symbol:"SOL", x:16, y:252, w:360, h:220, locked:false}
-          ]);
-        }
-        login("demo@user.local","demo1234");
-        refreshUser();
-        update();
-        alert("Załadowano dane demo i zalogowano.");
-      }catch(e){ alert(e.message); }
-    });
-
-    const update = ()=>{
-      const u = getSessionUser();
-      refreshUser();
-      if(!u){
-        renderTable([]);
-        ui.statsOnly.innerHTML = "";
-        ui.sumStats.textContent = "$0.00 | P/L $0.00 (0.00%)";
-        ui.kpiValue.textContent = "$0.00";
-        ui.kpiDelta.textContent = "$0.00 (0.00%)";
-        ui.kpiDaily.textContent = "$0.00";
-        ui.kpiPositions.textContent = "0";
-        ui.kpiTiles.textContent = "0";
-        ui.canvas.innerHTML = "";
-        charts.forEach((c,id)=> destroyChart(id));
-        charts.clear();
-        return;
-      }
-      const agg = aggregate(u.id, activeTab);
-      renderKPIs(agg);
-      renderTable(agg.rows);
-      renderStatsPanel(agg.rows, agg.totals);
-      renderTiles();
-    };
-
-    setInterval(()=> update(), 12000);
-
-    refreshUser();
-    update();
+    // Init
+    refreshPriceTable();
+    renderTiles();
+    setInterval(refreshPriceTable, 30000);
   </script>
 </body>
 </html>
