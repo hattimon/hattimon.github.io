@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Krypto Dashboard – TradingView embed (offline-compatible UI)</title>
+  <title>Krypto Dashboard – Tryb offline z lokalnym wykresem + TradingView (gdy online)</title>
   <style>
     :root{
       --bg:#0b1020;
@@ -119,6 +119,12 @@
     .table th, .table td{padding:10px;border-bottom:1px solid var(--border);font-size:13px;text-align:left}
     .table th{color:var(--muted);font-weight:600;background:rgba(16,24,50,0.55);backdrop-filter: blur(6px)}
     .modal{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,0.5);z-index:100}
+    /* Offline canvas styles */
+    .offwrap{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr}
+    .offhdr{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--border);background:#0b122a}
+    .badge{font-size:11px;padding:2px 6px;border-radius:6px;background:#1a2b55;color:#9ec1ff;border:1px solid rgba(106,169,255,0.35)}
+    canvas.chart{width:100%;height:100%;display:block;background:linear-gradient(180deg,#0b1128,#0a1024)}
+    .legend{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.35);padding:6px 8px;border-radius:8px;font-size:12px;color:#cfe0ff;border:1px solid rgba(255,255,255,0.1)}
   </style>
   <script type="importmap">
     {
@@ -139,11 +145,27 @@
     import { v4 as uuidv4 } from "uuid";
     const html = htm.bind(h);
 
-    // Uwaga dla użytkownika:
-    // Wymaganie: "kafelki mają zawierać wykres TradingView z oryginalnymi świecami, pełną historią i narzędziami".
-    // To wymaga sieciowego osadzenia oryginalnego widgetu TradingView (external script).
-    // Ta aplikacja nie generuje własnych świec ani narzędzi dla kafelków – używa iframe TradingView symbol/EXCHANGE.
-    // Jeśli jesteś offline, widget nie załaduje się (brak danych z TradingView). UI pozostanie funkcjonalne, ale wykresy pokażą placeholder.
+    // Detekcja łączności – jeżeli offline lub nie osiągalny TradingView, pokazujemy lokalny wykres (proceduralny).
+    let online = navigator.onLine;
+    window.addEventListener("online", ()=>{ online = true; rerender(); });
+    window.addEventListener("offline", ()=>{ online = false; rerender(); });
+
+    // Funkcja testująca dostępność domeny TradingView w bezpieczny sposób (HEAD na zasób statyczny).
+    async function checkTradingViewReachable(timeout=2500){
+      if(!navigator.onLine) return false;
+      const controller = new AbortController();
+      const t = setTimeout(()=>controller.abort(), timeout);
+      try{
+        // lekki zasób: ping.gif – jeśli blokada sieci/CSP, złapiemy błąd i przełączymy na offline chart
+        const res = await fetch("https://s3.tradingview.com/tv.js", { method:"HEAD", mode:"no-cors", signal: controller.signal });
+        clearTimeout(t);
+        // no-cors nie zwróci statusu, ale brak wyjątku sugeruje, że połączenie możliwe
+        return true;
+      }catch(e){
+        clearTimeout(t);
+        return false;
+      }
+    }
 
     const state = {
       tiles: [],
@@ -160,20 +182,8 @@
       clear(){ state.tiles = []; rerender(); fitCanvas(); }
     };
 
-    // Mapowanie symbolu na zalecaną giełdę w TradingView (możesz rozwinąć)
     function bestExchange(sym){
-      const map = {
-        BTC: "BINANCE",
-        ETH: "BINANCE",
-        SOL: "BINANCE",
-        BNB: "BINANCE",
-        XRP: "BINANCE",
-        DOGE: "BINANCE",
-        ADA: "BINANCE",
-        ARB: "BINANCE",
-        APT: "BINANCE",
-        SUI: "BINANCE"
-      };
+      const map = { BTC:"BINANCE", ETH:"BINANCE", SOL:"BINANCE", BNB:"BINANCE", XRP:"BINANCE", DOGE:"BINANCE", ADA:"BINANCE", ARB:"BINANCE", APT:"BINANCE", SUI:"BINANCE" };
       return map[sym] || "BINANCE";
     }
 
@@ -183,8 +193,10 @@
           <div class="brand">
             <div class="logo" aria-hidden="true"></div>
             <div>
-              <h1 style="margin:0;font-size:18px">Krypto Dashboard – TradingView</h1>
-              <div class="muted" style="font-size:12px">Kafelki osadzają oryginalny widget TradingView (pełna historia, narzędzia TV)</div>
+              <h1 style="margin:0;font-size:18px">Krypto Dashboard</h1>
+              <div class="muted" style="font-size:12px">
+                Działa offline: lokalny wykres. Gdy online: automatycznie ładuje TradingView.
+              </div>
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -199,7 +211,7 @@
       return html`
         <aside>
           <div class="panel">
-            <h3 style="margin:0 0 10px 0;color:var(--muted)">Dodaj kafelek TradingView</h3>
+            <h3 style="margin:0 0 10px 0;color:var(--muted)">Dodaj kafelek</h3>
             <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
               <input id="symIn" class="input" placeholder="BTC" value="BTC" />
               <button class="btn" onClick=${()=>{
@@ -216,16 +228,16 @@
               <button class="btn alt" onClick=${()=>state.clear()}>Wyczyść</button>
             </div>
             <p class="muted" style="font-size:12px;margin-top:12px">
-              Uwaga: Widget TradingView ładuje się z sieci. Offline pokaże się placeholder.
+              Jeśli TradingView jest niedostępny, widzisz lokalny wykres świecowy z danych syntetycznych.
             </p>
           </div>
 
           <div class="panel">
             <h3 style="margin:0 0 10px 0;color:var(--muted)">Wskazówki</h3>
             <ul style="margin:0;padding-left:18px;color:var(--muted);font-size:12px;line-height:1.5">
-              <li>Pełne narzędzia i historia pochodzą z TradingView (oryginalny interfejs).</li>
-              <li>Przeciągaj okno za uchwyt po lewej stronie belki.</li>
+              <li>Przeciągaj kafel za uchwyt po lewej stronie belki.</li>
               <li>Zmieniaj rozmiar uchwytem w prawym dolnym rogu.</li>
+              <li>Automatyczne przełączanie między TradingView a lokalnym wykresem.</li>
             </ul>
           </div>
         </aside>
@@ -243,6 +255,131 @@
       }
       canvas.style.minWidth = Math.ceil(maxR + gap)+"px";
       canvas.style.minHeight = Math.ceil(maxB + gap)+"px";
+    }
+
+    // Proceduralne dane świecowe (placebo offline) – deterministyczne, zależne od symbolu
+    function seededRandom(seed){
+      let h = 2166136261 ^ seed.length;
+      for (let i=0;i<seed.length;i++){
+        h ^= seed.charCodeAt(i);
+        h += (h<<1)+(h<<4)+(h<<7)+(h<<8)+(h<<24);
+      }
+      return ()=> {
+        h += 0x6D2B79F5;
+        let t = Math.imul(h ^ (h>>>15), 1 | h);
+        t ^= t + Math.imul(t ^ (t>>>7), 61 | t);
+        return ((t ^ (t>>>14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function genOHLC(symbol, points=240){
+      const rnd = seededRandom(symbol+"-ohlc");
+      const data = [];
+      let price = 100 + Math.floor(rnd()*1000);
+      for(let i=0;i<points;i++){
+        const drift = (rnd()-0.5)*2.0;
+        const vol = 0.8 + rnd()*1.6;
+        const open = price;
+        let high = open + Math.abs(drift*5*vol) + rnd()*3;
+        let low  = open - Math.abs(drift*5*vol) - rnd()*3;
+        if(low<1) low = 1;
+        let close = open + drift*4*vol + (rnd()-0.5)*2;
+        if(close<1) close=1;
+        high = Math.max(high, open, close);
+        low = Math.min(low, open, close);
+        const up = close>=open;
+        data.push({ o:open, h:high, l:low, c:close, up });
+        price = close;
+      }
+      return data;
+    }
+
+    function drawCandles(canvas, data){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width * dpr);
+      canvas.height = Math.floor(rect.height * dpr);
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0,0,rect.width,rect.height);
+
+      const padL=40, padR=10, padT=10, padB=20;
+      const w = rect.width - padL - padR;
+      const h = rect.height - padT - padB;
+      if(w<=0 || h<=0 || data.length===0) return;
+
+      let min = Infinity, max = -Infinity;
+      for(const d of data){ if(d.l<min) min=d.l; if(d.h>max) max=d.h; }
+      const y = (v)=> padT + (max - v) * (h / (max - min || 1));
+      const candleW = Math.max(3, Math.floor(w / data.length * 0.7));
+      const step = w / data.length;
+
+      // grid
+      const lines = 5;
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      ctx.lineWidth = 1;
+      for(let i=0;i<=lines;i++){
+        const gy = padT + (h/lines)*i;
+        ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(padL+w, gy); ctx.stroke();
+      }
+
+      // axis labels
+      ctx.fillStyle = "#9db4ff";
+      ctx.font = "11px ui-sans-serif, system-ui";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for(let i=0;i<=lines;i++){
+        const gy = padT + (h/lines)*i;
+        const val = (max - (max-min)*(i/lines)).toFixed(2);
+        ctx.fillText(val, padL-6, gy);
+      }
+
+      // candles
+      for(let i=0;i<data.length;i++){
+        const d = data[i];
+        const cx = padL + i*step + step*0.5;
+        ctx.strokeStyle = d.up ? "#27d980" : "#ff5c7a";
+        ctx.fillStyle = d.up ? "#27d980" : "#ff5c7a";
+        // wick
+        ctx.beginPath();
+        ctx.moveTo(cx, y(d.h));
+        ctx.lineTo(cx, y(d.l));
+        ctx.stroke();
+        // body
+        const bo = y(d.o), bc = y(d.c);
+        const top = Math.min(bo, bc), height = Math.max(2, Math.abs(bc - bo));
+        ctx.fillRect(cx - candleW/2, top, candleW, height);
+      }
+    }
+
+    function OfflineChart({symbol, id}){
+      // Kontener offline: canvas + prosta legenda
+      setTimeout(()=>{
+        const canvas = document.getElementById("offc_"+id);
+        if(!canvas) return;
+        const redraw = ()=>{
+          const data = genOHLC(symbol, 200);
+          drawCandles(canvas, data);
+        };
+        redraw();
+        const ro = new ResizeObserver(redraw);
+        ro.observe(canvas);
+        const t = setInterval(redraw, 2000); // delikatne "odświeżanie"
+        canvas._cleanup = ()=>{ try{ ro.disconnect(); }catch{} clearInterval(t); };
+      }, 0);
+
+      return html`
+        <div class="offwrap">
+          <div class="offhdr">
+            <span class="badge">Tryb offline</span>
+            <span style="font-size:12px;color:var(--muted)">${symbol} — lokalny wykres świecowy</span>
+          </div>
+          <div style="position:relative">
+            <canvas id=${"offc_"+id} class="chart"></canvas>
+            <div class="legend">Otw/Wys/Nis/Zam – dane syntetyczne</div>
+          </div>
+        </div>
+      `;
     }
 
     function Tile({tile}){
@@ -274,82 +411,78 @@
         const rw = Math.round(nw/grid)*grid;
         const rh = Math.round(nh/grid)*grid;
         state.updateTile(tile.id, { w: rw, h: rh });
-        // wysyłamy event do iframe, by przeliczył rozmiar (widget auto-fit)
         const frame = document.getElementById("tvf_"+tile.id);
         if(frame) requestAnimationFrame(()=>{ frame.style.width = "100%"; frame.style.height = "100%"; });
       };
       const onResizeUp = ()=>{ resize=null; };
 
-      // Konstrukcja bezpośredniego osadzenia: używamy oficjalnego lightweight widgetu embed w iframe (tools on)
-      // Uwaga: Pełny "Charting Library" wymaga licencji; tu używamy publicznego widgetu z narzędziami TV.
       const sym = `${tile.exchange}:${tile.symbol}USDT`;
 
-      // Placeholder offline (prosty komunikat; nie rysujemy własnych świec)
-      const offlineHtml = `
-        <div style="display:grid;place-items:center;height:100%;color:#b7c3ff;background:#0b1128">
-          <div style="text-align:center;max-width:360px;font: 13px ui-sans-serif,system-ui">
-            <div style="margin-bottom:10px;font-weight:700;color:#e7ecff">${sym}</div>
-            <div>Brak połączenia z TradingView. Aby zobaczyć oryginalny wykres z pełną historią i narzędziami, połącz się z Internetem.</div>
-          </div>
-        </div>
-      `.trim();
+      // Render: jeśli TV osiągalny -> iframe z TV, w przeciwnym wypadku lokalny wykres
+      const content = html`<div class="tv-holder" id=${"ctn_"+tile.id}></div>`;
 
-      // Generujemy dokument do iframe, który ładuje oficjalny widget TradingView (external). Jeśli CSP/HTTPS zablokuje, zostanie offline placeholder.
-      const iframe = html`<iframe id=${"tvf_"+tile.id} title=${"tv_"+tile.symbol}
-                          style="border:0;display:block;width:100%;height:100%;background:#0b1128"
-                          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                          loading="lazy"></iframe>`;
-
-      // Po wyrenderowaniu Preact, wypełnimy iframe odpowiednią treścią
-      setTimeout(()=>{
-        const frame = document.getElementById("tvf_"+tile.id);
-        if(!frame) return;
-        try{
-          const doc = frame.contentDocument || frame.contentWindow?.document;
-          if(!doc) throw new Error("no doc");
-          doc.open();
-          doc.write(`<!DOCTYPE html><html><head>
-            <meta charset="utf-8"/>
-            <meta name="viewport" content="width=device-width,initial-scale=1"/>
-            <style>
-              html,body,#container{height:100%;margin:0;background:#0b1128}
-            </style>
-          </head><body>
-            <div id="container"></div>
-            <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async><\/script>
-            <script>
-              // Gdy skrypt się załaduje, spróbuje zainicjować widget na #container przy użyciu poniższej konfiguracji:
-              window.addEventListener('DOMContentLoaded', function(){
-                try{
-                  new window.TradingView.widget({
-                    autosize: true,
-                    symbol: ${JSON.stringify(sym)},
-                    interval: "60",
-                    timezone: "Etc/UTC",
-                    theme: "dark",
-                    style: "1",
-                    locale: "pl",
-                    enable_publishing: false,
-                    allow_symbol_change: true,
-                    withdateranges: true,
-                    details: true,
-                    hotlist: false,
-                    calendar: false,
-                    hide_side_toolbar: false,
-                    studies: [],
-                    container_id: "container"
-                  });
-                }catch(e){
-                  document.body.innerHTML = ${JSON.stringify(offlineHtml)};
-                }
-              });
-            <\/script>
-          </body></html>`);
-          doc.close();
-        }catch(e){
-          // Jeśli nie uda się wstawić widgetu (np. offline), pokaż placeholder w dokumencie nadrzędnym:
-          const holder = document.getElementById("ctn_"+tile.id);
-          if(holder) holder.innerHTML = offlineHtml;
+      // Wstrzyknięcie po renderze
+      setTimeout(async ()=>{
+        const holder = document.getElementById("ctn_"+tile.id);
+        if(!holder) return;
+        // spróbuj wykryć dostępność TradingView
+        const tvOk = await checkTradingViewReachable();
+        if(tvOk){
+          // IFRAME z widgetem TradingView
+          const iframe = document.createElement("iframe");
+          iframe.id = "tvf_"+tile.id;
+          iframe.title = "tv_"+tile.symbol;
+          iframe.style.cssText = "border:0;display:block;width:100%;height:100%;background:#0b1128";
+          iframe.sandbox = "allow-scripts allow-same-origin allow-popups allow-forms";
+          iframe.loading = "lazy";
+          holder.innerHTML = "";
+          holder.appendChild(iframe);
+          try{
+            const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            doc.open();
+            doc.write(`<!DOCTYPE html><html><head>
+              <meta charset="utf-8"/>
+              <meta name="viewport" content="width=device-width,initial-scale=1"/>
+              <style>html,body,#container{height:100%;margin:0;background:#0b1128}</style>
+            </head><body>
+              <div id="container"></div>
+              <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async><\/script>
+              <script>
+                window.addEventListener('DOMContentLoaded', function(){
+                  try{
+                    new window.TradingView.widget({
+                      autosize: true,
+                      symbol: ${JSON.stringify(sym)},
+                      interval: "60",
+                      timezone: "Etc/UTC",
+                      theme: "dark",
+                      style: "1",
+                      locale: "pl",
+                      enable_publishing: false,
+                      allow_symbol_change: true,
+                      withdateranges: true,
+                      details: true,
+                      hotlist: false,
+                      calendar: false,
+                      hide_side_toolbar: false,
+                      studies: [],
+                      container_id: "container"
+                    });
+                  }catch(e){
+                    document.body.innerHTML = '<div style="display:grid;place-items:center;height:100%;color:#b7c3ff;background:#0b1128">Nie udało się zainicjować TradingView.</div>';
+                  }
+                });
+              <\/script>
+            </body></html>`);
+            doc.close();
+          }catch(e){
+            // fallback do lokalnego wykresu
+            holder.innerHTML = "";
+            render(html`<${OfflineChart} symbol=${sym} id=${tile.id}/>`, holder);
+          }
+        }else{
+          holder.innerHTML = "";
+          render(html`<${OfflineChart} symbol=${sym} id=${tile.id}/>`, holder);
         }
       }, 0);
 
@@ -358,7 +491,7 @@
           <div class="toolbar" onPointerMove=${onMove} onPointerUp=${onUp}>
             <div class="grabber">
               <div class="grab-handle" title="Przeciągnij okno" onPointerDown=${onGrabDown} onPointerMove=${onMove} onPointerUp=${onUp}></div>
-              <div class="title">${tile.exchange}:${tile.symbol}USDT — TradingView</div>
+              <div class="title">${sym} — Wykres</div>
             </div>
             <div class="actions">
               <button class="btn small alt" onClick=${()=> state.addTile(tile.symbol)}>Duplikuj</button>
@@ -366,7 +499,7 @@
             </div>
           </div>
           <div class="content">
-            <div class="tv-holder" id=${"ctn_"+tile.id}>${iframe}</div>
+            ${content}
           </div>
           <div class="resizer" title="Zmień rozmiar" onPointerDown=${onResizeDown} onPointerMove=${onResizeMove} onPointerUp=${onResizeUp}></div>
         </div>
@@ -381,7 +514,7 @@
           ${Sidebar()}
           <main style="display:flex;flex-direction:column;gap:18px">
             <section class="panel">
-              <h3 style="margin-top:0;color:var(--muted)">Płótno kafelków (TradingView)</h3>
+              <h3 style="margin-top:0;color:var(--muted)">Płótno kafelków</h3>
               <div id="canvas" class="canvas">
                 ${state.tiles.map(t=> html`<${Tile} key=${t.id} tile=${t} />`)}
               </div>
@@ -395,7 +528,7 @@
                 `)}
               </div>
               <div class="muted" style="font-size:12px;margin-top:8px">
-                Wykresy pochodzą bezpośrednio z TradingView (pełne świece, historia i narzędzia).
+                Gdy połączenie z TradingView jest niedostępne, zobaczysz lokalny wykres świecowy (syntetyczny).
               </div>
             </section>
 
@@ -403,16 +536,16 @@
               <h3 style="margin-top:0;color:var(--muted)">FAQ</h3>
               <table class="table">
                 <tbody>
-                  <tr><th>Czy generujemy własne świece/narzędzia?</th><td>Nie. Kafelki osadzają oficjalny widget TradingView.</td></tr>
-                  <tr><th>Historia danych</th><td>Dostarczana przez TradingView dla wybranego symbolu/giełdy.</td></tr>
-                  <tr><th>Offline</th><td>Widget nie działa bez sieci. Pokazujemy jedynie placeholder informacyjny.</td></tr>
+                  <tr><th>Co z komunikatem "Brak połączenia z TradingView"?</th><td>Teraz, gdy TV niedostępny, wyświetlamy lokalny wykres zamiast pustego komunikatu.</td></tr>
+                  <tr><th>Czy to prawdziwe dane?</th><td>Offline używa danych syntetycznych. Po odzyskaniu łącza ładuje się wykres TradingView z prawdziwymi danymi.</td></tr>
+                  <tr><th>Przełączanie</th><td>Automatyczne: aplikacja sprawdza dostępność TV i przełącza widok.</td></tr>
                 </tbody>
               </table>
             </section>
           </main>
         </div>
         <footer style="padding:18px;color:var(--muted);font-size:12px;text-align:center">
-          Kafelki używają oryginalnego widgetu TradingView (oraz jego narzędzi i pełnej historii). Brak lokalnej generacji świec i narzędzi.
+          Tryb hybrydowy: lokalny wykres offline + TradingView online.
         </footer>
       `;
     }
