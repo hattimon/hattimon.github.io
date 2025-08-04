@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Krypto Dashboard – SPA z nowoczesnym stosem (symulacja monorepo)</title>
+  <title>Krypto Dashboard – Wykresy świecowe jak TradingView (offline)</title>
   <style>
     :root{
       --bg:#0b1020;
@@ -133,9 +133,10 @@
       .tile{border-radius:10px}
       .panel{padding:12px}
     }
-    /* Modal */
     .modal{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,0.5);z-index:100}
     .hidden{display:none !important}
+    /* Candlestick chart styling hints */
+    .tv-grid{stroke:rgba(255,255,255,0.06)}
   </style>
   <script type="importmap">
     {
@@ -156,25 +157,19 @@
     import { v4 as uuidv4 } from "uuid";
     const html = htm.bind(h);
 
-    // In-memory "backend" simulation (Express/Prisma/Redis/BullMQ placeholders)
-    // It mimics endpoints and models, but persists locally to keep the app runnable offline.
-
-    const DB_KEY = "kd_db_v1";
+    // In-memory data
+    const DB_KEY = "kd_db_v2_tv_like";
     const defaultDB = { users: [], tokens: [], txs: [], pricesCache: {}, ohlcCache: {} };
     const db = loadDB();
-
     function loadDB(){ try{ return JSON.parse(localStorage.getItem(DB_KEY)) || structuredClone(defaultDB);}catch{ return structuredClone(defaultDB);} }
     function saveDB(){ localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 
-    // Simple crypto-hash placeholder (bcrypt-like interface)
     function hashPass(p){ let h=2166136261; for(const c of p){ h^=c.charCodeAt(0); h=(h*16777619)>>>0;} return h.toString(16); }
     function verifyPass(p, hash){ return hashPass(p)===hash; }
-
-    // JWT-like token (unsigned, local demo)
     function makeToken(payload){ return btoa(JSON.stringify({ ...payload, iat: Date.now() })); }
     function readToken(tok){ try{ return JSON.parse(atob(tok)); }catch{ return null; } }
 
-    // Price engine (procedural instead of CoinGecko + Redis cache)
+    // Price + OHLC engine (procedural)
     const basePrices = { BTC: 65000, ETH: 3000, SOL: 150, BNB: 550, XRP: 0.6, DOGE: 0.12, ADA: 0.5, ARB: 1.2, APT: 8, SUI: 1.4 };
     const lastPrice = { ...basePrices };
     const lastChange = Object.fromEntries(Object.keys(basePrices).map(s=>[s,0]));
@@ -187,26 +182,33 @@
         lastChange[s] = ((np - p) / p) * 100;
         lastPrice[s] = np;
       }
-      // update cache
       const now = Date.now();
       for(const s of Object.keys(lastPrice)){
         db.pricesCache[s] = { price: lastPrice[s], ch24: lastChange[s], ts: now };
       }
-      // basic OHLC synth
       for(const s of Object.keys(lastPrice)){
         const series = db.ohlcCache[s] || [];
-        const last = series[series.length-1];
-        const t = Math.floor(now/60000)*60000; // minute
+        const minute = Math.floor(now/60000)*60000;
         const price = lastPrice[s];
-        if(!last || last.t !== t){
-          const candle = { t, o: price*(1+(Math.random()-0.5)*0.01), h: price*1.01, l: price*0.99, c: price, v: Math.random()*1000+100 };
-          series.push(candle);
-          if(series.length>300) series.shift();
+        if(!series.length){
+          const o = price*(1+(Math.random()-0.5)*0.01);
+          series.push({ t: minute-60000, o, h:o, l:o, c:o, v: 500 });
+        }
+        const last = series[series.length-1];
+        if(!last || last.t !== minute){
+          const prev = last || { c: price };
+          const open = prev.c*(1+(Math.random()-0.5)*0.01);
+          const c = price;
+          const range = Math.max(0.0001, prev.c*0.01);
+          const high = Math.max(open, c) + Math.random()*range*0.5;
+          const low = Math.min(open, c) - Math.random()*range*0.5;
+          series.push({ t: minute, o: open, h: high, l: low, c, v: Math.random()*1500+300 });
+          if(series.length>720) series.shift();
         }else{
           last.c = price;
           last.h = Math.max(last.h, price);
           last.l = Math.min(last.l, price);
-          last.v += Math.random()*100;
+          last.v += Math.random()*50;
         }
         db.ohlcCache[s] = series;
       }
@@ -214,7 +216,6 @@
     }
     setInterval(stepPrices, 1000);
 
-    // Backend-like services
     const backend = {
       async register({email, password}){
         if(db.users.some(u=>u.email===email)) throw new Error("Użytkownik istnieje");
@@ -231,19 +232,16 @@
       async addManualToken(token, { symbol, amount, purchasePrice, network }){
         const me = await backend.me(token);
         symbol = symbol.toUpperCase();
-        const id = uuidv4();
         const existing = db.tokens.find(t=>t.userId===me.id && t.symbol===symbol);
         if(existing){
-          // average price
           const totalCost = existing.purchasePrice * existing.amount + purchasePrice * amount;
           const totalAmt = existing.amount + amount;
           existing.amount = totalAmt;
           existing.purchasePrice = totalCost / (totalAmt || 1);
           existing.updatedAt = Date.now();
         }else{
-          db.tokens.push({ id, userId: me.id, symbol, amount, purchasePrice, network: network||null, createdAt: Date.now(), updatedAt: Date.now() });
+          db.tokens.push({ id: uuidv4(), userId: me.id, symbol, amount, purchasePrice, network: network||null, createdAt: Date.now(), updatedAt: Date.now() });
         }
-        // record transaction
         db.txs.push({ id: uuidv4(), userId: me.id, symbol, type:"BUY", amount, price: purchasePrice, timestamp: Date.now(), createdAt: Date.now() });
         saveDB();
         return { ok:true };
@@ -268,15 +266,7 @@
           const value = cp * it.amount;
           const pnl = (cp - it.purchasePrice) * it.amount;
           const pnlPct = (cp / (it.purchasePrice||1) - 1) * 100;
-          return {
-            symbol: it.symbol,
-            amount: it.amount,
-            avgPurchasePrice: it.purchasePrice,
-            currentPrice: cp,
-            value,
-            profitLoss: pnl,
-            profitLossPercent: pnlPct
-          };
+          return { symbol: it.symbol, amount: it.amount, avgPurchasePrice: it.purchasePrice, currentPrice: cp, value, profitLoss: pnl, profitLossPercent: pnlPct };
         });
         const totalValue = list.reduce((s,x)=>s+x.value,0);
         const totalPnl = list.reduce((s,x)=>s+x.profitLoss,0);
@@ -293,30 +283,22 @@
         saveDB();
         return out;
       },
-      async ohlc(symbol, interval="1h"){ // interval ignored in demo
-        symbol = symbol.toUpperCase();
-        return db.ohlcCache[symbol] || [];
-      }
+      async ohlc(symbol){ return db.ohlcCache[symbol.toUpperCase()] || []; }
     };
 
-    // Global app state (Zustand-like super light)
+    // Global state
     const state = {
       token: localStorage.getItem("kd_auth") || "",
       setToken(tok){ state.token = tok; localStorage.setItem("kd_auth", tok||""); rerender(); },
 
-      tiles: [], // {id,symbol,x,y,w,h,locked,interval}
+      tiles: [],
       addTile(sym){
-        const gap=16, defW=360, defH=260;
+        const gap=16, defW=420, defH=300;
         const idx = state.tiles.length;
-        state.tiles = state.tiles.concat({ id: uuidv4(), symbol: sym.toUpperCase(), x: gap + (idx%2)*(defW+gap), y: gap + Math.floor(idx/2)*(defH+gap), w:defW, h:defH, locked:false, interval:"1h" });
-        rerender();
-        setTimeout(()=>fitCanvas(),0);
+        state.tiles = state.tiles.concat({ id: uuidv4(), symbol: sym.toUpperCase(), x: gap + (idx%2)*(defW+gap), y: gap + Math.floor(idx/2)*(defH+gap), w:defW, h:defH, locked:false, interval:"1m", tool:"crosshair" });
+        rerender(); setTimeout(()=>fitCanvas(),0);
       },
-      updateTile(id, patch){
-        state.tiles = state.tiles.map(t=> t.id===id? { ...t, ...patch }: t);
-        rerender();
-        setTimeout(()=>fitCanvas(),0);
-      },
+      updateTile(id, patch){ state.tiles = state.tiles.map(t=> t.id===id? { ...t, ...patch }: t); rerender(); setTimeout(()=>fitCanvas(),0); },
       removeTile(id){ state.tiles = state.tiles.filter(t=>t.id!==id); rerender(); setTimeout(()=>fitCanvas(),0); },
       lockAll(flag){ state.tiles = state.tiles.map(t=>({...t, locked: flag})); rerender(); },
       clear(){ state.tiles = []; rerender(); setTimeout(()=>fitCanvas(),0); },
@@ -326,11 +308,7 @@
 
       async refreshPortfolio(){
         if(!state.token){ state.portfolio = { items: [], totals: { totalValue: 0, totalPnl: 0, totalPnlPct: 0 } }; rerender(); return; }
-        try{
-          const res = await backend.portfolio(state.token);
-          state.portfolio = res;
-          rerender();
-        }catch(e){ console.warn(e); }
+        try{ state.portfolio = await backend.portfolio(state.token); rerender(); }catch(e){ console.warn(e); }
       },
       async refreshPrices(){
         const syms = Object.keys(basePrices);
@@ -340,12 +318,11 @@
       }
     };
 
-    // Wallet mini-chart
+    // Wallet mini-chart (area) for portfolio/stat sections only
     let walletHistory = [];
     let walletInterval = "D1";
     function computeWalletValue(){
       const syms = [...new Set(state.tiles.map(t=>t.symbol))];
-      if(syms.length===0) return 0;
       let sum = 0;
       const map = db.pricesCache;
       for(const s of syms){ sum += (map[s]?.price || lastPrice[s] || 0); }
@@ -376,7 +353,7 @@
     function fitCanvas(){
       const canvas = document.getElementById("canvas");
       if(!canvas) return;
-      const gap=16, defW=360, defH=260;
+      const gap=16, defW=420, defH=300;
       let maxR=0, maxB=0;
       for(const t of state.tiles){
         maxR = Math.max(maxR, (t.x||0)+(t.w||defW));
@@ -384,6 +361,320 @@
       }
       canvas.style.minWidth = Math.ceil(maxR + gap)+"px";
       canvas.style.minHeight = Math.ceil(maxB + gap)+"px";
+    }
+
+    // TradingView-like candlestick + basic tools
+    function drawCandleChart(root, series, opts){
+      // opts: { theme, tool, onToolChange }
+      // root: container element to fill
+      // series: [{t,o,h,l,c,v}]
+      if(!root) return;
+      root.innerHTML = "";
+      const dpr = window.devicePixelRatio || 1;
+
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "position:absolute;inset:0;display:flex;flex-direction:column;";
+      const toolbar = document.createElement("div");
+      toolbar.style.cssText = "display:flex;gap:6px;align-items:center;padding:6px;border-bottom:1px solid var(--border);background:rgba(16,24,50,0.35)";
+      const canvas = document.createElement("canvas");
+      canvas.style.cssText = "flex:1;display:block;background:linear-gradient(180deg, rgba(24,36,80,0.20), rgba(12,18,40,0.30))";
+      wrap.appendChild(toolbar);
+      wrap.appendChild(canvas);
+      root.appendChild(wrap);
+
+      const tools = [
+        { id:"crosshair", label:"Kursor" },
+        { id:"trend", label:"Linia trendu" },
+        { id:"hline", label:"Pozioma" },
+        { id:"rect", label:"Prostokąt" },
+        { id:"fib", label:"Fibo" }
+      ];
+      const btns = {};
+      tools.forEach(t=>{
+        const b = document.createElement("button");
+        b.className = "btn small alt";
+        b.textContent = t.label;
+        b.onclick = ()=>{ toolState.mode = t.id; updateBtns(); };
+        btns[t.id]=b; toolbar.appendChild(b);
+      });
+      const updateBtns = ()=>{
+        Object.entries(btns).forEach(([id,b])=>{
+          b.className = "btn small " + (toolState.mode===id ? "" : "alt");
+        });
+      };
+
+      const ctx = canvas.getContext("2d");
+      const padLeft = 50; // space for y-scale
+      const padBottom = 20;
+      let width=0, height=0;
+      let viewStart = Math.max(0, series.length - 150);
+      let viewEnd = series.length;
+      let mouse = { x:0, y:0, over:false };
+      let toolState = {
+        mode: opts.tool || "crosshair",
+        drawings: [], // {mode, points: [{x,y,t,price}], extra:{}}
+        cur: null
+      };
+
+      function resize(){
+        const rect = root.getBoundingClientRect();
+        width = Math.max(200, rect.width);
+        height = Math.max(140, rect.height - toolbar.getBoundingClientRect().height);
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.scale(dpr, dpr);
+        draw();
+      }
+      const prices = ()=> series.slice(viewStart, viewEnd).map(c=>[c.o,c.h,c.l,c.c]).flat();
+      function yFor(price, min, max){
+        const h = height - padBottom;
+        return Math.round((h) - (price-min)/Math.max(1e-9,(max-min))*(h-10)) + 5;
+      }
+      function priceFor(y, min, max){
+        const h = height - padBottom;
+        return min + ( (h - (y-5)) / Math.max(1e-9,(h-10)) ) * (max-min);
+      }
+      function xFor(i, count){
+        const w = width - padLeft - 6;
+        if(count<=1) return padLeft + w/2;
+        return Math.round(padLeft + i*(w/(count-1)));
+      }
+      function indexForX(x, count){
+        const w = width - padLeft - 6;
+        const i = Math.round((x - padLeft) / (w/Math.max(1,count-1)));
+        return Math.min(count-1, Math.max(0, i));
+      }
+
+      // Zoom & pan state
+      let isPanning = false;
+      let panStartX = 0, panStartView = 0;
+      canvas.addEventListener("wheel", (e)=>{
+        e.preventDefault();
+        const delta = Math.sign(e.deltaY);
+        const count = viewEnd - viewStart;
+        const centerIdx = Math.round(viewStart + (viewEnd-viewStart)*( (mouse.x - padLeft)/Math.max(1, (width-padLeft)) ));
+        const zoom = Math.max(20, Math.min(600, count + delta*10));
+        const left = Math.max(0, centerIdx - Math.floor(zoom*0.6));
+        const right = Math.min(series.length, left + zoom);
+        viewStart = Math.max(0, right - zoom);
+        viewEnd = right;
+        draw();
+      }, { passive:false });
+      canvas.addEventListener("pointerdown", (e)=>{
+        canvas.setPointerCapture(e.pointerId);
+        const x = (e.offsetX||0);
+        const y = (e.offsetY||0);
+        if(toolState.mode==="crosshair"){
+          isPanning = true; panStartX = x; panStartView = viewStart;
+        }else{
+          // start drawing
+          startDrawing(x,y);
+        }
+      });
+      canvas.addEventListener("pointermove", (e)=>{
+        mouse = { x: e.offsetX, y: e.offsetY, over:true };
+        if(isPanning){
+          const dx = mouse.x - panStartX;
+          const count = viewEnd - viewStart;
+          const w = width - padLeft - 6;
+          const barsMove = Math.round(-dx / Math.max(1, w/(count-1)));
+          viewStart = Math.max(0, Math.min(series.length-count, panStartView + barsMove));
+          viewEnd = viewStart + count;
+        }else if(toolState.cur){
+          updateDrawing(mouse.x, mouse.y);
+        }
+        draw();
+      });
+      const stopPan = ()=>{ isPanning=false; if(toolState.cur && (toolState.mode==="trend"||toolState.mode==="rect"||toolState.mode==="fib"||toolState.mode==="hline")) finalizeDrawing(); };
+      canvas.addEventListener("pointerup", stopPan);
+      canvas.addEventListener("pointerleave", ()=>{ mouse.over=false; draw(); });
+
+      function startDrawing(x,y){
+        const count = viewEnd - viewStart;
+        const vis = series.slice(viewStart, viewEnd);
+        const vals = prices();
+        const min = Math.min(...vals), max = Math.max(...vals);
+        const idx = indexForX(x, count);
+        const price = priceFor(y, min, max);
+        if(toolState.mode==="trend"){
+          toolState.cur = { mode:"trend", points:[{x,y,idx,price}], color:"#6aa9ff" };
+        }else if(toolState.mode==="hline"){
+          toolState.cur = { mode:"hline", points:[{x:padLeft,y,idx,price}], color:"#ffcc66" };
+        }else if(toolState.mode==="rect"){
+          toolState.cur = { mode:"rect", points:[{x,y,idx,price}], color:"rgba(106,169,255,0.2)" };
+        }else if(toolState.mode==="fib"){
+          toolState.cur = { mode:"fib", points:[{x,y,idx,price}], levels:[0,0.236,0.382,0.5,0.618,0.786,1] };
+        }
+      }
+      function updateDrawing(x,y){
+        const count = viewEnd - viewStart;
+        const vals = prices(); const min = Math.min(...vals), max = Math.max(...vals);
+        const idx = indexForX(x, count); const price = priceFor(y, min, max);
+        const cur = toolState.cur;
+        if(!cur) return;
+        if(cur.mode==="trend"){
+          cur.points[1] = { x,y,idx,price };
+        }else if(cur.mode==="hline"){
+          cur.points[0] = { x: padLeft, y, idx, price };
+        }else if(cur.mode==="rect"){
+          cur.points[1] = { x,y,idx,price };
+        }else if(cur.mode==="fib"){
+          cur.points[1] = { x,y,idx,price };
+        }
+      }
+      function finalizeDrawing(){
+        if(toolState.cur){
+          toolState.drawings.push(toolState.cur);
+          toolState.cur = null;
+        }
+      }
+
+      function draw(){
+        ctx.clearRect(0,0,width,height);
+        // background
+        ctx.fillStyle = "rgba(12,18,40,0.18)";
+        ctx.fillRect(0,0,width,height);
+
+        // grid
+        ctx.strokeStyle = "rgba(255,255,255,0.06)";
+        ctx.lineWidth = 1;
+        for(let i=0;i<6;i++){
+          const y = 8 + i*((height-padBottom-16)/5);
+          ctx.beginPath(); ctx.moveTo(padLeft, y); ctx.lineTo(width-4, y); ctx.stroke();
+        }
+
+        const windowData = series.slice(viewStart, viewEnd);
+        if(windowData.length<2) return;
+
+        const vals = prices();
+        const min = Math.min(...vals), max = Math.max(...vals);
+        const count = windowData.length;
+
+        // y-scale labels
+        ctx.fillStyle = "rgba(231,236,255,0.8)";
+        ctx.font = "11px ui-sans-serif, system-ui";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        for(let i=0;i<=5;i++){
+          const v = min + (i/5)*(max-min);
+          const y = yFor(v, min, max);
+          ctx.fillText(formatPrice(v), padLeft-6, y);
+        }
+
+        // x-scale time labels (sparse)
+        ctx.textAlign = "center"; ctx.textBaseline = "top";
+        for(let i=0;i<count;i+=Math.max(10,Math.floor(count/6))){
+          const x = xFor(i, count);
+          const t = windowData[i].t;
+          const d = new Date(t);
+          const label = d.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+          ctx.fillText(label, x, height-padBottom+3);
+        }
+
+        // candles
+        const barW = Math.max(2, Math.floor((width - padLeft - 10)/count * 0.7));
+        for(let i=0;i<count;i++){
+          const c = windowData[i];
+          const x = xFor(i, count);
+          const openY = yFor(c.o, min, max);
+          const closeY = yFor(c.c, min, max);
+          const highY = yFor(c.h, min, max);
+          const lowY = yFor(c.l, min, max);
+          const up = c.c >= c.o;
+          ctx.strokeStyle = up ? "rgba(39,217,128,1)" : "rgba(255,92,122,1)";
+          ctx.fillStyle = up ? "rgba(39,217,128,0.2)" : "rgba(255,92,122,0.2)";
+          // wick
+          ctx.beginPath();
+          ctx.moveTo(x, highY); ctx.lineTo(x, lowY); ctx.stroke();
+          // body
+          const bodyTop = Math.min(openY, closeY);
+          const bodyH = Math.max(1, Math.abs(closeY - openY));
+          ctx.fillRect(x - Math.floor(barW/2), bodyTop, barW, bodyH);
+          ctx.strokeRect(x - Math.floor(barW/2), bodyTop, barW, bodyH);
+        }
+
+        // volume bars
+        const volMax = Math.max(...windowData.map(v=>v.v||0), 1);
+        for(let i=0;i<count;i++){
+          const c = windowData[i];
+          const x = xFor(i, count);
+          const hVol = Math.round(((c.v||0)/volMax) * 24);
+          ctx.fillStyle = c.c>=c.o ? "rgba(39,217,128,0.25)" : "rgba(255,92,122,0.25)";
+          ctx.fillRect(x - Math.floor(barW/2), height-padBottom- hVol, barW, hVol);
+        }
+
+        // drawings
+        const drawLine = (p1, p2, color)=>{
+          ctx.strokeStyle = color; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        };
+        const drawRect = (p1, p2, color)=>{
+          const x = Math.min(p1.x,p2.x), y=Math.min(p1.y,p2.y), w=Math.abs(p2.x-p1.x), h=Math.abs(p2.y-p1.y);
+          ctx.fillStyle = color; ctx.strokeStyle="rgba(106,169,255,0.6)"; ctx.lineWidth=1.5;
+          ctx.fillRect(x,y,w,h); ctx.strokeRect(x,y,w,h);
+        };
+        const drawFib = (p1,p2,levels)=>{
+          const top = p1.y, bottom = p2.y;
+          const left = Math.min(p1.x,p2.x), right = Math.max(p1.x,p2.x);
+          levels.forEach((lv,idx)=>{
+            const y = top + (bottom-top)*lv;
+            ctx.strokeStyle = "rgba(255,204,102,0.9)"; ctx.lineWidth=1;
+            ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+            ctx.fillStyle = "rgba(231,236,255,0.9)";
+            ctx.font = "10px ui-sans-serif"; ctx.fillText((lv*100).toFixed(1)+"%", right+4, y);
+          });
+        };
+        const renderDrawing = d=>{
+          if(d.mode==="trend" && d.points.length>=2) drawLine(d.points[0], d.points[1], d.color);
+          if(d.mode==="hline" && d.points.length>=1) drawLine({x:padLeft, y:d.points[0].y},{x:width-6,y:d.points[0].y}, "#ffcc66");
+          if(d.mode==="rect" && d.points.length>=2) drawRect(d.points[0], d.points[1], d.color);
+          if(d.mode==="fib" && d.points.length>=2) drawFib(d.points[0], d.points[1], d.levels||[0,0.236,0.382,0.5,0.618,0.786,1]);
+        };
+        toolState.drawings.forEach(renderDrawing);
+        if(toolState.cur) renderDrawing(toolState.cur);
+
+        // crosshair
+        if(mouse.over){
+          const i = Math.min(count-1, Math.max(0, indexForX(mouse.x, count)));
+          const x = xFor(i, count);
+          const price = priceFor(mouse.y, min, max);
+          ctx.strokeStyle = "rgba(231,236,255,0.25)";
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(padLeft, mouse.y); ctx.lineTo(width-4, mouse.y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(x, 6); ctx.lineTo(x, height-padBottom); ctx.stroke();
+          // price box
+          const box = formatPrice(price);
+          const w = ctx.measureText(box).width + 10;
+          ctx.fillStyle = "rgba(16,24,50,0.9)";
+          ctx.strokeStyle = "rgba(106,169,255,0.6)";
+          ctx.lineWidth = 1;
+          ctx.fillRect(2, mouse.y-8, padLeft-6, 16);
+          ctx.strokeRect(2, mouse.y-8, padLeft-6, 16);
+          ctx.fillStyle = "rgba(231,236,255,0.95)";
+          ctx.textAlign="left"; ctx.textBaseline="middle";
+          ctx.fillText(box, 8, mouse.y);
+        }
+      }
+
+      // first paint
+      resize();
+      new ResizeObserver(resize).observe(root);
+      updateBtns();
+
+      return {
+        setTool(id){ toolState.mode=id; updateBtns(); draw(); },
+        setSeries(newSeries){ series = newSeries; viewEnd = series.length; viewStart = Math.max(0, viewEnd-150); draw(); },
+        redraw: ()=> draw()
+      };
+    }
+
+    function formatPrice(v){
+      const abs = Math.abs(v);
+      if(abs >= 1000) return "$"+abs.toLocaleString(undefined,{maximumFractionDigits:2});
+      if(abs >= 1) return "$"+v.toFixed(2);
+      if(abs >= 0.01) return "$"+v.toFixed(4);
+      return "$"+v.toFixed(6);
     }
 
     // Components
@@ -395,7 +686,7 @@
             <div class="logo" aria-hidden="true"></div>
             <div>
               <h1 style="margin:0;font-size:18px">Krypto Dashboard</h1>
-              <div class="muted" style="font-size:12px">Nowoczesny SPA, kafelki, portfel i wykresy (wersja demonstracyjna offline)</div>
+              <div class="muted" style="font-size:12px">Świece japońskie jak w TradingView + narzędzia (offline)</div>
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -488,7 +779,7 @@
         try{
           await backend.addManualToken(state.token, { symbol: form.symbol, amount: parseFloat(form.amount), purchasePrice: parseFloat(form.price), network: form.network });
           await state.refreshPortfolio();
-          alert("Dodano / zaktualizowano pozycję");
+          alert("Dodano / uśredniono pozycję");
         }catch(err){ alert(err.message||String(err)); }
       };
       return html`
@@ -575,7 +866,7 @@
       let layoutMode = "fit";
       const autoLayout = (mode)=>{
         const gap=16, W = document.getElementById("canvas")?.clientWidth || 960;
-        const colW=360, rowH=260;
+        const colW=420, rowH=300;
         let x=gap,y=gap,maxH=rowH;
         state.tiles = state.tiles.map((t,idx)=>{
           if(mode==="fit"){
@@ -629,10 +920,9 @@
     }
 
     function Tile({tile}){
-      // draggable and resizable
       const onPointerDown = (e)=>{
         if(tile.locked) return;
-        const el = e.currentTarget.parentElement.parentElement; // tile root
+        const el = e.currentTarget.parentElement.parentElement;
         el.setPointerCapture(e.pointerId);
         drag = { sx:e.clientX, sy:e.clientY, ox: tile.x, oy: tile.y, id: tile.id };
       };
@@ -665,13 +955,31 @@
       const onResizeMove = (e)=>{
         if(!resize || resize.id!==tile.id) return;
         const grid=8;
-        const nw = Math.max(260, resize.ow + (e.clientX - resize.sx));
-        const nh = Math.max(180, resize.oh + (e.clientY - resize.sy));
+        const nw = Math.max(320, resize.ow + (e.clientX - resize.sx));
+        const nh = Math.max(220, resize.oh + (e.clientY - resize.sy));
         const rw = Math.round(nw/grid)*grid;
         const rh = Math.round(nh/grid)*grid;
         state.updateTile(tile.id, { w: rw, h: rh });
+        // trigger redraw for chart
+        const holder = document.getElementById("tv_"+tile.id);
+        const api = tvCharts[tile.id];
+        if(holder && api) api.redraw();
       };
       const onResizeUp = ()=>{ resize=null; };
+
+      // mount/refresh candlestick chart
+      setTimeout(async ()=>{
+        const holder = document.getElementById("tv_"+tile.id);
+        if(!holder) return;
+        const data = await backend.ohlc(tile.symbol);
+        let api = tvCharts[tile.id];
+        if(!api){
+          api = drawCandleChart(holder, data, { tool: tile.tool });
+          tvCharts[tile.id] = api;
+        }else{
+          api.setSeries(data);
+        }
+      }, 0);
 
       return html`
         <div class=${"tile"+(tile.locked?" locked":"")} style=${{ left: tile.x+"px", top: tile.y+"px", width: tile.w+"px", height: tile.h+"px" }}>
@@ -679,12 +987,13 @@
             <div class="title">${tile.symbol} — $${(db.pricesCache[tile.symbol]?.price||lastPrice[tile.symbol]||0).toLocaleString(undefined,{maximumFractionDigits:6})}</div>
             <div class="actions">
               <button class="btn small alt" onClick=${()=> state.addTile(tile.symbol)}>Duplikuj</button>
+              <button class="btn small alt" onClick=${()=> cycleTool(tile.id)}>Narzędzie</button>
               <button class="btn small" onClick=${()=> state.updateTile(tile.id, { locked: !tile.locked })}>${tile.locked?"Odblokuj":"Zablokuj"}</button>
               <button class="btn small alt" onClick=${()=> state.removeTile(tile.id)}>Usuń</button>
             </div>
           </div>
           <div class="content">
-            <div class="tv-holder" id=${"tv_"+tile.id}>${MiniLine(tile.symbol)}</div>
+            <div class="tv-holder" id=${"tv_"+tile.id}></div>
           </div>
           <div class="resizer" onPointerDown=${onResizeDown} onPointerMove=${onResizeMove} onPointerUp=${onResizeUp}></div>
           <div class="statline">
@@ -700,27 +1009,15 @@
       `;
     }
     let drag=null, resize=null;
-
-    function MiniLine(symbol){
-      // SVG sparkline
-      const seed = Math.abs([...symbol].reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0), 0))%1000 + Date.now()/2000;
-      const pts = [];
-      let v = 40 + Math.sin(seed)*6;
-      for(let i=0;i<40;i++){
-        v += (Math.random()-0.5)*2.2;
-        v = Math.min(55, Math.max(8, v));
-        pts.push([4 + i*(92/39), v]);
-      }
-      const d = pts.map((p,i)=> (i? "L":"M")+p[0].toFixed(2)+","+(60-p[1]).toFixed(2)).join(" ");
-      return html`
-        <svg viewBox="0 0 100 60" width="100%" height="100%">
-          ${Array.from({length:5}).map((_,i)=>{
-            const y = 10 + i*10;
-            return html`<line x1="4" x2="96" y1=${y} y2=${y} stroke="rgba(255,255,255,0.08)" stroke-width="0.6" />`;
-          })}
-          <path d=${d} fill="none" stroke="#6aa9ff" stroke-width="1.5" />
-        </svg>
-      `;
+    const tvCharts = {}; // id -> api
+    function cycleTool(tileId){
+      const tile = state.tiles.find(t=>t.id===tileId);
+      const order = ["crosshair","trend","hline","rect","fib"];
+      const idx = order.indexOf(tile.tool||"crosshair");
+      const next = order[(idx+1)%order.length];
+      state.updateTile(tileId, { tool: next });
+      const api = tvCharts[tileId];
+      if(api) api.setTool(next);
     }
 
     function Dashboard(){
@@ -730,7 +1027,7 @@
           ${Sidebar()}
           <main style="display:flex;flex-direction:column;gap:18px">
             <section class="panel">
-              <h3 style="margin-top:0;color:var(--muted)">Płótno kafelków</h3>
+              <h3 style="margin-top:0;color:var(--muted)">Płótno kafelków (świece + narzędzia TradingView)</h3>
               <div id="canvas" class="canvas">
                 ${state.tiles.map(t=> html`<${Tile} key=${t.id} tile=${t} />`)}
               </div>
@@ -750,7 +1047,7 @@
           </main>
         </div>
         <footer style="padding:18px;color:var(--muted);font-size:12px;text-align:center">
-          Wersja demonstracyjna bez zewnętrznych API. Backend/Prisma/Redis/Queue zasymulowane lokalnie. Dane i wykresy generowane proceduralnie.
+          Wersja demonstracyjna bez zewnętrznych API. Dane i wykresy generowane proceduralnie. Kafelki: świece japońskie + narzędzia (trend, pozioma, prostokąt, fibo).
         </footer>
         ${AuthModal()}
       `;
@@ -820,7 +1117,6 @@
       ctx.setTransform(1,0,0,1,0,0);
       ctx.scale(dpr, dpr);
       ctx.clearRect(0,0,rect.width, c.height/dpr);
-      // grid
       ctx.strokeStyle = "rgba(255,255,255,0.08)";
       for(let i=0;i<6;i++){
         const y = (i/5)*(c.height/dpr-20)+10;
@@ -853,22 +1149,28 @@
 
     // periodic updates
     function loop(){
-      // prices and portfolio refresh
       state.refreshPrices();
       state.refreshPortfolio();
-      // wallet history drift
       if(walletHistory.length===0 || Math.random()<0.25) generateWalletHistory(180);
       walletHistory.push(computeWalletValue()||walletHistory[walletHistory.length-1]||0);
       if(walletHistory.length>240) walletHistory.shift();
       drawWalletChart();
-      // tiles mini-line rerender (cheap via rerender)
-      rerender();
+
+      // refresh tile charts data
+      state.tiles.forEach(async t=>{
+        const holder = document.getElementById("tv_"+t.id);
+        if(!holder) return;
+        const data = await backend.ohlc(t.symbol);
+        const api = tvCharts[t.id];
+        if(api) api.setSeries(data);
+      });
+
       setTimeout(loop, 1200);
     }
 
     // bootstrap
     (function init(){
-      stepPrices(); // seed
+      stepPrices();
       state.addTile("BTC");
       state.addTile("ETH");
       state.refreshPrices();
