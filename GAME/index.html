@@ -8,25 +8,30 @@
   :root{
     --cell: 32px; --cols: 25; --rows: 18;
     --bg:#0b1c10; --path:#0f2a18; --wall:#23402a;
-    --buka:#7ad1ff; --mumin:#f4f6f8; --hunter:#6ef0a7;
+    --tree:#2d5b33; --cap:#d3222a; --stem:#eddcc8;
+    --buka:#7ad1ff; --hunter:#6ef0a7; --text:#e6ffe6;
   }
-  html,body{margin:0;height:100%;background:var(--bg);color:#e6ffe6;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial,sans-serif}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial,sans-serif}
   .wrap{min-height:100%;display:grid;place-items:center;gap:10px;padding:10px}
   h1{margin:6px 0 2px;font-size:20px}
-  .hud{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  /* HUD – wiersz pod wierszem */
+  .hud{display:grid;grid-template-columns:1fr;gap:6px;align-items:center;min-width:820px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .badge{background:#173a24;border:1px solid #2a5b3c;padding:6px 10px;border-radius:8px}
-  .meter{position:relative;width:160px;height:14px;background:#113621;border:1px solid #2a5b3c;border-radius:6px;overflow:hidden}
-  .meter>.fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,#3fd0ff,#6ec2ff)}
-  .meter.hp>.fill{background:linear-gradient(90deg,#36d17c,#8fffd0)}
-  .meter.cloud>.fill{background:linear-gradient(90deg,#000,#333)}
+  .meter{position:relative;flex:1;min-width:260px;height:16px;background:#113621;border:1px solid #2a5b3c;border-radius:6px;overflow:hidden}
+  .meter>.fill{position:absolute;inset:0;width:0%}
+  .hp .fill{background:linear-gradient(90deg,#36d17c,#8fffd0)}
+  .frost .fill{background:linear-gradient(90deg,#000,#333)}
+  .cloudAmmo .fill{background:linear-gradient(90deg,#203848,#3b5c70)}
+  .ammoAlt .fill{background:linear-gradient(90deg,#85c6ff,#4190ff)}
   .grid{position:relative;width:calc(var(--cell)*var(--cols));height:calc(var(--cell)*var(--rows));background:var(--path);border-radius:10px;overflow:hidden;box-shadow:0 0 0 3px #163c25 inset,0 10px 30px rgba(0,0,0,.35)}
   canvas{width:100%;height:100%;image-rendering:pixelated}
-  .controls{opacity:.85;font-size:14px}
+  .controls{opacity:.9;font-size:14px}
   .controls kbd{background:#113621;border:1px solid #215035;border-bottom-width:3px;padding:2px 6px;border-radius:5px;font-family:ui-monospace,Menlo,monospace}
   .overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.55);color:white;text-align:center;padding:24px;backdrop-filter:blur(2px)}
   .overlay[hidden]{display:none !important;pointer-events:none}
   .overlay .card{background:rgba(16,40,28,.9);border:1px solid #2a5b3c;border-radius:12px;padding:18px 20px;max-width:560px}
-  button{background:#2a5b3c;color:white;border:0;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;margin-top:10px}
+  button{background:#2a5b3c;color:white;border:0;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer}
   button:hover{filter:brightness(1.1)}
   .mute{background:#20543a}
 </style>
@@ -34,24 +39,45 @@
 <body>
 <div class="wrap">
   <h1>BUKA w Dolinie Muminków</h1>
+
+  <!-- HUD: wiersze -->
   <div class="hud">
-    <div class="badge">Muminki: <span id="left">0</span></div>
-    <div class="badge">Punkty: <span id="score">0</span></div>
-    <div class="badge">Poziom: <span id="level">1</span></div>
-    <div class="badge">Mróz Włóczykija: <span id="freezeT">0s</span></div>
-    <div class="badge">Amunicja: <span id="ammoText">0</span></div>
-    <div class="meter hp" title="Życie"><div id="hpFill" class="fill" style="width:100%"></div></div>
-    <div class="meter cloud" title="Czas chmury"><div id="cloudFill" class="fill" style="width:0%"></div></div>
-    <button id="musicBtn" class="mute" title="Włącz/wyłącz muzykę">Muzyka: ON</button>
-    <div class="controls">Sterowanie: <kbd>WASD</kbd>/<kbd>Strzałki</kbd>, chmura: <kbd>Spacja</kbd>, piorun: <kbd>Alt</kbd>, pauza: <kbd>P</kbd>, restart: <kbd>R</kbd></div>
+    <div class="row">
+      <div class="badge">Cele do zebrania: Muminki <span id="left">0</span> • Kryształy 5 • Muchomory <span id="mushLeft">?</span></div>
+    </div>
+    <div class="row">
+      <div class="badge">Punkty: <span id="score">0</span></div>
+    </div>
+    <div class="row">
+      <div class="badge">Poziom: <span id="level">1</span></div>
+      <div class="badge">Mróz Włóczykija: <span id="freezeT">0s</span></div>
+    </div>
+    <div class="row">
+      <div class="badge">Amunicja Alt (Pioruny): <span id="ammoAltText">100</span></div>
+      <div class="badge">Amunicja Spacja (Chmura): <span id="ammoCloudText">5</span></div>
+    </div>
+    <div class="row">
+      <div class="meter frost" title="Czas aktywnej chmury"><div id="frostFill" class="fill" style="width:0%"></div></div>
+    </div>
+    <div class="row">
+      <div class="meter cloudAmmo" title="Zapasy amunicji chmury"><div id="cloudStockFill" class="fill" style="width:0%"></div></div>
+    </div>
+    <div class="row">
+      <div class="meter hp" title="Życie"><div id="hpFill" class="fill" style="width:100%"></div></div>
+      <button id="musicBtn" class="mute">Muzyka: ON</button>
+    </div>
+    <div class="row controls">
+      Sterowanie: <kbd>WASD</kbd>/<kbd>Strzałki</kbd> – ruch, <kbd>Spacja</kbd> – chmura, <kbd>Alt</kbd> – piorun, <kbd>P</kbd> – pauza, <kbd>R</kbd> – restart
+    </div>
   </div>
+
   <div class="grid">
     <canvas id="game" width="800" height="576"></canvas>
     <div id="overlay" class="overlay">
       <div class="card">
         <div id="title" style="font-size:22px;margin-bottom:6px;">Buka budzi mróz…</div>
         <div id="desc" style="opacity:.9;margin-bottom:10px;">
-          Spacja – chmura na 7 s (promień ~1/5 planszy), unieruchamia cię na 3 s i mrozi Muminki na 10 s, byś mógł je zjeść. Alt – wystrzał pioruna mrozu (mrozi cel na 10 s).
+          Zbieraj kryształy (uzupełniają chmurę – Spacja). Alt strzela piorunem (osobna amunicja). Muchomory pod drzewami dają 4× rozmiar i +33% szybkości na 15 s.
         </div>
         <button id="startBtn">Start</button>
       </div>
@@ -59,23 +85,30 @@
   </div>
 </div>
 
-<!-- Muzyka: podmień src na własne pliki jeśli chcesz -->
+<!-- Muzyka przykładowa (możesz podmienić src na swoje) -->
 <audio id="musicHappy" loop preload="auto" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_d0b2a58b8a.mp3?filename=happy-day-112194.mp3"></audio>
 <audio id="musicDark" loop preload="auto" src="https://cdn.pixabay.com/download/audio/2021/12/20/audio_8e2b2e6fa2.mp3?filename=dark-ambient-110011.mp3"></audio>
 
 <script>
 (() => {
-  // Parametry
+  // Stałe
   const CELL=32, COLS=25, ROWS=18;
-  const WALL_DENSITY=0.25;
-  const RNG_SEED=4242;
+  const WALL_DENSITY=0.32; // trochę gęściej
+  const RNG_SEED=7777;
 
-  const BOKA_SPEED=3.1, BOKA_R=14;
-  const HUNTER_SPEED=2.7, HUNTER_R=12, HUNTER_PROJ_SPEED=5.0, HUNTER_FIRE_COOLDOWN=1.8, HUNTER_AIM_RANGE=380;
-  const MUMIN_R=11, MUMINS_BASE=7, MUMIN_FEAR_DROP_RATE=0.35;
+  const BOKA_BASE_SPEED=3.1, BOKA_R_BASE=14;
+  const HUNTER_SPEED=2.7, HUNTER_R=12;
+  // słabsze ogniki i znacznie rzadsze strzały
+  const HUNTER_PROJ_SPEED=4.2;
+  const HUNTER_FIRE_COOLDOWN=1.8*5; // 5× rzadziej
+  const HUNTER_AIM_RANGE=360;
+  const PROJ_DMG_PER_SEC=14/10; // 10× słabsze
+
+  const MUMIN_R=11, MUMINS_BASE=8;
+  const MUMIN_FEAR_DROP_RATE=0.35;
   const CLOUD_DURATION=7.0, CLOUD_FREEZE_MUMIN=10.0, BOKA_ROOT_TIME=3.0;
   const HUNTER_FREEZE_TIME=60.0, FREEZE_TICKS_TO_KILL=10;
-  const HP_MAX=100, PROJ_DMG_PER_SEC=14;
+  const HP_MAX=100;
 
   const MIN_BOARD=Math.min(COLS*CELL, ROWS*CELL);
   const CLOUD_MAX_RADIUS=Math.floor(MIN_BOARD/5);
@@ -86,11 +119,14 @@
   const overlay=document.getElementById('overlay');
   const startBtn=document.getElementById('startBtn');
   const leftEl=document.getElementById('left');
+  const mushLeftEl=document.getElementById('mushLeft');
   const lvlEl=document.getElementById('level');
   const scoreEl=document.getElementById('score');
   const hpFill=document.getElementById('hpFill');
-  const cloudFill=document.getElementById('cloudFill');
-  const ammoText=document.getElementById('ammoText');
+  const frostFill=document.getElementById('frostFill');
+  const cloudStockFill=document.getElementById('cloudStockFill');
+  const ammoAltText=document.getElementById('ammoAltText');
+  const ammoCloudText=document.getElementById('ammoCloudText');
   const freezeT=document.getElementById('freezeT');
   const musicBtn=document.getElementById('musicBtn');
   const musicHappy=document.getElementById('musicHappy');
@@ -99,22 +135,24 @@
   // RNG
   function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
   let rng=mulberry32(RNG_SEED);
+  function rr(a,b){return Math.floor(a+(b-a)*Math.random());}
 
-  // Mapa
+  // Mapa i ozdoby
   let grid=[];
+  const trees=[];      // drzewka
+  const mushrooms=[];  // muchomory
   function isWall(c,r){if(r<0||c<0||r>=ROWS||c>=COLS)return true;return grid[r][c]===1}
   function genMap(level){
     rng=mulberry32(RNG_SEED+level*97);
     grid=Array.from({length:ROWS},()=>Array(COLS).fill(0));
-    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(r===0||c===0||r===ROWS-1||c===COLS-1) grid[r][c]=1;
-    for(let r=1;r<ROWS-1;r++) for(let c=1;c<COLS-1;c++) if(rng()<WALL_DENSITY) grid[r][c]=1;
-    let snakes=8;
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(r===0||c===0||r===ROWS-1||c===COLS-1) grid[r][c]=1;
+    for(let r=1;r<ROWS-1;r++) for(let c=1;c<COLS-1;c++) if(Math.random()<WALL_DENSITY) grid[r][c]=1;
+    let snakes=9;
     while(snakes--){
-      let r=(ROWS>>1)+Math.floor((rng()-0.5)*6);
-      let c=(COLS>>1)+Math.floor((rng()-0.5)*6);
-      for(let i=0;i<200;i++){
+      let r=(ROWS>>1)+rr(-3,3), c=(COLS>>1)+rr(-3,3);
+      for(let i=0;i<230;i++){
         grid[r][c]=0;
-        const d=Math.floor(rng()*4);
+        const d=rr(0,4);
         if(d===0&&r>1)r--; if(d===1&&r<ROWS-2)r++;
         if(d===2&&c>1)c--; if(d===3&&c<COLS-2)c++;
       }
@@ -122,28 +160,38 @@
     // Domek 3x3
     let dr=0,dc=0;
     for(let tries=0;tries<200;tries++){
-      const r=2+Math.floor(rng()*(ROWS-5));
-      const c=2+Math.floor(rng()*(COLS-5));
-      let ok=true;
-      for(let rr=r;rr<r+3;rr++) for(let cc=c;cc<c+3;cc++) if(isWall(cc,rr)) ok=false;
+      const r=2+rr(0,ROWS-5), c=2+rr(0,COLS-5);
+      let ok=true; for(let rr2=r;rr2<r+3;rr2++) for(let cc=c;cc<c+3;cc++) if(isWall(cc,rr2)) ok=false;
       if(ok){dr=r;dc=c;break;}
     }
-    for(let rr=dr;rr<dr+3;rr++) for(let cc=dc;cc<dc+3;cc++) grid[rr][cc]=2;
-    grid[1][1]=0;
+    for(let rr2=dr;rr2<dr+3;rr2++) for(let cc=dc;cc<dc+3;cc++) grid[rr2][cc]=2;
+
+    // Drzewka + muchomory przy nich
+    trees.length=0; mushrooms.length=0;
+    const treeCount=18;
+    let placed=0;
+    while(placed<treeCount){
+      const c=1+rr(0,COLS-2), r=1+rr(0,ROWS-2);
+      if(grid[r][c]!==0) continue;
+      const x=c*CELL+CELL/2, y=r*CELL+CELL/2;
+      trees.push({x,y});
+      // muchomor pod drzewem (30% szans)
+      if(Math.random()<0.3) mushrooms.push({x:x+rr(-8,9), y:y+rr(6,12), r:6, alive:true});
+      placed++;
+    }
   }
   function inHouse(x,y){const c=Math.floor(x/CELL), r=Math.floor(y/CELL); return grid[r] && grid[r][c]===2;}
 
   // Obiekty
-  const boka={x:CELL*1.5,y:CELL*1.5,r:BOKA_R,hp:HP_MAX,poison:0, ammo:5, cloud:0, cloudActive:false, cloudFade:0, lookX:1, lookY:0, rooted:0};
+  const boka={x:CELL*1.5,y:CELL*1.5,r:BOKA_R_BASE,hp:HP_MAX,poison:0,
+              ammoAlt:100, ammoCloud:5,
+              cloud:0, cloudActive:false, rooted:0, lookX:1, lookY:0,
+              growT:0}; // muchomor efekt
   const hunter={x:CELL*(COLS-2.5), y:CELL*(ROWS-2.5), r:HUNTER_R, frozen:0, freezeHits:0, tShot:0};
-  const mumins=[];
-  const fearClouds=[], blueClouds=[];
-  const projs=[];           // ogniki Włóczykija
-  const iceBolts=[];        // pioruny mrozu Buki
-  const crystals=[];        // kryształy amunicji
+  const mumins=[], fearClouds=[], blueClouds=[], crystals=[], projs=[], iceBolts=[];
   let level=1, score=0;
-  let playing=false, paused=false;
-  let lastTick=0, musicOn=true;
+  let playing=false, paused=false, musicOn=true;
+  let lastTick=0;
 
   // Helpers
   function cellRect(c,r){return [c*CELL,r*CELL,CELL,CELL]}
@@ -153,9 +201,9 @@
     const minX=rad, minY=rad, maxX=COLS*CELL-rad, maxY=ROWS*CELL-rad;
     nx=Math.max(minX,Math.min(maxX,nx)); ny=Math.max(minY,Math.min(maxY,ny));
     const c=Math.floor(nx/CELL), r=Math.floor(ny/CELL);
-    for(let rr=r-1;rr<=r+1;rr++) for(let cc=c-1;cc<=c+1;cc++){
-      if(!isWall(cc,rr)) continue;
-      const rx=cc*CELL, ry=rr*CELL;
+    for(let rr2=r-1;rr2<=r+1;rr2++) for(let cc=c-1;cc<=c+1;cc++){
+      if(!isWall(cc,rr2)) continue;
+      const rx=cc*CELL, ry=rr2*CELL;
       const cx=Math.max(rx,Math.min(nx,rx+CELL));
       const cy=Math.max(ry,Math.min(ny,ry+CELL));
       const dx=nx-cx, dy=ny-cy, d2=dx*dx+dy*dy;
@@ -170,27 +218,25 @@
 
   function resetLevel(){
     genMap(level);
-    mumins.length=0; fearClouds.length=0; blueClouds.length=0; projs.length=0; iceBolts.length=0; crystals.length=0;
-    boka.x=CELL*1.5; boka.y=CELL*1.5; boka.hp=HP_MAX; boka.poison=0; boka.cloud=0; boka.cloudActive=false; boka.cloudFade=0; boka.lookX=1; boka.lookY=0; boka.rooted=0;
+    mumins.length=0; fearClouds.length=0; blueClouds.length=0; crystals.length=0; projs.length=0; iceBolts.length=0;
+    boka.x=CELL*1.5; boka.y=CELL*1.5; boka.hp=HP_MAX; boka.poison=0; boka.cloud=0; boka.cloudActive=false; boka.rooted=0; boka.lookX=1; boka.lookY=0; boka.growT=0;
     hunter.x=CELL*(COLS-2.5); hunter.y=CELL*(ROWS-2.5); hunter.frozen=0; hunter.tShot=0;
 
     // Muminki
-    const toPlace=MUMINS_BASE+Math.floor(level*1.5);
+    const toPlace=MUMINS_BASE+Math.floor(level*1.4);
     let i=0;
     while(i<toPlace){
-      const c=1+Math.floor(Math.random()*(COLS-2));
-      const r=1+Math.floor(Math.random()*(ROWS-2));
+      const c=1+rr(0,COLS-2), r=1+rr(0,ROWS-2);
       if(isWall(c,r)||grid[r][c]===2) continue;
       const x=c*CELL+CELL/2, y=r*CELL+CELL/2;
       if(dist(x,y,boka.x,boka.y)<60) continue;
       mumins.push({x,y,r:MUMIN_R, alive:true, hide:false, frozen:0, dir:Math.random()*Math.PI*2});
       i++;
     }
-    // 5 kryształów amunicji
+    // 5 kryształów (chmura)
     let k=0;
     while(k<5){
-      const c=1+Math.floor(Math.random()*(COLS-2));
-      const r=1+Math.floor(Math.random()*(ROWS-2));
+      const c=1+rr(0,COLS-2), r=1+rr(0,ROWS-2);
       if(isWall(c,r)||grid[r][c]===2) continue;
       const x=c*CELL+CELL/2, y=r*CELL+CELL/2;
       if(crystals.some(q=>dist(q.x,q.y,x,y)<20)) continue;
@@ -199,9 +245,12 @@
     }
 
     leftEl.textContent = mumins.filter(m=>m.alive).length;
+    mushLeftEl.textContent = mushrooms.filter(m=>m.alive!==false).length;
     lvlEl.textContent = level;
     scoreEl.textContent = score;
-    ammoText.textContent = boka.ammo;
+    ammoAltText.textContent = boka.ammoAlt;
+    ammoCloudText.textContent = boka.ammoCloud;
+    cloudStockFill.style.width = Math.min(100, (boka.ammoCloud/10)*100) + '%';
   }
 
   // Wejście
@@ -223,35 +272,28 @@
     else { if(boka.cloudActive) {musicDark.play(); musicHappy.pause();} else {musicHappy.play(); musicDark.pause();} }
   });
 
+  // Akcje
   function tryUseCloud(){
     if(boka.cloudActive) return;
-    if(boka.ammo<=0) return;
-    boka.ammo--; ammoText.textContent=boka.ammo;
-    boka.cloud=CLOUD_DURATION;
-    boka.cloudFade=1.0;
-    boka.cloudActive=true;
-    boka.rooted = BOKA_ROOT_TIME; // 3 s brak ruchu
+    if(boka.ammoCloud<=0) return;
+    boka.ammoCloud--; ammoCloudText.textContent=boka.ammoCloud;
+    boka.cloud=CLOUD_DURATION; boka.cloudActive=true; boka.rooted=BOKA_ROOT_TIME;
+    frostFill.style.width='100%';
+    cloudStockFill.style.width = Math.min(100, (boka.ammoCloud/10)*100) + '%';
     if(musicOn){ musicDark.currentTime=0; musicDark.play(); musicHappy.pause(); }
-    // zamroź w zasięgu muminki na 10 s
-    mumins.forEach(m=>{
-      if(m.alive && dist(m.x,m.y,boka.x,boka.y) < CLOUD_MAX_RADIUS){
-        m.frozen = Math.max(m.frozen, CLOUD_FREEZE_MUMIN);
-      }
-    });
-    // zamroź Włóczykija
-    if(dist(hunter.x,hunter.y,boka.x,boka.y) < CLOUD_MAX_RADIUS){
+    // zamroź zasięg
+    mumins.forEach(m=>{ if(m.alive && dist(m.x,m.y,boka.x,boka.y) < CLOUD_MAX_RADIUS){ m.frozen=Math.max(m.frozen,CLOUD_FREEZE_MUMIN);} });
+    if(dist(hunter.x,hunter.y,boka.x,boka.y)<CLOUD_MAX_RADIUS){
       if(hunter.frozen<=0) hunter.freezeHits++;
-      hunter.frozen = Math.max(hunter.frozen, HUNTER_FREEZE_TIME);
+      hunter.frozen=Math.max(hunter.frozen,HUNTER_FREEZE_TIME);
     }
   }
-
   function fireIceBolt(){
-    if(boka.ammo<=0) return;
-    // pocisk w kierunku patrzenia
+    if(boka.ammoAlt<=0) return;
     const dirLen=Math.hypot(boka.lookX,boka.lookY)||1;
     const ux=boka.lookX/dirLen, uy=boka.lookY/dirLen;
-    boka.ammo--; ammoText.textContent=boka.ammo;
-    iceBolts.push({x:boka.x+ux*16, y:boka.y+uy*16, vx:ux*7.5, vy:uy*7.5, ttl:2.5});
+    boka.ammoAlt--; ammoAltText.textContent=boka.ammoAlt;
+    iceBolts.push({x:boka.x+ux*16, y:boka.y+uy*16, vx:ux*7.0, vy:uy*7.0, ttl:2.5});
   }
 
   function update(now){
@@ -260,17 +302,20 @@
     lastTick=now;
     if(paused){ draw(); requestAnimationFrame(update); return; }
 
-    // Buka ruch
-    if(boka.rooted>0){ boka.rooted-=dt; }
-    if(!boka.cloudActive){
-      // muzyka wesoła
-      if(musicOn && musicDark.currentTime>0 && !musicDark.paused){ musicDark.pause(); musicHappy.play(); }
-    }
+    // Frost timer UI
     if(boka.cloudActive){
-      boka.cloud -= dt; boka.cloudFade = Math.max(0, boka.cloud / CLOUD_DURATION);
-      cloudFill.style.width = (boka.cloudFade*100)+'%';
-      if(boka.cloud<=0){ boka.cloudActive=false; boka.cloudFade=0; cloudFill.style.width='0%'; if(musicOn){ musicDark.pause(); musicHappy.play(); } }
-    }
+      boka.cloud -= dt;
+      if(boka.cloud<=0){ boka.cloud=0; boka.cloudActive=false; if(musicOn){ musicDark.pause(); musicHappy.play(); } }
+      frostFill.style.width = (boka.cloud/CLOUD_DURATION*100)+'%';
+    } else frostFill.style.width='0%';
+
+    // Buka ruch + efekt muchomora
+    if(boka.growT>0) boka.growT-=dt;
+    const sizeMul = (boka.growT>0)? 4.0 : 1.0;
+    boka.r = BOKA_R_BASE * sizeMul;
+    const spMul = (boka.growT>0)? 1.33 : 1.0;
+
+    if(boka.rooted>0) boka.rooted-=dt;
     if(!boka.cloudActive && boka.rooted<=0){
       let ax=0,ay=0;
       if(keys.has('ArrowUp')||keys.has('KeyW')) ay-=1;
@@ -278,22 +323,23 @@
       if(keys.has('ArrowLeft')||keys.has('KeyA')) ax-=1;
       if(keys.has('ArrowRight')||keys.has('KeyD')) ax+=1;
       if(ax||ay){ const l=Math.hypot(ax,ay); ax/=l; ay/=l; boka.lookX=ax; boka.lookY=ay; }
-      const sp=BOKA_SPEED*CELL/10;
-      const moved=moveCircle(boka, ax*sp*dt, ay*sp*dt, BOKA_R);
+      const sp=BOKA_BASE_SPEED*CELL/10*spMul;
+      const moved=moveCircle(boka, ax*sp*dt, ay*sp*dt, boka.r);
       boka.x=moved.x; boka.y=moved.y;
     }
 
-    // trucizna
-    if(boka.poison>0){ boka.hp -= PROJ_DMG_PER_SEC*dt; boka.poison = Math.max(0,boka.poison-dt); }
+    // Trucizna z ogników
+    if(boka.poison>0){ boka.hp -= PROJ_DMG_PER_SEC*dt; boka.poison=Math.max(0,boka.poison-dt); }
 
     // Hunter
-    if(hunter.frozen>0){ hunter.frozen-=dt; } else {
+    if(hunter.frozen>0) hunter.frozen-=dt;
+    else{
       const dx=boka.x-hunter.x, dy=boka.y-hunter.y, d=Math.hypot(dx,dy);
       if(d>1){ const ux=dx/d, uy=dy/d; const moved=moveCircle(hunter, ux*HUNTER_SPEED, uy*HUNTER_SPEED, HUNTER_R); hunter.x=moved.x; hunter.y=moved.y; }
       hunter.tShot-=dt;
-      if(hunter.tShot<=0 && d<HUNTER_AIM_RANGE && !(boka.cloudActive && boka.rooted>0)){
+      if(hunter.tShot<=0 && d<HUNTER_AIM_RANGE && !(boka.cloudActive&&boka.rooted>0)){
         const speed=HUNTER_PROJ_SPEED;
-        projs.push({x:hunter.x,y:hunter.y, vx:(dx/d)*speed, vy:(dy/d)*speed, ttl:5});
+        projs.push({x:hunter.x,y:hunter.y, vx:(dx/d)*speed, vy:(dy/d)*speed, ttl:6});
         hunter.tShot=HUNTER_FIRE_COOLDOWN*(0.9+Math.random()*0.4);
       }
     }
@@ -302,26 +348,22 @@
     for(let i=projs.length-1;i>=0;i--){
       const p=projs[i];
       p.ttl-=dt; if(p.ttl<=0){projs.splice(i,1); continue;}
-      const moved=moveCircle(p, p.vx, p.vy, 2);
-      p.x=moved.x; p.y=moved.y;
-      if(dist(p.x,p.y,boka.x,boka.y)<BOKA_R+4){ boka.poison=2.5; projs.splice(i,1); }
+      const moved=moveCircle(p, p.vx, p.vy, 2); p.x=moved.x; p.y=moved.y;
+      if(dist(p.x,p.y,boka.x,boka.y)<boka.r+4){ boka.poison=2.5; projs.splice(i,1); }
     }
 
     // Pioruny mrozu
     for(let i=iceBolts.length-1;i>=0;i--){
       const b=iceBolts[i];
       b.ttl-=dt; if(b.ttl<=0){iceBolts.splice(i,1); continue;}
-      const moved=moveCircle(b, b.vx, b.vy, 2);
-      b.x=moved.x; b.y=moved.y;
-      // mrożenie muminka
+      const moved=moveCircle(b, b.vx, b.vy, 2); b.x=moved.x; b.y=moved.y;
       for(const m of mumins){
         if(!m.alive) continue;
-        if(dist(b.x,b.y,m.x,m.y)<m.r+4){ m.frozen = Math.max(m.frozen, CLOUD_FREEZE_MUMIN); b.ttl=0; break; }
+        if(dist(b.x,b.y,m.x,m.y)<m.r+4){ m.frozen=Math.max(m.frozen,CLOUD_FREEZE_MUMIN); b.ttl=0; break; }
       }
-      // mrożenie Włóczykija
       if(dist(b.x,b.y,hunter.x,hunter.y)<HUNTER_R+4){
         if(hunter.frozen<=0) hunter.freezeHits++;
-        hunter.frozen=Math.max(hunter.frozen, HUNTER_FREEZE_TIME);
+        hunter.frozen=Math.max(hunter.frozen,HUNTER_FREEZE_TIME);
         b.ttl=0;
       }
     }
@@ -331,7 +373,6 @@
       if(!m.alive) return;
       if(m.frozen>0){ m.frozen-=dt; }
       else{
-        // widoczność
         const dx=boka.x-m.x, dy=boka.y-m.y, d=Math.hypot(dx,dy);
         let see=false;
         if(d<260){
@@ -339,7 +380,7 @@
           for(let k=1;k<steps;k++){ const xx=m.x+dx*(k/steps), yy=m.y+dy*(k/steps); const c=Math.floor(xx/CELL), r=Math.floor(yy/CELL); if(isWall(c,r)){ok=false;break;} }
           see=ok;
         }
-        if(see){ // uciekaj do domku
+        if(see){ // uciekaj
           m.hide=true;
           let target=null, best=1e9;
           for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(grid[r][c]===2){
@@ -347,7 +388,6 @@
             if(dd<best){best=dd; target={x:tx,y:ty}}
           }
           if(target){ const ux=(target.x-m.x)/best, uy=(target.y-m.y)/best; const moved=moveCircle(m, ux*2.3, uy*2.3, MUMIN_R); m.x=moved.x; m.y=moved.y; }
-          // chmurki strachu
           if(Math.random()<MUMIN_FEAR_DROP_RATE*dt*3){ fearClouds.push({x:m.x,y:m.y,r:8, ttl:10}); }
         } else {
           m.hide=false;
@@ -355,28 +395,37 @@
           const moved=moveCircle(m, Math.cos(m.dir)*1.0, Math.sin(m.dir)*1.0, MUMIN_R); m.x=moved.x; m.y=moved.y;
         }
       }
-      // Zjedzenie przez najazd (jeśli nie w domku i nie zamrożony? można zjeść także zamrożonego)
-      if(dist(m.x,m.y,boka.x,boka.y) < BOKA_R+m.r && !inHouse(m.x,m.y)){
-        m.alive=false;
-        score+=50; scoreEl.textContent=score;
-        boka.ammo += 3; ammoText.textContent=boka.ammo;
+      // zjedzenie przy kontakcie (poza domkiem)
+      if(dist(m.x,m.y,boka.x,boka.y) < boka.r+m.r && !inHouse(m.x,m.y)){
+        m.alive=false; score+=50; scoreEl.textContent=score;
+        // niebieska chmurka + leczenie + 1 zapas chmury
         blueClouds.push({x:m.x,y:m.y,r:10, ttl:15});
+        boka.ammoCloud+=3; ammoCloudText.textContent=boka.ammoCloud;
+        cloudStockFill.style.width = Math.min(100, (boka.ammoCloud/10)*100) + '%';
       }
     });
 
-    // Kryształy amunicji
+    // Kryształy (tylko chmura)
     for(let i=crystals.length-1;i>=0;i--){
       const c=crystals[i];
-      if(dist(c.x,c.y,boka.x,boka.y) < BOKA_R+c.r){
-        boka.ammo++; ammoText.textContent=boka.ammo;
+      if(dist(c.x,c.y,boka.x,boka.y) < boka.r+c.r){
+        boka.ammoCloud++; ammoCloudText.textContent=boka.ammoCloud;
+        cloudStockFill.style.width = Math.min(100, (boka.ammoCloud/10)*100) + '%';
         crystals.splice(i,1);
       }
     }
 
-    // Zbieranie chmurek
+    // Muchomory – power-up
+    for(const m of mushrooms){
+      if(m.alive!==false && dist(m.x,m.y,boka.x,boka.y)<boka.r+m.r){
+        m.alive=false; boka.growT=15; // 15 s
+      }
+    }
+
+    // Chmurki
     for(let i=fearClouds.length-1;i>=0;i--){
       const f=fearClouds[i]; f.ttl-=dt; if(f.ttl<=0){fearClouds.splice(i,1); continue;}
-      if(dist(f.x,f.y,boka.x,boka.y)<BOKA_R+f.r){
+      if(dist(f.x,f.y,boka.x,boka.y)<boka.r+f.r){
         score+=10; scoreEl.textContent=score;
         boka.hp=Math.min(HP_MAX, boka.hp+5);
         fearClouds.splice(i,1);
@@ -384,15 +433,16 @@
     }
     for(let i=blueClouds.length-1;i>=0;i--){
       const b=blueClouds[i]; b.ttl-=dt; if(b.ttl<=0){blueClouds.splice(i,1); continue;}
-      if(dist(b.x,b.y,boka.x,boka.y)<BOKA_R+b.r){
+      if(dist(b.x,b.y,boka.x,boka.y)<boka.r+b.r){
         boka.hp=Math.min(HP_MAX, boka.hp+20);
-        // dodatkowy ładunek
-        boka.ammo += 1; ammoText.textContent=boka.ammo;
+        // bonus 1 zapas chmury
+        boka.ammoCloud++; ammoCloudText.textContent=boka.ammoCloud;
+        cloudStockFill.style.width = Math.min(100, (boka.ammoCloud/10)*100) + '%';
         blueClouds.splice(i,1);
       }
     }
 
-    // Włóczykij stan
+    // Włóczykij win condition
     if(hunter.freezeHits>=FREEZE_TICKS_TO_KILL){
       score+=500; level++;
       overlay.hidden=false;
@@ -403,13 +453,14 @@
 
     // UI
     leftEl.textContent = mumins.filter(m=>m.alive).length;
+    mushLeftEl.textContent = mushrooms.filter(m=>m.alive!==false).length;
     hpFill.style.width = Math.max(0, Math.min(100, (boka.hp/HP_MAX)*100))+'%';
     freezeT.textContent = (hunter.frozen>0? Math.ceil(hunter.frozen)+'s':'0s');
 
     if(boka.hp<=0){
       playing=false; overlay.hidden=false;
-      document.getElementById('title').textContent='Przegrałeś…';
-      document.getElementById('desc').textContent='Ogniki Włóczykija cię wyczerpały. Spróbuj ponownie.';
+      document.getElementById('title').textContent='Przegrana';
+      document.getElementById('desc').textContent='Ogniki cię wyczerpały. Spróbuj ponownie.';
       return;
     }
 
@@ -420,21 +471,35 @@
   // Rysowanie
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    // Tło (ciemniejsze gdy chmura aktywna)
-    const darkShift = (boka.cloudActive? 0.12:0);
+    // Tło
     for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
       const [x,y,w,h]=cellRect(c,r);
       const t=grid[r][c];
-      let col = t===1 ? '#23402a' : (t===2 ? '#163c25' : '#0f2a18');
-      if(darkShift>0){
-        // przyciemnij
-        const k=(t===1?0.8:0.7); ctx.fillStyle=`rgba(10,20,14,${darkShift})`; 
-      }
-      ctx.fillStyle = (t===1 ? '#23402a' : (t===2 ? '#163c25' : '#0f2a18'));
-      if(boka.cloudActive){ ctx.fillStyle = (t===1 ? '#1f3527' : (t===2 ? '#112a1d' : '#0b1d12')); }
+      ctx.fillStyle = t===1 ? '#23402a' : (t===2 ? '#163c25' : '#0f2a18');
+      if(boka.cloudActive){ ctx.fillStyle = t===1?'#1f3527':(t===2?'#112a1d':'#0b1d12'); }
       ctx.fillRect(x,y,w,h);
-      if(t===1){ ctx.fillStyle='rgba(25,70,45,0.25)'; if(boka.cloudActive) ctx.fillStyle='rgba(20,55,38,0.25)'; ctx.fillRect(x+2,y+2,w-4,h-4); }
+      if(t===1){ ctx.fillStyle=boka.cloudActive?'rgba(20,55,38,0.25)':'rgba(25,70,45,0.25)'; ctx.fillRect(x+2,y+2,w-4,h-4); }
       if(t===2){ ctx.strokeStyle=boka.cloudActive?'rgba(90,140,120,0.35)':'rgba(120,200,160,0.4)'; ctx.strokeRect(x+3,y+3,w-6,h-6); }
+    }
+
+    // Drzewka
+    for(const t of trees){
+      ctx.fillStyle='#1b3b22';
+      ctx.fillRect(t.x-6, t.y+5, 12, 6); // cień
+      ctx.fillStyle=varColor('--tree','#2d5b33');
+      ctx.beginPath(); ctx.moveTo(t.x, t.y-18); ctx.lineTo(t.x-12, t.y+8); ctx.lineTo(t.x+12, t.y+8); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#4a2e1c'; ctx.fillRect(t.x-2, t.y+8, 4, 8); // pień
+    }
+    // Muchomory
+    for(const m of mushrooms){
+      if(m.alive===false) continue;
+      // trzonek
+      ctx.fillStyle='rgba(237,220,200,0.95)'; ctx.fillRect(m.x-2, m.y-4, 4, 6);
+      // kapelusz
+      ctx.fillStyle='#d3222a'; ctx.beginPath(); ctx.ellipse(m.x, m.y-4, 8, 5, 0, 0, Math.PI, true); ctx.fill();
+      // kropki
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(m.x-3,m.y-6,1.2,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(m.x+2,m.y-5,1.4,0,Math.PI*2); ctx.fill();
     }
 
     // Kryształy
@@ -459,11 +524,10 @@
       ctx.beginPath(); ctx.ellipse(0,-10,6,5,0,0,Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.ellipse(-3,-15,2,3,0,0,Math.PI*2); ctx.fill();
       ctx.beginPath(); ctx.ellipse(3,-15,2,3,0,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle='#cfd5da'; ctx.lineWidth=1; ctx.beginPath(); ctx.ellipse(0,4,8,11,0,0,Math.PI*2); ctx.stroke();
       ctx.restore();
     });
 
-    // Ogniki
+    // Ogniki Włóczykija
     projs.forEach(p=>{ ctx.fillStyle='#a9ffbf'; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill(); });
 
     // Pioruny mrozu
@@ -487,21 +551,22 @@
     ctx.save(); ctx.translate(boka.x,boka.y);
     ctx.shadowColor='#7ad1ff'; ctx.shadowBlur=glow;
     ctx.fillStyle=boka.cloudActive?'#5aa7d4':'#7ad1ff';
-    ctx.beginPath(); ctx.ellipse(0,2,13,18,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0,2,boka.r*0.93,boka.r*1.3,0,0,Math.PI*2); ctx.fill();
     ctx.fillStyle=boka.cloudActive?'rgba(120,160,190,0.5)':'rgba(170,220,255,0.5)';
-    ctx.beginPath(); ctx.ellipse(0,8,16,6,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0,8,boka.r*1.1,6,0,0,Math.PI*2); ctx.fill();
     ctx.shadowBlur=0;
-    // oczy kierunkowe
+    // oczy
     const el=Math.hypot(boka.lookX,boka.lookY)||1; const ex=(boka.lookX/el)*2.2, ey=(boka.lookY/el)*2.2;
     ctx.fillStyle='#eef9ff';
     ctx.beginPath(); ctx.ellipse(-4,-4,3,4,0,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(4,-4,3,4,0,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#0b1c10'; ctx.beginPath(); ctx.arc(-4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0b1c10'; ctx.beginPath(); ctx.arc(-4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill();
     ctx.restore();
 
     // Chmura mrozu
     if(boka.cloudActive){
-      const radius=CLOUD_MAX_RADIUS*boka.cloudFade;
+      const radius=CLOUD_MAX_RADIUS*(boka.cloud/CLOUD_DURATION);
       const grd=ctx.createRadialGradient(boka.x,boka.y,10,boka.x,boka.y,radius);
       grd.addColorStop(0,'rgba(0,0,0,0.8)');
       grd.addColorStop(0.6,'rgba(0,0,0,0.6)');
@@ -516,9 +581,11 @@
 
   function startGame(reset=false){
     overlay.hidden=true;
-    if(reset){ level=1; score=0; boka.ammo=5; }
-    else { boka.ammo = 5; }
-    ammoText.textContent=boka.ammo;
+    if(reset){ level=1; score=0; boka.ammoAlt=100; boka.ammoCloud=5; }
+    else { boka.ammoAlt=100; boka.ammoCloud=5; }
+    ammoAltText.textContent=boka.ammoAlt;
+    ammoCloudText.textContent=boka.ammoCloud;
+    cloudStockFill.style.width = Math.min(100, (boka.ammoCloud/10)*100) + '%';
     resetLevel();
     playing=true; paused=false;
     lastTick=performance.now();
@@ -526,7 +593,7 @@
     requestAnimationFrame(update);
   }
 
-  // Start
+  function varColor(name,fallback){return getComputedStyle(document.documentElement).getPropertyValue(name)||fallback}
   overlay.hidden=false;
 })();
 </script>
