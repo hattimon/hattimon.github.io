@@ -13,7 +13,7 @@ A web application displaying a TradingView chart with multi-interval candle over
 ## Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/<your-username>/tradingview-multi-interval.git
+   git clone https://github.com/hattimon/tradingview-multi-interval.git
 
 
 Open index.html in a modern browser (e.g., Chrome, Firefox).
