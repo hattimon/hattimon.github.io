@@ -2,85 +2,126 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Kaskadowy wykres świec krypto (live) z RSI i Stoch</title>
   <style>
     :root{
-      --bg:#0f1217;
-      --panel:#121720;
-      --grid:#232a35;
-      --muted:#6b778c;
-      --text:#d8dee9;
+      --bg:#0b0f16;
+      --panel:#0f141d;
+      --grid:#1c2533;
+      --muted:#7a889f;
+      --text:#e5ecf5;
       --bull:#5bd49c;
-      --bear:#e57373;
+      --bear:#ef6b73;
       --accent:#7aa2f7;
       --accent2:#bb9af7;
       --accent3:#7dcfff;
       --rsi:#c3e88d;
-      --stoch:%239fe2ff;
+      --stoch:#9fe2ff;
+      --tool:#ffcc66;
+      --sel:#3d4a61;
+      --handle:#ffd166;
     }
     *{box-sizing:border-box}
     html,body{height:100%;background:var(--bg);color:var(--text);margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     header{
       display:flex;gap:.75rem;align-items:center;justify-content:space-between;
-      padding:.75rem 1rem;background:linear-gradient(180deg,#0f131b,#0d1219);
-      border-bottom:1px solid #1e2633; position:sticky; top:0; z-index:2;
+      padding:.6rem .8rem;background:linear-gradient(180deg,#0f131b,#0d1219);
+      border-bottom:1px solid #172030; position:sticky; top:0; z-index:5;
     }
     header .left, header .right{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap}
     select, input, button{
       background:#0f1622;border:1px solid #1f2a3a;color:var(--text);
-      padding:.45rem .6rem;border-radius:.4rem; outline:none;
+      padding:.45rem .6rem;border-radius:.4rem; outline:none; min-height:34px;
     }
     button{cursor:pointer}
     button:hover, select:hover{border-color:#2b3a52}
     .container{
-      display:grid; grid-template-rows:150px 1fr 150px; height:calc(100% - 60px);
+      display:grid; grid-template-rows:minmax(110px,23vh) minmax(0,1fr) minmax(110px,22vh);
+      height:calc(100% - 58px);
+      transition:grid-template-rows .25s ease;
     }
     .panel{
-      background:var(--panel); border-top:1px solid #1b2432; border-bottom:1px solid #1b2432;
+      background:var(--panel); border-top:1px solid #141c28; border-bottom:1px solid #141c28;
+      min-height:80px;
     }
-    .row{display:grid; grid-template-columns:260px 1fr; height:100%}
+    .row{display:grid; grid-template-columns:minmax(220px, 280px) 1fr; height:100%; min-height:0}
     .sidebar{
-      padding:.6rem;border-right:1px solid #1b2432; overflow:auto;
+      padding:.65rem;border-right:1px solid #141c28; overflow:auto;
       background:linear-gradient(180deg,#101722,#0f141d);
     }
     .sidebar h3{margin:.4rem 0 .6rem;color:#aab7cf;font-weight:600;font-size:.95rem}
-    .tf-level{
-      display:flex; flex-direction:column; gap:.25rem; margin-bottom:.75rem;
-    }
-    .tf-level .label{
-      color:#8ea0bb; font-size:.8rem; display:flex; align-items:center; gap:.4rem;
-    }
-    .legend{
-      display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem;
-    }
-    .badge{
-      font-size:.7rem; padding:.2rem .35rem; border-radius:.3rem; border:1px solid #223045;
-      color:#b5c3da; background:#0f1724;
-    }
-    .canvas-wrap{position:relative; background:var(--panel)}
+    .tf-level{display:flex; flex-direction:column; gap:.25rem; margin-bottom:.75rem;}
+    .tf-level .label{color:#8ea0bb; font-size:.8rem; display:flex; align-items:center; gap:.4rem;}
+    .legend{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem;}
+    .badge{font-size:.7rem; padding:.2rem .35rem; border-radius:.3rem; border:1px solid #223045;color:#b5c3da; background:#0f1724;}
+    .canvas-wrap{position:relative; background:var(--panel); min-height:0}
     canvas{display:block; width:100%; height:100%}
     .status{
-      position:absolute; top:.4rem; right:.6rem; background:#0f1622;
-      border:1px solid #1f2a3a; border-radius:.4rem; padding:.25rem .5rem; color:#aab7cf;
+      position:absolute; top:.35rem; right:.5rem; background:#0f1622;
+      border:1px solid #1f2a3a; border-radius:.4rem; padding:.2rem .5rem; color:#aab7cf;
       font-size:.78rem; display:flex; gap:.5rem; align-items:center; pointer-events:none;
     }
     .toast{
       position:fixed; bottom:10px; left:50%; transform:translateX(-50%);
       background:#0f1622;border:1px solid #223045; padding:.5rem .75rem; border-radius:.4rem;
-      color:#b5c3da; font-size:.8rem; opacity:.95; z-index:5;
+      color:#b5c3da; font-size:.8rem; opacity:.95; z-index:15;
     }
-    .help{
-      color:#8aa0c2; font-size:.82rem; margin-top:.25rem; line-height:1.35;
-    }
+    .help{color:#8aa0c2; font-size:.82rem; margin-top:.25rem; line-height:1.35;}
     .muted{color:var(--muted)}
     .spacer{flex:1}
+
+    /* Tool overlay */
+    .toolbox{
+      position:absolute; left:.5rem; top:.5rem; display:flex; gap:.35rem; z-index:4;
+      background:rgba(12,18,28,.6); backdrop-filter: blur(4px);
+      border:1px solid #1f2a3a; padding:.3rem .4rem; border-radius:.4rem;
+    }
+    .toolbox button{
+      background:#0e1521;border:1px solid #1d2a3f; color:#cfe0ff; padding:.25rem .45rem; font-size:.78rem;
+    }
+    .toolbox button.active{border-color:#3a4f74; background:#122032}
+    .scale-handles{
+      position:absolute; right:0; top:0; bottom:0; width:56px; pointer-events:none;
+      background:linear-gradient(90deg, transparent, rgba(20,26,38,.35));
+    }
+    .y-zoom-handle{
+      position:absolute; right:8px; top:50%; transform:translateY(-50%);
+      width:12px; height:60px; border-radius:6px; background:rgba(255,209,102,.2);
+      border:1px solid rgba(255,209,102,.5); pointer-events:auto; cursor:ns-resize;
+    }
+    .x-zoom-bar{
+      position:absolute; left:0; right:0; bottom:0; height:22px; pointer-events:none;
+      background:linear-gradient(0deg, rgba(20,26,38,.4), transparent);
+    }
+    .x-zoom-handle{
+      position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
+      height:14px; width:84px; border-radius:7px; background:rgba(123,167,255,.22);
+      border:1px solid rgba(123,167,255,.4); pointer-events:auto; cursor:ew-resize;
+    }
+
+    /* Mobile toggle */
+    .mobile{
+      grid-template-rows:minmax(80px, 26vh) 1fr minmax(80px, 26vh);
+    }
+    .mobile .row{ grid-template-columns: 1fr; }
+    .mobile .sidebar{ display:none; }
+    .mobile header{ gap:.4rem }
+    .mobile header .left strong{ font-size:.95rem }
+    .mobile .status{ font-size:.7rem }
+    .mobile .toolbox{ left:50%; transform:translateX(-50%); top:.35rem }
+
+    @media (max-width: 900px){
+      .row{ grid-template-columns:minmax(200px, 240px) 1fr; }
+    }
+    @media (max-width: 720px){
+      .row{ grid-template-columns:1fr; }
+      .sidebar{ display:none; }
+    }
   </style>
   <script type="importmap">
   {
-    "imports": {
-      "p5": "https://cdn.jsdelivr.net/npm/p5@1.9.3/lib/p5.min.js"
-    }
+    "imports": {}
   }
   </script>
 </head>
@@ -106,12 +147,14 @@
       </select>
       <button id="loadBtn">Załaduj</button>
       <button id="liveBtn">Live ON</button>
+      <button id="mobileBtn">Tryb mobilny</button>
     </div>
   </header>
 
-  <div class="container">
+  <div class="container" id="root">
     <div class="panel" id="rsiPanel">
       <div class="canvas-wrap">
+        <div class="toolbox" id="rsiTools" style="display:none"></div>
         <canvas id="rsi"></canvas>
         <div class="status" id="rsiStatus">RSI(14)</div>
       </div>
@@ -121,7 +164,7 @@
         <h3>Ustawienia</h3>
         <div class="tf-level">
           <div class="label">Tryb nawigacji</div>
-          <div class="help">Kliknij świecę aby wejść głębiej. PPM lub Backspace aby cofnąć poziom. Kółko/gest: zoom, przeciągnij: przesuwanie.</div>
+          <div class="help">Kliknij świecę aby wejść głębiej. PPM lub Backspace aby cofnąć poziom. Kółko/gest: zoom X, przeciągnij: przesuwanie. Użyj uchwytów aby skalować w osi X/Y.</div>
         </div>
         <div class="tf-level">
           <div class="label">Kolory i intensywność</div>
@@ -137,7 +180,11 @@
         </div>
         <div class="tf-level">
           <div class="label">Głębokość</div>
-          <div class="help">Roczne › Miesięczne › Tygodniowe › Dzienne › 4h › 1h › 30m › 15m › 5m › 1m</div>
+          <div class="help">Roczne → Miesięczne → Tygodniowe → Dzienne → 4h → 1h → 30m → 15m → 5m → 1m</div>
+        </div>
+        <div class="tf-level">
+          <div class="label">Narzędzia rysunkowe</div>
+          <div class="help">Wybierz w pasku narzędzi na wykresie: Linia trendu, Poziom, Prostokąt. Przeciągnij uchwyty aby modyfikować.</div>
         </div>
         <div class="tf-level">
           <div class="label">Status</div>
@@ -145,12 +192,26 @@
         </div>
       </div>
       <div class="canvas-wrap">
+        <div class="toolbox" id="chartTools">
+          <button data-tool="cursor" class="active">Kursor</button>
+          <button data-tool="trend">Linia trendu</button>
+          <button data-tool="hline">Poziom</button>
+          <button data-tool="rect">Prostokąt</button>
+          <button data-tool="clear">Wyczyść</button>
+        </div>
+        <div class="scale-handles">
+          <div class="y-zoom-handle" id="yHandle" title="Skaluj oś Y"></div>
+          <div class="x-zoom-bar">
+            <div class="x-zoom-handle" id="xHandle" title="Skaluj oś X (zoom)"></div>
+          </div>
+        </div>
         <canvas id="chart"></canvas>
         <div class="status" id="chartStatus">BTCUSDT (1m) Live</div>
       </div>
     </div>
     <div class="panel" id="stochPanel">
       <div class="canvas-wrap">
+        <div class="toolbox" id="stochTools" style="display:none"></div>
         <canvas id="stoch"></canvas>
         <div class="status" id="stochStatus">Stochastic (14,3,3)</div>
       </div>
@@ -160,7 +221,7 @@
   <div class="toast" id="toast" style="display:none"></div>
 
   <script type="module">
-    // Core configuration
+    // Core configuration and TF chain
     const TF_CHAIN = [
       {key:'1y',  label:'Roczne',         exch:['binance','coinbase'], binance:'1M', coinbase:'1M',  approxMs:365*24*60*60*1000},
       {key:'1M',  label:'Miesięczne',     exch:['binance','coinbase'], binance:'1w', coinbase:'1w',  approxMs:30*24*60*60*1000},
@@ -173,10 +234,7 @@
       {key:'5m',  label:'5 minut',        exch:['binance','coinbase'], binance:'1m', coinbase:'1m', approxMs:5*60*1000},
       {key:'1m',  label:'1 minuta',       exch:['binance','coinbase'], binance:'1m', coinbase:'1m', approxMs:60*1000}
     ];
-    // Visual intensity per TF (longer -> lower alpha)
-    const TF_ALPHA = {
-      '1y':0.18,'1M':0.22,'1w':0.26,'1d':0.32,'4h':0.42,'1h':0.5,'30m':0.58,'15m':0.66,'5m':0.74,'1m':0.9
-    };
+    const TF_ALPHA = {'1y':0.16,'1M':0.22,'1w':0.26,'1d':0.34,'4h':0.44,'1h':0.54,'30m':0.64,'15m':0.72,'5m':0.8,'1m':0.92};
 
     // UI elements
     const chartCanvas = document.getElementById('chart');
@@ -190,6 +248,24 @@
     const loadBtn = document.getElementById('loadBtn');
     const liveBtn = document.getElementById('liveBtn');
     const chartStatus = document.getElementById('chartStatus');
+    const mobileBtn = document.getElementById('mobileBtn');
+    const root = document.getElementById('root');
+    const toolBar = document.getElementById('chartTools');
+    const yHandle = document.getElementById('yHandle');
+    const xHandle = document.getElementById('xHandle');
+
+    // Drawing tool state (trend, hline, rect)
+    const tools = {
+      active: 'cursor',
+      shapes: [] // array of {type, points:[{x,y},{x,y}], y(optional), rect:{x1,y1,x2,y2}}
+    };
+    toolBar.addEventListener('click', (e)=>{
+      if(!(e.target instanceof HTMLButtonElement)) return;
+      const t = e.target.getAttribute('data-tool');
+      if(t==='clear'){ tools.shapes.length=0; requestRender(); return; }
+      tools.active = t;
+      [...toolBar.querySelectorAll('button')].forEach(b=>b.classList.toggle('active', b===e.target));
+    });
 
     // State
     let state = {
@@ -197,130 +273,93 @@
       symbol:'BTCUSDT',
       tz:'local',
       live:true,
-      levelIndex:0, // start yearly
-      // visible range for X (in ms)
+      levelIndex:0,
       viewStart:Date.now()-365*24*60*60*1000*5,
       viewEnd:Date.now()+24*60*60*1000,
-      // data cache per timeframe: array of {t,o,h,l,c,v}
+      yMin:null, yMax:null, // manual Y scaling bounds for price panel
+      yLock:false,
       data:{},
-      // animation
-      lastRedraw:0,
+      lastRedraw:0
     };
 
     // Helpers
     const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
     const lerp = (a,b,t)=>a+(b-a)*t;
-    const showToast = (msg, timeout=2200)=>{
+    const showToast = (msg, timeout=2000)=>{
       toastEl.textContent = msg;
       toastEl.style.display='block';
       setTimeout(()=>toastEl.style.display='none', timeout);
     };
-    const fmtTime = (ts)=>{
-      const d = new Date(ts);
-      if(state.tz==='exchange') return d.toUTCString();
-      return d.toLocaleString();
-    };
     function resizeCanvasToDisplaySize(canvas) {
       const ratio = window.devicePixelRatio || 1;
-      const w = canvas.clientWidth * ratio;
-      const h = canvas.clientHeight * ratio;
+      const w = Math.max(2, Math.floor(canvas.clientWidth * ratio));
+      const h = Math.max(2, Math.floor(canvas.clientHeight * ratio));
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w; canvas.height = h;
       }
       return {w,h,ratio};
     }
 
-    // Random placeholder gradient background (procedural asset)
+    // Procedural background for stability and contrast
     function drawBackdrop(ctx,w,h){
-      const g = ctx.createLinearGradient(0,0,w,h);
-      g.addColorStop(0,'#0d1320');
-      g.addColorStop(1,'#0a0f19');
+      const g = ctx.createLinearGradient(0,0,0,h);
+      g.addColorStop(0,'#0c121c'); g.addColorStop(1,'#0a0f18');
       ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
-      ctx.globalAlpha = 0.08;
-      for(let i=0;i<6;i++){
-        const cx = Math.random()*w, cy=Math.random()*h, r = Math.random()*Math.min(w,h)*0.5;
-        const grd = ctx.createRadialGradient(cx,cy,0,cx,cy,r);
-        grd.addColorStop(0, ['#21304a','#222b40','#1c2640'][i%3]);
-        grd.addColorStop(1,'transparent');
-        ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 0.07;
+      for(let i=0;i<5;i++){
+        const cx = (i/4)*w + (Math.sin(i*1.7)*0.15)*w;
+        const cy = (0.2+0.15*i)*h;
+        const r = 0.55*Math.min(w,h)/(i+2);
+        const rg = ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+        rg.addColorStop(0, ['#1b2740','#1a2a3f','#17263b'][i%3]);
+        rg.addColorStop(1, 'transparent');
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
       }
       ctx.globalAlpha = 1;
     }
 
-    // Fetchers: Binance and Coinbase REST klines
+    // Networking
     async function fetchKlines(exchange, symbol, interval, limit=1000, endTimeMs=Date.now()){
       if(exchange==='binance'){
-        // Binance requires symbol like BTCUSDT. map intervals directly or via TF_CHAIN
         const url = new URL('https://api.binance.com/api/v3/klines');
-        url.searchParams.set('symbol', symbol);
+        url.searchParams.set('symbol', symbol.replace(/[-/]/g,'').toUpperCase());
         url.searchParams.set('interval', interval);
         url.searchParams.set('limit', String(limit));
         url.searchParams.set('endTime', String(endTimeMs));
         const r = await fetch(url.toString());
         if(!r.ok) throw new Error('Binance HTTP '+r.status);
         const arr = await r.json();
-        return arr.map(k=>({
-          t: k[0],
-          o: +k[1],
-          h: +k[2],
-          l: +k[3],
-          c: +k[4],
-          v: +k[5]
-        }));
+        return arr.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]}));
       } else {
-        // Coinbase Advanced Trade API (public candles)
-        // Product like BTC-USD
-        // Intervals: 1m 5m 15m 1h 6h 24h (we'll roll up to required)
-        // Use /api/v3/brokerage/products/{product_id}/candles?granularity=ONE_MINUTE etc.
-        const map = {
-          '1m':'ONE_MINUTE','5m':'FIVE_MINUTE','15m':'FIFTEEN_MINUTE',
-          '1h':'ONE_HOUR','4h':'SIX_HOUR','1d':'ONE_DAY','1w':'ONE_DAY','1M':'ONE_DAY'
-        };
+        const map = {'1m':'ONE_MINUTE','5m':'FIVE_MINUTE','15m':'FIFTEEN_MINUTE','30m':'FIVE_MINUTE','1h':'ONE_HOUR','4h':'SIX_HOUR','1d':'ONE_DAY','1w':'ONE_DAY','1M':'ONE_DAY'};
         const g = map[interval] || 'ONE_MINUTE';
-        const url = new URL(`https://api.coinbase.com/api/v3/brokerage/products/${symbol}/candles`);
+        let sym = symbol.includes('-') ? symbol : (symbol.toUpperCase().endsWith('USDT')? symbol.slice(0,-4)+'-USD' : symbol.toUpperCase()+'-USD');
+        const url = new URL(`https://api.coinbase.com/api/v3/brokerage/products/${sym}/candles`);
         url.searchParams.set('granularity', g);
-        // Coinbase returns recent-first; provide limit via start/end time window
         const endISO = new Date(endTimeMs).toISOString();
-        const startISO = new Date(endTimeMs - limit*60*1000*5).toISOString(); // broad window
+        const spanMs = 1000*60*limit*5;
+        const startISO = new Date(endTimeMs - spanMs).toISOString();
         url.searchParams.set('start', startISO);
         url.searchParams.set('end', endISO);
         const r = await fetch(url.toString());
         if(!r.ok) throw new Error('Coinbase HTTP '+r.status);
         const json = await r.json();
-        const arr = (json.candles||[]).map(c=>({
-          t: new Date(c.start).getTime(),
-          o: +c.open,
-          h: +c.high,
-          l: +c.low,
-          c: +c.close,
-          v: +c.volume
-        })).sort((a,b)=>a.t-b.t);
-        return arr;
+        return (json.candles||[]).map(c=>({t:new Date(c.start).getTime(),o:+c.open,h:+c.high,l:+c.low,c:+c.close,v:+c.volume})).sort((a,b)=>a.t-b.t);
       }
     }
 
-    // Rollup aggregation to higher custom frames (e.g., 1y from 1M, 1M from 1w, etc.)
     function rollup(data, frameMs){
       if(!data || !data.length) return [];
-      const buckets = [];
-      let bucketStart = Math.floor(data[0].t / frameMs) * frameMs;
-      let o = data[0].o, h = data[0].h, l = data[0].l, v = 0, c = data[0].c;
+      const out=[]; let bStart = Math.floor(data[0].t/frameMs)*frameMs;
+      let o=data[0].o, h=data[0].h, l=data[0].l, c=data[0].c, v=0;
       for(const d of data){
-        const k = Math.floor(d.t / frameMs) * frameMs;
-        if(k !== bucketStart){
-          buckets.push({t:bucketStart, o, h, l, c, v});
-          bucketStart = k; o = d.o; h = d.h; l = d.l; v = 0;
-        }
-        h = Math.max(h, d.h);
-        l = Math.min(l, d.l);
-        c = d.c;
-        v += d.v || 0;
+        const k = Math.floor(d.t/frameMs)*frameMs;
+        if(k!==bStart){ out.push({t:bStart,o,h,l,c,v}); bStart=k; o=d.o; h=d.h; l=d.l; v=0; }
+        h=Math.max(h,d.h); l=Math.min(l,d.l); c=d.c; v+=d.v||0;
       }
-      buckets.push({t:bucketStart, o, h, l, c, v});
-      return buckets;
+      out.push({t:bStart,o,h,l,c,v});
+      return out;
     }
-
-    // Compute frame milliseconds by TF key
     function tfMs(tf){
       switch(tf){
         case '1m':return 60*1000;
@@ -333,276 +372,137 @@
         case '1w':return 7*24*60*60*1000;
         case '1M':return 30*24*60*60*1000;
         case '1y':return 365*24*60*60*1000;
-      }
-      return 60*1000;
+      } return 60*1000;
     }
-
-    // Indicators: RSI(14), Stochastic (14,3,3 like TradingView default smoothing)
     function SMA(values, period){
       const out=[]; let sum=0;
       for(let i=0;i<values.length;i++){
-        sum+=values[i];
-        if(i>=period) sum-=values[i-period];
-        if(i>=period-1) out.push(sum/period); else out.push(NaN);
-      }
-      return out;
+        sum+=values[i]; if(i>=period) sum-=values[i-period];
+        out.push(i>=period-1 ? sum/period : NaN);
+      } return out;
     }
     function RSI(closes, period=14){
-      const out=[]; let gains=[], losses=[];
+      const out=[]; if(!closes.length) return out;
+      let gains=new Array(closes.length).fill(0), losses=new Array(closes.length).fill(0);
+      for(let i=1;i<closes.length;i++){ const ch=closes[i]-closes[i-1]; gains[i]=Math.max(0,ch); losses[i]=Math.max(0,-ch); }
+      let avgG = gains.slice(1,1+period).reduce((a,b)=>a+b,0)/period;
+      let avgL = losses.slice(1,1+period).reduce((a,b)=>a+b,0)/period;
+      out[0]=NaN;
       for(let i=1;i<closes.length;i++){
-        const ch = closes[i]-closes[i-1];
-        gains.push(ch>0?ch:0);
-        losses.push(ch<0?-ch:0);
-      }
-      let avgGain = gains.slice(0,period).reduce((a,b)=>a+b,0)/period;
-      let avgLoss = losses.slice(0,period).reduce((a,b)=>a+b,0)/period;
-      for(let i=0;i<closes.length;i++){
-        if(i===0){ out.push(NaN); continue; }
-        if(i<period){ out.push(NaN); continue; }
-        if(i>period){
-          const ch = closes[i]-closes[i-1];
-          const g = ch>0?ch:0, l = ch<0?-ch:0;
-          avgGain = (avgGain*(period-1)+g)/period;
-          avgLoss = (avgLoss*(period-1)+l)/period;
-        }
-        const rs = avgLoss===0 ? 100 : avgGain/avgLoss;
-        const rsi = 100 - (100/(1+rs));
-        out.push(rsi);
+        if(i<period){ out[i]=NaN; continue; }
+        if(i>period){ const ch=closes[i]-closes[i-1]; const g=Math.max(0,ch), l=Math.max(0,-ch); avgG=(avgG*(period-1)+g)/period; avgL=(avgL*(period-1)+l)/period; }
+        const rs = avgL===0 ? 1000 : avgG/avgL;
+        out[i] = 100 - (100/(1+rs));
       }
       return out;
     }
-    function Stochastic(highs, lows, closes, kPeriod=14, kSmoothing=3, dPeriod=3){
+    function Stochastic(highs,lows,closes,kPeriod=14,kSmoothing=3,dPeriod=3){
       const kRaw=[];
       for(let i=0;i<closes.length;i++){
-        const from = Math.max(0, i-kPeriod+1);
-        const hh = Math.max(...highs.slice(from, i+1));
-        const ll = Math.min(...lows.slice(from, i+1));
-        const denom = (hh-ll) || 1e-9;
-        kRaw.push(((closes[i]-ll)/denom)*100);
+        const from=Math.max(0,i-kPeriod+1);
+        const hh=Math.max(...highs.slice(from,i+1));
+        const ll=Math.min(...lows.slice(from,i+1));
+        const den=(hh-ll)||1e-9;
+        kRaw.push(((closes[i]-ll)/den)*100);
       }
-      const k = SMA(kRaw, kSmoothing);
-      const d = SMA(k, dPeriod);
+      const k=SMA(kRaw,kSmoothing);
+      const d=SMA(k,dPeriod);
       return {k,d};
     }
-
-    // Color scale by timeframe
     function colorForTF(tf){
-      // palette from muted cyan -> blue -> violet with intensity by alpha
-      const base = {
-        '1y':'#6b7b95','1M':'#6b87a8','1w':'#6b93bb','1d':'#67a1ce',
-        '4h':'#63aee1','1h':'#5dbcf2','30m':'#60c7f7','15m':'#6ad0fb',
-        '5m':'#73d8fd','1m':'#7de0ff'
-      }[tf] || '#7de0ff';
-      return base;
+      const map={'1y':'#6b7b95','1M':'#6b87a8','1w':'#6b93bb','1d':'#67a1ce','4h':'#63aee1','1h':'#5dbcf2','30m':'#60c7f7','15m':'#6ad0fb','5m':'#73d8fd','1m':'#88e8ff'};
+      return map[tf] || '#88e8ff';
     }
-
-    // Drill map: which child TF to show next
     function childTF(tf){
-      const idx = TF_CHAIN.findIndex(t=>t.key===tf);
-      if(idx<0 || idx>=TF_CHAIN.length-1) return null;
-      return TF_CHAIN[idx+1].key;
+      const idx=TF_CHAIN.findIndex(t=>t.key===tf);
+      return (idx<0||idx>=TF_CHAIN.length-1)?null:TF_CHAIN[idx+1].key;
     }
-
-    // Candlestick rendering
-    function drawGrid(ctx,w,h, yLabels=[]){
-      ctx.strokeStyle='#1e2633'; ctx.lineWidth=1;
+    function drawGrid(ctx,w,h,yLabels=[]){
+      ctx.strokeStyle='#1b2432'; ctx.lineWidth=1;
       ctx.beginPath();
-      for(let i=0;i<10;i++){
-        const y = Math.round((i+1)*h/11)+.5;
-        ctx.moveTo(0,y); ctx.lineTo(w,y);
-      }
+      for(let i=0;i<6;i++){ const y=Math.round((i+1)*h/7)+.5; ctx.moveTo(0,y); ctx.lineTo(w,y); }
       ctx.stroke();
-      // y labels
-      ctx.fillStyle='#7f8ca1';
-      ctx.textAlign='right'; ctx.textBaseline='middle';
-      ctx.font='12px system-ui, Arial';
+      ctx.fillStyle='#8ba0ba'; ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.font='12px system-ui, Arial';
       const pad=4;
-      for(const yl of yLabels){
-        const y = yl.y;
-        ctx.fillText(yl.text, w-pad, y);
-      }
+      for(const yl of yLabels){ ctx.fillText(yl.text, w-pad, yl.y); }
     }
-
-    function yScale(vals, h, pad=10){
+    function yScale(vals,h,pad=10){
       let min=Infinity, max=-Infinity;
       for(const v of vals){ if(v<min)min=v; if(v>max)max=v; }
       if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
       if(max===min){ max=min+1; }
       const range = max-min;
-      const f = (v)=> h - ((v-min)/(range))* (h-2*pad) - pad;
-      return {min,max, map:f};
+      const f = (v)=> h - ((v-min)/range) * (h-2*pad) - pad;
+      return {min,max,map:f};
     }
-
-    // Build hierarchy data on demand and cache
     async function ensureData(tf){
-      // If we have, return
       if(state.data[tf] && state.data[tf].length) return state.data[tf];
-
       const ex = state.exch;
       let sym = state.symbol.trim();
-      if(ex==='binance'){
-        // ensure uppercase without dash
-        sym = sym.replace(/[-/]/g,'').toUpperCase();
-      } else {
-        // Coinbase needs dash
-        if(!sym.includes('-')){
-          // heuristic: if ends with USDT or BUSD, translate to USD
-          if(sym.toUpperCase().endsWith('USDT')) sym = sym.slice(0,-4)+'-USD';
-          else if(sym.toUpperCase().endsWith('USD')) sym = sym.slice(0,-3)+'-USD';
-          else sym = sym.toUpperCase() + '-USD';
-        }
-      }
-
-      // Determine base interval to fetch from exchange
+      if(ex==='binance'){ sym = sym.replace(/[-/]/g,'').toUpperCase(); }
+      else { if(!sym.includes('-')) sym = (sym.toUpperCase().endsWith('USDT')? sym.slice(0,-4)+'-USD' : sym.toUpperCase()+'-USD'); }
       const chainItem = TF_CHAIN.find(t=>t.key===tf);
-      let fetchInterval = chainItem[ex];
-      // For yearly we will aggregate from monthly (1M) which we mapped to weekly on exchange; better: get 1d and roll to monthly then yearly
-      // To have enough data for deep drill, fetch 1m for lower, 1d for higher
-      let limit = 1000;
-
-      // two paths: if fetchInterval equals '1m' we can fetch directly; else we'll fetch the exchange-supported and roll to our tf
+      const fetchInterval = chainItem[ex];
       const endTime = Date.now();
-
-      let baseData = await fetchKlines(ex, sym, fetchInterval, limit, endTime);
-
-      // If our tf is same as exchange interval, use directly, else roll to our tf using target frameMs
-      const targetMs = tfMs(tf);
-      const exchMs = tfMs(fetchInterval);
-      let data;
-      if(targetMs===exchMs){
-        data = baseData;
-      } else {
-        data = rollup(baseData, targetMs);
-      }
-
-      // For topmost yearly, aggregate from monthly if needed (already handled by roll)
-      // Cache
-      state.data[tf] = data;
+      let baseData = await fetchKlines(ex, sym, fetchInterval, 900, endTime);
+      const targetMs = tfMs(tf), exchMs = tfMs(fetchInterval);
+      const data = (targetMs===exchMs)? baseData : rollup(baseData, targetMs);
+      state.data[tf]=data;
       return data;
     }
-
-    function getChainPath(){
-      return TF_CHAIN.map(t=>t.key);
-    }
-
-    // Map visible window to indices quickly
     function sliceByTime(data, startMs, endMs){
       if(!data || !data.length) return [];
       const out = data.filter(d=>d.t>=startMs && d.t<=endMs);
-      return out.length ? out : data; // fall back to all if filter empty (zoomed too far)
+      return out.length ? out : data;
     }
-
-    // Draw candlesticks for the whole chain, faded by TF
-    function drawCandles(ctx, data, tf, x0, x1, yScaleMap, timeStart, timeEnd){
-      if(!data || !data.length) return;
-      const color = colorForTF(tf);
-      const alpha = TF_ALPHA[tf] ?? 0.5;
-      const w = ctx.canvas.width;
-      const h = ctx.canvas.height;
-      const tSpan = timeEnd - timeStart;
-      ctx.lineWidth = 1;
-      for(const d of data){
-        const t = d.t;
-        const nx = (t - timeStart) / tSpan;
-        const cx = x0 + nx * (x1-x0);
-        const nextT = t + tfMs(tf);
-        const nx2 = (Math.min(nextT, timeEnd) - timeStart) / tSpan;
-        const cx2 = x0 + nx2 * (x1-x0);
-        const cw = Math.max(1, (cx2 - cx) * 0.7);
-
-        const yO = yScaleMap.map(d.o);
-        const yH = yScaleMap.map(d.h);
-        const yL = yScaleMap.map(d.l);
-        const yC = yScaleMap.map(d.c);
-
-        const up = d.c>=d.o;
-        ctx.strokeStyle = up ? `rgba(91,212,156,${alpha})` : `rgba(229,115,115,${alpha})`;
-        ctx.fillStyle   = up ? `rgba(91,212,156,${alpha*0.7})` : `rgba(229,115,115,${alpha*0.7})`;
-
-        // Wick
-        ctx.beginPath();
-        ctx.moveTo(cx, yH); ctx.lineTo(cx, yL);
-        ctx.stroke();
-
-        // Body
-        const top = Math.min(yO, yC);
-        const bottom = Math.max(yO, yC);
-        const bh = Math.max(1, bottom - top);
-        ctx.fillRect(cx - cw/2, top, cw, bh);
-        // Outline subtle
-        ctx.globalAlpha = 0.6;
-        ctx.strokeRect(cx - cw/2, top, cw, bh);
-        ctx.globalAlpha = 1;
-      }
-    }
-
     function priceBoundsFromChain(datasets){
       let min=Infinity, max=-Infinity;
-      for(const arr of datasets){
-        if(!arr) continue;
-        for(const d of arr){
-          if(d.l<min)min=d.l;
-          if(d.h>max)max=d.h;
-        }
-      }
+      for(const arr of datasets){ if(!arr) continue; for(const d of arr){ if(d.l<min)min=d.l; if(d.h>max)max=d.h; } }
       if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
       return {min,max};
     }
-
-    // Build deepest series for indicators (we choose current level tf for indicators)
     function extractCloses(data){ return data.map(d=>d.c); }
     function extractHighs(data){ return data.map(d=>d.h); }
     function extractLows(data){ return data.map(d=>d.l); }
 
-    // Interaction: zoom & pan
-    let isPanning = false, panStartX = 0, panStartStart=0, panStartEnd=0;
+    // Interaction: pan/zoom X, manual Y zoom via handle, and x-handle
+    let isPanning=false, panStartX=0, panStartStart=0, panStartEnd=0;
     function attachInteractions(canvas){
-      canvas.addEventListener('wheel', (e)=>{
+      canvas.addEventListener('wheel',(e)=>{
         e.preventDefault();
         const mx = e.offsetX * (canvas.width/canvas.clientWidth);
         const frac = mx / canvas.width;
-        const tStart = state.viewStart;
-        const tEnd = state.viewEnd;
-        const span = tEnd - tStart;
+        const tStart = state.viewStart, tEnd=state.viewEnd, span=tEnd-tStart;
         const zoom = Math.exp(-e.deltaY * 0.0015);
         const newSpan = clamp(span * zoom, 60*1000*10, 365*24*60*60*1000*50);
         const pivot = tStart + span * frac;
         state.viewStart = pivot - newSpan * frac;
         state.viewEnd   = pivot + newSpan * (1-frac);
         requestRender();
-      }, {passive:false});
-
-      canvas.addEventListener('mousedown', (e)=>{
-        if(e.button===2){ // right click to go up
-          levelUp();
-          return;
+      },{passive:false});
+      canvas.addEventListener('mousedown',(e)=>{
+        if(e.button===2){ levelUp(); return; }
+        if(tools.active!=='cursor'){
+          beginToolDraw(e); return;
         }
-        isPanning = true;
-        panStartX = e.clientX;
-        panStartStart = state.viewStart;
-        panStartEnd = state.viewEnd;
+        isPanning=true; panStartX=e.clientX; panStartStart=state.viewStart; panStartEnd=state.viewEnd;
       });
-      window.addEventListener('mousemove', (e)=>{
-        if(!isPanning) return;
-        const dx = (e.clientX - panStartX);
-        const px = dx * (canvas.width/canvas.clientWidth);
-        const span = panStartEnd - panStartStart;
-        const shift = px / canvas.width * span;
-        state.viewStart = panStartStart - shift;
-        state.viewEnd   = panStartEnd   - shift;
-        requestRender();
+      window.addEventListener('mousemove',(e)=>{
+        if(isPanning){
+          const px = (e.clientX - panStartX) * (canvas.width/canvas.clientWidth);
+          const span = panStartEnd - panStartStart;
+          const shift = px / canvas.width * span;
+          state.viewStart = panStartStart - shift;
+          state.viewEnd   = panStartEnd   - shift;
+          requestRender();
+        } else if(isDrawing){
+          updateToolDraw(e);
+        }
       });
-      window.addEventListener('mouseup', ()=>{ isPanning=false; });
-      window.addEventListener('contextmenu', (e)=>{
-        if(e.target===canvas){ e.preventDefault(); }
-      });
-      window.addEventListener('keydown', (e)=>{
-        if(e.key==='Backspace'){ e.preventDefault(); levelUp(); }
-      });
-      canvas.addEventListener('click', (e)=>{
-        // Drill-in on nearest candle
-        drillIntoAt(e.offsetX, canvas);
-      });
+      window.addEventListener('mouseup',()=>{ isPanning=false; endToolDraw(); });
+      window.addEventListener('contextmenu',(e)=>{ if(e.target===canvas){ e.preventDefault(); } });
+      window.addEventListener('keydown',(e)=>{ if(e.key==='Backspace'){ e.preventDefault(); levelUp(); } });
+      canvas.addEventListener('click',(e)=>{ if(tools.active==='cursor') drillIntoAt(e.offsetX, canvas); });
     }
 
     function currentTF(){ return TF_CHAIN[state.levelIndex].key; }
@@ -610,33 +510,176 @@
       if(state.levelIndex>0){
         state.levelIndex--;
         showToast('Cofnięto do: '+TF_CHAIN[state.levelIndex].label);
+        // Auto fit X on level up
+        const tf = currentTF();
+        const d = state.data[tf]||[];
+        if(d.length){ state.viewStart=d[0].t; state.viewEnd=d[d.length-1].t + tfMs(tf); }
+        // reset Y lock to fit
+        state.yLock=false; state.yMin=null; state.yMax=null;
         requestRender();
       }
     }
     async function drillIntoAt(x, canvas){
-      // map x to time
       const ratio = canvas.width/canvas.clientWidth;
       const mx = x*ratio;
       const t = state.viewStart + (state.viewEnd - state.viewStart)*(mx/canvas.width);
       const tf = currentTF();
       const data = state.data[tf]||[];
       if(!data.length) return;
-      // find candle containing t
       const ms = tfMs(tf);
       const bucket = Math.floor(t/ms)*ms;
       const child = childTF(tf);
       if(!child){ showToast('To jest najniższy interwał.'); return; }
-      // Set view to that bucket +/- one span
       state.levelIndex++;
-      state.viewStart = bucket;
-      state.viewEnd = bucket + tfMs(child) * Math.max(120, 200); // show some child candles
-      // Ensure child data exists
+      state.viewStart = bucket - tfMs(child)*100;
+      state.viewEnd   = bucket + tfMs(child)*200;
       await ensureData(child);
+      // Reset Y to auto on drill
+      state.yLock=false; state.yMin=null; state.yMax=null;
       showToast('Wejście w: '+TF_CHAIN[state.levelIndex].label);
       requestRender();
     }
 
-    // Main render loop
+    // Y handle scaling (manual Y zoom/shift)
+    let yDrag=false, yDragStart=0, yRef={min:0,max:1};
+    yHandle.addEventListener('mousedown',(e)=>{
+      e.preventDefault(); yDrag=true; yDragStart=e.clientY;
+      const bounds = computeAutoYBounds();
+      yRef.min = state.yLock? state.yMin:bounds.min;
+      yRef.max = state.yLock? state.yMax:bounds.max;
+    });
+    window.addEventListener('mousemove',(e)=>{
+      if(!yDrag) return;
+      const dy = (e.clientY - yDragStart);
+      const sens = 0.0025;
+      const range = yRef.max - yRef.min;
+      const scale = Math.exp(dy * sens);
+      const mid = (yRef.max + yRef.min)/2;
+      const newRange = clamp(range * scale, 1e-6, Number.MAX_SAFE_INTEGER);
+      state.yMin = mid - newRange/2; state.yMax = mid + newRange/2; state.yLock=true;
+      requestRender();
+    });
+    window.addEventListener('mouseup',()=>{ yDrag=false; });
+
+    // X handle scaling (center zoom)
+    let xDrag=false, xDragStart=0, xRefSpan=0;
+    xHandle.addEventListener('mousedown',(e)=>{
+      e.preventDefault(); xDrag=true; xDragStart=e.clientX; xRefSpan=state.viewEnd-state.viewStart;
+    });
+    window.addEventListener('mousemove',(e)=>{
+      if(!xDrag) return;
+      const dx = (e.clientX - xDragStart);
+      const scale = Math.exp(-dx*0.0035);
+      const newSpan = clamp(xRefSpan*scale, 60*1000*10, 365*24*60*60*1000*50);
+      const mid = (state.viewStart+state.viewEnd)/2;
+      state.viewStart = mid - newSpan/2; state.viewEnd = mid + newSpan/2;
+      requestRender();
+    });
+    window.addEventListener('mouseup',()=>{ xDrag=false; });
+
+    // Tools drawing
+    let isDrawing=false, draft=null;
+    function pxToTime(px){ return state.viewStart + (state.viewEnd-state.viewStart)*(px/chartCanvas.width); }
+    function pyToPrice(py, yMap){ // inverse of yMap using state y bounds
+      const h = chartCanvas.height; const pad=10;
+      const min=activeYMin(), max=activeYMax();
+      const usable = h-2*pad; const v = max - ((py-pad)/usable)*(max-min);
+      return v;
+    }
+    function beginToolDraw(e){
+      isDrawing=true;
+      const r = chartCanvas.getBoundingClientRect();
+      const x = (e.clientX - r.left) * (chartCanvas.width / chartCanvas.clientWidth);
+      const y = (e.clientY - r.top) * (chartCanvas.height / chartCanvas.clientHeight);
+      if(tools.active==='trend'){ draft={type:'trend', points:[{x,y},{x,y}]}; }
+      else if(tools.active==='hline'){ draft={type:'hline', y}; }
+      else if(tools.active==='rect'){ draft={type:'rect', rect:{x1:x,y1:y,x2:x,y2:y}}; }
+    }
+    function updateToolDraw(e){
+      const r = chartCanvas.getBoundingClientRect();
+      const x = (e.clientX - r.left) * (chartCanvas.width / chartCanvas.clientWidth);
+      const y = (e.clientY - r.top) * (chartCanvas.height / chartCanvas.clientHeight);
+      if(!draft) return;
+      if(draft.type==='trend'){ draft.points[1]={x,y}; }
+      else if(draft.type==='hline'){ draft.y = y; }
+      else if(draft.type==='rect'){ draft.rect.x2=x; draft.rect.y2=y; }
+      requestRender();
+    }
+    function endToolDraw(){
+      if(draft){ tools.shapes.push(draft); draft=null; }
+      isDrawing=false;
+      requestRender();
+    }
+
+    // Render candles
+    function drawCandles(ctx, data, tf, x0, x1, yMap, timeStart, timeEnd){
+      if(!data || !data.length) return;
+      const alpha = TF_ALPHA[tf] ?? 0.5;
+      for(const d of data){
+        const t = d.t;
+        const t2 = t + tfMs(tf);
+        if(t2<timeStart || t>timeEnd) continue;
+        const nx = (t - timeStart) / (timeEnd - timeStart);
+        const nx2 = (Math.min(t2,timeEnd) - timeStart) / (timeEnd - timeStart);
+        const cx = x0 + nx*(x1-x0), cx2 = x0 + nx2*(x1-x0);
+        const cw = Math.max(1, (cx2-cx)*0.7);
+        const yO = yMap.map(d.o), yH = yMap.map(d.h), yL = yMap.map(d.l), yC = yMap.map(d.c);
+        const up = d.c>=d.o;
+        const wick = '#2a364b';
+        // Wick
+        ctx.strokeStyle = wick; ctx.lineWidth = Math.max(1, Math.floor(cw*0.2));
+        ctx.beginPath(); ctx.moveTo(cx, yH); ctx.lineTo(cx, yL); ctx.stroke();
+        // Body
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = up ? `rgba(91,212,156,${alpha})` : `rgba(239,107,115,${alpha})`;
+        ctx.fillStyle   = up ? `rgba(91,212,156,${Math.min(1,alpha*0.9)})` : `rgba(239,107,115,${Math.min(1,alpha*0.9)})`;
+        const top = Math.min(yO,yC), bottom=Math.max(yO,yC), bh=Math.max(1, bottom-top);
+        // border radius illusion
+        ctx.beginPath(); ctx.rect(cx - cw/2, top, cw, bh); ctx.fill(); ctx.stroke();
+      }
+    }
+
+    // Draw tools
+    function drawTools(ctx){
+      ctx.save();
+      ctx.strokeStyle='rgba(255,204,102,.95)';
+      ctx.fillStyle='rgba(255,204,102,.1)';
+      ctx.lineWidth=1.4;
+      const all = [...tools.shapes, ...(draft?[draft]:[])];
+      for(const s of all){
+        if(s.type==='trend'){
+          ctx.beginPath();
+          ctx.moveTo(s.points[0].x, s.points[0].y);
+          ctx.lineTo(s.points[1].x, s.points[1].y);
+          ctx.stroke();
+          // handles
+          for(const p of s.points){
+            ctx.beginPath(); ctx.fillStyle='rgba(255,204,102,.9)';
+            ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle='rgba(255,204,102,.1)';
+          }
+        } else if(s.type==='hline'){
+          ctx.beginPath(); ctx.moveTo(0,s.y); ctx.lineTo(chartCanvas.width,s.y); ctx.stroke();
+        } else if(s.type==='rect'){
+          const {x1,y1,x2,y2}=s.rect;
+          const x=Math.min(x1,x2), y=Math.min(y1,y2), w=Math.abs(x2-x1), h=Math.abs(y2-y1);
+          ctx.beginPath(); ctx.rect(x,y,w,h); ctx.fill(); ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    // Active Y bounds
+    function computeAutoYBounds(){
+      const tf = currentTF();
+      const t0 = state.viewStart, t1=state.viewEnd;
+      const datasets = TF_CHAIN.map(t=> sliceByTime(state.data[t.key], t0, t1));
+      return priceBoundsFromChain(datasets);
+    }
+    const activeYMin = ()=> state.yLock && state.yMin!=null ? state.yMin : computeAutoYBounds().min;
+    const activeYMax = ()=> state.yLock && state.yMax!=null ? state.yMax : computeAutoYBounds().max;
+
+    // Main render
     async function render(){
       const {w:W,h:H} = resizeCanvasToDisplaySize(chartCanvas);
       const {w:Wrsi,h:Hrsi} = resizeCanvasToDisplaySize(rsiCanvas);
@@ -645,159 +688,103 @@
       const rsiCtx = rsiCanvas.getContext('2d');
       const stCtx = stochCanvas.getContext('2d');
 
-      // Backdrops
       drawBackdrop(ctx,W,H);
       drawBackdrop(rsiCtx,Wrsi,Hrsi);
       drawBackdrop(stCtx,Wst,Hst);
 
-      // Load required data for chain up to current level and children until 1m
-      const path = getChainPath();
-      // Ensure base data for each visible level onward
-      for(const tf of path){
-        try{
-          await ensureData(tf);
-        }catch(err){
-          statusEl.textContent = 'Błąd pobierania: '+err.message;
-        }
+      // Ensure data for all TFs we might display
+      for(const tf of TF_CHAIN.map(t=>t.key)){
+        try{ await ensureData(tf); } catch(err){ statusEl.textContent='Błąd pobierania: '+err.message; }
       }
 
-      // Build datasets per TF cut to view
+      // Visible window
       const t0 = state.viewStart, t1 = state.viewEnd;
-      const chainIdx = TF_CHAIN.findIndex(t=>t.key===currentTF());
-      const visibleTFs = TF_CHAIN.slice(0, chainIdx+1).map(t=>t.key)
-        .concat(TF_CHAIN.slice(chainIdx+1).map(t=>t.key));
-      const datasets = visibleTFs.map(tf=> sliceByTime(state.data[tf], t0, t1));
 
-      // Price scale from all to keep consistent
-      const {min, max} = priceBoundsFromChain(datasets);
-      const yMap = yScale([min,max], H, 12);
+      // Y scale
+      const ymin = activeYMin(), ymax = activeYMax();
+      const yMap = yScale([ymin,ymax], H, 12);
 
       // Grid + price labels
       const yLabels=[];
-      for(let i=0;i<5;i++){
-        const v = lerp(min,max, i/4);
-        const y = yMap.map(v);
-        yLabels.push({y, text: v.toFixed(2)});
-      }
+      for(let i=0;i<5;i++){ const v = lerp(ymin,ymax, i/4); const y=yMap.map(v); yLabels.push({y, text:v.toFixed(2)}); }
       drawGrid(ctx, W, H, yLabels);
 
-      // Draw each TF behind to front
+      // Draw candles for 3 depth levels around current: parent/current/child to achieve "do trzech poziomów"
+      const idx = state.levelIndex;
+      const tfKeys = TF_CHAIN.map(t=>t.key);
+      const tiers = [tfKeys[idx-1], tfKeys[idx], tfKeys[idx+1]].filter(Boolean);
+      // back layers (parent) with lower alpha
       for(const tf of TF_CHAIN.map(t=>t.key)){
+        const isTier = tiers.includes(tf);
+        if(!isTier) continue;
         const data = sliceByTime(state.data[tf], t0, t1);
         drawCandles(ctx, data, tf, 0, W, yMap, t0, t1);
       }
 
       // Indicators on current level
-      const tf = currentTF();
+      const tf = tfKeys[idx];
       const curData = sliceByTime(state.data[tf], t0, t1);
-      const closes = extractCloses(curData);
-      const highs = extractHighs(curData);
-      const lows = extractLows(curData);
+      const closes = extractCloses(curData), highs = extractHighs(curData), lows = extractLows(curData);
+
       // RSI
       const rsi = RSI(closes,14);
-      // RSI scale 0-100
-      rsiCtx.strokeStyle='#1e2633'; rsiCtx.lineWidth=1;
-      rsiCtx.beginPath();
-      for(const y of [30,50,70]){
-        const yy = Hrsi - (y/100)*(Hrsi-14) - 7;
-        rsiCtx.moveTo(0,yy); rsiCtx.lineTo(Wrsi,yy);
-      }
+      rsiCtx.strokeStyle='#1e2633'; rsiCtx.lineWidth=1; rsiCtx.beginPath();
+      for(const y of [30,50,70]){ const yy = Hrsi - (y/100)*(Hrsi-14) - 7; rsiCtx.moveTo(0,yy); rsiCtx.lineTo(Wrsi,yy); }
       rsiCtx.stroke();
-      rsiCtx.strokeStyle='#c3e88d'; rsiCtx.lineWidth=1.5;
-      rsiCtx.beginPath();
+      rsiCtx.strokeStyle='#c3e88d'; rsiCtx.lineWidth=1.8; rsiCtx.beginPath();
       for(let i=0;i<rsi.length;i++){
         const x = i/(Math.max(1,rsi.length-1))*Wrsi;
-        const yVal = clamp(rsi[i]||0,0,100);
-        const y = Hrsi - (yVal/100)*(Hrsi-14) - 7;
+        const yVal = clamp(rsi[i]||0,0,100); const y = Hrsi - (yVal/100)*(Hrsi-14) - 7;
         if(i===0) rsiCtx.moveTo(x,y); else rsiCtx.lineTo(x,y);
-      }
-      rsiCtx.stroke();
+      } rsiCtx.stroke();
 
       // Stochastic
       const {k,d} = Stochastic(highs,lows,closes,14,3,3);
-      // bounds 0..100 grid
-      stCtx.strokeStyle='#1e2633'; stCtx.lineWidth=1;
-      stCtx.beginPath();
-      for(const y of [20,50,80]){
-        const yy = Hst - (y/100)*(Hst-14) - 7;
-        stCtx.moveTo(0,yy); stCtx.lineTo(Wst,yy);
-      }
-      stCtx.stroke();
-      // %K
-      stCtx.strokeStyle='#9fe2ff'; stCtx.lineWidth=1.5; stCtx.beginPath();
-      for(let i=0;i<k.length;i++){
-        const x = i/(Math.max(1,k.length-1))*Wst;
-        const yVal = clamp(k[i]||0,0,100);
-        const y = Hst - (yVal/100)*(Hst-14) - 7;
-        if(i===0) stCtx.moveTo(x,y); else stCtx.lineTo(x,y);
-      }
-      stCtx.stroke();
-      // %D
-      stCtx.strokeStyle='#bb9af7'; stCtx.lineWidth=1.5; stCtx.beginPath();
-      for(let i=0;i<d.length;i++){
-        const x = i/(Math.max(1,d.length-1))*Wst;
-        const yVal = clamp(d[i]||0,0,100);
-        const y = Hst - (yVal/100)*(Hst-14) - 7;
-        if(i===0) stCtx.moveTo(x,y); else stCtx.lineTo(x,y);
-      }
-      stCtx.stroke();
+      stCtx.strokeStyle='#1e2633'; stCtx.lineWidth=1; stCtx.beginPath();
+      for(const y of [20,50,80]){ const yy = Hst - (y/100)*(Hst-14) - 7; stCtx.moveTo(0,yy); stCtx.lineTo(Wst,yy); } stCtx.stroke();
+      stCtx.lineWidth=1.8;
+      stCtx.strokeStyle='rgba(159,226,255,1)'; stCtx.beginPath();
+      for(let i=0;i<k.length;i++){ const x=i/Math.max(1,k.length-1)*Wst; const y=Hst-(clamp(k[i]||0,0,100)/100)*(Hst-14)-7; if(i===0) stCtx.moveTo(x,y); else stCtx.lineTo(x,y);} stCtx.stroke();
+      stCtx.strokeStyle='rgba(187,154,247,1)'; stCtx.beginPath();
+      for(let i=0;i<d.length;i++){ const x=i/Math.max(1,d.length-1)*Wst; const y=Hst-(clamp(d[i]||0,0,100)/100)*(Hst-14)-7; if(i===0) stCtx.moveTo(x,y); else stCtx.lineTo(x,y);} stCtx.stroke();
+
+      // Tools overlay
+      drawTools(ctx);
 
       // Status
       document.getElementById('rsiStatus').textContent = `RSI(14) — ${tf}`;
       document.getElementById('stochStatus').textContent = `Stochastic (14,3,3) — ${tf}`;
-      chartStatus.textContent = `${state.symbol} (${tf}) ${state.live?'Live':'Paused'}`;
+      chartStatus.textContent = `${state.symbol} (${tf}) ${state.live?'Live':'Paused'} ${state.yLock?'[Y-lock]':''}`;
       statusEl.textContent = `Świece: ${curData.length}. Zakres: ${new Date(t0).toLocaleString()} — ${new Date(t1).toLocaleString()}`;
       state.lastRedraw = performance.now();
     }
 
-    let pending = false;
-    function requestRender(){
-      if(pending) return;
-      pending = true;
-      requestAnimationFrame(async()=>{
-        pending = false;
-        await render();
-      });
-    }
+    let pending=false;
+    function requestRender(){ if(pending) return; pending=true; requestAnimationFrame(async()=>{ pending=false; await render(); }); }
 
-    // Live updater: periodically fetch newest batches on the lowest needed exchange interval
+    // Live updates
     async function liveTick(){
       if(!state.live) return;
-      // refresh the lowest-level dataset to keep everything flowing
       try{
         const ex = state.exch;
         let sym = state.symbol.trim();
         if(ex==='binance') sym = sym.replace(/[-/]/g,'').toUpperCase();
-        else {
-          if(!sym.includes('-')){
-            if(sym.toUpperCase().endsWith('USDT')) sym = sym.slice(0,-4)+'-USD';
-            else if(!sym.endsWith('-USD')) sym = sym.toUpperCase()+'-USD';
-          }
-        }
-        // choose 1m as base refresh
+        else { if(!sym.includes('-')) sym = (sym.toUpperCase().endsWith('USDT')? sym.slice(0,-4)+'-USD' : sym.toUpperCase()+'-USD'); }
         const baseInterval = TF_CHAIN[TF_CHAIN.length-1][ex]; // 1m
-        const latest = await fetchKlines(ex, sym, baseInterval, 500, Date.now());
+        const latest = await fetchKlines(ex, sym, baseInterval, 600, Date.now());
         state.data['1m'] = latest;
-        // rebuild higher levels from available exchange-supported data if necessary
-        // For simplicity, we re-fetch direct per TF mapping used earlier, to keep them updated as well
         for(const tf of ['5m','15m','30m','1h','4h','1d','1w','1M']){
           try{
-            const chainItem = TF_CHAIN.find(t=>t.key===tf);
-            const inter = chainItem[ex];
+            const item = TF_CHAIN.find(t=>t.key===tf);
+            const inter = item[ex];
             const arr = await fetchKlines(ex, sym, inter, 800, Date.now());
-            const targetMs = tfMs(tf);
-            const interMs = tfMs(inter);
+            const targetMs = tfMs(tf), interMs = tfMs(inter);
             state.data[tf] = (interMs===targetMs) ? arr : rollup(arr, targetMs);
-          }catch(_){/* ignore */}
+          }catch(_){/*ignore*/}
         }
-        // For yearly from monthly
-        if(state.data['1M'] && state.data['1M'].length){
-          state.data['1y'] = rollup(state.data['1M'], tfMs('1y'));
-        }
+        if(state.data['1M'] && state.data['1M'].length){ state.data['1y'] = rollup(state.data['1M'], tfMs('1y')); }
         requestRender();
-      }catch(err){
-        statusEl.textContent = 'Live błąd: '+err.message;
-      }
+      }catch(err){ statusEl.textContent = 'Live błąd: '+err.message; }
     }
 
     // Controls
@@ -809,31 +796,37 @@
       state.levelIndex = 0;
       state.viewStart = Date.now() - 365*24*60*60*1000*8;
       state.viewEnd = Date.now() + 24*60*60*1000;
+      state.yLock=false; state.yMin=null; state.yMax=null;
       showToast('Ładowanie…');
       await ensureData('1M').catch(()=>{});
       state.data['1y'] = rollup(state.data['1M']||[], tfMs('1y'));
-      for(const tf of ['1w','1d','4h','1h','30m','15m','5m','1m']){
-        await ensureData(tf).catch(()=>{});
-      }
+      for(const tf of ['1w','1d','4h','1h','30m','15m','5m','1m']){ await ensureData(tf).catch(()=>{}); }
       requestRender();
       showToast('Załadowano: '+state.symbol);
     });
-
     liveBtn.addEventListener('click', ()=>{
-      state.live = !state.live;
+      state.live=!state.live;
       liveBtn.textContent = state.live?'Live ON':'Live OFF';
       chartStatus.textContent = `${state.symbol} (${currentTF()}) ${state.live?'Live':'Paused'}`;
       if(state.live) liveTick();
     });
 
+    // Mobile toggle
+    let mobile=false;
+    mobileBtn.addEventListener('click',()=>{
+      mobile=!mobile;
+      root.classList.toggle('mobile', mobile);
+      mobileBtn.textContent = mobile?'Tryb desktop':'Tryb mobilny';
+      requestRender();
+    });
+
     attachInteractions(chartCanvas);
     window.addEventListener('resize', requestRender);
 
-    // Initial boot
+    // Boot
     (async function boot(){
       await loadBtn.click();
       requestRender();
-      // polling timer
       setInterval(liveTick, 5000);
     })();
   </script>
