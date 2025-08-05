@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8" />
   <title>Multi-Interval TradingView Chart with Indicators</title>
@@ -191,7 +191,7 @@
     <div class="toolbar">
       <div class="title">Multi-Interval Chart</div>
 
-      <div class="intervals">
+      <div class="intervals" id="intervals">
         <button class="btn" data-int="1">M1</button>
         <button class="btn" data-int="5">M5</button>
         <button class="btn" data-int="15">M15</button>
@@ -221,7 +221,7 @@
     </div>
 
     <div class="container">
-      <div id="chart"></div>
+      <div id="chart" aria-label="chart area"></div>
 
       <div class="legend" id="legend">
         <div class="row"><div class="dot" id="dotMain"></div><div>Main</div></div>
@@ -240,21 +240,41 @@
   <script type="module">
     import { createChart, CrosshairMode } from "lightweight-charts";
 
-    // Tailwind-like utility via classes already in CSS; we will programmatically style colors.
+    // Helper: safe DOM get
+    function $(sel) {
+      const el = document.querySelector(sel);
+      if (!el) throw new Error('Missing element: ' + sel);
+      return el;
+    }
 
     // Theme handling
-    const appRoot = document.getElementById('appRoot');
-    const themeToggle = document.getElementById('themeToggle');
-    const infoTheme = document.getElementById('infoTheme');
+    const appRoot = $('#appRoot');
+    const themeToggle = $('#themeToggle');
+    const infoTheme = $('#infoTheme');
 
     let isDark = false;
-    function applyTheme() {
-      if (isDark) {
-        appRoot.classList.remove('light');
-      } else {
-        appRoot.classList.add('light');
+    function chartColors() {
+      return isDark
+        ? { background: '#0e1116', grid: '#1f2937', text: '#cbd5e1', up: '#22c55e', down: '#ef4444', vol: '#64748b' }
+        : { background: '#f6f7fb', grid: '#e5e7eb', text: '#1f2937', up: '#16a34a', down: '#dc2626', vol: '#94a3b8' };
+    }
+
+    function applyChartTheme() {
+      const c = chartColors();
+      if (chart) {
+        chart.applyOptions({
+          layout: { background: { color: c.background }, textColor: c.text },
+          grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
+          timeScale: { borderColor: c.grid },
+          rightPriceScale: { borderColor: c.grid }
+        });
       }
+      dotMain.style.background = isDark ? '#22c55e' : '#16a34a';
       infoTheme.textContent = 'Theme: ' + (isDark ? 'Dark' : 'Light');
+    }
+
+    function applyTheme() {
+      appRoot.classList.toggle('light', !isDark);
       applyChartTheme();
     }
     themeToggle.addEventListener('click', () => {
@@ -263,29 +283,16 @@
     });
 
     // Create chart
-    const chartContainer = document.getElementById('chart');
+    const chartContainer = $('#chart');
 
-    function chartColors() {
-      if (isDark) {
-        return {
-          background: '#0e1116',
-          grid: '#1f2937',
-          text: '#cbd5e1',
-          up: '#22c55e',
-          down: '#ef4444',
-          vol: '#64748b'
-        };
-      } else {
-        return {
-          background: '#f6f7fb',
-          grid: '#e5e7eb',
-          text: '#1f2937',
-          up: '#16a34a',
-          down: '#dc2626',
-          vol: '#94a3b8'
-        };
+    // Ensure container has dimensions before creating chart
+    function ensureContainerSized() {
+      const rect = chartContainer.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        chartContainer.style.minHeight = '320px';
       }
     }
+    ensureContainerSized();
 
     let chart = createChart(chartContainer, {
       autoSize: true,
@@ -304,9 +311,6 @@
       handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true }
     });
 
-    // Panels: We'll simulate top (RSI) and bottom (Stoch) panes using separate price scales and overlay lines with baselines.
-    // lightweight-charts doesn't support draggable pane dividers natively, so we implement a custom splitter layered UI.
-
     // Series
     const mainCandles = chart.addCandlestickSeries({
       upColor: chartColors().up, downColor: chartColors().down,
@@ -314,7 +318,6 @@
       wickUpColor: chartColors().up, wickDownColor: chartColors().down
     });
 
-    // Higher timeframe transparent candles (three degrees)
     const htf1 = chart.addCandlestickSeries({
       priceScaleId: 'right',
       upColor: 'rgba(34,197,94,0.35)',
@@ -343,20 +346,20 @@
       borderDownColor: 'rgba(239,68,68,0.12)'
     });
 
-    // RSI and Stochastic series - place them on separate overlayed panes by mapping values to custom price scales
+    // Indicator scales
     const RSI_SCALE = 'rsi';
     const STOCH_SCALE = 'stoch';
 
     chart.priceScale(RSI_SCALE, {
-      scaleMargins: { top: 0.02, bottom: 0.8 }, // top pane 1/8
+      scaleMargins: { top: 0.02, bottom: 0.8 },
       borderColor: chartColors().grid
     });
     chart.priceScale(STOCH_SCALE, {
-      scaleMargins: { top: 0.8, bottom: 0.02 }, // bottom pane 1/8
+      scaleMargins: { top: 0.8, bottom: 0.02 },
       borderColor: chartColors().grid
     });
     chart.priceScale('right', {
-      scaleMargins: { top: 0.13, bottom: 0.13 } // main chart occupies 3/4 (1 - 1/8 - 1/8)
+      scaleMargins: { top: 0.13, bottom: 0.13 }
     });
 
     const rsiLine = chart.addLineSeries({
@@ -381,10 +384,10 @@
     const stochLower = chart.addLineSeries({ priceScaleId: STOCH_SCALE, color: 'rgba(245,158,11,0.25)', lineWidth: 1 });
 
     // Legend color dots
-    const dotMain = document.getElementById('dotMain');
-    const dotHTF1 = document.getElementById('dotHTF1');
-    const dotHTF2 = document.getElementById('dotHTF2');
-    const dotHTF3 = document.getElementById('dotHTF3');
+    const dotMain = $('#dotMain');
+    const dotHTF1 = $('#dotHTF1');
+    const dotHTF2 = $('#dotHTF2');
+    const dotHTF3 = $('#dotHTF3');
     dotMain.style.background = isDark ? '#22c55e' : '#16a34a';
     dotHTF1.style.background = 'rgba(59,130,246,0.35)';
     dotHTF2.style.background = 'rgba(59,130,246,0.22)';
@@ -399,28 +402,26 @@
       { key: '240', label: 'H4', seconds: 14400 },
       { key: 'D', label: 'D1', seconds: 86400 },
       { key: 'W', label: 'W1', seconds: 604800 },
-      { key: 'M', label: 'MN', seconds: 2629800 }, // approx month
-      { key: 'Y', label: 'Y1', seconds: 31557600 } // approx year
+      { key: 'M', label: 'MN', seconds: 2629800 },
+      { key: 'Y', label: 'Y1', seconds: 31557600 }
     ];
     const intByKey = Object.fromEntries(intervals.map(i => [i.key, i]));
-    const infoInterval = document.getElementById('infoInterval');
+    const infoInterval = $('#infoInterval');
 
     function higherIntervals(key) {
-      // Compute up to three higher TFs. Special rule: monthly->yearly (second-degree), all lower show up to third-degree, highest Y1.
       const order = ['1','5','15','60','240','D','W','M','Y'];
       const idx = order.indexOf(key);
       const out = [];
       for (let i=1; i<=3; i++) {
         const k = order[Math.min(idx + i, order.length - 1)];
-        if (!k) break;
-        if (k === key) continue;
+        if (!k || k === key) break;
         out.push(k);
         if (k === 'Y') break;
       }
       return out;
     }
 
-    // Synthetic OHLCV data generator (no external assets)
+    // Synthetic OHLCV data generator
     function generateData(startTimeSec, bars, basePrice, volatilityPct, stepSec) {
       let t = startTimeSec;
       const data = [];
@@ -442,7 +443,7 @@
     }
 
     // Aggregate to higher timeframe
-    function aggregate(data, stepSec, aggSec) {
+    function aggregate(data, aggSec) {
       const bucket = new Map();
       for (const d of data) {
         const t0 = Math.floor(d.time / aggSec) * aggSec;
@@ -515,154 +516,121 @@
       return { k: outK, d: outD };
     }
 
-    function applyChartTheme() {
-      const c = chartColors();
-      chart.applyOptions({
-        layout: { background: { color: c.background }, textColor: c.text },
-        grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
-        timeScale: { borderColor: c.grid },
-        rightPriceScale: { borderColor: c.grid }
-      });
-      dotMain.style.background = isDark ? '#22c55e' : '#16a34a';
-    }
-
-    // Interval controls
-    const intervalButtons = Array.from(document.querySelectorAll('.intervals .btn'));
-    let currentIntervalKey = 'D';
-
-    function setActiveIntervalButton(key) {
-      intervalButtons.forEach(b => {
-        if (b.dataset.int === key) b.classList.add('active');
-        else b.classList.remove('active');
-      });
-      infoInterval.textContent = 'Interval: ' + intByKey[key].label;
-    }
-
-    intervalButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.dataset.int;
-        if (key === currentIntervalKey) return;
-        currentIntervalKey = key;
-        setActiveIntervalButton(key);
-        refreshDataForInterval();
-      });
-    });
-
-    // Generate base minute data and then aggregate as needed on-the-fly
-    const nowSec = Math.floor(Date.now() / 1000);
-    const BASE_STEP = 60; // 1-minute base
-    const baseData = generateData(nowSec - 400*BASE_STEP, 400, 20000, 0.0025, BASE_STEP);
-
     function seriesSetDataFromCandles(series, candles) {
       series.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
     }
 
+    // Interval controls
+    const intervalButtons = Array.from(document.querySelectorAll('.intervals .btn'));
+    const infoInterval = $('#infoInterval');
+    let currentIntervalKey = 'D';
+
+    function setActiveIntervalButton(key) {
+      intervalButtons.forEach(b => {
+        b.classList.toggle('active', b.dataset.int === key);
+      });
+      infoInterval.textContent = 'Interval: ' + intByKey[key].label;
+    }
+
+    // Generate base minute data and then aggregate as needed on-the-fly
+    const nowSec = Math.floor(Date.now() / 1000);
+    const BASE_STEP = 60; // 1-minute base
+    // Generate enough 1m bars to allow aggregation up to "W" nicely; M/Y will be sparse but still render
+    const baseData = generateData(nowSec - 20000*BASE_STEP, 20000, 20000, 0.0025, BASE_STEP);
+
     function computeForInterval(key) {
-      const main = intByKey[key];
-      // Compute main candles
       let mainCandlesData;
+      const agg = (s) => aggregate(baseData, s);
       if (key === '1') mainCandlesData = baseData;
-      else if (key === '5') mainCandlesData = aggregate(baseData, 60, 300);
-      else if (key === '15') mainCandlesData = aggregate(baseData, 60, 900);
-      else if (key === '60') mainCandlesData = aggregate(baseData, 60, 3600);
-      else if (key === '240') mainCandlesData = aggregate(baseData, 60, 14400);
-      else if (key === 'D') mainCandlesData = aggregate(baseData, 60, 86400);
-      else if (key === 'W') mainCandlesData = aggregate(baseData, 60, 604800);
-      else if (key === 'M') mainCandlesData = aggregate(baseData, 60, 2629800);
-      else if (key === 'Y') mainCandlesData = aggregate(baseData, 60, 31557600);
+      else if (key === '5') mainCandlesData = agg(300);
+      else if (key === '15') mainCandlesData = agg(900);
+      else if (key === '60') mainCandlesData = agg(3600);
+      else if (key === '240') mainCandlesData = agg(14400);
+      else if (key === 'D') mainCandlesData = agg(86400);
+      else if (key === 'W') mainCandlesData = agg(604800);
+      else if (key === 'M') mainCandlesData = agg(2629800);
+      else if (key === 'Y') mainCandlesData = agg(31557600);
+      else mainCandlesData = baseData;
 
       const htfKeys = higherIntervals(key);
-      const htfData = htfKeys.map(k => {
-        const step = intByKey[k].seconds;
-        return aggregate(baseData, 60, step);
-      });
-
-      return { mainCandlesData, htfData, htfKeys };
+      const htfData = htfKeys.map(k => aggregate(baseData, intByKey[k].seconds));
+      return { mainCandlesData, htfData };
     }
 
     function updateIndicators(candles) {
+      if (!candles || candles.length === 0) {
+        rsiLine.setData([]);
+        rsiUpper.setData([]);
+        rsiLower.setData([]);
+        stochKLine.setData([]);
+        stochDLine.setData([]);
+        stochUpper.setData([]);
+        stochLower.setData([]);
+        return;
+      }
       const close = candles.map(c => c.close);
       const high = candles.map(c => c.high);
       const low = candles.map(c => c.low);
       const times = candles.map(c => c.time);
 
-      const rsiPeriod = parseInt(document.getElementById('rsiPeriod').value) || 14;
+      const rsiPeriod = Math.max(2, Math.min(100, parseInt($('#rsiPeriod').value || '14')));
       const rsi = RSI(close, rsiPeriod);
       const rsiData = times.map((t,i) => rsi[i] == null ? { time: t, value: null } : { time: t, value: rsi[i] });
       rsiLine.setData(rsiData);
-      // Reference lines 70/30
       rsiUpper.setData(times.map(t => ({ time: t, value: 70 })));
       rsiLower.setData(times.map(t => ({ time: t, value: 30 })));
 
-      const kPeriod = parseInt(document.getElementById('stochK').value) || 14;
-      const dPeriod = parseInt(document.getElementById('stochD').value) || 3;
-      const sPeriod = parseInt(document.getElementById('stochS').value) || 3;
+      const kPeriod = Math.max(2, Math.min(100, parseInt($('#stochK').value || '14')));
+      const dPeriod = Math.max(1, Math.min(100, parseInt($('#stochD').value || '3')));
+      const sPeriod = Math.max(1, Math.min(100, parseInt($('#stochS').value || '3')));
       const { k, d } = Stochastic(high, low, close, kPeriod, dPeriod, sPeriod);
       const kData = times.map((t,i) => k[i] == null ? { time: t, value: null } : { time: t, value: k[i] });
       const dData = times.map((t,i) => d[i] == null ? { time: t, value: null } : { time: t, value: d[i] });
       stochKLine.setData(kData);
       stochDLine.setData(dData);
-      // Reference lines 80/20
       stochUpper.setData(times.map(t => ({ time: t, value: 80 })));
       stochLower.setData(times.map(t => ({ time: t, value: 20 })));
     }
 
     function refreshDataForInterval() {
-      const { mainCandlesData, htfData, htfKeys } = computeForInterval(currentIntervalKey);
+      const { mainCandlesData, htfData } = computeForInterval(currentIntervalKey);
       seriesSetDataFromCandles(mainCandles, mainCandlesData);
       seriesSetDataFromCandles(htf1, htfData[0] ?? []);
       seriesSetDataFromCandles(htf2, htfData[1] ?? []);
       seriesSetDataFromCandles(htf3, htfData[2] ?? []);
 
-      // Update labels for legend visibility
-      document.querySelector('#legend .row:nth-child(2)').style.display = htfData[0] ? 'flex' : 'none';
-      document.querySelector('#legend .row:nth-child(3)').style.display = htfData[1] ? 'flex' : 'none';
-      document.querySelector('#legend .row:nth-child(4)').style.display = htfData[2] ? 'flex' : 'none';
+      // Legend rows show/hide
+      const legend = $('#legend');
+      legend.querySelector('.row:nth-child(2)').style.display = htfData[0] && htfData[0].length ? 'flex' : 'none';
+      legend.querySelector('.row:nth-child(3)').style.display = htfData[1] && htfData[1].length ? 'flex' : 'none';
+      legend.querySelector('.row:nth-child(4)').style.display = htfData[2] && htfData[2].length ? 'flex' : 'none';
 
+      chart.timeScale().fitContent();
       updateIndicators(mainCandlesData);
     }
 
-    // Apply indicator settings
-    document.getElementById('applyIndicators').addEventListener('click', () => {
+    $('#applyIndicators').addEventListener('click', () => {
       const { mainCandlesData } = computeForInterval(currentIntervalKey);
       updateIndicators(mainCandlesData);
     });
 
-    // Draggable panel heights via scaleMargins manipulation
-    // We'll capture mouse drag on invisible gutters near top and bottom of main area.
-    let draggingTop = false;
-    let draggingBottom = false;
-
+    // Pane sizing via scaleMargins
     function setPaneFractions(rsiFrac, stochFrac) {
-      // Clamp
       rsiFrac = Math.max(0.08, Math.min(0.5, rsiFrac));
       stochFrac = Math.max(0.08, Math.min(0.5, stochFrac));
-      const mainFrac = Math.max(0.2, 1 - rsiFrac - stochFrac);
-
       chart.priceScale(RSI_SCALE).applyOptions({ scaleMargins: { top: 0.02, bottom: 1 - rsiFrac } });
       chart.priceScale('right').applyOptions({ scaleMargins: { top: rsiFrac + 0.02, bottom: stochFrac + 0.02 } });
       chart.priceScale(STOCH_SCALE).applyOptions({ scaleMargins: { top: 1 - stochFrac, bottom: 0.02 } });
     }
 
-    // Default: 1/8 each
     let rsiFrac = 1/8;
     let stochFrac = 1/8;
     setPaneFractions(rsiFrac, stochFrac);
 
-    // Create draggable overlays
+    // Draggable overlays
     const topDivider = document.createElement('div');
-    topDivider.style.position = 'absolute';
-    topDivider.style.left = '0';
-    topDivider.style.right = '0';
-    topDivider.style.height = '8px';
-    topDivider.style.cursor = 'row-resize';
-    topDivider.style.zIndex = '20';
-
+    Object.assign(topDivider.style, { position: 'absolute', left: '0', right: '0', height: '8px', cursor: 'row-resize', zIndex: '20' });
     const bottomDivider = topDivider.cloneNode(true);
-
-    chart.timeScale().subscribeVisibleTimeRangeChange(() => {
-      // no-op, but forces layout events
-    });
 
     function layoutDividers() {
       const { height } = chartContainer.getBoundingClientRect();
@@ -672,23 +640,23 @@
       bottomDivider.style.top = (bottomY - 4) + 'px';
     }
     window.addEventListener('resize', layoutDividers);
+    chart.timeScale().subscribeVisibleTimeRangeChange(layoutDividers);
     chartContainer.appendChild(topDivider);
     chartContainer.appendChild(bottomDivider);
     layoutDividers();
 
-    function onMouseDownFactory(which) {
-      return (e) => {
-        e.preventDefault();
-        draggingTop = which === 'top';
-        draggingBottom = which === 'bottom';
-        document.body.style.userSelect = 'none';
-      };
+    let draggingTop = false;
+    let draggingBottom = false;
+    function onMouseDown(which, clientY) {
+      draggingTop = which === 'top';
+      draggingBottom = which === 'bottom';
+      document.body.style.userSelect = 'none';
     }
     function onMouseMove(e) {
       if (!draggingTop && !draggingBottom) return;
       const rect = chartContainer.getBoundingClientRect();
       const y = e.clientY - rect.top;
-      const h = rect.height;
+      const h = rect.height || 1;
       if (draggingTop) {
         rsiFrac = Math.max(0.08, Math.min(0.5, y / h));
       } else if (draggingBottom) {
@@ -701,21 +669,43 @@
       draggingTop = draggingBottom = false;
       document.body.style.userSelect = '';
     }
-    topDivider.addEventListener('mousedown', onMouseDownFactory('top'));
-    bottomDivider.addEventListener('mousedown', onMouseDownFactory('bottom'));
+    topDivider.addEventListener('mousedown', (e)=>{ e.preventDefault(); onMouseDown('top'); });
+    bottomDivider.addEventListener('mousedown', (e)=>{ e.preventDefault(); onMouseDown('bottom'); });
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
-    // Touch support
-    topDivider.addEventListener('touchstart', (e)=>{ onMouseDownFactory('top')(e.touches[0]); }, {passive:true});
-    bottomDivider.addEventListener('touchstart', (e)=>{ onMouseDownFactory('bottom')(e.touches[0]); }, {passive:true});
-    window.addEventListener('touchmove', (e)=>{ onMouseMove(e.touches[0]); }, {passive:true});
+    topDivider.addEventListener('touchstart', (e)=>{ onMouseDown('top'); }, {passive:true});
+    bottomDivider.addEventListener('touchstart', (e)=>{ onMouseDown('bottom'); }, {passive:true});
+    window.addEventListener('touchmove', (e)=>{ if (e.touches && e.touches[0]) onMouseMove(e.touches[0]); }, {passive:true});
     window.addEventListener('touchend', onMouseUp);
+
+    // Event delegation for interval buttons (fix for "buttons not responding")
+    $('#intervals').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-int]');
+      if (!btn) return;
+      const key = btn.dataset.int;
+      if (!intByKey[key] || key === currentIntervalKey) return;
+      currentIntervalKey = key;
+      setActiveIntervalButton(key);
+      refreshDataForInterval();
+    });
 
     // Initialize
     setActiveIntervalButton(currentIntervalKey);
     applyTheme();
     refreshDataForInterval();
 
+    // Safety: if something breaks, show a minimal message overlay
+    window.addEventListener('error', (ev) => {
+      console.error(ev.error || ev.message);
+      const msg = document.createElement('div');
+      msg.textContent = 'Wystąpił błąd: ' + (ev.message || 'unknown');
+      Object.assign(msg.style, {
+        position: 'fixed', left: '10px', top: '10px', background: '#ef4444', color: '#fff',
+        padding: '8px 10px', borderRadius: '6px', zIndex: 9999, fontSize: '12px'
+      });
+      document.body.appendChild(msg);
+      setTimeout(()=>msg.remove(), 5000);
+    });
   </script>
 </body>
 </html>
