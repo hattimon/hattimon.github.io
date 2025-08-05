@@ -3,24 +3,25 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Boka vs Włóczykij – Labirynt Porośli</title>
+<title>BUKA w Dolinie Muminków</title>
 <style>
   :root{
     --cell: 32px; --cols: 25; --rows: 18;
     --bg:#0b1c10; --path:#0f2a18; --wall:#23402a;
-    --boka:#6ec2ff; --mumin:#f4f6f8; --mumin-line:#cfd5da;
-    --hunter:#6ef0a7; --proj:#a9ffbf; --text:#e6ffe6; --danger:#ff6b6b;
+    --buka:#7ad1ff; --buka-dark:#5fb8ea;
+    --mumin:#f4f6f8; --mumin-line:#cfd5da;
+    --hunter:#6ef0a7; --proj:#a9ffbf; --text:#e6ffe6;
   }
   html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial,sans-serif}
   .wrap{min-height:100%;display:grid;place-items:center;gap:10px;padding:10px}
   h1{margin:6px 0 2px;font-size:20px}
   .hud{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .badge{background:#173a24;border:1px solid #2a5b3c;padding:6px 10px;border-radius:8px}
-  .meter{position:relative; width:160px; height:14px; background:#113621; border:1px solid #2a5b3c; border-radius:6px; overflow:hidden}
-  .meter>.fill{position:absolute;inset:0; width:50%; background:linear-gradient(90deg,#3fd0ff,#6ec2ff)}
+  .meter{position:relative;width:160px;height:14px;background:#113621;border:1px solid #2a5b3c;border-radius:6px;overflow:hidden}
+  .meter>.fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,#3fd0ff,#6ec2ff)}
   .meter.hp>.fill{background:linear-gradient(90deg,#36d17c,#8fffd0)}
-  .meter.ammo>.fill{background:linear-gradient(90deg,#444,#000)}
-  .grid{position:relative; width:calc(var(--cell)*var(--cols)); height:calc(var(--cell)*var(--rows)); background:var(--path); border-radius:10px; overflow:hidden; box-shadow:0 0 0 3px #163c25 inset,0 10px 30px rgba(0,0,0,.35)}
+  .meter.cloud>.fill{background:linear-gradient(90deg,#000,#333)}
+  .grid{position:relative;width:calc(var(--cell)*var(--cols));height:calc(var(--cell)*var(--rows));background:var(--path);border-radius:10px;overflow:hidden;box-shadow:0 0 0 3px #163c25 inset,0 10px 30px rgba(0,0,0,.35)}
   canvas{width:100%;height:100%;image-rendering:pixelated}
   .controls{opacity:.85;font-size:14px}
   .controls kbd{background:#113621;border:1px solid #215035;border-bottom-width:3px;padding:2px 6px;border-radius:5px;font-family:ui-monospace,Menlo,monospace}
@@ -33,7 +34,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Boka vs Włóczykij – Labirynt Porośli</h1>
+  <h1>BUKA w Dolinie Muminków</h1>
   <div class="hud">
     <div class="badge">Muminki: <span id="left">0</span></div>
     <div class="badge">Punkty: <span id="score">0</span></div>
@@ -41,16 +42,16 @@
     <div class="badge">Mróz Włóczykija: <span id="freezeT">0s</span></div>
     <div class="badge">Amunicja: <span id="ammoText">0</span></div>
     <div class="meter hp" title="Życie"><div id="hpFill" class="fill" style="width:100%"></div></div>
-    <div class="meter ammo" title="Czas trwania chmury (gdy aktywna)"><div id="cloudFill" class="fill" style="width:0%"></div></div>
+    <div class="meter cloud" title="Czas trwania chmury"><div id="cloudFill" class="fill" style="width:0%"></div></div>
     <div class="controls">Sterowanie: <kbd>WASD</kbd>/<kbd>Strzałki</kbd>, broń: <kbd>Spacja</kbd>, pauza: <kbd>P</kbd>, restart: <kbd>R</kbd></div>
   </div>
   <div class="grid">
     <canvas id="game" width="800" height="576"></canvas>
     <div id="overlay" class="overlay">
       <div class="card">
-        <div id="title" style="font-size:22px;margin-bottom:6px;">Boka w mroku…</div>
+        <div id="title" style="font-size:22px;margin-bottom:6px;">Buka budzi mróz…</div>
         <div id="desc" style="opacity:.9;margin-bottom:10px;">
-          Uciekaj przed Włóczykijem i poluj na Muminki mroźną chmurą. Spacja – czarna chmura (7s), mrozi wrogów i zabija Muminki na zewnątrz domku.
+          Spacja rozpyla czarną chmurę mrozu na 7 s (promień ~1/5 planszy). W tym czasie Buka nie porusza się. Zamrażaj Włóczykija i poluj na Muminki poza domkiem.
         </div>
         <button id="startBtn">Start</button>
       </div>
@@ -60,13 +61,13 @@
 
 <script>
 (() => {
-  // Parametry gry
+  // Parametry
   const CELL=32, COLS=25, ROWS=18;
   const WALL_DENSITY=0.25;
   const RNG_SEED=4242;
 
-  const BOKA_SPEED=3.1; // px/tick
-  const BOKA_R=12;
+  const BOKA_BASE_SPEED=3.1;      // px/tick (skalowane niżej do world units)
+  const BOKA_R=14;
   const HUNTER_SPEED=2.7;
   const HUNTER_R=12;
   const HUNTER_PROJ_SPEED=5.0;
@@ -74,12 +75,16 @@
   const HUNTER_AIM_RANGE=380;
   const MUMIN_R=11;
   const MUMINS_BASE=7;
-  const MUMIN_FEAR_DROP_RATE=0.35; // szansa zostawienia chmurki strachu co kilka sekund ucieczki
-  const CLOUD_DURATION=7.0; // s
-  const HUNTER_FREEZE_TIME=60.0; // s
-  const FREEZE_TICKS_TO_KILL=10; // 10 zamrożeń
+  const MUMIN_FEAR_DROP_RATE=0.35;
+  const CLOUD_DURATION=7.0;
+  const HUNTER_FREEZE_TIME=60.0;
+  const FREEZE_TICKS_TO_KILL=10;
   const HP_MAX=100;
-  const PROJ_DMG_PER_SEC=14; // DPS trujący po trafieniu
+  const PROJ_DMG_PER_SEC=14;
+
+  // Chmura – promień docelowy to ~1/5 krótszego boku planszy
+  const MIN_BOARD = Math.min(COLS*CELL, ROWS*CELL);
+  const CLOUD_MAX_RADIUS = Math.floor(MIN_BOARD/5); // ~1/5 planszy
 
   // DOM
   const canvas=document.getElementById('game');
@@ -106,7 +111,7 @@
     grid=Array.from({length:ROWS},()=>Array(COLS).fill(0));
     for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(r===0||c===0||r===ROWS-1||c===COLS-1) grid[r][c]=1;
     for(let r=1;r<ROWS-1;r++) for(let c=1;c<COLS-1;c++) if(rng()<WALL_DENSITY) grid[r][c]=1;
-    // Wąż wycina korytarze
+    // korytarze
     let snakes=8;
     while(snakes--){
       let r=(ROWS>>1)+Math.floor((rng()-0.5)*6);
@@ -118,7 +123,7 @@
         if(d===2&&c>1)c--; if(d===3&&c<COLS-2)c++;
       }
     }
-    // Domek Muminków – losowe spokojne miejsce (obszar 3x3)
+    // Domek 3x3
     let dr=0,dc=0;
     for(let tries=0;tries<200;tries++){
       const r=2+Math.floor(rng()*(ROWS-5));
@@ -127,9 +132,8 @@
       for(let rr=r;rr<r+3;rr++) for(let cc=c;cc<c+3;cc++) if(isWall(cc,rr)) ok=false;
       if(ok){dr=r;dc=c;break;}
     }
-    // oznacz domek: wartość 2
     for(let rr=dr;rr<dr+3;rr++) for(let cc=dc;cc<dc+3;cc++) grid[rr][cc]=2;
-    grid[1][1]=0; // start
+    grid[1][1]=0;
   }
   function inHouse(x,y){
     const c=Math.floor(x/CELL), r=Math.floor(y/CELL);
@@ -137,11 +141,11 @@
   }
 
   // Obiekty
-  const boka={x:CELL*1.5,y:CELL*1.5,r:BOKA_R,hp:HP_MAX,poison:0, vx:0,vy:0, ammo:0, cloud:0, cloudActive:false, cloudFade:0};
+  const boka={x:CELL*1.5,y:CELL*1.5,r:BOKA_R,hp:HP_MAX,poison:0, ammo:0, cloud:0, cloudActive:false, cloudFade:0, lookX:1, lookY:0};
   const hunter={x:CELL*(COLS-2.5), y:CELL*(ROWS-2.5), r:HUNTER_R, frozen:0, freezeHits:0, tShot:0};
-  const pellets=[]; // muminki
-  const fearClouds=[]; // żółtawe – strach
-  const blueClouds=[]; // niebieskie – leczenie/energia
+  const mumins=[];
+  const fearClouds=[];
+  const blueClouds=[];
   const projs=[];
   let level=1, score=0;
   let playing=false, paused=false;
@@ -170,25 +174,26 @@
     return {x:nx,y:ny};
   }
 
-  // Inicjacja poziomu
   function resetLevel(){
     genMap(level);
-    pellets.length=0; fearClouds.length=0; blueClouds.length=0; projs.length=0;
-    boka.x=CELL*1.5; boka.y=CELL*1.5; boka.hp=HP_MAX; boka.poison=0; boka.cloud=0; boka.cloudActive=false; boka.cloudFade=0;
+    mumins.length=0; fearClouds.length=0; blueClouds.length=0; projs.length=0;
+    boka.x=CELL*1.5; boka.y=CELL*1.5; boka.hp=HP_MAX; boka.poison=0; boka.cloud=0; boka.cloudActive=false; boka.cloudFade=0; boka.lookX=1; boka.lookY=0;
+    if(level===1) boka.ammo=0; // na start 0 ładunków
     hunter.x=CELL*(COLS-2.5); hunter.y=CELL*(ROWS-2.5); hunter.frozen=0; hunter.tShot=0;
+
     // Muminki
     const toPlace=MUMINS_BASE+Math.floor(level*1.5);
     let i=0;
     while(i<toPlace){
       const c=1+Math.floor(rng()*(COLS-2));
       const r=1+Math.floor(rng()*(ROWS-2));
-      if(isWall(c,r)) continue;
+      if(isWall(c,r) || grid[r][c]===2) continue;
       const x=c*CELL+CELL/2, y=r*CELL+CELL/2;
       if(dist(x,y,boka.x,boka.y)<60) continue;
-      pellets.push({x,y,r:MUMIN_R, alive:true, fearT:0, hide:false, tDrop:0, dir:rng()*Math.PI*2});
+      mumins.push({x,y,r:MUMIN_R, alive:true, hide:false, tDrop:0, dir:rng()*Math.PI*2});
       i++;
     }
-    leftEl.textContent = pellets.filter(p=>p.alive).length;
+    leftEl.textContent = mumins.filter(m=>m.alive).length;
     lvlEl.textContent = level;
     scoreEl.textContent = score;
     ammoText.textContent = boka.ammo;
@@ -197,8 +202,8 @@
   // Wejście
   const keys=new Set();
   window.addEventListener('keydown', (e)=>{
-    const moveKeys=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'];
-    if(moveKeys.includes(e.code)) { e.preventDefault(); keys.add(e.code); }
+    const mv=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'];
+    if(mv.includes(e.code)){ e.preventDefault(); keys.add(e.code); }
     if(e.code==='Space'){ e.preventDefault(); tryUseCloud(); }
     if(e.code==='KeyP') paused=!paused;
     if(e.code==='KeyR') startGame(true);
@@ -216,89 +221,81 @@
     boka.cloudActive=true;
   }
 
-  // Logika
   function update(now){
     if(!playing) return;
     const dt=Math.min(0.033,(now-lastTick)/16.666);
     lastTick=now;
     if(paused){ draw(); requestAnimationFrame(update); return; }
 
-    // Boka ruch
+    // Buka ruch i kierunek patrzenia
     if(!boka.cloudActive){
       let ax=0,ay=0;
       if(keys.has('ArrowUp')||keys.has('KeyW')) ay-=1;
       if(keys.has('ArrowDown')||keys.has('KeyS')) ay+=1;
       if(keys.has('ArrowLeft')||keys.has('KeyA')) ax-=1;
       if(keys.has('ArrowRight')||keys.has('KeyD')) ax+=1;
-      if(ax||ay){const l=Math.hypot(ax,ay); ax/=l; ay/=l;}
-      const sp=BOKA_SPEED;
-      const moved=moveCircle(boka, ax*sp*dt*CELL/10, ay*sp*dt*CELL/10, BOKA_R);
+      if(ax||ay){
+        const l=Math.hypot(ax,ay); ax/=l; ay/=l;
+        boka.lookX=ax; boka.lookY=ay;
+      }
+      const sp=BOKA_BASE_SPEED*CELL/10;
+      const moved=moveCircle(boka, ax*sp*dt, ay*sp*dt, BOKA_R);
       boka.x=moved.x; boka.y=moved.y;
     } else {
-      // aktywna chmura – nie porusza się
       boka.cloud -= dt;
       boka.cloudFade = Math.max(0, boka.cloud / CLOUD_DURATION);
       cloudFill.style.width = (boka.cloudFade*100)+'%';
       if(boka.cloud<=0){boka.cloudActive=false; boka.cloudFade=0; cloudFill.style.width='0%';}
     }
 
-    // Trucizna po trafieniu – DPS
+    // trucizna
     if(boka.poison>0){ boka.hp -= PROJ_DMG_PER_SEC*dt; boka.poison = Math.max(0,boka.poison-dt); }
 
-    // Hunter AI
+    // Hunter
     if(hunter.frozen>0){
       hunter.frozen-=dt;
     } else {
-      // prosta pogoń
       const dx=boka.x-hunter.x, dy=boka.y-hunter.y, d=Math.hypot(dx,dy);
       if(d>1){ const ux=dx/d, uy=dy/d;
         const moved=moveCircle(hunter, ux*HUNTER_SPEED, uy*HUNTER_SPEED, HUNTER_R);
         hunter.x=moved.x; hunter.y=moved.y;
       }
-      // strzał
-      hunter.tShot -= dt;
+      hunter.tShot-=dt;
       if(hunter.tShot<=0 && d<HUNTER_AIM_RANGE && !boka.cloudActive){
         const speed=HUNTER_PROJ_SPEED;
         projs.push({x:hunter.x,y:hunter.y, vx:(dx/d)*speed, vy:(dy/d)*speed, ttl:5});
-        hunter.tShot=HUNTER_FIRE_COOLDOWN*(0.9+rng()*0.4);
+        hunter.tShot=HUNTER_FIRE_COOLDOWN*(0.9+Math.random()*0.4);
       }
     }
 
     // Pociski
     for(let i=projs.length-1;i>=0;i--){
       const p=projs[i];
-      p.ttl-=dt;
-      if(p.ttl<=0){ projs.splice(i,1); continue; }
+      p.ttl-=dt; if(p.ttl<=0){projs.splice(i,1); continue;}
       const moved=moveCircle(p, p.vx, p.vy, 2);
       p.x=moved.x; p.y=moved.y;
-      // trafienie Boki
-      if(dist(p.x,p.y,boka.x,boka.y) < BOKA_R+4){
-        boka.poison = 2.5; // przez 2.5 s zadaje DPS
-        projs.splice(i,1);
-      }
+      if(dist(p.x,p.y,boka.x,boka.y)<BOKA_R+4){ boka.poison=2.5; projs.splice(i,1); }
     }
 
-    // Muminki – AI
-    pellets.forEach(m=>{
+    // Muminki
+    mumins.forEach(m=>{
       if(!m.alive) return;
-      // widoczność – prosta linia (odległość i brak ściany)
+      // widoczność
       const dx=boka.x-m.x, dy=boka.y-m.y, d=Math.hypot(dx,dy);
       let see=false;
       if(d<260){
-        // raycast co 8px
         const steps=Math.ceil(d/8);
-        let ok=true, sx=m.x, sy=m.y;
+        let ok=true;
         for(let k=1;k<steps;k++){
-          const xx=sx+dx*(k/steps), yy=sy+dy*(k/steps);
+          const xx=m.x+dx*(k/steps), yy=m.y+dy*(k/steps);
           const c=Math.floor(xx/CELL), r=Math.floor(yy/CELL);
-          if(isWall(c,r)){ ok=false; break; }
+          if(isWall(c,r)){ok=false;break;}
         }
         see=ok;
       }
-      // zachowanie
-      if(see){ // ucieczka do domku
+      if(see){
         m.hide=true;
-        // kierunek do najbliższej komórki domku
+        // do domku
         let target=null, best=1e9;
         for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(grid[r][c]===2){
           const tx=c*CELL+CELL/2, ty=r*CELL+CELL/2;
@@ -307,10 +304,10 @@
         }
         if(target){
           const ux=(target.x-m.x)/best, uy=(target.y-m.y)/best;
-          const moved=moveCircle(m, ux*2.2, uy*2.2, MUMIN_R);
+          const moved=moveCircle(m, ux*2.3, uy*2.3, MUMIN_R);
           m.x=moved.x; m.y=moved.y;
         }
-        // zrzucanie chmurek strachu
+        // chmurki strachu
         m.tDrop-=dt;
         if(m.tDrop<=0 && Math.random()<MUMIN_FEAR_DROP_RATE){
           fearClouds.push({x:m.x,y:m.y,r:8, ttl:10});
@@ -318,21 +315,16 @@
         }
       } else {
         m.hide=false;
-        // lekki patrol
-        if(Math.random()<0.02) m.dir=rng()*Math.PI*2;
+        if(Math.random()<0.02) m.dir=Math.random()*Math.PI*2;
         const moved=moveCircle(m, Math.cos(m.dir)*1.0, Math.sin(m.dir)*1.0, MUMIN_R);
         m.x=moved.x; m.y=moved.y;
       }
-      // Kontakt z aktywną chmurą – zabicie jeśli poza domkiem
-      if(boka.cloudActive && dist(m.x,m.y,boka.x,boka.y) < 110*boka.cloudFade && !inHouse(m.x,m.y)){
+      // zabicie chmurą (tylko poza domkiem)
+      if(boka.cloudActive && dist(m.x,m.y,boka.x,boka.y) < CLOUD_MAX_RADIUS*boka.cloudFade && !inHouse(m.x,m.y)){
         m.alive=false;
-        score+=50;
-        scoreEl.textContent=score;
-        // niebieska chmurka (leczenie + amunicja)
+        score+=50; scoreEl.textContent=score;
         blueClouds.push({x:m.x,y:m.y,r:10, ttl:15});
-        // amunicja +3 użycia
-        boka.ammo += 3;
-        ammoText.textContent=boka.ammo;
+        boka.ammo += 3; ammoText.textContent=boka.ammo;
       }
     });
 
@@ -349,42 +341,34 @@
       const b=blueClouds[i]; b.ttl-=dt; if(b.ttl<=0){blueClouds.splice(i,1); continue;}
       if(dist(b.x,b.y,boka.x,boka.y)<BOKA_R+b.r){
         boka.hp=Math.min(HP_MAX, boka.hp+20);
-        // mały bonus amunicji gdy „najechane”
-        boka.ammo += 1;
-        ammoText.textContent=boka.ammo;
+        boka.ammo += 1; ammoText.textContent=boka.ammo;
         blueClouds.splice(i,1);
       }
     }
 
-    // Chmura mrozu a Włóczykij
-    if(boka.cloudActive && dist(hunter.x,hunter.y,boka.x,boka.y) < 110*boka.cloudFade){
+    // Zamrażanie Włóczykija
+    if(boka.cloudActive && dist(hunter.x,hunter.y,boka.x,boka.y) < CLOUD_MAX_RADIUS*boka.cloudFade){
       if(hunter.frozen<=0){ hunter.freezeHits++; }
       hunter.frozen=Math.max(hunter.frozen, HUNTER_FREEZE_TIME);
     }
 
-    // Śmierć Włóczykija po 10 zamrożeniach
     if(hunter.freezeHits>=FREEZE_TICKS_TO_KILL){
-      // Respawn nowy na następnym poziomie
-      score+=500;
-      level++;
+      score+=500; level++;
       overlay.hidden=false;
       document.getElementById('title').textContent='Włóczykij pokonany';
-      document.getElementById('desc').textContent='Przetrwałeś. Start następnego poziomu?';
-      playing=false;
-      return;
+      document.getElementById('desc').textContent='Zamrożony 10 razy! Start kolejnego poziomu?';
+      playing=false; return;
     }
 
-    // Aktualizacje UI
-    leftEl.textContent = pellets.filter(p=>p.alive).length;
+    // UI
+    leftEl.textContent = mumins.filter(m=>m.alive).length;
     hpFill.style.width = Math.max(0, Math.min(100, (boka.hp/HP_MAX)*100))+'%';
     freezeT.textContent = (hunter.frozen>0? Math.ceil(hunter.frozen)+'s':'0s');
 
-    // Kolizja śmiertelna chmury? (Boka nie otrzymuje)
     if(boka.hp<=0){
-      playing=false;
-      overlay.hidden=false;
+      playing=false; overlay.hidden=false;
       document.getElementById('title').textContent='Przegrałeś…';
-      document.getElementById('desc').textContent='Włóczykij i ogniki cię dopadły. Spróbuj ponownie.';
+      document.getElementById('desc').textContent='Ogniki Włóczykija cię wyczerpały. Spróbuj ponownie.';
       return;
     }
 
@@ -392,94 +376,89 @@
     requestAnimationFrame(update);
   }
 
-  // Render
+  // Rysowanie
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    // Mapa
+    // Tło
     for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
       const [x,y,w,h]=cellRect(c,r);
       const t=grid[r][c];
       ctx.fillStyle = t===1 ? '#23402a' : (t===2 ? '#163c25' : '#0f2a18');
       ctx.fillRect(x,y,w,h);
-      if(t===1){
-        ctx.fillStyle='rgba(25,70,45,0.25)'; ctx.fillRect(x+2,y+2,w-4,h-4);
-      }
-      if(t===2){
-        ctx.strokeStyle='rgba(120,200,160,0.4)';
-        ctx.strokeRect(x+3,y+3,w-6,h-6);
-      }
+      if(t===1){ ctx.fillStyle='rgba(25,70,45,0.25)'; ctx.fillRect(x+2,y+2,w-4,h-4); }
+      if(t===2){ ctx.strokeStyle='rgba(120,200,160,0.4)'; ctx.strokeRect(x+3,y+3,w-6,h-6); }
     }
 
-    // Chmurki strachu
-    fearClouds.forEach(f=>{
-      ctx.fillStyle='rgba(255,230,120,0.55)';
-      ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill();
-    });
-    // Niebieskie chmury
-    blueClouds.forEach(b=>{
-      ctx.fillStyle='rgba(140,200,255,0.7)';
-      ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
-    });
+    // Chmurki
+    fearClouds.forEach(f=>{ ctx.fillStyle='rgba(255,230,120,0.55)'; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill(); });
+    blueClouds.forEach(b=>{ ctx.fillStyle='rgba(140,200,255,0.7)'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill(); });
 
-    // Muminki – prosta sylwetka
-    pellets.forEach(m=>{
+    // Muminki – biała sylwetka
+    mumins.forEach(m=>{
       if(!m.alive) return;
-      ctx.save();
-      ctx.translate(m.x,m.y);
+      ctx.save(); ctx.translate(m.x,m.y);
       ctx.fillStyle= m.hide ? 'rgba(255,255,255,0.6)' : '#f7f7f7';
-      // brzuszek
-      ctx.beginPath(); ctx.ellipse(0,3,8,10,0,0,Math.PI*2); ctx.fill();
-      // głowa
-      ctx.beginPath(); ctx.ellipse(0,-9,6,5,0,0,Math.PI*2); ctx.fill();
-      // uszka
-      ctx.beginPath(); ctx.ellipse(-3,-14,2,3,0,0,Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(3,-14,2,3,0,0,Math.PI*2); ctx.fill();
-      // kontur
-      ctx.strokeStyle='#cfd5da'; ctx.lineWidth=1; 
-      ctx.beginPath(); ctx.ellipse(0,3,8,10,0,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0,4,8,11,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0,-10,6,5,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-3,-15,2,3,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(3,-15,2,3,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#cfd5da'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.ellipse(0,4,8,11,0,0,Math.PI*2); ctx.stroke();
       ctx.restore();
     });
 
     // Pociski
-    projs.forEach(p=>{
-      ctx.fillStyle='#a9ffbf';
-      ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();
-    });
+    projs.forEach(p=>{ ctx.fillStyle='#a9ffbf'; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill(); });
 
     // Włóczykij
     ctx.save(); ctx.translate(hunter.x,hunter.y);
-    const frozen = hunter.frozen>0;
-    ctx.fillStyle = frozen ? 'rgba(160,240,220,0.8)' : '#6ef0a7';
+    const frozen=hunter.frozen>0;
+    ctx.fillStyle=frozen ? 'rgba(160,240,220,0.85)' : '#6ef0a7';
     // kapelusz
     ctx.beginPath(); ctx.moveTo(-10,-6); ctx.lineTo(10,-6); ctx.lineTo(0,-18); ctx.closePath(); ctx.fill();
     // tułów
-    ctx.beginPath(); ctx.ellipse(0,4,10,12,0,0,Math.PI*2); ctx.fill();
-    if(frozen){
-      ctx.strokeStyle='rgba(180,255,255,0.8)'; ctx.strokeRect(-12,-20,24,40);
-    }
+    ctx.beginPath(); ctx.ellipse(0,5,10,12,0,0,Math.PI*2); ctx.fill();
+    if(frozen){ ctx.strokeStyle='rgba(180,255,255,0.8)'; ctx.strokeRect(-12,-20,24,40); }
     ctx.restore();
 
-    // Boka
+    // Buka – sylweta
     const glow=10+6*Math.sin(performance.now()/180);
-    ctx.shadowColor= '#6ec2ff'; ctx.shadowBlur=glow;
-    ctx.fillStyle= boka.poison>0 ? '#ff8080' : '#6ec2ff';
-    ctx.beginPath(); ctx.arc(boka.x,boka.y,BOKA_R,0,Math.PI*2); ctx.fill();
+    ctx.save(); ctx.translate(boka.x,boka.y);
+    ctx.shadowColor='#7ad1ff'; ctx.shadowBlur=glow;
+    ctx.fillStyle='linear-gradient(180deg, #7ad1ff, #5fb8ea)';
+    // ciało (wysokie jajko)
+    ctx.fillStyle='#7ad1ff';
+    ctx.beginPath(); ctx.ellipse(0,2,13,18,0,0,Math.PI*2); ctx.fill();
+    // kołnierz/aurora
+    ctx.fillStyle='rgba(170,220,255,0.5)';
+    ctx.beginPath(); ctx.ellipse(0,8,16,6,0,0,Math.PI*2); ctx.fill();
     ctx.shadowBlur=0;
-    // oko
-    ctx.fillStyle='#0b1c10'; ctx.beginPath(); ctx.arc(boka.x+3,boka.y-2,3,0,Math.PI*2); ctx.fill();
 
-    // Chmura mrozu
+    // Oczy – patrzą w stronę ostatniego ruchu
+    const eyeDirLen = Math.hypot(boka.lookX, boka.lookY) || 1;
+    const ex = (boka.lookX/eyeDirLen)*2.2;
+    const ey = (boka.lookY/eyeDirLen)*2.2;
+    // białka
+    ctx.fillStyle='#eef9ff';
+    ctx.beginPath(); ctx.ellipse(-4,-4,3,4,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(4,-4,3,4,0,0,Math.PI*2); ctx.fill();
+    // źrenice
+    ctx.fillStyle='#0b1c10';
+    ctx.beginPath(); ctx.arc(-4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Chmura mrozu – promień ~1/5 planszy, zanikanie
     if(boka.cloudActive){
-      const radius = 120*boka.cloudFade;
+      const radius = CLOUD_MAX_RADIUS*boka.cloudFade;
       const grd=ctx.createRadialGradient(boka.x,boka.y,10, boka.x,boka.y, radius);
-      grd.addColorStop(0, 'rgba(0,0,0,0.7)');
-      grd.addColorStop(0.6, 'rgba(0,0,0,0.5)');
+      grd.addColorStop(0, 'rgba(0,0,0,0.75)');
+      grd.addColorStop(0.6, 'rgba(0,0,0,0.55)');
       grd.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle=grd;
       ctx.beginPath(); ctx.arc(boka.x,boka.y,radius,0,Math.PI*2); ctx.fill();
-      // szron
       ctx.strokeStyle='rgba(140,200,255,0.35)';
-      ctx.beginPath(); ctx.arc(boka.x,boka.y,radius-6,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(boka.x,boka.y,Math.max(0,radius-6),0,Math.PI*2); ctx.stroke();
     }
 
     // ramka
