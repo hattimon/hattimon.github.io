@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Kaskadowy wykres świec krypto (live) z RSI i Stoch</title>
+  <title>Alt Season Super Wskaźnik — BTC, TOTAL3, BTCD, ETH/BTC</title>
   <style>
     :root{
       --bg:#0b0f16;
@@ -21,13 +21,17 @@
       --tool:#ffcc66;
       --sel:#3d4a61;
       --handle:#ffd166;
+      --line1:#7aa2f7;
+      --line2:#ffcc66;
+      --line3:#5bd49c;
+      --line4:#ef6b73;
     }
     *{box-sizing:border-box}
     html,body{height:100%;background:var(--bg);color:var(--text);margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
     header{
       display:flex;gap:.75rem;align-items:center;justify-content:space-between;
       padding:.6rem .8rem;background:linear-gradient(180deg,#0f131b,#0d1219);
-      border-bottom:1px solid #172030; position:sticky; top:0; z-index:5;
+      border-bottom:1px solid #172030; position:sticky; top:0; z-index:20;
     }
     header .left, header .right{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap}
     select, input, button{
@@ -37,41 +41,32 @@
     button{cursor:pointer}
     button:hover, select:hover{border-color:#2b3a52}
     .container{
-      display:grid; grid-template-rows:minmax(110px,23vh) minmax(0,1fr) minmax(110px,22vh);
+      display:grid; grid-template-rows: minmax(60px, var(--rsiH, 14%)) minmax(0, var(--mainH, 72%)) minmax(60px, var(--stochH, 14%)) minmax(120px, 26vh);
       height:calc(100% - 58px);
       transition:grid-template-rows .25s ease;
     }
-    .panel{
-      background:var(--panel); border-top:1px solid #141c28; border-bottom:1px solid #141c28;
-      min-height:80px;
-    }
-    .row{display:grid; grid-template-columns:minmax(220px, 280px) 1fr; height:100%; min-height:0}
+    .row{display:grid; grid-template-columns:minmax(220px, 300px) 1fr; height:100%; min-height:0}
     .sidebar{
       padding:.65rem;border-right:1px solid #141c28; overflow:auto;
       background:linear-gradient(180deg,#101722,#0f141d);
     }
     .sidebar h3{margin:.4rem 0 .6rem;color:#aab7cf;font-weight:600;font-size:.95rem}
-    .tf-level{display:flex; flex-direction:column; gap:.25rem; margin-bottom:.75rem;}
-    .tf-level .label{color:#8ea0bb; font-size:.8rem; display:flex; align-items:center; gap:.4rem;}
-    .legend{display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem;}
-    .badge{font-size:.7rem; padding:.2rem .35rem; border-radius:.3rem; border:1px solid #223045;color:#b5c3da; background:#0f1724;}
     .canvas-wrap{position:relative; background:var(--panel); min-height:0}
     canvas{display:block; width:100%; height:100%}
+    .panel{
+      background:var(--panel); border-top:1px solid #141c28; border-bottom:1px solid #141c28;
+      min-height:60px;
+    }
     .status{
       position:absolute; top:.35rem; right:.5rem; background:#0f1622;
       border:1px solid #1f2a3a; border-radius:.4rem; padding:.2rem .5rem; color:#aab7cf;
       font-size:.78rem; display:flex; gap:.5rem; align-items:center; pointer-events:none;
     }
-    .toast{
-      position:fixed; bottom:10px; left:50%; transform:translateX(-50%);
-      background:#0f1622;border:1px solid #223045; padding:.5rem .75rem; border-radius:.4rem;
-      color:#b5c3da; font-size:.8rem; opacity:.95; z-index:15;
-    }
+    .legend{display:flex; gap:.35rem; flex-wrap:wrap; margin-top:.4rem}
+    .badge{font-size:.7rem; padding:.2rem .35rem; border-radius:.3rem; border:1px solid #223045;color:#b5c3da; background:#0f1724;}
     .help{color:#8aa0c2; font-size:.82rem; margin-top:.25rem; line-height:1.35;}
     .muted{color:var(--muted)}
     .spacer{flex:1}
-
-    /* Tool overlay */
     .toolbox{
       position:absolute; left:.5rem; top:.5rem; display:flex; gap:.35rem; z-index:4;
       background:rgba(12,18,28,.6); backdrop-filter: blur(4px);
@@ -99,24 +94,33 @@
       height:14px; width:84px; border-radius:7px; background:rgba(123,167,255,.22);
       border:1px solid rgba(123,167,255,.4); pointer-events:auto; cursor:ew-resize;
     }
-
-    /* Mobile toggle */
+    .toast{
+      position:fixed; bottom:10px; left:50%; transform:translateX(-50%);
+      background:#0f1622;border:1px solid #223045; padding:.5rem .75rem; border-radius:.4rem;
+      color:#b5c3da; font-size:.8rem; opacity:.95; z-index:50;
+    }
+    .super-panel{ display:grid; grid-template-columns: 1fr 1fr; gap:1px; background:#141c28; }
+    .super-item{ position:relative; background:var(--panel); min-height:160px; }
+    .super-item .status{ left:.5rem; right:auto; }
+    .switches{ display:flex; gap:.4rem; flex-wrap:wrap; }
+    .switches label{ display:flex; align-items:center; gap:.3rem; background:#0e1521; border:1px solid #1d2a3f; padding:.25rem .4rem; border-radius:.35rem; font-size:.82rem}
+    .alert-bar{ position:absolute; bottom:.35rem; left:.5rem; right:.5rem; font-size:.78rem; color:#dfe7ff; opacity:.85}
+    .alert-green{ color:var(--bull) }
+    .alert-red{ color:var(--bear) }
+    .resize-row{ position:relative; }
+    .row-handle{
+      position:absolute; left:0; right:0; height:6px; cursor:row-resize; z-index:5;
+      background:linear-gradient(90deg, transparent, rgba(255,209,102,.08), transparent);
+    }
+    #rsiHandle{ bottom:-3px; }
+    #stochHandle{ top:-3px; }
     .mobile{
-      grid-template-rows:minmax(80px, 26vh) 1fr minmax(80px, 26vh);
+      grid-template-rows:minmax(80px, 26vh) 1fr minmax(80px, 26vh) minmax(120px, 28vh);
     }
-    .mobile .row{ grid-template-columns: 1fr; }
-    .mobile .sidebar{ display:none; }
-    .mobile header{ gap:.4rem }
-    .mobile header .left strong{ font-size:.95rem }
-    .mobile .status{ font-size:.7rem }
-    .mobile .toolbox{ left:50%; transform:translateX(-50%); top:.35rem }
-
-    @media (max-width: 900px){
-      .row{ grid-template-columns:minmax(200px, 240px) 1fr; }
-    }
-    @media (max-width: 720px){
-      .row{ grid-template-columns:1fr; }
+    @media (max-width: 980px){
+      .row{ grid-template-columns: 1fr; }
       .sidebar{ display:none; }
+      .super-panel{ grid-template-columns: 1fr; }
     }
   </style>
   <script type="importmap">
@@ -128,8 +132,8 @@
 <body>
   <header>
     <div class="left">
-      <strong>Crypto Multi-Drill Candles</strong>
-      <span class="muted">Live</span>
+      <strong>Alt Season — Super Wskaźnik</strong>
+      <span class="muted">BTC, TOTAL3, BTCD, ETH/BTC</span>
       <div class="spacer"></div>
     </div>
     <div class="right">
@@ -138,8 +142,8 @@
         <option value="binance">Binance (REST)</option>
         <option value="coinbase">Coinbase (REST)</option>
       </select>
-      <label class="muted">Symbol</label>
-      <input id="symbol" placeholder="BTCUSDT lub BTC-USD" value="BTCUSDT" />
+      <label class="muted">Główny symbol</label>
+      <input id="symbol" value="BTCUSDT" placeholder="BTCUSDT lub BTC-USD" />
       <label class="muted">Strefa</label>
       <select id="timezone">
         <option value="exchange">Czas giełdy</option>
@@ -151,46 +155,49 @@
     </div>
   </header>
 
-  <div class="container" id="root">
-    <div class="panel" id="rsiPanel">
+  <div class="container" id="root" style="--rsiH:14.285%; --stochH:14.285%; --mainH:71.43%">
+    <div class="panel resize-row" id="rsiPanel">
+      <div class="row-handle" id="rsiHandle" title="Przeciągnij, aby zmienić wysokość RSI"></div>
       <div class="canvas-wrap">
-        <div class="toolbox" id="rsiTools" style="display:none"></div>
         <canvas id="rsi"></canvas>
         <div class="status" id="rsiStatus">RSI(14)</div>
       </div>
     </div>
+
     <div class="row">
       <div class="sidebar">
         <h3>Ustawienia</h3>
-        <div class="tf-level">
-          <div class="label">Tryb nawigacji</div>
-          <div class="help">Kliknij świecę aby wejść głębiej. PPM lub Backspace aby cofnąć poziom. Kółko/gest: zoom X, przeciągnij: przesuwanie. Użyj uchwytów aby skalować w osi X/Y.</div>
+        <div class="help">
+          Skupiamy się na najdłuższej historii BTC. Dodatkowo włącz porównania: TOTAL3 (kapitalizacja altów bez BTC/ETH),
+          BTCD (dominacja BTC) oraz ETH/BTC. To pozwala wykrywać fazy alt sezonu.
         </div>
-        <div class="tf-level">
-          <div class="label">Kolory i intensywność</div>
-          <div class="help">Im krótszy interwał, tym żywsza barwa. Dłuższe ramy są przygaszone.</div>
-        </div>
-        <div class="tf-level">
-          <div class="label">Wskaźniki</div>
+        <div style="margin-top:.5rem">
           <div class="legend">
-            <span class="badge">RSI(14)</span>
-            <span class="badge">%K(14,3)</span>
-            <span class="badge">%D(3)</span>
+            <span class="badge">BTC (świece)</span>
+            <span class="badge">TOTAL3 (linia)</span>
+            <span class="badge">BTCD (linia)</span>
+            <span class="badge">ETH/BTC (linia)</span>
           </div>
         </div>
-        <div class="tf-level">
-          <div class="label">Głębokość</div>
-          <div class="help">Roczne → Miesięczne → Tygodniowe → Dzienne → 4h → 1h → 30m → 15m → 5m → 1m</div>
+        <h3>Porównania</h3>
+        <div class="switches">
+          <label><input type="checkbox" id="toggleTotal3" checked /> TOTAL3</label>
+          <label><input type="checkbox" id="toggleBtcd" checked /> BTCD</label>
+          <label><input type="checkbox" id="toggleEthBtc" checked /> ETH/BTC</label>
         </div>
-        <div class="tf-level">
-          <div class="label">Narzędzia rysunkowe</div>
-          <div class="help">Wybierz w pasku narzędzi na wykresie: Linia trendu, Poziom, Prostokąt. Przeciągnij uchwyty aby modyfikować.</div>
+        <div class="help">
+          Sygnały alt sezonu (heurystyki):
+          1) BTCD spada i przebija w dół MA, 2) TOTAL3 rośnie ponad MA, 3) ETH/BTC wybija i utrzymuje trend wzrostowy,
+          4) Zbieżność: min. 2 z 3 jednocześnie. Włącz alerty poniżej.
         </div>
-        <div class="tf-level">
-          <div class="label">Status</div>
-          <div id="status" class="help">Oczekiwanie na dane…</div>
+        <h3>Alerty</h3>
+        <div class="switches">
+          <label><input type="checkbox" id="toggleAlerts" checked /> Alerty Alt Season</label>
+          <label><input type="checkbox" id="toggleEarly" checked /> Wczesne sygnały</label>
         </div>
+        <div class="help" id="status">Oczekiwanie na dane…</div>
       </div>
+
       <div class="canvas-wrap">
         <div class="toolbox" id="chartTools">
           <button data-tool="cursor" class="active">Kursor</button>
@@ -206,14 +213,40 @@
           </div>
         </div>
         <canvas id="chart"></canvas>
-        <div class="status" id="chartStatus">BTCUSDT (1m) Live</div>
+        <div class="status" id="chartStatus">BTCUSDT (1d / MTFA) Live</div>
       </div>
     </div>
-    <div class="panel" id="stochPanel">
+
+    <div class="panel resize-row" id="stochPanel">
+      <div class="row-handle" id="stochHandle" title="Przeciągnij, aby zmienić wysokość Stoch"></div>
       <div class="canvas-wrap">
-        <div class="toolbox" id="stochTools" style="display:none"></div>
         <canvas id="stoch"></canvas>
         <div class="status" id="stochStatus">Stochastic (14,3,3)</div>
+      </div>
+    </div>
+
+    <div class="panel" id="superPanel">
+      <div class="super-panel">
+        <div class="super-item">
+          <canvas id="total3Canvas"></canvas>
+          <div class="status">TOTAL3 (proxy) — trend i MA</div>
+          <div class="alert-bar" id="total3Alert"></div>
+        </div>
+        <div class="super-item">
+          <canvas id="btcdCanvas"></canvas>
+          <div class="status">BTCD (proxy) — dominacja BTC</div>
+          <div class="alert-bar" id="btcdAlert"></div>
+        </div>
+        <div class="super-item">
+          <canvas id="ethbtcCanvas"></canvas>
+          <div class="status">ETH/BTC (proxy) — przepływ do ETH/altów</div>
+          <div class="alert-bar" id="ethbtcAlert"></div>
+        </div>
+        <div class="super-item">
+          <canvas id="signalCanvas"></canvas>
+          <div class="status">Alt Season — Sygnał łączony</div>
+          <div class="alert-bar" id="comboAlert"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -221,22 +254,20 @@
   <div class="toast" id="toast" style="display:none"></div>
 
   <script type="module">
-    // Core configuration and TF chain
     const TF_CHAIN = [
-      {key:'1y',  label:'Roczne',         exch:['binance','coinbase'], binance:'1M', coinbase:'1M',  approxMs:365*24*60*60*1000},
-      {key:'1M',  label:'Miesięczne',     exch:['binance','coinbase'], binance:'1w', coinbase:'1w',  approxMs:30*24*60*60*1000},
-      {key:'1w',  label:'Tygodniowe',     exch:['binance','coinbase'], binance:'1d', coinbase:'1d',  approxMs:7*24*60*60*1000},
-      {key:'1d',  label:'Dzienne',        exch:['binance','coinbase'], binance:'4h', coinbase:'4h', approxMs:24*60*60*1000},
-      {key:'4h',  label:'4 godziny',      exch:['binance','coinbase'], binance:'1h', coinbase:'1h', approxMs:4*60*60*1000},
-      {key:'1h',  label:'1 godzina',      exch:['binance','coinbase'], binance:'30m',coinbase:'30m',approxMs:60*60*1000},
-      {key:'30m', label:'30 minut',       exch:['binance','coinbase'], binance:'15m',coinbase:'15m',approxMs:30*60*1000},
-      {key:'15m', label:'15 minut',       exch:['binance','coinbase'], binance:'5m', coinbase:'5m', approxMs:15*60*1000},
-      {key:'5m',  label:'5 minut',        exch:['binance','coinbase'], binance:'1m', coinbase:'1m', approxMs:5*60*1000},
-      {key:'1m',  label:'1 minuta',       exch:['binance','coinbase'], binance:'1m', coinbase:'1m', approxMs:60*1000}
+      {key:'1y',  label:'Roczne',         approxMs:365*24*60*60*1000},
+      {key:'1M',  label:'Miesięczne',     approxMs:30*24*60*60*1000},
+      {key:'1w',  label:'Tygodniowe',     approxMs:7*24*60*60*1000},
+      {key:'1d',  label:'Dzienne',        approxMs:24*60*60*1000},
+      {key:'4h',  label:'4 godziny',      approxMs:4*60*60*1000},
+      {key:'1h',  label:'1 godzina',      approxMs:60*60*1000},
+      {key:'30m', label:'30 minut',       approxMs:30*60*1000},
+      {key:'15m', label:'15 minut',       approxMs:15*60*1000},
+      {key:'5m',  label:'5 minut',        approxMs:5*60*1000},
+      {key:'1m',  label:'1 minuta',       approxMs:60*1000}
     ];
-    const TF_ALPHA = {'1y':0.16,'1M':0.22,'1w':0.26,'1d':0.34,'4h':0.44,'1h':0.54,'30m':0.64,'15m':0.72,'5m':0.8,'1m':0.92};
+    const TF_ALPHA = {'1y':0.16,'1M':0.22,'1w':0.26,'1d':0.46,'4h':0.64,'1h':0.72,'30m':0.8,'15m':0.86,'5m':0.9,'1m':0.95};
 
-    // UI elements
     const chartCanvas = document.getElementById('chart');
     const rsiCanvas = document.getElementById('rsi');
     const stochCanvas = document.getElementById('stoch');
@@ -253,12 +284,25 @@
     const toolBar = document.getElementById('chartTools');
     const yHandle = document.getElementById('yHandle');
     const xHandle = document.getElementById('xHandle');
+    const rsiHandle = document.getElementById('rsiHandle');
+    const stochHandle = document.getElementById('stochHandle');
 
-    // Drawing tool state (trend, hline, rect)
-    const tools = {
-      active: 'cursor',
-      shapes: [] // array of {type, points:[{x,y},{x,y}], y(optional), rect:{x1,y1,x2,y2}}
-    };
+    const total3Canvas = document.getElementById('total3Canvas');
+    const btcdCanvas = document.getElementById('btcdCanvas');
+    const ethbtcCanvas = document.getElementById('ethbtcCanvas');
+    const signalCanvas = document.getElementById('signalCanvas');
+    const total3Alert = document.getElementById('total3Alert');
+    const btcdAlert = document.getElementById('btcdAlert');
+    const ethbtcAlert = document.getElementById('ethbtcAlert');
+    const comboAlert = document.getElementById('comboAlert');
+
+    const toggleTotal3 = document.getElementById('toggleTotal3');
+    const toggleBtcd = document.getElementById('toggleBtcd');
+    const toggleEthBtc = document.getElementById('toggleEthBtc');
+    const toggleAlerts = document.getElementById('toggleAlerts');
+    const toggleEarly = document.getElementById('toggleEarly');
+
+    const tools = { active:'cursor', shapes:[] };
     toolBar.addEventListener('click', (e)=>{
       if(!(e.target instanceof HTMLButtonElement)) return;
       const t = e.target.getAttribute('data-tool');
@@ -267,97 +311,25 @@
       [...toolBar.querySelectorAll('button')].forEach(b=>b.classList.toggle('active', b===e.target));
     });
 
-    // State
-    let state = {
-      exch:'binance',
-      symbol:'BTCUSDT',
-      tz:'local',
-      live:true,
-      levelIndex:0,
-      viewStart:Date.now()-365*24*60*60*1000*5,
-      viewEnd:Date.now()+24*60*60*1000,
-      yMin:null, yMax:null, // manual Y scaling bounds for price panel
-      yLock:false,
-      data:{},
-      lastRedraw:0
-    };
-
-    // Helpers
-    const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
-    const lerp = (a,b,t)=>a+(b-a)*t;
-    const showToast = (msg, timeout=2000)=>{
-      toastEl.textContent = msg;
-      toastEl.style.display='block';
-      setTimeout(()=>toastEl.style.display='none', timeout);
-    };
-    function resizeCanvasToDisplaySize(canvas) {
-      const ratio = window.devicePixelRatio || 1;
-      const w = Math.max(2, Math.floor(canvas.clientWidth * ratio));
-      const h = Math.max(2, Math.floor(canvas.clientHeight * ratio));
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w; canvas.height = h;
+    function generateSyntheticOHLC(startMs, endMs, baseMs){
+      const out=[];
+      const steps = Math.floor((endMs-startMs)/baseMs);
+      let price = 20000;
+      let trend = 0.00002;
+      let vol = 0.015;
+      for(let i=0;i<=steps;i++){
+        const t = startMs + i*baseMs;
+        const cyc = 0.12*Math.sin(i/400) + 0.06*Math.sin(i/87) + 0.02*Math.cos(i/21);
+        const rnd = (Math.random()-0.5)*vol*2;
+        const ret = trend + cyc*0.0005 + rnd;
+        const o = price;
+        price = Math.max(500, price * (1+ret));
+        const c = price;
+        const h = Math.max(o,c) * (1+Math.random()*0.006);
+        const l = Math.min(o,c) * (1-Math.random()*0.006);
+        const v = 100 + Math.random()*50;
+        out.push({t,o,h,l,c,v});
       }
-      return {w,h,ratio};
-    }
-
-    // Procedural background for stability and contrast
-    function drawBackdrop(ctx,w,h){
-      const g = ctx.createLinearGradient(0,0,0,h);
-      g.addColorStop(0,'#0c121c'); g.addColorStop(1,'#0a0f18');
-      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
-      ctx.globalAlpha = 0.07;
-      for(let i=0;i<5;i++){
-        const cx = (i/4)*w + (Math.sin(i*1.7)*0.15)*w;
-        const cy = (0.2+0.15*i)*h;
-        const r = 0.55*Math.min(w,h)/(i+2);
-        const rg = ctx.createRadialGradient(cx,cy,0,cx,cy,r);
-        rg.addColorStop(0, ['#1b2740','#1a2a3f','#17263b'][i%3]);
-        rg.addColorStop(1, 'transparent');
-        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // Networking
-    async function fetchKlines(exchange, symbol, interval, limit=1000, endTimeMs=Date.now()){
-      if(exchange==='binance'){
-        const url = new URL('https://api.binance.com/api/v3/klines');
-        url.searchParams.set('symbol', symbol.replace(/[-/]/g,'').toUpperCase());
-        url.searchParams.set('interval', interval);
-        url.searchParams.set('limit', String(limit));
-        url.searchParams.set('endTime', String(endTimeMs));
-        const r = await fetch(url.toString());
-        if(!r.ok) throw new Error('Binance HTTP '+r.status);
-        const arr = await r.json();
-        return arr.map(k=>({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]}));
-      } else {
-        const map = {'1m':'ONE_MINUTE','5m':'FIVE_MINUTE','15m':'FIFTEEN_MINUTE','30m':'FIVE_MINUTE','1h':'ONE_HOUR','4h':'SIX_HOUR','1d':'ONE_DAY','1w':'ONE_DAY','1M':'ONE_DAY'};
-        const g = map[interval] || 'ONE_MINUTE';
-        let sym = symbol.includes('-') ? symbol : (symbol.toUpperCase().endsWith('USDT')? symbol.slice(0,-4)+'-USD' : symbol.toUpperCase()+'-USD');
-        const url = new URL(`https://api.coinbase.com/api/v3/brokerage/products/${sym}/candles`);
-        url.searchParams.set('granularity', g);
-        const endISO = new Date(endTimeMs).toISOString();
-        const spanMs = 1000*60*limit*5;
-        const startISO = new Date(endTimeMs - spanMs).toISOString();
-        url.searchParams.set('start', startISO);
-        url.searchParams.set('end', endISO);
-        const r = await fetch(url.toString());
-        if(!r.ok) throw new Error('Coinbase HTTP '+r.status);
-        const json = await r.json();
-        return (json.candles||[]).map(c=>({t:new Date(c.start).getTime(),o:+c.open,h:+c.high,l:+c.low,c:+c.close,v:+c.volume})).sort((a,b)=>a.t-b.t);
-      }
-    }
-
-    function rollup(data, frameMs){
-      if(!data || !data.length) return [];
-      const out=[]; let bStart = Math.floor(data[0].t/frameMs)*frameMs;
-      let o=data[0].o, h=data[0].h, l=data[0].l, c=data[0].c, v=0;
-      for(const d of data){
-        const k = Math.floor(d.t/frameMs)*frameMs;
-        if(k!==bStart){ out.push({t:bStart,o,h,l,c,v}); bStart=k; o=d.o; h=d.h; l=d.l; v=0; }
-        h=Math.max(h,d.h); l=Math.min(l,d.l); c=d.c; v+=d.v||0;
-      }
-      out.push({t:bStart,o,h,l,c,v});
       return out;
     }
     function tfMs(tf){
@@ -374,14 +346,128 @@
         case '1y':return 365*24*60*60*1000;
       } return 60*1000;
     }
+    function rollup(data, frameMs){
+      if(!data || !data.length) return [];
+      const out=[]; let bStart = Math.floor(data[0].t/frameMs)*frameMs;
+      let o=data[0].o, h=data[0].h, l=data[0].l, c=data[0].c, v=0;
+      for(const d of data){
+        const k = Math.floor(d.t/frameMs)*frameMs;
+        if(k!==bStart){ out.push({t:bStart,o,h,l,c,v}); bStart=k; o=d.o; h=d.h; l=d.l; v=0; }
+        h=Math.max(h,d.h); l=Math.min(l,d.l); c=d.c; v+=d.v||0;
+      }
+      out.push({t:bStart,o,h,l,c,v});
+      return out;
+    }
+
+    const now = Date.now();
+    const startHistory = now - 365*24*60*60*1000*4;
+    const base1m = generateSyntheticOHLC(startHistory, now, tfMs('1m'));
+    const dataStore = {};
+    for(const t of TF_CHAIN){
+      if(t.key==='1m'){ dataStore['1m']=base1m; continue; }
+      dataStore[t.key] = rollup(base1m, tfMs(t.key));
+    }
+
+    const state = {
+      symbol:'BTCUSDT',
+      tz:'local',
+      live:false,
+      levelIndex: TF_CHAIN.findIndex(t=>t.key==='1d'),
+      viewStart: now - 200*tfMs('1d'),
+      viewEnd: now + 10*tfMs('1d'),
+      yMin:null, yMax:null, yLock:false,
+      data: dataStore,
+      overlays: { total3:[], btcd:[], ethbtc:[] },
+      rsiPeriod:14,
+      stochCfg:{k:14, ks:3, d:3}
+    };
+
+    let rsiPct = 1/7, stochPct = 1/7;
+    function applyHeights(){
+      const mainPct = Math.max(0.1, 1 - rsiPct - stochPct);
+      root.style.setProperty('--rsiH', (rsiPct*100).toFixed(2)+'%');
+      root.style.setProperty('--stochH', (stochPct*100).toFixed(2)+'%');
+      root.style.setProperty('--mainH', (mainPct*100).toFixed(2)+'%');
+      requestRender();
+    }
+    applyHeights();
+
+    function attachRowHandle(handleEl, which){
+      let dragging=false, startY=0, startRsi=rsiPct, startStoch=stochPct, startMain=1-rsiPct-stochPct;
+      handleEl.addEventListener('mousedown',(e)=>{
+        e.preventDefault(); dragging=true; startY=e.clientY; startRsi=rsiPct; startStoch=stochPct; startMain=1-startRsi-startStoch;
+        document.body.style.cursor='row-resize';
+      });
+      window.addEventListener('mousemove',(e)=>{
+        if(!dragging) return;
+        const dy = e.clientY - startY;
+        const containerRect = root.getBoundingClientRect();
+        const delta = dy / containerRect.height;
+        if(which==='rsi'){
+          rsiPct = Math.max(0.06, Math.min(0.5, startRsi + delta));
+        }else{
+          stochPct = Math.max(0.06, Math.min(0.5, startStoch - delta));
+        }
+        const sum = rsiPct + stochPct;
+        if(1 - sum < 0.10){
+          if(which==='rsi') rsiPct = 0.90 - stochPct;
+          else stochPct = 0.90 - rsiPct;
+        }
+        applyHeights();
+      });
+      window.addEventListener('mouseup',()=>{
+        if(dragging){ dragging=false; document.body.style.cursor=''; }
+      });
+    }
+    attachRowHandle(rsiHandle,'rsi');
+    attachRowHandle(stochHandle,'stoch');
+
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+    const showToast=(msg,timeout=2000)=>{ toastEl.textContent=msg; toastEl.style.display='block'; setTimeout(()=>toastEl.style.display='none',timeout); };
+    function resizeCanvasToDisplaySize(canvas) {
+      const ratio = window.devicePixelRatio || 1;
+      const w = Math.max(2, Math.floor(canvas.clientWidth * ratio));
+      const h = Math.max(2, Math.floor(canvas.clientHeight * ratio));
+      if (canvas.width !== w || canvas.height !== h) { canvas.width=w; canvas.height=h; }
+      return {w,h,ratio};
+    }
+    function drawBackdrop(ctx,w,h){
+      const g = ctx.createLinearGradient(0,0,0,h);
+      g.addColorStop(0,'#0c121c'); g.addColorStop(1,'#0a0f18');
+      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+      ctx.globalAlpha = 0.07;
+      for(let i=0;i<4;i++){
+        const cx = (i/3)*w + (Math.sin(i*1.3)*0.18)*w;
+        const cy = (0.22+0.18*i)*h;
+        const r = 0.55*Math.min(w,h)/(i+2);
+        const rg = ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+        rg.addColorStop(0, ['#1b2740','#1a2a3f','#17263b'][i%3]);
+        rg.addColorStop(1, 'transparent');
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    function drawGrid(ctx,w,h){
+      ctx.strokeStyle='#1b2432'; ctx.lineWidth=1;
+      ctx.beginPath();
+      for(let i=0;i<6;i++){ const y=Math.round((i+1)*h/7)+.5; ctx.moveTo(0,y); ctx.lineTo(w,y); }
+      ctx.stroke();
+    }
+    function yScale(vals,h,pad=10){
+      let min=Infinity, max=-Infinity;
+      for(const v of vals){ if(v<min)min=v; if(v>max)max=v; }
+      if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
+      if(max===min){ max=min+1; }
+      const f = (v)=> h - ((v-min)/(max-min))*(h-2*pad)-pad;
+      return {min,max,map:f};
+    }
+
     function SMA(values, period){
       const out=[]; let sum=0;
-      for(let i=0;i<values.length;i++){
-        sum+=values[i]; if(i>=period) sum-=values[i-period];
-        out.push(i>=period-1 ? sum/period : NaN);
-      } return out;
+      for(let i=0;i<values.length;i++){ sum+=values[i]; if(i>=period) sum-=values[i-period]; out.push(i>=period-1 ? sum/period : NaN); }
+      return out;
     }
-    function RSI(closes, period=14){
+    function RSIarr(closes, period=14){
       const out=[]; if(!closes.length) return out;
       let gains=new Array(closes.length).fill(0), losses=new Array(closes.length).fill(0);
       for(let i=1;i<closes.length;i++){ const ch=closes[i]-closes[i-1]; gains[i]=Math.max(0,ch); losses[i]=Math.max(0,-ch); }
@@ -391,12 +477,11 @@
       for(let i=1;i<closes.length;i++){
         if(i<period){ out[i]=NaN; continue; }
         if(i>period){ const ch=closes[i]-closes[i-1]; const g=Math.max(0,ch), l=Math.max(0,-ch); avgG=(avgG*(period-1)+g)/period; avgL=(avgL*(period-1)+l)/period; }
-        const rs = avgL===0 ? 1000 : avgG/avgL;
-        out[i] = 100 - (100/(1+rs));
+        const rs = avgL===0 ? 1000 : avgG/avgL; out[i] = 100 - (100/(1+rs));
       }
       return out;
     }
-    function Stochastic(highs,lows,closes,kPeriod=14,kSmoothing=3,dPeriod=3){
+    function Stoch(highs,lows,closes,kPeriod=14,kSmoothing=3,dPeriod=3){
       const kRaw=[];
       for(let i=0;i<closes.length;i++){
         const from=Math.max(0,i-kPeriod+1);
@@ -405,67 +490,47 @@
         const den=(hh-ll)||1e-9;
         kRaw.push(((closes[i]-ll)/den)*100);
       }
-      const k=SMA(kRaw,kSmoothing);
-      const d=SMA(k,dPeriod);
+      const k=SMA(kRaw,kSmoothing), d=SMA(k,kSmoothing);
       return {k,d};
     }
-    function colorForTF(tf){
-      const map={'1y':'#6b7b95','1M':'#6b87a8','1w':'#6b93bb','1d':'#67a1ce','4h':'#63aee1','1h':'#5dbcf2','30m':'#60c7f7','15m':'#6ad0fb','5m':'#73d8fd','1m':'#88e8ff'};
-      return map[tf] || '#88e8ff';
-    }
-    function childTF(tf){
-      const idx=TF_CHAIN.findIndex(t=>t.key===tf);
-      return (idx<0||idx>=TF_CHAIN.length-1)?null:TF_CHAIN[idx+1].key;
-    }
-    function drawGrid(ctx,w,h,yLabels=[]){
-      ctx.strokeStyle='#1b2432'; ctx.lineWidth=1;
-      ctx.beginPath();
-      for(let i=0;i<6;i++){ const y=Math.round((i+1)*h/7)+.5; ctx.moveTo(0,y); ctx.lineTo(w,y); }
-      ctx.stroke();
-      ctx.fillStyle='#8ba0ba'; ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.font='12px system-ui, Arial';
-      const pad=4;
-      for(const yl of yLabels){ ctx.fillText(yl.text, w-pad, yl.y); }
-    }
-    function yScale(vals,h,pad=10){
-      let min=Infinity, max=-Infinity;
-      for(const v of vals){ if(v<min)min=v; if(v>max)max=v; }
-      if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
-      if(max===min){ max=min+1; }
-      const range = max-min;
-      const f = (v)=> h - ((v-min)/range) * (h-2*pad) - pad;
-      return {min,max,map:f};
-    }
-    async function ensureData(tf){
-      if(state.data[tf] && state.data[tf].length) return state.data[tf];
-      const ex = state.exch;
-      let sym = state.symbol.trim();
-      if(ex==='binance'){ sym = sym.replace(/[-/]/g,'').toUpperCase(); }
-      else { if(!sym.includes('-')) sym = (sym.toUpperCase().endsWith('USDT')? sym.slice(0,-4)+'-USD' : sym.toUpperCase()+'-USD'); }
-      const chainItem = TF_CHAIN.find(t=>t.key===tf);
-      const fetchInterval = chainItem[ex];
-      const endTime = Date.now();
-      let baseData = await fetchKlines(ex, sym, fetchInterval, 900, endTime);
-      const targetMs = tfMs(tf), exchMs = tfMs(fetchInterval);
-      const data = (targetMs===exchMs)? baseData : rollup(baseData, targetMs);
-      state.data[tf]=data;
-      return data;
-    }
-    function sliceByTime(data, startMs, endMs){
-      if(!data || !data.length) return [];
-      const out = data.filter(d=>d.t>=startMs && d.t<=endMs);
-      return out.length ? out : data;
-    }
-    function priceBoundsFromChain(datasets){
-      let min=Infinity, max=-Infinity;
-      for(const arr of datasets){ if(!arr) continue; for(const d of arr){ if(d.l<min)min=d.l; if(d.h>max)max=d.h; } }
-      if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
-      return {min,max};
-    }
-    function extractCloses(data){ return data.map(d=>d.c); }
-    function extractHighs(data){ return data.map(d=>d.h); }
-    function extractLows(data){ return data.map(d=>d.l); }
 
-    // Interaction: pan/zoom X, manual Y zoom via handle, and x-handle
+    function higherTFs(tf){
+      const idx = TF_CHAIN.findIndex(t=>t.key===tf);
+      const out = [];
+      for(let i=1;i<=2;i++){ const j = idx - i; if(j>=0) out.push(TF_CHAIN[j].key); }
+      if(idx-3>=0) out.push(TF_CHAIN[idx-3].key);
+      return out;
+    }
+
+    function buildOverlays(){
+      const daily = dataStore['1d'];
+      const closes = daily.map(d=>d.c);
+      const times = daily.map(d=>d.t);
+      const total3=[], btcd=[], ethbtc=[];
+      let emaT = closes[0], emaEth = 0.065, dom=0.55;
+      for(let i=0;i<closes.length;i++){
+        const c = closes[i], t=times[i], p=i?closes[i-1]:c;
+        const ret=(c-p)/p;
+        const cyc=0.02*Math.sin(i/30)+0.012*Math.cos(i/80);
+        emaT = emaT*0.93 + (c*(1+1.6*ret+cyc))*0.07;
+        total3.push({t,v:emaT});
+
+        const ethDrift = (-ret*0.7) + 0.0015*Math.sin(i/45);
+        emaEth = clamp(emaEth*0.985 + (emaEth + ethDrift)*0.015, 0.02, 0.25);
+        ethbtc.push({t,v:emaEth});
+
+        const risk = (emaT/c) + (emaEth/0.07);
+        dom = clamp(0.58 - 0.07*(risk-1), 0.35, 0.75);
+        const prev = btcd.length? btcd[btcd.length-1].v : dom;
+        const sm = prev*0.92 + dom*0.08;
+        btcd.push({t,v:sm});
+      }
+      state.overlays.total3 = total3;
+      state.overlays.btcd = btcd;
+      state.overlays.ethbtc = ethbtc;
+    }
+    buildOverlays();
+
     let isPanning=false, panStartX=0, panStartStart=0, panStartEnd=0;
     function attachInteractions(canvas){
       canvas.addEventListener('wheel',(e)=>{
@@ -482,9 +547,6 @@
       },{passive:false});
       canvas.addEventListener('mousedown',(e)=>{
         if(e.button===2){ levelUp(); return; }
-        if(tools.active!=='cursor'){
-          beginToolDraw(e); return;
-        }
         isPanning=true; panStartX=e.clientX; panStartStart=state.viewStart; panStartEnd=state.viewEnd;
       });
       window.addEventListener('mousemove',(e)=>{
@@ -495,26 +557,23 @@
           state.viewStart = panStartStart - shift;
           state.viewEnd   = panStartEnd   - shift;
           requestRender();
-        } else if(isDrawing){
-          updateToolDraw(e);
         }
       });
-      window.addEventListener('mouseup',()=>{ isPanning=false; endToolDraw(); });
+      window.addEventListener('mouseup',()=>{ isPanning=false; });
       window.addEventListener('contextmenu',(e)=>{ if(e.target===canvas){ e.preventDefault(); } });
       window.addEventListener('keydown',(e)=>{ if(e.key==='Backspace'){ e.preventDefault(); levelUp(); } });
-      canvas.addEventListener('click',(e)=>{ if(tools.active==='cursor') drillIntoAt(e.offsetX, canvas); });
+      canvas.addEventListener('click',(e)=>{ drillIntoAt(e.offsetX, canvas); });
     }
+    attachInteractions(chartCanvas);
 
     function currentTF(){ return TF_CHAIN[state.levelIndex].key; }
     function levelUp(){
       if(state.levelIndex>0){
         state.levelIndex--;
         showToast('Cofnięto do: '+TF_CHAIN[state.levelIndex].label);
-        // Auto fit X on level up
         const tf = currentTF();
-        const d = state.data[tf]||[];
+        const d = dataStore[tf];
         if(d.length){ state.viewStart=d[0].t; state.viewEnd=d[d.length-1].t + tfMs(tf); }
-        // reset Y lock to fit
         state.yLock=false; state.yMin=null; state.yMax=null;
         requestRender();
       }
@@ -524,29 +583,25 @@
       const mx = x*ratio;
       const t = state.viewStart + (state.viewEnd - state.viewStart)*(mx/canvas.width);
       const tf = currentTF();
-      const data = state.data[tf]||[];
-      if(!data.length) return;
       const ms = tfMs(tf);
       const bucket = Math.floor(t/ms)*ms;
-      const child = childTF(tf);
-      if(!child){ showToast('To jest najniższy interwał.'); return; }
+      const idx = TF_CHAIN.findIndex(i=>i.key===tf);
+      if(idx>=TF_CHAIN.length-1){ showToast('To najniższy interwał.'); return; }
       state.levelIndex++;
-      state.viewStart = bucket - tfMs(child)*100;
-      state.viewEnd   = bucket + tfMs(child)*200;
-      await ensureData(child);
-      // Reset Y to auto on drill
+      const child = currentTF();
+      state.viewStart = bucket - tfMs(child)*200;
+      state.viewEnd   = bucket + tfMs(child)*400;
       state.yLock=false; state.yMin=null; state.yMax=null;
-      showToast('Wejście w: '+TF_CHAIN[state.levelIndex].label);
+      showToast('Interwał: '+TF_CHAIN[state.levelIndex].label);
       requestRender();
     }
 
-    // Y handle scaling (manual Y zoom/shift)
     let yDrag=false, yDragStart=0, yRef={min:0,max:1};
     yHandle.addEventListener('mousedown',(e)=>{
       e.preventDefault(); yDrag=true; yDragStart=e.clientY;
-      const bounds = computeAutoYBounds();
-      yRef.min = state.yLock? state.yMin:bounds.min;
-      yRef.max = state.yLock? state.yMax:bounds.max;
+      const {min,max} = computeAutoYBounds();
+      yRef.min = state.yLock? state.yMin:min;
+      yRef.max = state.yLock? state.yMax:max;
     });
     window.addEventListener('mousemove',(e)=>{
       if(!yDrag) return;
@@ -561,7 +616,6 @@
     });
     window.addEventListener('mouseup',()=>{ yDrag=false; });
 
-    // X handle scaling (center zoom)
     let xDrag=false, xDragStart=0, xRefSpan=0;
     xHandle.addEventListener('mousedown',(e)=>{
       e.preventDefault(); xDrag=true; xDragStart=e.clientX; xRefSpan=state.viewEnd-state.viewStart;
@@ -577,258 +631,324 @@
     });
     window.addEventListener('mouseup',()=>{ xDrag=false; });
 
-    // Tools drawing
-    let isDrawing=false, draft=null;
-    function pxToTime(px){ return state.viewStart + (state.viewEnd-state.viewStart)*(px/chartCanvas.width); }
-    function pyToPrice(py, yMap){ // inverse of yMap using state y bounds
-      const h = chartCanvas.height; const pad=10;
-      const min=activeYMin(), max=activeYMax();
-      const usable = h-2*pad; const v = max - ((py-pad)/usable)*(max-min);
-      return v;
+    function drawCandles(ctx, data, tf, yMap, t0, t1, colorUp, colorDn, alphaMul=1){
+      if(!data || !data.length) return;
+      const alpha = (TF_ALPHA[tf] ?? 0.5) * alphaMul;
+      for(const d of data){
+        const t = d.t, t2 = t + tfMs(tf);
+        if(t2<t0 || t>t1) continue;
+        const nx = (t - t0) / (t1 - t0);
+        const nx2 = (Math.min(t2,t1) - t0) / (t1 - t0);
+        const cx = nx*ctx.canvas.width, cx2 = nx2*ctx.canvas.width;
+        const cw = Math.max(1, (cx2-cx)*0.7);
+        const yO = yMap(d.o), yH = yMap(d.h), yL = yMap(d.l), yC = yMap(d.c);
+        const up = d.c>=d.o;
+        const wick = 'rgba(42,54,75,'+Math.min(1,alpha+0.2)+')';
+        ctx.strokeStyle = wick; ctx.lineWidth = Math.max(1, Math.floor(cw*0.2));
+        ctx.beginPath(); ctx.moveTo(cx, yH); ctx.lineTo(cx, yL); ctx.stroke();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = up ? `rgba(91,212,156,${alpha})` : `rgba(239,107,115,${alpha})`;
+        ctx.fillStyle   = up ? `rgba(91,212,156,${Math.min(1,alpha*0.9)})` : `rgba(239,107,115,${Math.min(1,alpha*0.9)})`;
+        const top = Math.min(yO,yC), bottom=Math.max(yO,yC), bh=Math.max(1, bottom-top);
+        ctx.beginPath(); ctx.rect(cx - cw/2, top, cw, bh); ctx.fill(); ctx.stroke();
+      }
     }
-    function beginToolDraw(e){
-      isDrawing=true;
+
+    function computeAutoYBounds(){
+      const t0 = state.viewStart, t1=state.viewEnd;
+      const tf = currentTF();
+      const arrMain = dataStore[tf].filter(d=>d.t>=t0 && d.t<=t1);
+      let min=Infinity, max=-Infinity;
+      const update = d=>{ if(d.l<min)min=d.l; if(d.h>max)max=d.h; };
+      (arrMain.length?arrMain:dataStore[tf]).forEach(update);
+      for(const hi of higherTFs(tf)){
+        const arr = dataStore[hi];
+        (arr||[]).forEach(d=>{ if(d.t+tfMs(hi)<t0 || d.t>t1) return; update(d); });
+      }
+      if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
+      return {min,max};
+    }
+    const activeYMin = ()=> state.yLock && state.yMin!=null ? state.yMin : computeAutoYBounds().min;
+    const activeYMax = ()=> state.yLock && state.yMax!=null ? state.yMax : computeAutoYBounds().max;
+
+    function drawLine(ctx, xs, ys, color, width=1.5){
+      if(!xs.length) return;
+      ctx.strokeStyle=color; ctx.lineWidth=width; ctx.beginPath();
+      for(let i=0;i<xs.length;i++){ const x=xs[i], y=ys[i]; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+      ctx.stroke();
+    }
+
+    function drawRSI(ctx, data, t0, t1){
+      const closes = data.map(d=>d.c);
+      const r = RSIarr(closes, state.rsiPeriod);
+      const w = ctx.canvas.width, h = ctx.canvas.height;
+      drawBackdrop(ctx,w,h); drawGrid(ctx,w,h);
+      const xs=[], ys=[];
+      const min=0, max=100; const map = v => h - ((v-min)/(max-min))*(h-20)-10;
+      const start = data.findIndex(d=>d.t>=t0); const end = data.findIndex(d=>d.t>t1);
+      const s = start>=0? start:0, e = end>=0? end:data.length;
+      for(let i=s;i<e;i++){
+        const nx = (data[i].t - t0) / (t1 - t0); xs.push(nx*w); ys.push(map(r[i]));
+      }
+      ctx.strokeStyle='rgba(195,232,141,0.95)'; ctx.lineWidth=1.4; ctx.beginPath();
+      ys.forEach((y,i)=>{ const x=xs[i]; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke();
+      ctx.strokeStyle='rgba(200,200,200,.25)'; ctx.setLineDash([4,4]); ctx.beginPath();
+      const y30=map(30), y70=map(70); ctx.moveTo(0,y30); ctx.lineTo(w,y30); ctx.moveTo(0,y70); ctx.lineTo(w,y70); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    function drawStoch(ctx, data, t0, t1){
+      const highs=data.map(d=>d.h), lows=data.map(d=>d.l), closes=data.map(d=>d.c);
+      const st = Stoch(highs,lows,closes, state.stochCfg.k, state.stochCfg.ks, state.stochCfg.d);
+      const w = ctx.canvas.width, h = ctx.canvas.height;
+      drawBackdrop(ctx,w,h); drawGrid(ctx,w,h);
+      const xsK=[], ysK=[], xsD=[], ysD=[];
+      const min=0, max=100; const map = v => h - ((v-min)/(max-min))*(h-20)-10;
+      const start = data.findIndex(d=>d.t>=t0); const end = data.findIndex(d=>d.t>t1);
+      const s = start>=0? start:0, e = end>=0? end:data.length;
+      for(let i=s;i<e;i++){
+        const nx = (data[i].t - t0) / (t1 - t0); const x=nx*w;
+        xsK.push(x); ysK.push(map(st.k[i]));
+        xsD.push(x); ysD.push(map(st.d[i]));
+      }
+      drawLine(ctx,xsK,ysK,'#9fe2ff',1.5);
+      drawLine(ctx,xsD,ysD,'#7aa2f7',1.2);
+      ctx.strokeStyle='rgba(200,200,200,.25)'; ctx.setLineDash([4,4]); ctx.beginPath();
+      const y20=map(20), y80=map(80); ctx.moveTo(0,y20); ctx.lineTo(w,y20); ctx.moveTo(0,y80); ctx.lineTo(w,y80); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function movingAverage(arr, period){ const out=[]; let sum=0; for(let i=0;i<arr.length;i++){ sum+=arr[i]; if(i>=period) sum-=arr[i-period]; out.push(i>=period-1?sum/period:NaN);} return out; }
+    function detectSignals(t0,t1){
+      const total3 = state.overlays.total3;
+      const btcd = state.overlays.btcd;
+      const ethbtc = state.overlays.ethbtc;
+      if(!(total3.length && btcd.length && ethbtc.length)) return {score:0, early:[], strong:[]};
+      const inRange = (arr)=> arr.filter(p=>p.t>=t0 && p.t<=t1);
+      const t3 = inRange(total3), bd = inRange(btcd), eb = inRange(ethbtc);
+      if(!(t3.length && bd.length && eb.length)) return {score:0, early:[], strong:[]};
+      const t3v=t3.map(p=>p.v), bdv=bd.map(p=>p.v), ebv=eb.map(p=>p.v);
+      const t3ma=movingAverage(t3v,20), bdma=movingAverage(bdv,20), ebma=movingAverage(ebv,20);
+      const ia=t3v.length-1, ib=bdv.length-1, ic=ebv.length-1;
+      const chA = ia>5 ? (t3v[ia]-t3v[ia-5])/t3v[ia-5] : 0;
+      const chBpct = ib>5 ? (bdv[ib]-bdv[ib-5])/bdv[ib-5]:0;
+      const chC = ic>5 ? (ebv[ic]-ebv[ic-5])/ebv[ic-5] : 0;
+      const condA = t3v[ia] > (t3ma[ia]||t3v[ia]) && chA > 0.03;
+      const condB = bdv[ib] < (bdma[ib]||bdv[ib]) && chBpct < -0.015;
+      const condC = ebv[ic] > (ebma[ic]||ebv[ic]) && chC > 0.01;
+      const score = [condA,condB,condC].filter(Boolean).length;
+      const early=[], strong=[];
+      if(t3v[ia] > (t3ma[ia]||t3v[ia])) early.push('TOTAL3 ponad MA');
+      if(bdv[ib] < (bdma[ib]||bdv[ib])) early.push('BTCD poniżej MA');
+      if(ebv[ic] > (ebma[ic]||ebv[ic])) early.push('ETH/BTC ponad MA');
+      if(condA) strong.push('TOTAL3 wybija (+)');
+      if(condB) strong.push('BTCD spada (risk-on)');
+      if(condC) strong.push('ETH/BTC rośnie');
+      return {score, early, strong};
+    }
+    function alertBars(t0,t1){
+      const res = detectSignals(t0,t1);
+      total3Alert.textContent = res.strong.includes('TOTAL3 wybija (+)') ? 'TOTAL3: mocny trend wzrostowy' : (res.early.includes('TOTAL3 ponad MA') ? 'TOTAL3: wczesny sygnał powyżej MA' : '');
+      total3Alert.className = 'alert-bar ' + (total3Alert.textContent.includes('mocny')?'alert-green':'');
+      btcdAlert.textContent = res.strong.includes('BTCD spada (risk-on)') ? 'BTCD: silny spadek dominacji' : (res.early.includes('BTCD poniżej MA') ? 'BTCD: wczesny sygnał poniżej MA' : '');
+      btcdAlert.className = 'alert-bar ' + (btcdAlert.textContent.includes('silny')?'alert-green':'');
+      ethbtcAlert.textContent = res.strong.includes('ETH/BTC rośnie') ? 'ETH/BTC: mocny przepływ do ETH/altów' : (res.early.includes('ETH/BTC ponad MA') ? 'ETH/BTC: wczesny sygnał powyżej MA' : '');
+      ethbtcAlert.className = 'alert-bar ' + (ethbtcAlert.textContent.includes('mocny')?'alert-green':'');
+      comboAlert.textContent = res.score>=2 ? `Sygnał łączony: ${res.score}/3 — możliwy alt sezon` : (res.score===1? 'Sygnał łączony: 1/3 — obserwuj' : 'Sygnał łączony: 0/3');
+      comboAlert.className = 'alert-bar ' + (res.score>=2 ? 'alert-green' : res.score===0 ? 'alert-red':'');
+    }
+
+    function drawOverlayPanel(canvas, series, color='#7aa2f7'){
+      const {w,h} = resizeCanvasToDisplaySize(canvas);
+      const ctx = canvas.getContext('2d');
+      drawBackdrop(ctx,w,h); drawGrid(ctx,w,h);
+      const t0 = state.viewStart, t1 = state.viewEnd;
+      const arr = series.filter(p=>p.t>=t0 && p.t<=t1);
+      const use = arr.length? arr : series.slice(-Math.floor(series.length*0.6));
+      if(!use.length) return;
+      let min=Infinity, max=-Infinity; for(const p of use){ if(p.v<min)min=p.v; if(p.v>max)max=p.v; }
+      if(max===min){ max=min+1; }
+      const xs=[], ys=[];
+      for(const p of use){
+        const nx = (p.t - (arr.length?t0:use[0].t)) / ((arr.length?t1:use[use.length-1].t) - (arr.length?t0:use[0].t) || 1);
+        xs.push(nx*w);
+        ys.push(h - ((p.v-min)/(max-min))*(h-20)-10);
+      }
+      drawLine(ctx, xs, ys, color, 1.6);
+      const vals = use.map(p=>p.v); const ma = SMA(vals, 20);
+      const xs2=[], ys2=[];
+      for(let i=0;i<use.length;i++){
+        const nx = (use[i].t - (arr.length?t0:use[0].t)) / ((arr.length?t1:use[use.length-1].t) - (arr.length?t0:use[0].t) || 1);
+        xs2.push(nx*w); ys2.push(h - (((ma[i]||vals[i])-min)/(max-min))*(h-20)-10);
+      }
+      drawLine(ctx, xs2, ys2, '#ffcc66', 1.2);
+      canvas.style.opacity = '1';
+      canvas.parentElement.style.display = 'block';
+    }
+
+    function render(){
+      const {w:W,h:H} = resizeCanvasToDisplaySize(chartCanvas);
+      const cctx = chartCanvas.getContext('2d');
+      drawBackdrop(cctx,W,H); drawGrid(cctx,W,H);
+      const tf = currentTF();
+      const t0 = state.viewStart, t1=state.viewEnd;
+      const mainData = dataStore[tf];
+      const yMin = activeYMin(), yMax = activeYMax();
+      const yMap = v => H - ((v-yMin)/(yMax-yMin))*(H-20) - 10;
+
+      const highs = higherTFs(tf);
+      highs.forEach((hi, i)=>{
+        const arr = dataStore[hi];
+        cctx.save();
+        cctx.globalAlpha = 0.25 - i*0.06;
+        drawCandles(cctx, arr, hi, yMap, t0, t1, '#5bd49c', '#ef6b73', 0.7);
+        cctx.restore();
+      });
+
+      drawCandles(cctx, mainData, tf, yMap, t0, t1, '#5bd49c', '#ef6b73', 1);
+
+      cctx.save();
+      cctx.strokeStyle='rgba(255,204,102,.95)';
+      cctx.fillStyle='rgba(255,204,102,.1)';
+      cctx.lineWidth=1.4;
+      for(const s of tools.shapes){
+        if(s.type==='trend'){
+          cctx.beginPath(); cctx.moveTo(s.points[0].x, s.points[0].y); cctx.lineTo(s.points[1].x, s.points[1].y); cctx.stroke();
+        } else if(s.type==='hline'){
+          cctx.beginPath(); cctx.moveTo(0,s.y); cctx.lineTo(W,s.y); cctx.stroke();
+        } else if(s.type==='rect'){
+          const {x1,y1,x2,y2}=s.rect; const x=Math.min(x1,x2), y=Math.min(y1,y2), w=Math.abs(x2-x1), h=Math.abs(y2-y1);
+          cctx.beginPath(); cctx.rect(x,y,w,h); cctx.fill(); cctx.stroke();
+        }
+      }
+      cctx.restore();
+
+      const rsiCtx = rsiCanvas.getContext('2d');
+      resizeCanvasToDisplaySize(rsiCanvas);
+      drawRSI(rsiCtx, mainData, t0, t1);
+
+      const stCtx = stochCanvas.getContext('2d');
+      resizeCanvasToDisplaySize(stochCanvas);
+      drawStoch(stCtx, mainData, t0, t1);
+
+      drawOverlayPanel(total3Canvas, state.overlays.total3, '#7dcfff');
+      drawOverlayPanel(btcdCanvas, state.overlays.btcd, '#bb9af7');
+      drawOverlayPanel(ethbtcCanvas, state.overlays.ethbtc, '#5bd49c');
+
+      const {w:Ws,h:Hs} = resizeCanvasToDisplaySize(signalCanvas);
+      const sctx = signalCanvas.getContext('2d');
+      drawBackdrop(sctx,Ws,Hs); drawGrid(sctx,Ws,Hs);
+      alertBars(t0,t1);
+
+      const tfName = tf;
+      chartStatus.textContent = `${state.symbol} (${tfName}) MTFA`;
+
+      // Toggle overlay visibility according to switches
+      total3Canvas.parentElement.style.display = toggleTotal3.checked ? 'block' : 'none';
+      btcdCanvas.parentElement.style.display = toggleBtcd.checked ? 'block' : 'none';
+      ethbtcCanvas.parentElement.style.display = toggleEthBtc.checked ? 'block' : 'none';
+      comboAlert.parentElement.style.display = (toggleTotal3.checked || toggleBtcd.checked || toggleEthBtc.checked) ? 'block' : 'block';
+    }
+
+    let raf = null, pending=false;
+    function requestRender(){ if(pending) return; pending=true; raf=requestAnimationFrame(()=>{ pending=false; render(); }); }
+
+    requestRender();
+
+    loadBtn.addEventListener('click', ()=>{
+      state.symbol = symbolInput.value.trim().toUpperCase() || 'BTCUSDT';
+      showToast('Załadowano dane (syntetyczne) dla: '+state.symbol, 1500);
+      requestRender();
+    });
+    liveBtn.addEventListener('click', ()=>{
+      state.live = !state.live; liveBtn.textContent = state.live? 'Live ON':'Live OFF';
+      showToast('Tryb live (symulacja): '+(state.live?'ON':'OFF'));
+    });
+    mobileBtn.addEventListener('click', ()=>{
+      root.classList.toggle('mobile'); requestRender();
+    });
+
+    let drawing=false, draft=null;
+    chartCanvas.addEventListener('mousedown',(e)=>{
+      if(tools.active==='cursor') return;
+      drawing=true;
       const r = chartCanvas.getBoundingClientRect();
       const x = (e.clientX - r.left) * (chartCanvas.width / chartCanvas.clientWidth);
       const y = (e.clientY - r.top) * (chartCanvas.height / chartCanvas.clientHeight);
       if(tools.active==='trend'){ draft={type:'trend', points:[{x,y},{x,y}]}; }
       else if(tools.active==='hline'){ draft={type:'hline', y}; }
       else if(tools.active==='rect'){ draft={type:'rect', rect:{x1:x,y1:y,x2:x,y2:y}}; }
-    }
-    function updateToolDraw(e){
+      if(draft) tools.shapes.push(draft);
+      requestRender();
+    });
+    window.addEventListener('mousemove',(e)=>{
+      if(!drawing || !draft) return;
       const r = chartCanvas.getBoundingClientRect();
       const x = (e.clientX - r.left) * (chartCanvas.width / chartCanvas.clientWidth);
       const y = (e.clientY - r.top) * (chartCanvas.height / chartCanvas.clientHeight);
-      if(!draft) return;
       if(draft.type==='trend'){ draft.points[1]={x,y}; }
-      else if(draft.type==='hline'){ draft.y = y; }
+      else if(draft.type==='hline'){ draft.y=y; }
       else if(draft.type==='rect'){ draft.rect.x2=x; draft.rect.y2=y; }
       requestRender();
+    });
+    window.addEventListener('mouseup',()=>{
+      if(drawing){ drawing=false; draft=null; }
+    });
+
+    // Switches behaviors
+    function updateAlertsToggle(){
+      const barEls = [total3Alert, btcdAlert, ethbtcAlert, comboAlert];
+      barEls.forEach(el=>{
+        el.style.opacity = toggleAlerts.checked ? '1' : '0.15';
+      });
     }
-    function endToolDraw(){
-      if(draft){ tools.shapes.push(draft); draft=null; }
-      isDrawing=false;
-      requestRender();
-    }
+    toggleAlerts.addEventListener('change', ()=>{ updateAlertsToggle(); requestRender(); });
+    toggleEarly.addEventListener('change', ()=>{ showToast('Wczesne sygnały: ' + (toggleEarly.checked?'ON':'OFF')); requestRender(); });
+    toggleTotal3.addEventListener('change', ()=> requestRender());
+    toggleBtcd.addEventListener('change', ()=> requestRender());
+    toggleEthBtc.addEventListener('change', ()=> requestRender());
 
-    // Render candles
-    function drawCandles(ctx, data, tf, x0, x1, yMap, timeStart, timeEnd){
-      if(!data || !data.length) return;
-      const alpha = TF_ALPHA[tf] ?? 0.5;
-      for(const d of data){
-        const t = d.t;
-        const t2 = t + tfMs(tf);
-        if(t2<timeStart || t>timeEnd) continue;
-        const nx = (t - timeStart) / (timeEnd - timeStart);
-        const nx2 = (Math.min(t2,timeEnd) - timeStart) / (timeEnd - timeStart);
-        const cx = x0 + nx*(x1-x0), cx2 = x0 + nx2*(x1-x0);
-        const cw = Math.max(1, (cx2-cx)*0.7);
-        const yO = yMap.map(d.o), yH = yMap.map(d.h), yL = yMap.map(d.l), yC = yMap.map(d.c);
-        const up = d.c>=d.o;
-        const wick = '#2a364b';
-        // Wick
-        ctx.strokeStyle = wick; ctx.lineWidth = Math.max(1, Math.floor(cw*0.2));
-        ctx.beginPath(); ctx.moveTo(cx, yH); ctx.lineTo(cx, yL); ctx.stroke();
-        // Body
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = up ? `rgba(91,212,156,${alpha})` : `rgba(239,107,115,${alpha})`;
-        ctx.fillStyle   = up ? `rgba(91,212,156,${Math.min(1,alpha*0.9)})` : `rgba(239,107,115,${Math.min(1,alpha*0.9)})`;
-        const top = Math.min(yO,yC), bottom=Math.max(yO,yC), bh=Math.max(1, bottom-top);
-        // border radius illusion
-        ctx.beginPath(); ctx.rect(cx - cw/2, top, cw, bh); ctx.fill(); ctx.stroke();
-      }
-    }
+    // Handle resize
+    window.addEventListener('resize', ()=> requestRender());
 
-    // Draw tools
-    function drawTools(ctx){
-      ctx.save();
-      ctx.strokeStyle='rgba(255,204,102,.95)';
-      ctx.fillStyle='rgba(255,204,102,.1)';
-      ctx.lineWidth=1.4;
-      const all = [...tools.shapes, ...(draft?[draft]:[])];
-      for(const s of all){
-        if(s.type==='trend'){
-          ctx.beginPath();
-          ctx.moveTo(s.points[0].x, s.points[0].y);
-          ctx.lineTo(s.points[1].x, s.points[1].y);
-          ctx.stroke();
-          // handles
-          for(const p of s.points){
-            ctx.beginPath(); ctx.fillStyle='rgba(255,204,102,.9)';
-            ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill();
-            ctx.fillStyle='rgba(255,204,102,.1)';
-          }
-        } else if(s.type==='hline'){
-          ctx.beginPath(); ctx.moveTo(0,s.y); ctx.lineTo(chartCanvas.width,s.y); ctx.stroke();
-        } else if(s.type==='rect'){
-          const {x1,y1,x2,y2}=s.rect;
-          const x=Math.min(x1,x2), y=Math.min(y1,y2), w=Math.abs(x2-x1), h=Math.abs(y2-y1);
-          ctx.beginPath(); ctx.rect(x,y,w,h); ctx.fill(); ctx.stroke();
-        }
-      }
-      ctx.restore();
-    }
-
-    // Active Y bounds
-    function computeAutoYBounds(){
-      const tf = currentTF();
-      const t0 = state.viewStart, t1=state.viewEnd;
-      const datasets = TF_CHAIN.map(t=> sliceByTime(state.data[t.key], t0, t1));
-      return priceBoundsFromChain(datasets);
-    }
-    const activeYMin = ()=> state.yLock && state.yMin!=null ? state.yMin : computeAutoYBounds().min;
-    const activeYMax = ()=> state.yLock && state.yMax!=null ? state.yMax : computeAutoYBounds().max;
-
-    // Main render
-    async function render(){
-      const {w:W,h:H} = resizeCanvasToDisplaySize(chartCanvas);
-      const {w:Wrsi,h:Hrsi} = resizeCanvasToDisplaySize(rsiCanvas);
-      const {w:Wst,h:Hst} = resizeCanvasToDisplaySize(stochCanvas);
-      const ctx = chartCanvas.getContext('2d');
-      const rsiCtx = rsiCanvas.getContext('2d');
-      const stCtx = stochCanvas.getContext('2d');
-
-      drawBackdrop(ctx,W,H);
-      drawBackdrop(rsiCtx,Wrsi,Hrsi);
-      drawBackdrop(stCtx,Wst,Hst);
-
-      // Ensure data for all TFs we might display
-      for(const tf of TF_CHAIN.map(t=>t.key)){
-        try{ await ensureData(tf); } catch(err){ statusEl.textContent='Błąd pobierania: '+err.message; }
-      }
-
-      // Visible window
-      const t0 = state.viewStart, t1 = state.viewEnd;
-
-      // Y scale
-      const ymin = activeYMin(), ymax = activeYMax();
-      const yMap = yScale([ymin,ymax], H, 12);
-
-      // Grid + price labels
-      const yLabels=[];
-      for(let i=0;i<5;i++){ const v = lerp(ymin,ymax, i/4); const y=yMap.map(v); yLabels.push({y, text:v.toFixed(2)}); }
-      drawGrid(ctx, W, H, yLabels);
-
-      // Draw candles for 3 depth levels around current: parent/current/child to achieve "do trzech poziomów"
-      const idx = state.levelIndex;
-      const tfKeys = TF_CHAIN.map(t=>t.key);
-      const tiers = [tfKeys[idx-1], tfKeys[idx], tfKeys[idx+1]].filter(Boolean);
-      // back layers (parent) with lower alpha
-      for(const tf of TF_CHAIN.map(t=>t.key)){
-        const isTier = tiers.includes(tf);
-        if(!isTier) continue;
-        const data = sliceByTime(state.data[tf], t0, t1);
-        drawCandles(ctx, data, tf, 0, W, yMap, t0, t1);
-      }
-
-      // Indicators on current level
-      const tf = tfKeys[idx];
-      const curData = sliceByTime(state.data[tf], t0, t1);
-      const closes = extractCloses(curData), highs = extractHighs(curData), lows = extractLows(curData);
-
-      // RSI
-      const rsi = RSI(closes,14);
-      rsiCtx.strokeStyle='#1e2633'; rsiCtx.lineWidth=1; rsiCtx.beginPath();
-      for(const y of [30,50,70]){ const yy = Hrsi - (y/100)*(Hrsi-14) - 7; rsiCtx.moveTo(0,yy); rsiCtx.lineTo(Wrsi,yy); }
-      rsiCtx.stroke();
-      rsiCtx.strokeStyle='#c3e88d'; rsiCtx.lineWidth=1.8; rsiCtx.beginPath();
-      for(let i=0;i<rsi.length;i++){
-        const x = i/(Math.max(1,rsi.length-1))*Wrsi;
-        const yVal = clamp(rsi[i]||0,0,100); const y = Hrsi - (yVal/100)*(Hrsi-14) - 7;
-        if(i===0) rsiCtx.moveTo(x,y); else rsiCtx.lineTo(x,y);
-      } rsiCtx.stroke();
-
-      // Stochastic
-      const {k,d} = Stochastic(highs,lows,closes,14,3,3);
-      stCtx.strokeStyle='#1e2633'; stCtx.lineWidth=1; stCtx.beginPath();
-      for(const y of [20,50,80]){ const yy = Hst - (y/100)*(Hst-14) - 7; stCtx.moveTo(0,yy); stCtx.lineTo(Wst,yy); } stCtx.stroke();
-      stCtx.lineWidth=1.8;
-      stCtx.strokeStyle='rgba(159,226,255,1)'; stCtx.beginPath();
-      for(let i=0;i<k.length;i++){ const x=i/Math.max(1,k.length-1)*Wst; const y=Hst-(clamp(k[i]||0,0,100)/100)*(Hst-14)-7; if(i===0) stCtx.moveTo(x,y); else stCtx.lineTo(x,y);} stCtx.stroke();
-      stCtx.strokeStyle='rgba(187,154,247,1)'; stCtx.beginPath();
-      for(let i=0;i<d.length;i++){ const x=i/Math.max(1,d.length-1)*Wst; const y=Hst-(clamp(d[i]||0,0,100)/100)*(Hst-14)-7; if(i===0) stCtx.moveTo(x,y); else stCtx.lineTo(x,y);} stCtx.stroke();
-
-      // Tools overlay
-      drawTools(ctx);
-
-      // Status
-      document.getElementById('rsiStatus').textContent = `RSI(14) — ${tf}`;
-      document.getElementById('stochStatus').textContent = `Stochastic (14,3,3) — ${tf}`;
-      chartStatus.textContent = `${state.symbol} (${tf}) ${state.live?'Live':'Paused'} ${state.yLock?'[Y-lock]':''}`;
-      statusEl.textContent = `Świece: ${curData.length}. Zakres: ${new Date(t0).toLocaleString()} — ${new Date(t1).toLocaleString()}`;
-      state.lastRedraw = performance.now();
-    }
-
-    let pending=false;
-    function requestRender(){ if(pending) return; pending=true; requestAnimationFrame(async()=>{ pending=false; await render(); }); }
-
-    // Live updates
-    async function liveTick(){
+    // Simulated live mode: append new candle every few seconds on active TF and rebuild overlays occasionally
+    setInterval(()=>{
       if(!state.live) return;
-      try{
-        const ex = state.exch;
-        let sym = state.symbol.trim();
-        if(ex==='binance') sym = sym.replace(/[-/]/g,'').toUpperCase();
-        else { if(!sym.includes('-')) sym = (sym.toUpperCase().endsWith('USDT')? sym.slice(0,-4)+'-USD' : sym.toUpperCase()+'-USD'); }
-        const baseInterval = TF_CHAIN[TF_CHAIN.length-1][ex]; // 1m
-        const latest = await fetchKlines(ex, sym, baseInterval, 600, Date.now());
-        state.data['1m'] = latest;
-        for(const tf of ['5m','15m','30m','1h','4h','1d','1w','1M']){
-          try{
-            const item = TF_CHAIN.find(t=>t.key===tf);
-            const inter = item[ex];
-            const arr = await fetchKlines(ex, sym, inter, 800, Date.now());
-            const targetMs = tfMs(tf), interMs = tfMs(inter);
-            state.data[tf] = (interMs===targetMs) ? arr : rollup(arr, targetMs);
-          }catch(_){/*ignore*/}
+      const tf = currentTF();
+      const ms = tfMs(tf);
+      const arr = dataStore['1m']; // drive base from 1m
+      const last = arr[arr.length-1];
+      const t = last.t + tfMs('1m');
+      // generate one more 1m step based on last close
+      const price = last.c;
+      const rnd = (Math.random()-0.5)*0.004;
+      const o = price;
+      const c = Math.max(500, price*(1+rnd));
+      const h = Math.max(o,c)*(1+Math.random()*0.002);
+      const l = Math.min(o,c)*(1-Math.random()*0.002);
+      arr.push({t,o,h,l,c,v:90+Math.random()*40});
+
+      // rollup affected frames cheaply (recompute end segments)
+      for(const tfi of TF_CHAIN){
+        const key=tfi.key;
+        if(key==='1m') continue;
+        const frame=tfMs(key);
+        const rolled = rollup(arr.slice(-Math.min(arr.length, Math.ceil((frame*100)/tfMs('1m')))), frame); // last window
+        const dst = dataStore[key];
+        // Merge last bucket
+        const lastBucket = rolled[rolled.length-1];
+        if(!dst.length || lastBucket.t > dst[dst.length-1].t){
+          dst.push(lastBucket);
+        } else {
+          dst[dst.length-1] = lastBucket;
         }
-        if(state.data['1M'] && state.data['1M'].length){ state.data['1y'] = rollup(state.data['1M'], tfMs('1y')); }
-        requestRender();
-      }catch(err){ statusEl.textContent = 'Live błąd: '+err.message; }
-    }
-
-    // Controls
-    loadBtn.addEventListener('click', async ()=>{
-      state.exch = exchangeSel.value;
-      state.symbol = symbolInput.value.trim() || (state.exch==='binance'?'BTCUSDT':'BTC-USD');
-      state.tz = timezoneSel.value==='local'?'local':'exchange';
-      state.data = {};
-      state.levelIndex = 0;
-      state.viewStart = Date.now() - 365*24*60*60*1000*8;
-      state.viewEnd = Date.now() + 24*60*60*1000;
-      state.yLock=false; state.yMin=null; state.yMax=null;
-      showToast('Ładowanie…');
-      await ensureData('1M').catch(()=>{});
-      state.data['1y'] = rollup(state.data['1M']||[], tfMs('1y'));
-      for(const tf of ['1w','1d','4h','1h','30m','15m','5m','1m']){ await ensureData(tf).catch(()=>{}); }
+      }
+      // Rebuild overlays from daily occasionally
+      if(Math.random()<0.2) buildOverlays();
       requestRender();
-      showToast('Załadowano: '+state.symbol);
-    });
-    liveBtn.addEventListener('click', ()=>{
-      state.live=!state.live;
-      liveBtn.textContent = state.live?'Live ON':'Live OFF';
-      chartStatus.textContent = `${state.symbol} (${currentTF()}) ${state.live?'Live':'Paused'}`;
-      if(state.live) liveTick();
-    });
+    }, 1200);
 
-    // Mobile toggle
-    let mobile=false;
-    mobileBtn.addEventListener('click',()=>{
-      mobile=!mobile;
-      root.classList.toggle('mobile', mobile);
-      mobileBtn.textContent = mobile?'Tryb desktop':'Tryb mobilny';
-      requestRender();
-    });
-
-    attachInteractions(chartCanvas);
-    window.addEventListener('resize', requestRender);
-
-    // Boot
-    (async function boot(){
-      await loadBtn.click();
-      requestRender();
-      setInterval(liveTick, 5000);
-    })();
+    updateAlertsToggle();
+    statusEl.textContent = 'Dane gotowe (syntetyczne). Kliknij wykres aby zejść w TF, Backspace / PPM aby wrócić.';
   </script>
 </body>
 </html>
