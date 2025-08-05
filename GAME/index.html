@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Buka Kiler – Labirynt Porośli</title>
+<style>
+  :root {
+    --cell: 32px;
+    --cols: 25;
+    --rows: 18;
+    --bg: #0b1c10;
+    --wall: #23402a;
+    --path: #0f2a18;
+    --buka: #6ec2ff;
+    --mumin: #ffd166;
+    --text: #e6ffe6;
+    --danger: #ff6b6b;
+  }
+  html, body {
+    margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, sans-serif;
+  }
+  .wrap {
+    display: grid; place-items: center; min-height: 100%;
+    gap: 12px; padding: 12px;
+  }
+  h1 { margin: 8px 0; font-size: 20px; letter-spacing: .5px; }
+  .hud {
+    display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  }
+  .badge { background: #173a24; padding: 6px 10px; border-radius: 8px; }
+  .grid {
+    position: relative;
+    width: calc(var(--cell) * var(--cols));
+    height: calc(var(--cell) * var(--rows));
+    background: var(--path);
+    box-shadow: 0 0 0 3px #163c25 inset, 0 10px 30px rgba(0,0,0,.35);
+    border-radius: 10px; overflow: hidden;
+  }
+  canvas {
+    width: 100%; height: 100%; image-rendering: pixelated;
+  }
+  .controls { opacity: .8; font-size: 14px }
+  .controls kbd {
+    background: #113621; border: 1px solid #215035; border-bottom-width: 3px;
+    padding: 2px 6px; border-radius: 5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .overlay {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background: rgba(0,0,0,.55); color: white; font-weight: 600;
+    text-align: center; padding: 24px; backdrop-filter: blur(2px);
+  }
+  .overlay .card {
+    background: rgba(16,40,28,.9); border: 1px solid #2a5b3c; border-radius: 12px;
+    padding: 18px 20px; max-width: 520px;
+  }
+  button {
+    background: #2a5b3c; color: white; border: 0; padding: 10px 14px; border-radius: 8px;
+    font-weight: 700; cursor: pointer; margin-top: 10px;
+  }
+  button:hover { filter: brightness(1.1); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Buka Kiler – Labirynt Porośli</h1>
+  <div class="hud">
+    <div class="badge">Muminki: <span id="left">0</span></div>
+    <div class="badge">Poziom: <span id="level">1</span></div>
+    <div class="badge">Czas: <span id="time">0.0</span>s</div>
+    <div class="controls">
+      Sterowanie: <kbd>WASD</kbd> lub <kbd>Strzałki</kbd>, reset: <kbd>R</kbd>, pauza: <kbd>P</kbd>
+    </div>
+  </div>
+  <div class="grid">
+    <canvas id="game" width="800" height="576" aria-label="Plansza gry"></canvas>
+    <div id="overlay" class="overlay" hidden>
+      <div class="card">
+        <div id="title" style="font-size:22px;margin-bottom:6px;">Buka poluje…</div>
+        <div id="desc" style="opacity:.9;margin-bottom:10px;">
+          Zjedz wszystkie Muminki w labiryncie porośli. Uważaj na żywopłoty!
+        </div>
+        <button id="startBtn">Start</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // Konfiguracja
+  const CELL = 32;
+  const COLS = 25;
+  const ROWS = 18;
+  const SPEED_BASE = 3.1;     // prędkość Buki (px/tick)
+  const SPEED_SCALE = 0.08;   // przyrost z poziomem
+  const ENEMY_SPEED = 2.4;    // prędkość Muminka-widma
+  const MUMIN_COUNT_BASE = 6; // ile Muminków na start
+  const MUMIN_PER_LEVEL = 2;  // ile więcej na poziom
+  const WALL_DENSITY = 0.28;  // gęstość żywopłotów
+  const RNG_SEED = 1337;
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  const overlay = document.getElementById('overlay');
+  const titleEl = document.getElementById('title');
+  const descEl = document.getElementById('desc');
+  const startBtn = document.getElementById('startBtn');
+
+  const leftEl = document.getElementById('left');
+  const lvlEl = document.getElementById('level');
+  const timeEl = document.getElementById('time');
+
+  // Prosty PRNG dla powtarzalnych poziomów
+  function mulberry32(a) {
+    return function() {
+      let t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+  }
+  let rng = mulberry32(RNG_SEED);
+
+  // Mapa: 0 – ścieżka, 1 – żywopłot
+  let grid = [];
+  function genMap(level) {
+    rng = mulberry32(RNG_SEED + level * 97);
+    grid = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+    // otoczka ścian
+    for (let r=0;r<ROWS;r++){
+      for (let c=0;c<COLS;c++){
+        if (r===0||c===0||r===ROWS-1||c===COLS-1) grid[r][c]=1;
+      }
+    }
+    // losowe ściany
+    for (let r=1;r<ROWS-1;r++){
+      for (let c=1;c<COLS-1;c++){
+        if (rng() < WALL_DENSITY) grid[r][c]=1;
+      }
+    }
+    // wyciosaj ścieżki metodą „wijącego się węża”
+    let snakes = 8;
+    while (snakes--){
+      let r = (ROWS>>1) + Math.floor((rng()-0.5)*6);
+      let c = (COLS>>1) + Math.floor((rng()-0.5)*6);
+      for (let i=0;i<180;i++){
+        grid[r][c]=0;
+        let dir = Math.floor(rng()*4);
+        if (dir===0 && r>1) r--;
+        if (dir===1 && r<ROWS-2) r++;
+        if (dir===2 && c>1) c--;
+        if (dir===3 && c<COLS-2) c++;
+      }
+    }
+    // upewnij się, że start jest wolny
+    grid[1][1]=0;
+  }
+
+  // Pomocnicze
+  function cellRect(c, r) { return [c*CELL, r*CELL, CELL, CELL]; }
+  function isWall(c, r) {
+    if (r<0||c<0||r>=ROWS||c>=COLS) return true;
+    return grid[r][c]===1;
+  }
+
+  // Postacie
+  const buka = { x: CELL*1.5, y: CELL*1.5, vx:0, vy:0, r: 12 };
+  const ghosts = []; // „Muminki” poruszające się losowo
+  let pellets = [];  // „Muminki” do zjedzenia (stojące)
+  let level = 1;
+  let playing = false;
+  let paused = false;
+  let timeStart = 0;
+  let lastTick = 0;
+
+  function resetLevel() {
+    genMap(level);
+    buka.x = CELL*1.5; buka.y = CELL*1.5; buka.vx = buka.vy = 0;
+    ghosts.length = 0;
+    pellets.length = 0;
+
+    // Rozmieszczenie „muminków” (żółte kulki) – jedzeni
+    const toPlace = MUMIN_COUNT_BASE + (level-1)*MUMIN_PER_LEVEL;
+    let placed = 0;
+    for (let r=1;r<ROWS-1;r++){
+      for (let c=1;c<COLS-1;c++){
+        if (placed>=toPlace) break;
+        if (!isWall(c,r) && (c+r)%3===0 && (rng()>0.4)) {
+          pellets.push({c, r, eaten:false});
+          placed++;
+        }
+      }
+    }
+    // Jeśli mało – dopełnij losowo
+    while (pellets.length < toPlace) {
+      const c = 1 + Math.floor(rng()*(COLS-2));
+      const r = 1 + Math.floor(rng()*(ROWS-2));
+      if (!isWall(c,r) && !pellets.some(p=>p.c===c&&p.r===r)) {
+        pellets.push({c,r,eaten:false});
+      }
+    }
+
+    // „Duchy” (ruchome Muminki – uciekają/kręcą się)
+    const gCount = Math.min(4 + Math.floor(level/2), 10);
+    for (let i=0;i<gCount;i++){
+      let c, r;
+      do {
+        c = 1 + Math.floor(rng()*(COLS-2));
+        r = 1 + Math.floor(rng()*(ROWS-2));
+      } while (isWall(c,r));
+      ghosts.push({
+        x: c*CELL + CELL/2,
+        y: r*CELL + CELL/2,
+        dir: Math.floor(rng()*4),
+        t: 0
+      });
+    }
+
+    leftEl.textContent = pellets.length;
+    lvlEl.textContent = level;
+    timeStart = performance.now();
+  }
+
+  // Kolizje kołowe ze ścianami (aproksymacja)
+  function moveCircle(obj, vx, vy, radius) {
+    // oś X
+    let nx = obj.x + vx;
+    let ny = obj.y + vy;
+    const minX = radius;
+    const minY = radius;
+    const maxX = COLS*CELL - radius;
+    const maxY = ROWS*CELL - radius;
+
+    // clamp
+    nx = Math.max(minX, Math.min(maxX, nx));
+    ny = Math.max(minY, Math.min(maxY, ny));
+
+    // sprawdź w czterech sąsiadach
+    function collide(ax, ay) {
+      const c = Math.floor(ax / CELL);
+      const r = Math.floor(ay / CELL);
+      for (let rr=r-1; rr<=r+1; rr++){
+        for (let cc=c-1; cc<=c+1; cc++){
+          if (!isWall(cc, rr)) continue;
+          const rx = cc*CELL, ry = rr*CELL;
+          // najbliższy punkt w prostokącie
+          const cx = Math.max(rx, Math.min(ax, rx+CELL));
+          const cy = Math.max(ry, Math.min(ay, ry+CELL));
+          const dx = ax - cx;
+          const dy = ay - cy;
+          const d2 = dx*dx + dy*dy;
+          if (d2 < radius*radius - 1) {
+            const d = Math.sqrt(Math.max(d2, 0.0001));
+            const nx = dx / d, ny = dy / d;
+            // odepchnij poza ścianę
+            ax = cx + nx * (radius + 0.5);
+            ay = cy + ny * (radius + 0.5);
+          }
+        }
+      }
+      return [ax, ay];
+    }
+    [nx, ny] = collide(nx, ny);
+    return {x:nx, y:ny};
+  }
+
+  // Wejście
+  const keys = new Set();
+  window.addEventListener('keydown', (e)=>{
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'].includes(e.code)) {
+      e.preventDefault();
+      keys.add(e.code);
+    }
+    if (e.code === 'KeyR') {
+      startGame(true);
+    }
+    if (e.code === 'KeyP') {
+      paused = !paused;
+    }
+    if (!playing && e.code==='Space') startGame();
+  });
+  window.addEventListener('keyup', (e)=>keys.delete(e.code));
+
+  function bukaSpeed() {
+    return SPEED_BASE + (level-1)*SPEED_SCALE*CELL;
+  }
+
+  function handleBuka(dt) {
+    let ax = 0, ay = 0;
+    if (keys.has('ArrowUp') || keys.has('KeyW')) ay -= 1;
+    if (keys.has('ArrowDown') || keys.has('KeyS')) ay += 1;
+    if (keys.has('ArrowLeft') || keys.has('KeyA')) ax -= 1;
+    if (keys.has('ArrowRight') || keys.has('KeyD')) ax += 1;
+
+    // normalizacja
+    if (ax||ay) {
+      const len = Math.hypot(ax, ay);
+      ax/=len; ay/=len;
+    }
+    const sp = bukaSpeed();
+    const nx = ax * sp * dt;
+    const ny = ay * sp * dt;
+
+    const moved = moveCircle(buka, nx, ny, buka.r);
+    buka.x = moved.x; buka.y = moved.y;
+
+    // Zjadanie „muminków” (pellets)
+    for (const p of pellets) {
+      if (p.eaten) continue;
+      const px = p.c * CELL + CELL/2;
+      const py = p.r * CELL + CELL/2;
+      if (Math.hypot(buka.x - px, buka.y - py) < buka.r + 8) {
+        p.eaten = true;
+      }
+    }
+  }
+
+  function handleGhosts(dt) {
+    for (const g of ghosts) {
+      g.t -= dt;
+      if (g.t <= 0) {
+        g.dir = Math.floor(rng()*4);
+        g.t = 0.5 + rng()*1.2;
+      }
+      let vx = 0, vy = 0;
+      if (g.dir===0) vy = -ENEMY_SPEED;
+      if (g.dir===1) vy =  ENEMY_SPEED;
+      if (g.dir===2) vx = -ENEMY_SPEED;
+      if (g.dir===3) vx =  ENEMY_SPEED;
+
+      const moved = moveCircle(g, vx, vy, 10);
+      g.x = moved.x; g.y = moved.y;
+
+      // kontakt z Buką = kara czasowa
+      if (Math.hypot(g.x - buka.x, g.y - buka.y) < 20) {
+        // cofnięcie Buki lekko i miganie
+        buka.x -= vx*2; buka.y -= vy*2;
+        hitFlash = 0.25;
+      }
+    }
+  }
+
+  // Render
+  function draw() {
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+    // tło kratki
+    for (let r=0;r<ROWS;r++){
+      for (let c=0;c<COLS;c++){
+        ctx.fillStyle = grid[r][c]===1 ? '#23402a' : '#0f2a18';
+        const [x,y,w,h] = cellRect(c,r);
+        ctx.fillRect(x,y,w,h);
+        if (grid[r][c]===1) {
+          // liściasta faktura
+          ctx.fillStyle = 'rgba(25,70,45,0.25)';
+          ctx.fillRect(x+2,y+2,w-4,h-4);
+        }
+      }
+    }
+    // Pellets (Muminki do zjedzenia)
+    for (const p of pellets) {
+      if (p.eaten) continue;
+      const x = p.c*CELL + CELL/2;
+      const y = p.r*CELL + CELL/2;
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#ffefb6';
+      ctx.beginPath(); ctx.arc(x-2, y-2, 2, 0, Math.PI*2); ctx.fill();
+    }
+
+    // Duchy (poruszające się Muminki – jako świetliki)
+    for (const g of ghosts) {
+      ctx.fillStyle = '#ffe08a';
+      ctx.beginPath(); ctx.arc(g.x, g.y, 8, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,230,160,0.6)';
+      ctx.beginPath(); ctx.arc(g.x, g.y, 12, 0, Math.PI*2); ctx.stroke();
+    }
+
+    // Buka
+    const glow = 10 + 6*Math.sin(performance.now()/180);
+    ctx.shadowColor = '#6ec2ff';
+    ctx.shadowBlur = glow;
+    ctx.fillStyle = hitFlash>0 ? '#ff6b6b' : '#6ec2ff';
+    ctx.beginPath(); ctx.arc(buka.x, buka.y, buka.r, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // oko
+    ctx.fillStyle = '#0b1c10'; ctx.beginPath(); ctx.arc(buka.x+3, buka.y-2, 3, 0, Math.PI*2); ctx.fill();
+
+    // UI: ramka
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.strokeRect(0.5,0.5, canvas.width-1, canvas.height-1);
+  }
+
+  // Logika zwycięstwa/przegranej
+  function remaining() { return pellets.filter(p=>!p.eaten).length; }
+
+  let hitFlash = 0;
+  function update(now) {
+    if (!playing) return;
+    const dt = Math.min(0.033, (now - lastTick)/16.666); // ~60fps scale
+    lastTick = now;
+    if (paused) { draw(); requestAnimationFrame(update); return; }
+
+    handleBuka(dt);
+    handleGhosts(dt);
+    if (hitFlash>0) hitFlash -= dt;
+
+    leftEl.textContent = remaining();
+    timeEl.textContent = ((now - timeStart)/1000).toFixed(1);
+
+    // koniec poziomu
+    if (remaining()===0) {
+      playing = false;
+      titleEl.textContent = 'Poziom ukończony!';
+      descEl.textContent = `Czas: ${((now - timeStart)/1000).toFixed(1)} s. Gotowy na kolejny poziom?`;
+      overlay.hidden = false;
+      startBtn.textContent = 'Dalej ▶';
+      level++;
+      return;
+    }
+
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function startGame(reset=false) {
+    if (reset) level = 1;
+    overlay.hidden = true;
+    if (!playing) {
+      resetLevel();
+      playing = true;
+      paused = false;
+      lastTick = performance.now();
+      requestAnimationFrame(update);
+    }
+  }
+
+  // Pokaz startowy
+  overlay.hidden = false;
+  titleEl.textContent = 'Buka poluje…';
+  descEl.textContent = 'Steruj Buką i zjedz wszystkie Muminki w labiryncie porośli. Uważaj na ruchome świetliki!';
+  startBtn.onclick = () => startGame();
+})();
+</script>
+</body>
+</html>
