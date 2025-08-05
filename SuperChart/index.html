@@ -2,9 +2,8 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <title>Multi-Interval TradingView Chart with Indicators</title>
+  <title>Generator promptu: Zaawansowany wykres multi-interwałowy</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <style>
     :root {
       --bg: #0e1116;
@@ -24,7 +23,6 @@
       --border: #e5e7eb;
       --shadow: rgba(0,0,0,0.08);
     }
-
     html, body {
       height: 100%;
       margin: 0;
@@ -32,30 +30,26 @@
       color: var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     }
-
     .app {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-rows: auto 1fr;
       height: 100%;
       width: 100%;
     }
-
     .toolbar {
       display: flex;
       gap: 12px;
       align-items: center;
-      padding: 10px 12px;
+      padding: 12px;
       background: var(--panel);
       border-bottom: 1px solid var(--border);
       box-shadow: 0 2px 8px var(--shadow);
       flex-wrap: wrap;
     }
-
-    .toolbar .title {
-      font-weight: 600;
+    .title {
+      font-weight: 700;
       margin-right: auto;
     }
-
     .btn {
       display: inline-flex;
       align-items: center;
@@ -66,49 +60,59 @@
       background: transparent;
       color: var(--text);
       cursor: pointer;
-      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
       user-select: none;
+      white-space: nowrap;
     }
-    .btn:hover {
-      background: rgba(59,130,246,0.08);
-      border-color: var(--accent);
-    }
-    .btn.active {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
-
-    .select {
+    .btn:hover { background: rgba(59,130,246,0.08); border-color: var(--accent); }
+    .btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .select, textarea {
       background: transparent;
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 8px 12px;
     }
-
+    .panel-inline {
+      display:flex; gap:8px; align-items:center; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
+    }
     .container {
       position: relative;
-      flex: 1;
-      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 12px;
+      padding: 12px;
       min-height: 0;
     }
-
-    #chart {
-      position: absolute;
-      inset: 0;
+    #preview {
+      position: relative;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(59,130,246,0.08), transparent);
+      overflow: auto;
     }
-
-    .overlay {
-      position: absolute;
-      right: 12px;
-      bottom: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 10;
+    .sidebar {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      min-height: 0;
     }
-
+    #prompt {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      line-height: 1.4;
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+    .intervals { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+    .intervals::-webkit-scrollbar { display:none; }
     .pill {
       background: var(--panel);
       color: var(--text);
@@ -116,596 +120,168 @@
       border-radius: 9999px;
       padding: 6px 10px;
       font-size: 12px;
-      opacity: 0.9;
+      opacity: 0.95;
     }
-
-    .legend {
-      position: absolute;
-      left: 12px;
-      bottom: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      z-index: 10;
-    }
-
-    .legend .row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 12px;
-    }
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 2px;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
-    }
-
-    /* Mobile first */
-    .toolbar {
-      gap: 8px;
-    }
-    .intervals {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: none;
-    }
-    .intervals::-webkit-scrollbar {
-      display: none;
-    }
-
-    /* Desktop overrides */
-    @media (min-width: 768px) {
-      .toolbar {
-        gap: 12px;
-      }
-      .intervals {
-        gap: 8px;
-      }
+    @media (max-width: 1000px) {
+      .container { grid-template-columns: 1fr; }
     }
   </style>
-
   <script type="importmap">
   {
-    "imports": {
-      "lightweight-charts": "https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.esm.production.js"
-    }
+    "imports": {}
   }
   </script>
 </head>
 <body>
   <div class="app light" id="appRoot">
     <div class="toolbar">
-      <div class="title">Multi-Interval Chart</div>
-
-      <div class="intervals" id="intervals">
-        <button class="btn" data-int="1">M1</button>
-        <button class="btn" data-int="5">M5</button>
-        <button class="btn" data-int="15">M15</button>
-        <button class="btn" data-int="60">H1</button>
-        <button class="btn" data-int="240">H4</button>
-        <button class="btn" data-int="D">D1</button>
-        <button class="btn" data-int="W">W1</button>
-        <button class="btn" data-int="M">MN</button>
-        <button class="btn" data-int="Y">Y1</button>
-      </div>
-
-      <button class="btn" id="themeToggle" title="Toggle Theme">
-        Toggle Theme
-      </button>
-
-      <div class="panel" style="display:flex; gap:8px; align-items:center;">
-        <label for="rsiPeriod">RSI</label>
-        <input id="rsiPeriod" class="select" type="number" min="2" max="100" value="14" style="width:70px;">
-        <label for="stochK">Stoch K</label>
-        <input id="stochK" class="select" type="number" min="2" max="100" value="14" style="width:70px;">
-        <label for="stochD">D</label>
-        <input id="stochD" class="select" type="number" min="1" max="100" value="3" style="width:60px;">
-        <label for="stochS">S</label>
-        <input id="stochS" class="select" type="number" min="1" max="100" value="3" style="width:60px;">
-        <button class="btn" id="applyIndicators">Apply</button>
+      <div class="title">Generator promptu dla wykresu multi-interwałowego</div>
+      <div class="row">
+        <button class="btn" id="toggleTheme">Tryb: Jasny</button>
+        <button class="btn" id="copyPrompt">Kopiuj prompt</button>
       </div>
     </div>
 
     <div class="container">
-      <div id="chart" aria-label="chart area"></div>
-
-      <div class="legend" id="legend">
-        <div class="row"><div class="dot" id="dotMain"></div><div>Main</div></div>
-        <div class="row"><div class="dot" id="dotHTF1"></div><div>HTF 1</div></div>
-        <div class="row"><div class="dot" id="dotHTF2"></div><div>HTF 2</div></div>
-        <div class="row"><div class="dot" id="dotHTF3"></div><div>HTF 3</div></div>
+      <div id="preview">
+        <div class="row" style="margin-bottom:8px;">
+          <div class="pill">Przegląd: Streszczenie wymagań</div>
+        </div>
+        <ul id="summary" style="margin-top:0; padding-left:18px;">
+          <li>Do 3 poziomów wyższego interwału nakładanych na świeczki (3. poziom najbardziej transparentny).</li>
+          <li>Mapowanie: H4 -> D1, D1 -> M, M -> Y (M tylko do 2. stopnia), wszystko niższe do 3. stopnia.</li>
+          <li>Obsługiwane interwały: m1, m5, m15, H1, H4, D1, tygodniowe, miesięczne, roczne. Najwyższy bazowy: roczne świece.</li>
+          <li>Tryb ciemny i jasny do wyboru. Responsywny: mobilny i desktop. Dopasowanie do okna.</li>
+          <li>Pełne narzędzia jak w TradingView lub zbliżone, z cieniami interwałów świec.</li>
+          <li>Wskaźniki: RSI i Stochastic Oscillator, możliwość dodawania i zmiany rozmiaru przez przeciąganie.</li>
+          <li>Domyślnie RSI na górze (1/8 wysokości), Stochastic na dole (1/8 wysokości).</li>
+        </ul>
+        <div class="pill">Poniżej znajduje się wygenerowany prompt w języku polskim. Możesz go skopiować lub edytować.</div>
       </div>
 
-      <div class="overlay">
-        <div class="pill" id="infoInterval">Interval: D1</div>
-        <div class="pill" id="infoTheme">Theme: Light</div>
+      <div class="sidebar">
+        <div class="panel-inline">
+          <span style="font-weight:600;">Opcje:</span>
+          <label class="row"><input id="optTV" type="checkbox" checked /> Preferuj TradingView (lub odpowiednik)</label>
+          <label class="row"><input id="optTools" type="checkbox" checked /> Wymuś narzędzia rysunkowe</label>
+          <label class="row"><input id="optMobile" type="checkbox" checked /> Wersja mobilna</label>
+          <label class="row"><input id="optLightDark" type="checkbox" checked /> Tryb jasny/ciemny</label>
+        </div>
+        <textarea id="prompt" spellcheck="false"></textarea>
+        <div class="row" style="justify-content: space-between;">
+          <div class="hint">Wskazówka: Zaznacz opcje powyżej, aby doprecyzować prompt. Kliknij „Kopiuj prompt”.</div>
+          <div class="pill" id="status">Gotowy</div>
+        </div>
       </div>
     </div>
   </div>
 
   <script type="module">
-    import { createChart, CrosshairMode } from "lightweight-charts";
-
-    // Helper: safe DOM get
-    function $(sel) {
-      const el = document.querySelector(sel);
-      if (!el) throw new Error('Missing element: ' + sel);
-      return el;
-    }
-
     // Theme handling
-    const appRoot = $('#appRoot');
-    const themeToggle = $('#themeToggle');
-    const infoTheme = $('#infoTheme');
-
+    const app = document.getElementById('appRoot');
+    const toggleThemeBtn = document.getElementById('toggleTheme');
     let isDark = false;
-    function chartColors() {
-      return isDark
-        ? { background: '#0e1116', grid: '#1f2937', text: '#cbd5e1', up: '#22c55e', down: '#ef4444', vol: '#64748b' }
-        : { background: '#f6f7fb', grid: '#e5e7eb', text: '#1f2937', up: '#16a34a', down: '#dc2626', vol: '#94a3b8' };
-    }
-
-    function applyChartTheme() {
-      const c = chartColors();
-      if (chart) {
-        chart.applyOptions({
-          layout: { background: { color: c.background }, textColor: c.text },
-          grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
-          timeScale: { borderColor: c.grid },
-          rightPriceScale: { borderColor: c.grid }
-        });
-      }
-      dotMain.style.background = isDark ? '#22c55e' : '#16a34a';
-      infoTheme.textContent = 'Theme: ' + (isDark ? 'Dark' : 'Light');
-    }
-
     function applyTheme() {
-      appRoot.classList.toggle('light', !isDark);
-      applyChartTheme();
+      app.classList.toggle('light', !isDark);
+      toggleThemeBtn.textContent = 'Tryb: ' + (isDark ? 'Ciemny' : 'Jasny');
     }
-    themeToggle.addEventListener('click', () => {
-      isDark = !isDark;
-      applyTheme();
-    });
-
-    // Create chart
-    const chartContainer = $('#chart');
-
-    // Ensure container has dimensions before creating chart
-    function ensureContainerSized() {
-      const rect = chartContainer.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) {
-        chartContainer.style.minHeight = '320px';
-      }
-    }
-    ensureContainerSized();
-
-    let chart = createChart(chartContainer, {
-      autoSize: true,
-      layout: {
-        background: { color: chartColors().background },
-        textColor: chartColors().text,
-      },
-      grid: {
-        vertLines: { color: chartColors().grid },
-        horzLines: { color: chartColors().grid },
-      },
-      crosshair: { mode: CrosshairMode.Normal },
-      timeScale: { timeVisible: true, secondsVisible: false, rightBarStaysOnScroll: true, borderColor: chartColors().grid },
-      rightPriceScale: { borderColor: chartColors().grid },
-      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: true },
-      handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true }
-    });
-
-    // Series
-    const mainCandles = chart.addCandlestickSeries({
-      upColor: chartColors().up, downColor: chartColors().down,
-      borderUpColor: chartColors().up, borderDownColor: chartColors().down,
-      wickUpColor: chartColors().up, wickDownColor: chartColors().down
-    });
-
-    const htf1 = chart.addCandlestickSeries({
-      priceScaleId: 'right',
-      upColor: 'rgba(34,197,94,0.35)',
-      downColor: 'rgba(239,68,68,0.35)',
-      wickUpColor: 'rgba(34,197,94,0.25)',
-      wickDownColor: 'rgba(239,68,68,0.25)',
-      borderUpColor: 'rgba(34,197,94,0.35)',
-      borderDownColor: 'rgba(239,68,68,0.35)'
-    });
-    const htf2 = chart.addCandlestickSeries({
-      priceScaleId: 'right',
-      upColor: 'rgba(34,197,94,0.22)',
-      downColor: 'rgba(239,68,68,0.22)',
-      wickUpColor: 'rgba(34,197,94,0.15)',
-      wickDownColor: 'rgba(239,68,68,0.15)',
-      borderUpColor: 'rgba(34,197,94,0.22)',
-      borderDownColor: 'rgba(239,68,68,0.22)'
-    });
-    const htf3 = chart.addCandlestickSeries({
-      priceScaleId: 'right',
-      upColor: 'rgba(34,197,94,0.12)',
-      downColor: 'rgba(239,68,68,0.12)',
-      wickUpColor: 'rgba(34,197,94,0.08)',
-      wickDownColor: 'rgba(239,68,68,0.08)',
-      borderUpColor: 'rgba(34,197,94,0.12)',
-      borderDownColor: 'rgba(239,68,68,0.12)'
-    });
-
-    // Indicator scales
-    const RSI_SCALE = 'rsi';
-    const STOCH_SCALE = 'stoch';
-
-    chart.priceScale(RSI_SCALE, {
-      scaleMargins: { top: 0.02, bottom: 0.8 },
-      borderColor: chartColors().grid
-    });
-    chart.priceScale(STOCH_SCALE, {
-      scaleMargins: { top: 0.8, bottom: 0.02 },
-      borderColor: chartColors().grid
-    });
-    chart.priceScale('right', {
-      scaleMargins: { top: 0.13, bottom: 0.13 }
-    });
-
-    const rsiLine = chart.addLineSeries({
-      priceScaleId: RSI_SCALE,
-      color: '#8b5cf6',
-      lineWidth: 2
-    });
-    const rsiUpper = chart.addLineSeries({ priceScaleId: RSI_SCALE, color: 'rgba(139,92,246,0.3)', lineWidth: 1 });
-    const rsiLower = chart.addLineSeries({ priceScaleId: RSI_SCALE, color: 'rgba(139,92,246,0.3)', lineWidth: 1 });
-
-    const stochKLine = chart.addLineSeries({
-      priceScaleId: STOCH_SCALE,
-      color: '#06b6d4',
-      lineWidth: 2
-    });
-    const stochDLine = chart.addLineSeries({
-      priceScaleId: STOCH_SCALE,
-      color: '#f59e0b',
-      lineWidth: 2
-    });
-    const stochUpper = chart.addLineSeries({ priceScaleId: STOCH_SCALE, color: 'rgba(245,158,11,0.25)', lineWidth: 1 });
-    const stochLower = chart.addLineSeries({ priceScaleId: STOCH_SCALE, color: 'rgba(245,158,11,0.25)', lineWidth: 1 });
-
-    // Legend color dots
-    const dotMain = $('#dotMain');
-    const dotHTF1 = $('#dotHTF1');
-    const dotHTF2 = $('#dotHTF2');
-    const dotHTF3 = $('#dotHTF3');
-    dotMain.style.background = isDark ? '#22c55e' : '#16a34a';
-    dotHTF1.style.background = 'rgba(59,130,246,0.35)';
-    dotHTF2.style.background = 'rgba(59,130,246,0.22)';
-    dotHTF3.style.background = 'rgba(59,130,246,0.12)';
-
-    // Interval mapping
-    const intervals = [
-      { key: '1', label: 'M1', seconds: 60 },
-      { key: '5', label: 'M5', seconds: 300 },
-      { key: '15', label: 'M15', seconds: 900 },
-      { key: '60', label: 'H1', seconds: 3600 },
-      { key: '240', label: 'H4', seconds: 14400 },
-      { key: 'D', label: 'D1', seconds: 86400 },
-      { key: 'W', label: 'W1', seconds: 604800 },
-      { key: 'M', label: 'MN', seconds: 2629800 },
-      { key: 'Y', label: 'Y1', seconds: 31557600 }
-    ];
-    const intByKey = Object.fromEntries(intervals.map(i => [i.key, i]));
-    const infoInterval = $('#infoInterval');
-
-    function higherIntervals(key) {
-      const order = ['1','5','15','60','240','D','W','M','Y'];
-      const idx = order.indexOf(key);
-      const out = [];
-      for (let i=1; i<=3; i++) {
-        const k = order[Math.min(idx + i, order.length - 1)];
-        if (!k || k === key) break;
-        out.push(k);
-        if (k === 'Y') break;
-      }
-      return out;
-    }
-
-    // Synthetic OHLCV data generator
-    function generateData(startTimeSec, bars, basePrice, volatilityPct, stepSec) {
-      let t = startTimeSec;
-      const data = [];
-      let price = basePrice;
-      let volBase = 1000;
-      for (let i=0; i<bars; i++) {
-        const drift = Math.sin(i / 50) * volatilityPct * basePrice;
-        const noise = (Math.random() - 0.5) * volatilityPct * basePrice * 0.6;
-        const open = price;
-        let close = Math.max(1, open + drift*0.02 + noise);
-        const high = Math.max(open, close) + Math.abs(noise) * 0.8;
-        const low  = Math.min(open, close) - Math.abs(noise) * 0.8;
-        const volume = Math.max(10, Math.round(volBase + (Math.sin(i/15)*200) + Math.random()*300));
-        data.push({ time: t, open, high, low, close, volume });
-        price = close;
-        t += stepSec;
-      }
-      return data;
-    }
-
-    // Aggregate to higher timeframe
-    function aggregate(data, aggSec) {
-      const bucket = new Map();
-      for (const d of data) {
-        const t0 = Math.floor(d.time / aggSec) * aggSec;
-        const key = t0;
-        if (!bucket.has(key)) {
-          bucket.set(key, { time: t0, open: d.open, high: d.high, low: d.low, close: d.close, volume: d.volume });
-        } else {
-          const b = bucket.get(key);
-          b.high = Math.max(b.high, d.high);
-          b.low = Math.min(b.low, d.low);
-          b.close = d.close;
-          b.volume += d.volume;
-        }
-      }
-      return Array.from(bucket.values()).sort((a,b)=>a.time-b.time);
-    }
-
-    // Indicators
-    function SMA(values, period) {
-      const out = new Array(values.length).fill(null);
-      let sum = 0;
-      for (let i=0; i<values.length; i++) {
-        sum += values[i];
-        if (i >= period) sum -= values[i - period];
-        if (i >= period - 1) out[i] = sum / period;
-      }
-      return out;
-    }
-
-    function RSI(close, period=14) {
-      const out = new Array(close.length).fill(null);
-      let gains = 0, losses = 0;
-      for (let i=1; i<close.length; i++) {
-        const ch = close[i] - close[i-1];
-        const gain = Math.max(ch, 0);
-        const loss = Math.max(-ch, 0);
-        if (i <= period) {
-          gains += gain;
-          losses += loss;
-          if (i === period) {
-            let rs = (gains/period) / (losses/period || 1e-10);
-            out[i] = 100 - 100 / (1 + rs);
-          }
-        } else {
-          gains = (gains * (period - 1) + gain) / period;
-          losses = (losses * (period - 1) + loss) / period;
-          let rs = gains / (losses || 1e-10);
-          out[i] = 100 - 100 / (1 + rs);
-        }
-      }
-      return out;
-    }
-
-    function Stochastic(high, low, close, kPeriod=14, dPeriod=3, smooth=3) {
-      const kRaw = new Array(close.length).fill(null);
-      for (let i=0; i<close.length; i++) {
-        if (i < kPeriod - 1) continue;
-        let h = -Infinity, l = Infinity;
-        for (let j=i-kPeriod+1; j<=i; j++) {
-          h = Math.max(h, high[j]);
-          l = Math.min(l, low[j]);
-        }
-        const denom = (h - l) || 1e-10;
-        kRaw[i] = ((close[i] - l) / denom) * 100;
-      }
-      const kSmooth = SMA(kRaw.map(v => v ?? 0), smooth);
-      const dLine = SMA(kSmooth.map(v => v ?? 0), dPeriod);
-      const outK = kSmooth.map((v,i) => (i < kPeriod - 1 + smooth - 1 ? null : v));
-      const outD = dLine.map((v,i) => (i < kPeriod - 1 + smooth - 1 + dPeriod - 1 ? null : v));
-      return { k: outK, d: outD };
-    }
-
-    function seriesSetDataFromCandles(series, candles) {
-      series.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
-    }
-
-    // Interval controls
-    const intervalButtons = Array.from(document.querySelectorAll('.intervals .btn'));
-    const infoInterval = $('#infoInterval');
-    let currentIntervalKey = 'D';
-
-    function setActiveIntervalButton(key) {
-      intervalButtons.forEach(b => {
-        b.classList.toggle('active', b.dataset.int === key);
-      });
-      infoInterval.textContent = 'Interval: ' + intByKey[key].label;
-    }
-
-    // Generate base minute data and then aggregate as needed on-the-fly
-    const nowSec = Math.floor(Date.now() / 1000);
-    const BASE_STEP = 60; // 1-minute base
-    // Generate enough 1m bars to allow aggregation up to "W" nicely; M/Y will be sparse but still render
-    const baseData = generateData(nowSec - 20000*BASE_STEP, 20000, 20000, 0.0025, BASE_STEP);
-
-    function computeForInterval(key) {
-      let mainCandlesData;
-      const agg = (s) => aggregate(baseData, s);
-      if (key === '1') mainCandlesData = baseData;
-      else if (key === '5') mainCandlesData = agg(300);
-      else if (key === '15') mainCandlesData = agg(900);
-      else if (key === '60') mainCandlesData = agg(3600);
-      else if (key === '240') mainCandlesData = agg(14400);
-      else if (key === 'D') mainCandlesData = agg(86400);
-      else if (key === 'W') mainCandlesData = agg(604800);
-      else if (key === 'M') mainCandlesData = agg(2629800);
-      else if (key === 'Y') mainCandlesData = agg(31557600);
-      else mainCandlesData = baseData;
-
-      const htfKeys = higherIntervals(key);
-      const htfData = htfKeys.map(k => aggregate(baseData, intByKey[k].seconds));
-      return { mainCandlesData, htfData };
-    }
-
-    function updateIndicators(candles) {
-      if (!candles || candles.length === 0) {
-        rsiLine.setData([]);
-        rsiUpper.setData([]);
-        rsiLower.setData([]);
-        stochKLine.setData([]);
-        stochDLine.setData([]);
-        stochUpper.setData([]);
-        stochLower.setData([]);
-        return;
-      }
-      const close = candles.map(c => c.close);
-      const high = candles.map(c => c.high);
-      const low = candles.map(c => c.low);
-      const times = candles.map(c => c.time);
-
-      const rsiPeriod = Math.max(2, Math.min(100, parseInt($('#rsiPeriod').value || '14')));
-      const rsi = RSI(close, rsiPeriod);
-      const rsiData = times.map((t,i) => rsi[i] == null ? { time: t, value: null } : { time: t, value: rsi[i] });
-      rsiLine.setData(rsiData);
-      rsiUpper.setData(times.map(t => ({ time: t, value: 70 })));
-      rsiLower.setData(times.map(t => ({ time: t, value: 30 })));
-
-      const kPeriod = Math.max(2, Math.min(100, parseInt($('#stochK').value || '14')));
-      const dPeriod = Math.max(1, Math.min(100, parseInt($('#stochD').value || '3')));
-      const sPeriod = Math.max(1, Math.min(100, parseInt($('#stochS').value || '3')));
-      const { k, d } = Stochastic(high, low, close, kPeriod, dPeriod, sPeriod);
-      const kData = times.map((t,i) => k[i] == null ? { time: t, value: null } : { time: t, value: k[i] });
-      const dData = times.map((t,i) => d[i] == null ? { time: t, value: null } : { time: t, value: d[i] });
-      stochKLine.setData(kData);
-      stochDLine.setData(dData);
-      stochUpper.setData(times.map(t => ({ time: t, value: 80 })));
-      stochLower.setData(times.map(t => ({ time: t, value: 20 })));
-    }
-
-    function refreshDataForInterval() {
-      const { mainCandlesData, htfData } = computeForInterval(currentIntervalKey);
-      seriesSetDataFromCandles(mainCandles, mainCandlesData);
-      seriesSetDataFromCandles(htf1, htfData[0] ?? []);
-      seriesSetDataFromCandles(htf2, htfData[1] ?? []);
-      seriesSetDataFromCandles(htf3, htfData[2] ?? []);
-
-      // Legend rows show/hide
-      const legend = $('#legend');
-      legend.querySelector('.row:nth-child(2)').style.display = htfData[0] && htfData[0].length ? 'flex' : 'none';
-      legend.querySelector('.row:nth-child(3)').style.display = htfData[1] && htfData[1].length ? 'flex' : 'none';
-      legend.querySelector('.row:nth-child(4)').style.display = htfData[2] && htfData[2].length ? 'flex' : 'none';
-
-      chart.timeScale().fitContent();
-      updateIndicators(mainCandlesData);
-    }
-
-    $('#applyIndicators').addEventListener('click', () => {
-      const { mainCandlesData } = computeForInterval(currentIntervalKey);
-      updateIndicators(mainCandlesData);
-    });
-
-    // Pane sizing via scaleMargins
-    function setPaneFractions(rsiFrac, stochFrac) {
-      rsiFrac = Math.max(0.08, Math.min(0.5, rsiFrac));
-      stochFrac = Math.max(0.08, Math.min(0.5, stochFrac));
-      chart.priceScale(RSI_SCALE).applyOptions({ scaleMargins: { top: 0.02, bottom: 1 - rsiFrac } });
-      chart.priceScale('right').applyOptions({ scaleMargins: { top: rsiFrac + 0.02, bottom: stochFrac + 0.02 } });
-      chart.priceScale(STOCH_SCALE).applyOptions({ scaleMargins: { top: 1 - stochFrac, bottom: 0.02 } });
-    }
-
-    let rsiFrac = 1/8;
-    let stochFrac = 1/8;
-    setPaneFractions(rsiFrac, stochFrac);
-
-    // Draggable overlays
-    const topDivider = document.createElement('div');
-    Object.assign(topDivider.style, { position: 'absolute', left: '0', right: '0', height: '8px', cursor: 'row-resize', zIndex: '20' });
-    const bottomDivider = topDivider.cloneNode(true);
-
-    function layoutDividers() {
-      const { height } = chartContainer.getBoundingClientRect();
-      const topY = Math.round(height * rsiFrac) + 6;
-      const bottomY = Math.round(height * (1 - stochFrac)) - 6;
-      topDivider.style.top = (topY - 4) + 'px';
-      bottomDivider.style.top = (bottomY - 4) + 'px';
-    }
-    window.addEventListener('resize', layoutDividers);
-    chart.timeScale().subscribeVisibleTimeRangeChange(layoutDividers);
-    chartContainer.appendChild(topDivider);
-    chartContainer.appendChild(bottomDivider);
-    layoutDividers();
-
-    let draggingTop = false;
-    let draggingBottom = false;
-    function onMouseDown(which, clientY) {
-      draggingTop = which === 'top';
-      draggingBottom = which === 'bottom';
-      document.body.style.userSelect = 'none';
-    }
-    function onMouseMove(e) {
-      if (!draggingTop && !draggingBottom) return;
-      const rect = chartContainer.getBoundingClientRect();
-      const y = e.clientY - rect.top;
-      const h = rect.height || 1;
-      if (draggingTop) {
-        rsiFrac = Math.max(0.08, Math.min(0.5, y / h));
-      } else if (draggingBottom) {
-        stochFrac = Math.max(0.08, Math.min(0.5, 1 - (y / h)));
-      }
-      setPaneFractions(rsiFrac, stochFrac);
-      layoutDividers();
-    }
-    function onMouseUp() {
-      draggingTop = draggingBottom = false;
-      document.body.style.userSelect = '';
-    }
-    topDivider.addEventListener('mousedown', (e)=>{ e.preventDefault(); onMouseDown('top'); });
-    bottomDivider.addEventListener('mousedown', (e)=>{ e.preventDefault(); onMouseDown('bottom'); });
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    topDivider.addEventListener('touchstart', (e)=>{ onMouseDown('top'); }, {passive:true});
-    bottomDivider.addEventListener('touchstart', (e)=>{ onMouseDown('bottom'); }, {passive:true});
-    window.addEventListener('touchmove', (e)=>{ if (e.touches && e.touches[0]) onMouseMove(e.touches[0]); }, {passive:true});
-    window.addEventListener('touchend', onMouseUp);
-
-    // Event delegation for interval buttons (fix for "buttons not responding")
-    $('#intervals').addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-int]');
-      if (!btn) return;
-      const key = btn.dataset.int;
-      if (!intByKey[key] || key === currentIntervalKey) return;
-      currentIntervalKey = key;
-      setActiveIntervalButton(key);
-      refreshDataForInterval();
-    });
-
-    // Initialize
-    setActiveIntervalButton(currentIntervalKey);
+    toggleThemeBtn.addEventListener('click', () => { isDark = !isDark; applyTheme(); });
     applyTheme();
-    refreshDataForInterval();
 
-    // Safety: if something breaks, show a minimal message overlay
-    window.addEventListener('error', (ev) => {
-      console.error(ev.error || ev.message);
-      const msg = document.createElement('div');
-      msg.textContent = 'Wystąpił błąd: ' + (ev.message || 'unknown');
-      Object.assign(msg.style, {
-        position: 'fixed', left: '10px', top: '10px', background: '#ef4444', color: '#fff',
-        padding: '8px 10px', borderRadius: '6px', zIndex: 9999, fontSize: '12px'
-      });
-      document.body.appendChild(msg);
-      setTimeout(()=>msg.remove(), 5000);
+    // Options
+    const optTV = document.getElementById('optTV');
+    const optTools = document.getElementById('optTools');
+    const optMobile = document.getElementById('optMobile');
+    const optLightDark = document.getElementById('optLightDark');
+    const promptEl = document.getElementById('prompt');
+    const statusEl = document.getElementById('status');
+
+    function buildPrompt() {
+      const parts = [];
+      parts.push(
+        'Jesteś specjalistą od tworzenia stron WWW oraz wykresów i wskaźników tradingowych. ' +
+        'Zaprojektuj i zaimplementuj w pełni responsywną aplikację wykresową (desktop + mobile) z trybem jasnym i ciemnym. ' +
+        'Wykres ma wyświetlać świeczki głównego interwału oraz do 3 wyższych interwałów nałożonych jako półtransparentne świece (każdy wyższy stopień bardziej transparentny; 3. stopień najbardziej).'
+      );
+      parts.push(
+        'Wymagania dotyczące interwałów i mapowania w górę: ' +
+        'Obsługiwane interwały: m1, m5, m15, H1, H4, D1, tygodniowe (W1), miesięczne (M), roczne (Y). ' +
+        'Zasada 3 stopni w górę dotyczy wszystkich interwałów niższych niż miesięczny. ' +
+        'Dla świec H4 pokaż nakładkę D1 oraz D1->M; dla D1 pokaż M oraz M->Y; jeżeli wybrany miesięczny (M), to pokazuj tylko roczne (Y) – czyli do drugiego stopnia interwału. ' +
+        'Najwyższym bazowym interwałem są roczne świece.'
+      );
+      if (optTV.checked) {
+        parts.push(
+          'Preferowane jest użycie wykresu TradingView (lub równoważnego zbliżonego pod względem funkcjonalności), ' +
+          'z pełną dostępnością typowych narzędzi TradingView (przybory rysunkowe, crosshair, skala czasu/ceny, zoom/scroll) ' +
+          'oraz z cieniami interwałów świec dla wyższych TF (świece HTF półtransparentne).'
+        );
+      } else {
+        parts.push(
+          'Możesz użyć dowolnej biblioteki wykresowej z funkcjonalnościami zbliżonymi do TradingView, ' +
+          'zapewniając narzędzia rysunkowe, crosshair, skalowanie i przewijanie oraz półtransparentne nakładki świec HTF.'
+        );
+      }
+      if (optTools.checked) {
+        parts.push(
+          'Zapewnij widoczne narzędzia analizy technicznej i rysunkowe, ' +
+          'a także panel wyboru interwałów: m1, m5, m15, H1, H4, D1, W1, M, Y. ' +
+          'Wykres musi automatycznie dopasowywać się do rozmiaru okna.'
+        );
+      }
+      parts.push(
+        'Wskaźniki: dodaj możliwość włączania RSI oraz Stochastic Oscillator (parametry konfigurowalne). ' +
+        'Umożliw przeciąganie separatorów/pasków, aby zmienić wysokość paneli wskaźników. ' +
+        'Domyślnie RSI ma znajdować się u góry wykresu i zajmować 1/8 wysokości, a Stochastic u dołu i również 1/8 wysokości okna.'
+      );
+      if (optLightDark.checked) {
+        parts.push('Aplikacja powinna posiadać przełącznik trybu jasnego i ciemnego oraz odpowiednią paletę kolorów dla obu trybów.');
+      }
+      if (optMobile.checked) {
+        parts.push('Projekt musi być mobilny i przeglądarkowy (RWD), z optymalnym UX na ekranach dotykowych i desktopowych.');
+      }
+      parts.push(
+        'Logika interwałów (transparentność): ' +
+        'Świeczki głównego interwału są w pełnej nieprzezroczystości. ' +
+        'Pierwszy wyższy interwał (HTF1) ~35% opacity, drugi (HTF2) ~22%, trzeci (HTF3) ~12%. ' +
+        'W przypadku interwału M (miesięcznego) nakładaj tylko Y (roczne) jako HTF1 (brak dalszych stopni).'
+      );
+      parts.push(
+        'Upewnij się, że: ' +
+        'a) interfejs zawiera szybkie przyciski wyboru interwału, ' +
+        'b) wyświetlany jest bieżący interwał i tryb, ' +
+        'c) wykres dopasowuje się do okna (fit to content), ' +
+        'd) dane są dostępne również w wyższych interwałach przez agregację (np. z m1 w górę).'
+      );
+      parts.push(
+        'Wynik: dostarcz kompletny, działający komponent/aplikację z powyższymi wymaganiami, ' +
+        'z czytelną strukturą i możliwością łatwej rozbudowy.'
+      );
+      return parts.join('\n\n');
+    }
+
+    function updatePrompt() {
+      promptEl.value = buildPrompt();
+    }
+
+    [optTV, optTools, optMobile, optLightDark].forEach(el => el.addEventListener('change', updatePrompt));
+    updatePrompt();
+
+    // Copy prompt
+    document.getElementById('copyPrompt').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(promptEl.value);
+        statusEl.textContent = 'Skopiowano do schowka';
+        statusEl.style.background = 'rgba(34,197,94,0.15)';
+        setTimeout(() => { statusEl.textContent = 'Gotowy'; statusEl.style.background = ''; }, 1500);
+      } catch (e) {
+        statusEl.textContent = 'Błąd kopiowania';
+        statusEl.style.background = 'rgba(239,68,68,0.2)';
+        setTimeout(() => { statusEl.textContent = 'Gotowy'; statusEl.style.background = ''; }, 2000);
+      }
     });
+
+    // No external assets needed; all UI is procedural.
   </script>
 </body>
 </html>
