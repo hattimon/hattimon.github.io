@@ -1,954 +1,721 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Alt Season Super Wskaźnik — BTC, TOTAL3, BTCD, ETH/BTC</title>
+  <title>Multi-Interval TradingView Chart with Indicators</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
-    :root{
-      --bg:#0b0f16;
-      --panel:#0f141d;
-      --grid:#1c2533;
-      --muted:#7a889f;
-      --text:#e5ecf5;
-      --bull:#5bd49c;
-      --bear:#ef6b73;
-      --accent:#7aa2f7;
-      --accent2:#bb9af7;
-      --accent3:#7dcfff;
-      --rsi:#c3e88d;
-      --stoch:#9fe2ff;
-      --tool:#ffcc66;
-      --sel:#3d4a61;
-      --handle:#ffd166;
-      --line1:#7aa2f7;
-      --line2:#ffcc66;
-      --line3:#5bd49c;
-      --line4:#ef6b73;
+    :root {
+      --bg: #0e1116;
+      --panel: #121722;
+      --text: #e5e7eb;
+      --muted: #9aa4b2;
+      --accent: #3b82f6;
+      --border: #253043;
+      --shadow: rgba(0,0,0,0.3);
     }
-    *{box-sizing:border-box}
-    html,body{height:100%;background:var(--bg);color:var(--text);margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
-    header{
-      display:flex;gap:.75rem;align-items:center;justify-content:space-between;
-      padding:.6rem .8rem;background:linear-gradient(180deg,#0f131b,#0d1219);
-      border-bottom:1px solid #172030; position:sticky; top:0; z-index:20;
+    .light {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --border: #e5e7eb;
+      --shadow: rgba(0,0,0,0.08);
     }
-    header .left, header .right{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap}
-    select, input, button{
-      background:#0f1622;border:1px solid #1f2a3a;color:var(--text);
-      padding:.45rem .6rem;border-radius:.4rem; outline:none; min-height:34px;
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     }
-    button{cursor:pointer}
-    button:hover, select:hover{border-color:#2b3a52}
-    .container{
-      display:grid; grid-template-rows: minmax(60px, var(--rsiH, 14%)) minmax(0, var(--mainH, 72%)) minmax(60px, var(--stochH, 14%)) minmax(120px, 26vh);
-      height:calc(100% - 58px);
-      transition:grid-template-rows .25s ease;
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
     }
-    .row{display:grid; grid-template-columns:minmax(220px, 300px) 1fr; height:100%; min-height:0}
-    .sidebar{
-      padding:.65rem;border-right:1px solid #141c28; overflow:auto;
-      background:linear-gradient(180deg,#101722,#0f141d);
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 8px var(--shadow);
+      flex-wrap: wrap;
     }
-    .sidebar h3{margin:.4rem 0 .6rem;color:#aab7cf;font-weight:600;font-size:.95rem}
-    .canvas-wrap{position:relative; background:var(--panel); min-height:0}
-    canvas{display:block; width:100%; height:100%}
-    .panel{
-      background:var(--panel); border-top:1px solid #141c28; border-bottom:1px solid #141c28;
-      min-height:60px;
+
+    .toolbar .title {
+      font-weight: 600;
+      margin-right: auto;
     }
-    .status{
-      position:absolute; top:.35rem; right:.5rem; background:#0f1622;
-      border:1px solid #1f2a3a; border-radius:.4rem; padding:.2rem .5rem; color:#aab7cf;
-      font-size:.78rem; display:flex; gap:.5rem; align-items:center; pointer-events:none;
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      user-select: none;
     }
-    .legend{display:flex; gap:.35rem; flex-wrap:wrap; margin-top:.4rem}
-    .badge{font-size:.7rem; padding:.2rem .35rem; border-radius:.3rem; border:1px solid #223045;color:#b5c3da; background:#0f1724;}
-    .help{color:#8aa0c2; font-size:.82rem; margin-top:.25rem; line-height:1.35;}
-    .muted{color:var(--muted)}
-    .spacer{flex:1}
-    .toolbox{
-      position:absolute; left:.5rem; top:.5rem; display:flex; gap:.35rem; z-index:4;
-      background:rgba(12,18,28,.6); backdrop-filter: blur(4px);
-      border:1px solid #1f2a3a; padding:.3rem .4rem; border-radius:.4rem;
+    .btn:hover {
+      background: rgba(59,130,246,0.08);
+      border-color: var(--accent);
     }
-    .toolbox button{
-      background:#0e1521;border:1px solid #1d2a3f; color:#cfe0ff; padding:.25rem .45rem; font-size:.78rem;
+    .btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
     }
-    .toolbox button.active{border-color:#3a4f74; background:#122032}
-    .scale-handles{
-      position:absolute; right:0; top:0; bottom:0; width:56px; pointer-events:none;
-      background:linear-gradient(90deg, transparent, rgba(20,26,38,.35));
+
+    .select {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
     }
-    .y-zoom-handle{
-      position:absolute; right:8px; top:50%; transform:translateY(-50%);
-      width:12px; height:60px; border-radius:6px; background:rgba(255,209,102,.2);
-      border:1px solid rgba(255,209,102,.5); pointer-events:auto; cursor:ns-resize;
+
+    .container {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      min-height: 0;
     }
-    .x-zoom-bar{
-      position:absolute; left:0; right:0; bottom:0; height:22px; pointer-events:none;
-      background:linear-gradient(0deg, rgba(20,26,38,.4), transparent);
+
+    #chart {
+      position: absolute;
+      inset: 0;
     }
-    .x-zoom-handle{
-      position:absolute; bottom:4px; left:50%; transform:translateX(-50%);
-      height:14px; width:84px; border-radius:7px; background:rgba(123,167,255,.22);
-      border:1px solid rgba(123,167,255,.4); pointer-events:auto; cursor:ew-resize;
+
+    .overlay {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
     }
-    .toast{
-      position:fixed; bottom:10px; left:50%; transform:translateX(-50%);
-      background:#0f1622;border:1px solid #223045; padding:.5rem .75rem; border-radius:.4rem;
-      color:#b5c3da; font-size:.8rem; opacity:.95; z-index:50;
+
+    .pill {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      opacity: 0.9;
     }
-    .super-panel{ display:grid; grid-template-columns: 1fr 1fr; gap:1px; background:#141c28; }
-    .super-item{ position:relative; background:var(--panel); min-height:160px; }
-    .super-item .status{ left:.5rem; right:auto; }
-    .switches{ display:flex; gap:.4rem; flex-wrap:wrap; }
-    .switches label{ display:flex; align-items:center; gap:.3rem; background:#0e1521; border:1px solid #1d2a3f; padding:.25rem .4rem; border-radius:.35rem; font-size:.82rem}
-    .alert-bar{ position:absolute; bottom:.35rem; left:.5rem; right:.5rem; font-size:.78rem; color:#dfe7ff; opacity:.85}
-    .alert-green{ color:var(--bull) }
-    .alert-red{ color:var(--bear) }
-    .resize-row{ position:relative; }
-    .row-handle{
-      position:absolute; left:0; right:0; height:6px; cursor:row-resize; z-index:5;
-      background:linear-gradient(90deg, transparent, rgba(255,209,102,.08), transparent);
+
+    .legend {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 10;
     }
-    #rsiHandle{ bottom:-3px; }
-    #stochHandle{ top:-3px; }
-    .mobile{
-      grid-template-rows:minmax(80px, 26vh) 1fr minmax(80px, 26vh) minmax(120px, 28vh);
+
+    .legend .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
     }
-    @media (max-width: 980px){
-      .row{ grid-template-columns: 1fr; }
-      .sidebar{ display:none; }
-      .super-panel{ grid-template-columns: 1fr; }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+    }
+
+    /* Mobile first */
+    .toolbar {
+      gap: 8px;
+    }
+    .intervals {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .intervals::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Desktop overrides */
+    @media (min-width: 768px) {
+      .toolbar {
+        gap: 12px;
+      }
+      .intervals {
+        gap: 8px;
+      }
     }
   </style>
+
   <script type="importmap">
   {
-    "imports": {}
+    "imports": {
+      "lightweight-charts": "https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.esm.production.js"
+    }
   }
   </script>
 </head>
 <body>
-  <header>
-    <div class="left">
-      <strong>Alt Season — Super Wskaźnik</strong>
-      <span class="muted">BTC, TOTAL3, BTCD, ETH/BTC</span>
-      <div class="spacer"></div>
-    </div>
-    <div class="right">
-      <label class="muted">Rynek</label>
-      <select id="exchange">
-        <option value="binance">Binance (REST)</option>
-        <option value="coinbase">Coinbase (REST)</option>
-      </select>
-      <label class="muted">Główny symbol</label>
-      <input id="symbol" value="BTCUSDT" placeholder="BTCUSDT lub BTC-USD" />
-      <label class="muted">Strefa</label>
-      <select id="timezone">
-        <option value="exchange">Czas giełdy</option>
-        <option value="local" selected>Twój lokalny</option>
-      </select>
-      <button id="loadBtn">Załaduj</button>
-      <button id="liveBtn">Live ON</button>
-      <button id="mobileBtn">Tryb mobilny</button>
-    </div>
-  </header>
+  <div class="app light" id="appRoot">
+    <div class="toolbar">
+      <div class="title">Multi-Interval Chart</div>
 
-  <div class="container" id="root" style="--rsiH:14.285%; --stochH:14.285%; --mainH:71.43%">
-    <div class="panel resize-row" id="rsiPanel">
-      <div class="row-handle" id="rsiHandle" title="Przeciągnij, aby zmienić wysokość RSI"></div>
-      <div class="canvas-wrap">
-        <canvas id="rsi"></canvas>
-        <div class="status" id="rsiStatus">RSI(14)</div>
+      <div class="intervals">
+        <button class="btn" data-int="1">M1</button>
+        <button class="btn" data-int="5">M5</button>
+        <button class="btn" data-int="15">M15</button>
+        <button class="btn" data-int="60">H1</button>
+        <button class="btn" data-int="240">H4</button>
+        <button class="btn" data-int="D">D1</button>
+        <button class="btn" data-int="W">W1</button>
+        <button class="btn" data-int="M">MN</button>
+        <button class="btn" data-int="Y">Y1</button>
+      </div>
+
+      <button class="btn" id="themeToggle" title="Toggle Theme">
+        Toggle Theme
+      </button>
+
+      <div class="panel" style="display:flex; gap:8px; align-items:center;">
+        <label for="rsiPeriod">RSI</label>
+        <input id="rsiPeriod" class="select" type="number" min="2" max="100" value="14" style="width:70px;">
+        <label for="stochK">Stoch K</label>
+        <input id="stochK" class="select" type="number" min="2" max="100" value="14" style="width:70px;">
+        <label for="stochD">D</label>
+        <input id="stochD" class="select" type="number" min="1" max="100" value="3" style="width:60px;">
+        <label for="stochS">S</label>
+        <input id="stochS" class="select" type="number" min="1" max="100" value="3" style="width:60px;">
+        <button class="btn" id="applyIndicators">Apply</button>
       </div>
     </div>
 
-    <div class="row">
-      <div class="sidebar">
-        <h3>Ustawienia</h3>
-        <div class="help">
-          Skupiamy się na najdłuższej historii BTC. Dodatkowo włącz porównania: TOTAL3 (kapitalizacja altów bez BTC/ETH),
-          BTCD (dominacja BTC) oraz ETH/BTC. To pozwala wykrywać fazy alt sezonu.
-        </div>
-        <div style="margin-top:.5rem">
-          <div class="legend">
-            <span class="badge">BTC (świece)</span>
-            <span class="badge">TOTAL3 (linia)</span>
-            <span class="badge">BTCD (linia)</span>
-            <span class="badge">ETH/BTC (linia)</span>
-          </div>
-        </div>
-        <h3>Porównania</h3>
-        <div class="switches">
-          <label><input type="checkbox" id="toggleTotal3" checked /> TOTAL3</label>
-          <label><input type="checkbox" id="toggleBtcd" checked /> BTCD</label>
-          <label><input type="checkbox" id="toggleEthBtc" checked /> ETH/BTC</label>
-        </div>
-        <div class="help">
-          Sygnały alt sezonu (heurystyki):
-          1) BTCD spada i przebija w dół MA, 2) TOTAL3 rośnie ponad MA, 3) ETH/BTC wybija i utrzymuje trend wzrostowy,
-          4) Zbieżność: min. 2 z 3 jednocześnie. Włącz alerty poniżej.
-        </div>
-        <h3>Alerty</h3>
-        <div class="switches">
-          <label><input type="checkbox" id="toggleAlerts" checked /> Alerty Alt Season</label>
-          <label><input type="checkbox" id="toggleEarly" checked /> Wczesne sygnały</label>
-        </div>
-        <div class="help" id="status">Oczekiwanie na dane…</div>
+    <div class="container">
+      <div id="chart"></div>
+
+      <div class="legend" id="legend">
+        <div class="row"><div class="dot" id="dotMain"></div><div>Main</div></div>
+        <div class="row"><div class="dot" id="dotHTF1"></div><div>HTF 1</div></div>
+        <div class="row"><div class="dot" id="dotHTF2"></div><div>HTF 2</div></div>
+        <div class="row"><div class="dot" id="dotHTF3"></div><div>HTF 3</div></div>
       </div>
 
-      <div class="canvas-wrap">
-        <div class="toolbox" id="chartTools">
-          <button data-tool="cursor" class="active">Kursor</button>
-          <button data-tool="trend">Linia trendu</button>
-          <button data-tool="hline">Poziom</button>
-          <button data-tool="rect">Prostokąt</button>
-          <button data-tool="clear">Wyczyść</button>
-        </div>
-        <div class="scale-handles">
-          <div class="y-zoom-handle" id="yHandle" title="Skaluj oś Y"></div>
-          <div class="x-zoom-bar">
-            <div class="x-zoom-handle" id="xHandle" title="Skaluj oś X (zoom)"></div>
-          </div>
-        </div>
-        <canvas id="chart"></canvas>
-        <div class="status" id="chartStatus">BTCUSDT (1d / MTFA) Live</div>
-      </div>
-    </div>
-
-    <div class="panel resize-row" id="stochPanel">
-      <div class="row-handle" id="stochHandle" title="Przeciągnij, aby zmienić wysokość Stoch"></div>
-      <div class="canvas-wrap">
-        <canvas id="stoch"></canvas>
-        <div class="status" id="stochStatus">Stochastic (14,3,3)</div>
-      </div>
-    </div>
-
-    <div class="panel" id="superPanel">
-      <div class="super-panel">
-        <div class="super-item">
-          <canvas id="total3Canvas"></canvas>
-          <div class="status">TOTAL3 (proxy) — trend i MA</div>
-          <div class="alert-bar" id="total3Alert"></div>
-        </div>
-        <div class="super-item">
-          <canvas id="btcdCanvas"></canvas>
-          <div class="status">BTCD (proxy) — dominacja BTC</div>
-          <div class="alert-bar" id="btcdAlert"></div>
-        </div>
-        <div class="super-item">
-          <canvas id="ethbtcCanvas"></canvas>
-          <div class="status">ETH/BTC (proxy) — przepływ do ETH/altów</div>
-          <div class="alert-bar" id="ethbtcAlert"></div>
-        </div>
-        <div class="super-item">
-          <canvas id="signalCanvas"></canvas>
-          <div class="status">Alt Season — Sygnał łączony</div>
-          <div class="alert-bar" id="comboAlert"></div>
-        </div>
+      <div class="overlay">
+        <div class="pill" id="infoInterval">Interval: D1</div>
+        <div class="pill" id="infoTheme">Theme: Light</div>
       </div>
     </div>
   </div>
 
-  <div class="toast" id="toast" style="display:none"></div>
-
   <script type="module">
-    const TF_CHAIN = [
-      {key:'1y',  label:'Roczne',         approxMs:365*24*60*60*1000},
-      {key:'1M',  label:'Miesięczne',     approxMs:30*24*60*60*1000},
-      {key:'1w',  label:'Tygodniowe',     approxMs:7*24*60*60*1000},
-      {key:'1d',  label:'Dzienne',        approxMs:24*60*60*1000},
-      {key:'4h',  label:'4 godziny',      approxMs:4*60*60*1000},
-      {key:'1h',  label:'1 godzina',      approxMs:60*60*1000},
-      {key:'30m', label:'30 minut',       approxMs:30*60*1000},
-      {key:'15m', label:'15 minut',       approxMs:15*60*1000},
-      {key:'5m',  label:'5 minut',        approxMs:5*60*1000},
-      {key:'1m',  label:'1 minuta',       approxMs:60*1000}
+    import { createChart, CrosshairMode } from "lightweight-charts";
+
+    // Tailwind-like utility via classes already in CSS; we will programmatically style colors.
+
+    // Theme handling
+    const appRoot = document.getElementById('appRoot');
+    const themeToggle = document.getElementById('themeToggle');
+    const infoTheme = document.getElementById('infoTheme');
+
+    let isDark = false;
+    function applyTheme() {
+      if (isDark) {
+        appRoot.classList.remove('light');
+      } else {
+        appRoot.classList.add('light');
+      }
+      infoTheme.textContent = 'Theme: ' + (isDark ? 'Dark' : 'Light');
+      applyChartTheme();
+    }
+    themeToggle.addEventListener('click', () => {
+      isDark = !isDark;
+      applyTheme();
+    });
+
+    // Create chart
+    const chartContainer = document.getElementById('chart');
+
+    function chartColors() {
+      if (isDark) {
+        return {
+          background: '#0e1116',
+          grid: '#1f2937',
+          text: '#cbd5e1',
+          up: '#22c55e',
+          down: '#ef4444',
+          vol: '#64748b'
+        };
+      } else {
+        return {
+          background: '#f6f7fb',
+          grid: '#e5e7eb',
+          text: '#1f2937',
+          up: '#16a34a',
+          down: '#dc2626',
+          vol: '#94a3b8'
+        };
+      }
+    }
+
+    let chart = createChart(chartContainer, {
+      autoSize: true,
+      layout: {
+        background: { color: chartColors().background },
+        textColor: chartColors().text,
+      },
+      grid: {
+        vertLines: { color: chartColors().grid },
+        horzLines: { color: chartColors().grid },
+      },
+      crosshair: { mode: CrosshairMode.Normal },
+      timeScale: { timeVisible: true, secondsVisible: false, rightBarStaysOnScroll: true, borderColor: chartColors().grid },
+      rightPriceScale: { borderColor: chartColors().grid },
+      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: true },
+      handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true }
+    });
+
+    // Panels: We'll simulate top (RSI) and bottom (Stoch) panes using separate price scales and overlay lines with baselines.
+    // lightweight-charts doesn't support draggable pane dividers natively, so we implement a custom splitter layered UI.
+
+    // Series
+    const mainCandles = chart.addCandlestickSeries({
+      upColor: chartColors().up, downColor: chartColors().down,
+      borderUpColor: chartColors().up, borderDownColor: chartColors().down,
+      wickUpColor: chartColors().up, wickDownColor: chartColors().down
+    });
+
+    // Higher timeframe transparent candles (three degrees)
+    const htf1 = chart.addCandlestickSeries({
+      priceScaleId: 'right',
+      upColor: 'rgba(34,197,94,0.35)',
+      downColor: 'rgba(239,68,68,0.35)',
+      wickUpColor: 'rgba(34,197,94,0.25)',
+      wickDownColor: 'rgba(239,68,68,0.25)',
+      borderUpColor: 'rgba(34,197,94,0.35)',
+      borderDownColor: 'rgba(239,68,68,0.35)'
+    });
+    const htf2 = chart.addCandlestickSeries({
+      priceScaleId: 'right',
+      upColor: 'rgba(34,197,94,0.22)',
+      downColor: 'rgba(239,68,68,0.22)',
+      wickUpColor: 'rgba(34,197,94,0.15)',
+      wickDownColor: 'rgba(239,68,68,0.15)',
+      borderUpColor: 'rgba(34,197,94,0.22)',
+      borderDownColor: 'rgba(239,68,68,0.22)'
+    });
+    const htf3 = chart.addCandlestickSeries({
+      priceScaleId: 'right',
+      upColor: 'rgba(34,197,94,0.12)',
+      downColor: 'rgba(239,68,68,0.12)',
+      wickUpColor: 'rgba(34,197,94,0.08)',
+      wickDownColor: 'rgba(239,68,68,0.08)',
+      borderUpColor: 'rgba(34,197,94,0.12)',
+      borderDownColor: 'rgba(239,68,68,0.12)'
+    });
+
+    // RSI and Stochastic series - place them on separate overlayed panes by mapping values to custom price scales
+    const RSI_SCALE = 'rsi';
+    const STOCH_SCALE = 'stoch';
+
+    chart.priceScale(RSI_SCALE, {
+      scaleMargins: { top: 0.02, bottom: 0.8 }, // top pane 1/8
+      borderColor: chartColors().grid
+    });
+    chart.priceScale(STOCH_SCALE, {
+      scaleMargins: { top: 0.8, bottom: 0.02 }, // bottom pane 1/8
+      borderColor: chartColors().grid
+    });
+    chart.priceScale('right', {
+      scaleMargins: { top: 0.13, bottom: 0.13 } // main chart occupies 3/4 (1 - 1/8 - 1/8)
+    });
+
+    const rsiLine = chart.addLineSeries({
+      priceScaleId: RSI_SCALE,
+      color: '#8b5cf6',
+      lineWidth: 2
+    });
+    const rsiUpper = chart.addLineSeries({ priceScaleId: RSI_SCALE, color: 'rgba(139,92,246,0.3)', lineWidth: 1 });
+    const rsiLower = chart.addLineSeries({ priceScaleId: RSI_SCALE, color: 'rgba(139,92,246,0.3)', lineWidth: 1 });
+
+    const stochKLine = chart.addLineSeries({
+      priceScaleId: STOCH_SCALE,
+      color: '#06b6d4',
+      lineWidth: 2
+    });
+    const stochDLine = chart.addLineSeries({
+      priceScaleId: STOCH_SCALE,
+      color: '#f59e0b',
+      lineWidth: 2
+    });
+    const stochUpper = chart.addLineSeries({ priceScaleId: STOCH_SCALE, color: 'rgba(245,158,11,0.25)', lineWidth: 1 });
+    const stochLower = chart.addLineSeries({ priceScaleId: STOCH_SCALE, color: 'rgba(245,158,11,0.25)', lineWidth: 1 });
+
+    // Legend color dots
+    const dotMain = document.getElementById('dotMain');
+    const dotHTF1 = document.getElementById('dotHTF1');
+    const dotHTF2 = document.getElementById('dotHTF2');
+    const dotHTF3 = document.getElementById('dotHTF3');
+    dotMain.style.background = isDark ? '#22c55e' : '#16a34a';
+    dotHTF1.style.background = 'rgba(59,130,246,0.35)';
+    dotHTF2.style.background = 'rgba(59,130,246,0.22)';
+    dotHTF3.style.background = 'rgba(59,130,246,0.12)';
+
+    // Interval mapping
+    const intervals = [
+      { key: '1', label: 'M1', seconds: 60 },
+      { key: '5', label: 'M5', seconds: 300 },
+      { key: '15', label: 'M15', seconds: 900 },
+      { key: '60', label: 'H1', seconds: 3600 },
+      { key: '240', label: 'H4', seconds: 14400 },
+      { key: 'D', label: 'D1', seconds: 86400 },
+      { key: 'W', label: 'W1', seconds: 604800 },
+      { key: 'M', label: 'MN', seconds: 2629800 }, // approx month
+      { key: 'Y', label: 'Y1', seconds: 31557600 } // approx year
     ];
-    const TF_ALPHA = {'1y':0.16,'1M':0.22,'1w':0.26,'1d':0.46,'4h':0.64,'1h':0.72,'30m':0.8,'15m':0.86,'5m':0.9,'1m':0.95};
+    const intByKey = Object.fromEntries(intervals.map(i => [i.key, i]));
+    const infoInterval = document.getElementById('infoInterval');
 
-    const chartCanvas = document.getElementById('chart');
-    const rsiCanvas = document.getElementById('rsi');
-    const stochCanvas = document.getElementById('stoch');
-    const statusEl = document.getElementById('status');
-    const toastEl = document.getElementById('toast');
-    const exchangeSel = document.getElementById('exchange');
-    const symbolInput = document.getElementById('symbol');
-    const timezoneSel = document.getElementById('timezone');
-    const loadBtn = document.getElementById('loadBtn');
-    const liveBtn = document.getElementById('liveBtn');
-    const chartStatus = document.getElementById('chartStatus');
-    const mobileBtn = document.getElementById('mobileBtn');
-    const root = document.getElementById('root');
-    const toolBar = document.getElementById('chartTools');
-    const yHandle = document.getElementById('yHandle');
-    const xHandle = document.getElementById('xHandle');
-    const rsiHandle = document.getElementById('rsiHandle');
-    const stochHandle = document.getElementById('stochHandle');
-
-    const total3Canvas = document.getElementById('total3Canvas');
-    const btcdCanvas = document.getElementById('btcdCanvas');
-    const ethbtcCanvas = document.getElementById('ethbtcCanvas');
-    const signalCanvas = document.getElementById('signalCanvas');
-    const total3Alert = document.getElementById('total3Alert');
-    const btcdAlert = document.getElementById('btcdAlert');
-    const ethbtcAlert = document.getElementById('ethbtcAlert');
-    const comboAlert = document.getElementById('comboAlert');
-
-    const toggleTotal3 = document.getElementById('toggleTotal3');
-    const toggleBtcd = document.getElementById('toggleBtcd');
-    const toggleEthBtc = document.getElementById('toggleEthBtc');
-    const toggleAlerts = document.getElementById('toggleAlerts');
-    const toggleEarly = document.getElementById('toggleEarly');
-
-    const tools = { active:'cursor', shapes:[] };
-    toolBar.addEventListener('click', (e)=>{
-      if(!(e.target instanceof HTMLButtonElement)) return;
-      const t = e.target.getAttribute('data-tool');
-      if(t==='clear'){ tools.shapes.length=0; requestRender(); return; }
-      tools.active = t;
-      [...toolBar.querySelectorAll('button')].forEach(b=>b.classList.toggle('active', b===e.target));
-    });
-
-    function generateSyntheticOHLC(startMs, endMs, baseMs){
-      const out=[];
-      const steps = Math.floor((endMs-startMs)/baseMs);
-      let price = 20000;
-      let trend = 0.00002;
-      let vol = 0.015;
-      for(let i=0;i<=steps;i++){
-        const t = startMs + i*baseMs;
-        const cyc = 0.12*Math.sin(i/400) + 0.06*Math.sin(i/87) + 0.02*Math.cos(i/21);
-        const rnd = (Math.random()-0.5)*vol*2;
-        const ret = trend + cyc*0.0005 + rnd;
-        const o = price;
-        price = Math.max(500, price * (1+ret));
-        const c = price;
-        const h = Math.max(o,c) * (1+Math.random()*0.006);
-        const l = Math.min(o,c) * (1-Math.random()*0.006);
-        const v = 100 + Math.random()*50;
-        out.push({t,o,h,l,c,v});
-      }
-      return out;
-    }
-    function tfMs(tf){
-      switch(tf){
-        case '1m':return 60*1000;
-        case '5m':return 5*60*1000;
-        case '15m':return 15*60*1000;
-        case '30m':return 30*60*1000;
-        case '1h':return 60*60*1000;
-        case '4h':return 4*60*60*1000;
-        case '1d':return 24*60*60*1000;
-        case '1w':return 7*24*60*60*1000;
-        case '1M':return 30*24*60*60*1000;
-        case '1y':return 365*24*60*60*1000;
-      } return 60*1000;
-    }
-    function rollup(data, frameMs){
-      if(!data || !data.length) return [];
-      const out=[]; let bStart = Math.floor(data[0].t/frameMs)*frameMs;
-      let o=data[0].o, h=data[0].h, l=data[0].l, c=data[0].c, v=0;
-      for(const d of data){
-        const k = Math.floor(d.t/frameMs)*frameMs;
-        if(k!==bStart){ out.push({t:bStart,o,h,l,c,v}); bStart=k; o=d.o; h=d.h; l=d.l; v=0; }
-        h=Math.max(h,d.h); l=Math.min(l,d.l); c=d.c; v+=d.v||0;
-      }
-      out.push({t:bStart,o,h,l,c,v});
-      return out;
-    }
-
-    const now = Date.now();
-    const startHistory = now - 365*24*60*60*1000*4;
-    const base1m = generateSyntheticOHLC(startHistory, now, tfMs('1m'));
-    const dataStore = {};
-    for(const t of TF_CHAIN){
-      if(t.key==='1m'){ dataStore['1m']=base1m; continue; }
-      dataStore[t.key] = rollup(base1m, tfMs(t.key));
-    }
-
-    const state = {
-      symbol:'BTCUSDT',
-      tz:'local',
-      live:false,
-      levelIndex: TF_CHAIN.findIndex(t=>t.key==='1d'),
-      viewStart: now - 200*tfMs('1d'),
-      viewEnd: now + 10*tfMs('1d'),
-      yMin:null, yMax:null, yLock:false,
-      data: dataStore,
-      overlays: { total3:[], btcd:[], ethbtc:[] },
-      rsiPeriod:14,
-      stochCfg:{k:14, ks:3, d:3}
-    };
-
-    let rsiPct = 1/7, stochPct = 1/7;
-    function applyHeights(){
-      const mainPct = Math.max(0.1, 1 - rsiPct - stochPct);
-      root.style.setProperty('--rsiH', (rsiPct*100).toFixed(2)+'%');
-      root.style.setProperty('--stochH', (stochPct*100).toFixed(2)+'%');
-      root.style.setProperty('--mainH', (mainPct*100).toFixed(2)+'%');
-      requestRender();
-    }
-    applyHeights();
-
-    function attachRowHandle(handleEl, which){
-      let dragging=false, startY=0, startRsi=rsiPct, startStoch=stochPct, startMain=1-rsiPct-stochPct;
-      handleEl.addEventListener('mousedown',(e)=>{
-        e.preventDefault(); dragging=true; startY=e.clientY; startRsi=rsiPct; startStoch=stochPct; startMain=1-startRsi-startStoch;
-        document.body.style.cursor='row-resize';
-      });
-      window.addEventListener('mousemove',(e)=>{
-        if(!dragging) return;
-        const dy = e.clientY - startY;
-        const containerRect = root.getBoundingClientRect();
-        const delta = dy / containerRect.height;
-        if(which==='rsi'){
-          rsiPct = Math.max(0.06, Math.min(0.5, startRsi + delta));
-        }else{
-          stochPct = Math.max(0.06, Math.min(0.5, startStoch - delta));
-        }
-        const sum = rsiPct + stochPct;
-        if(1 - sum < 0.10){
-          if(which==='rsi') rsiPct = 0.90 - stochPct;
-          else stochPct = 0.90 - rsiPct;
-        }
-        applyHeights();
-      });
-      window.addEventListener('mouseup',()=>{
-        if(dragging){ dragging=false; document.body.style.cursor=''; }
-      });
-    }
-    attachRowHandle(rsiHandle,'rsi');
-    attachRowHandle(stochHandle,'stoch');
-
-    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-    const showToast=(msg,timeout=2000)=>{ toastEl.textContent=msg; toastEl.style.display='block'; setTimeout(()=>toastEl.style.display='none',timeout); };
-    function resizeCanvasToDisplaySize(canvas) {
-      const ratio = window.devicePixelRatio || 1;
-      const w = Math.max(2, Math.floor(canvas.clientWidth * ratio));
-      const h = Math.max(2, Math.floor(canvas.clientHeight * ratio));
-      if (canvas.width !== w || canvas.height !== h) { canvas.width=w; canvas.height=h; }
-      return {w,h,ratio};
-    }
-    function drawBackdrop(ctx,w,h){
-      const g = ctx.createLinearGradient(0,0,0,h);
-      g.addColorStop(0,'#0c121c'); g.addColorStop(1,'#0a0f18');
-      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
-      ctx.globalAlpha = 0.07;
-      for(let i=0;i<4;i++){
-        const cx = (i/3)*w + (Math.sin(i*1.3)*0.18)*w;
-        const cy = (0.22+0.18*i)*h;
-        const r = 0.55*Math.min(w,h)/(i+2);
-        const rg = ctx.createRadialGradient(cx,cy,0,cx,cy,r);
-        rg.addColorStop(0, ['#1b2740','#1a2a3f','#17263b'][i%3]);
-        rg.addColorStop(1, 'transparent');
-        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
-    function drawGrid(ctx,w,h){
-      ctx.strokeStyle='#1b2432'; ctx.lineWidth=1;
-      ctx.beginPath();
-      for(let i=0;i<6;i++){ const y=Math.round((i+1)*h/7)+.5; ctx.moveTo(0,y); ctx.lineTo(w,y); }
-      ctx.stroke();
-    }
-    function yScale(vals,h,pad=10){
-      let min=Infinity, max=-Infinity;
-      for(const v of vals){ if(v<min)min=v; if(v>max)max=v; }
-      if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
-      if(max===min){ max=min+1; }
-      const f = (v)=> h - ((v-min)/(max-min))*(h-2*pad)-pad;
-      return {min,max,map:f};
-    }
-
-    function SMA(values, period){
-      const out=[]; let sum=0;
-      for(let i=0;i<values.length;i++){ sum+=values[i]; if(i>=period) sum-=values[i-period]; out.push(i>=period-1 ? sum/period : NaN); }
-      return out;
-    }
-    function RSIarr(closes, period=14){
-      const out=[]; if(!closes.length) return out;
-      let gains=new Array(closes.length).fill(0), losses=new Array(closes.length).fill(0);
-      for(let i=1;i<closes.length;i++){ const ch=closes[i]-closes[i-1]; gains[i]=Math.max(0,ch); losses[i]=Math.max(0,-ch); }
-      let avgG = gains.slice(1,1+period).reduce((a,b)=>a+b,0)/period;
-      let avgL = losses.slice(1,1+period).reduce((a,b)=>a+b,0)/period;
-      out[0]=NaN;
-      for(let i=1;i<closes.length;i++){
-        if(i<period){ out[i]=NaN; continue; }
-        if(i>period){ const ch=closes[i]-closes[i-1]; const g=Math.max(0,ch), l=Math.max(0,-ch); avgG=(avgG*(period-1)+g)/period; avgL=(avgL*(period-1)+l)/period; }
-        const rs = avgL===0 ? 1000 : avgG/avgL; out[i] = 100 - (100/(1+rs));
-      }
-      return out;
-    }
-    function Stoch(highs,lows,closes,kPeriod=14,kSmoothing=3,dPeriod=3){
-      const kRaw=[];
-      for(let i=0;i<closes.length;i++){
-        const from=Math.max(0,i-kPeriod+1);
-        const hh=Math.max(...highs.slice(from,i+1));
-        const ll=Math.min(...lows.slice(from,i+1));
-        const den=(hh-ll)||1e-9;
-        kRaw.push(((closes[i]-ll)/den)*100);
-      }
-      const k=SMA(kRaw,kSmoothing), d=SMA(k,kSmoothing);
-      return {k,d};
-    }
-
-    function higherTFs(tf){
-      const idx = TF_CHAIN.findIndex(t=>t.key===tf);
+    function higherIntervals(key) {
+      // Compute up to three higher TFs. Special rule: monthly->yearly (second-degree), all lower show up to third-degree, highest Y1.
+      const order = ['1','5','15','60','240','D','W','M','Y'];
+      const idx = order.indexOf(key);
       const out = [];
-      for(let i=1;i<=2;i++){ const j = idx - i; if(j>=0) out.push(TF_CHAIN[j].key); }
-      if(idx-3>=0) out.push(TF_CHAIN[idx-3].key);
+      for (let i=1; i<=3; i++) {
+        const k = order[Math.min(idx + i, order.length - 1)];
+        if (!k) break;
+        if (k === key) continue;
+        out.push(k);
+        if (k === 'Y') break;
+      }
       return out;
     }
 
-    function buildOverlays(){
-      const daily = dataStore['1d'];
-      const closes = daily.map(d=>d.c);
-      const times = daily.map(d=>d.t);
-      const total3=[], btcd=[], ethbtc=[];
-      let emaT = closes[0], emaEth = 0.065, dom=0.55;
-      for(let i=0;i<closes.length;i++){
-        const c = closes[i], t=times[i], p=i?closes[i-1]:c;
-        const ret=(c-p)/p;
-        const cyc=0.02*Math.sin(i/30)+0.012*Math.cos(i/80);
-        emaT = emaT*0.93 + (c*(1+1.6*ret+cyc))*0.07;
-        total3.push({t,v:emaT});
-
-        const ethDrift = (-ret*0.7) + 0.0015*Math.sin(i/45);
-        emaEth = clamp(emaEth*0.985 + (emaEth + ethDrift)*0.015, 0.02, 0.25);
-        ethbtc.push({t,v:emaEth});
-
-        const risk = (emaT/c) + (emaEth/0.07);
-        dom = clamp(0.58 - 0.07*(risk-1), 0.35, 0.75);
-        const prev = btcd.length? btcd[btcd.length-1].v : dom;
-        const sm = prev*0.92 + dom*0.08;
-        btcd.push({t,v:sm});
+    // Synthetic OHLCV data generator (no external assets)
+    function generateData(startTimeSec, bars, basePrice, volatilityPct, stepSec) {
+      let t = startTimeSec;
+      const data = [];
+      let price = basePrice;
+      let volBase = 1000;
+      for (let i=0; i<bars; i++) {
+        const drift = Math.sin(i / 50) * volatilityPct * basePrice;
+        const noise = (Math.random() - 0.5) * volatilityPct * basePrice * 0.6;
+        const open = price;
+        let close = Math.max(1, open + drift*0.02 + noise);
+        const high = Math.max(open, close) + Math.abs(noise) * 0.8;
+        const low  = Math.min(open, close) - Math.abs(noise) * 0.8;
+        const volume = Math.max(10, Math.round(volBase + (Math.sin(i/15)*200) + Math.random()*300));
+        data.push({ time: t, open, high, low, close, volume });
+        price = close;
+        t += stepSec;
       }
-      state.overlays.total3 = total3;
-      state.overlays.btcd = btcd;
-      state.overlays.ethbtc = ethbtc;
-    }
-    buildOverlays();
-
-    let isPanning=false, panStartX=0, panStartStart=0, panStartEnd=0;
-    function attachInteractions(canvas){
-      canvas.addEventListener('wheel',(e)=>{
-        e.preventDefault();
-        const mx = e.offsetX * (canvas.width/canvas.clientWidth);
-        const frac = mx / canvas.width;
-        const tStart = state.viewStart, tEnd=state.viewEnd, span=tEnd-tStart;
-        const zoom = Math.exp(-e.deltaY * 0.0015);
-        const newSpan = clamp(span * zoom, 60*1000*10, 365*24*60*60*1000*50);
-        const pivot = tStart + span * frac;
-        state.viewStart = pivot - newSpan * frac;
-        state.viewEnd   = pivot + newSpan * (1-frac);
-        requestRender();
-      },{passive:false});
-      canvas.addEventListener('mousedown',(e)=>{
-        if(e.button===2){ levelUp(); return; }
-        isPanning=true; panStartX=e.clientX; panStartStart=state.viewStart; panStartEnd=state.viewEnd;
-      });
-      window.addEventListener('mousemove',(e)=>{
-        if(isPanning){
-          const px = (e.clientX - panStartX) * (canvas.width/canvas.clientWidth);
-          const span = panStartEnd - panStartStart;
-          const shift = px / canvas.width * span;
-          state.viewStart = panStartStart - shift;
-          state.viewEnd   = panStartEnd   - shift;
-          requestRender();
-        }
-      });
-      window.addEventListener('mouseup',()=>{ isPanning=false; });
-      window.addEventListener('contextmenu',(e)=>{ if(e.target===canvas){ e.preventDefault(); } });
-      window.addEventListener('keydown',(e)=>{ if(e.key==='Backspace'){ e.preventDefault(); levelUp(); } });
-      canvas.addEventListener('click',(e)=>{ drillIntoAt(e.offsetX, canvas); });
-    }
-    attachInteractions(chartCanvas);
-
-    function currentTF(){ return TF_CHAIN[state.levelIndex].key; }
-    function levelUp(){
-      if(state.levelIndex>0){
-        state.levelIndex--;
-        showToast('Cofnięto do: '+TF_CHAIN[state.levelIndex].label);
-        const tf = currentTF();
-        const d = dataStore[tf];
-        if(d.length){ state.viewStart=d[0].t; state.viewEnd=d[d.length-1].t + tfMs(tf); }
-        state.yLock=false; state.yMin=null; state.yMax=null;
-        requestRender();
-      }
-    }
-    async function drillIntoAt(x, canvas){
-      const ratio = canvas.width/canvas.clientWidth;
-      const mx = x*ratio;
-      const t = state.viewStart + (state.viewEnd - state.viewStart)*(mx/canvas.width);
-      const tf = currentTF();
-      const ms = tfMs(tf);
-      const bucket = Math.floor(t/ms)*ms;
-      const idx = TF_CHAIN.findIndex(i=>i.key===tf);
-      if(idx>=TF_CHAIN.length-1){ showToast('To najniższy interwał.'); return; }
-      state.levelIndex++;
-      const child = currentTF();
-      state.viewStart = bucket - tfMs(child)*200;
-      state.viewEnd   = bucket + tfMs(child)*400;
-      state.yLock=false; state.yMin=null; state.yMax=null;
-      showToast('Interwał: '+TF_CHAIN[state.levelIndex].label);
-      requestRender();
+      return data;
     }
 
-    let yDrag=false, yDragStart=0, yRef={min:0,max:1};
-    yHandle.addEventListener('mousedown',(e)=>{
-      e.preventDefault(); yDrag=true; yDragStart=e.clientY;
-      const {min,max} = computeAutoYBounds();
-      yRef.min = state.yLock? state.yMin:min;
-      yRef.max = state.yLock? state.yMax:max;
-    });
-    window.addEventListener('mousemove',(e)=>{
-      if(!yDrag) return;
-      const dy = (e.clientY - yDragStart);
-      const sens = 0.0025;
-      const range = yRef.max - yRef.min;
-      const scale = Math.exp(dy * sens);
-      const mid = (yRef.max + yRef.min)/2;
-      const newRange = clamp(range * scale, 1e-6, Number.MAX_SAFE_INTEGER);
-      state.yMin = mid - newRange/2; state.yMax = mid + newRange/2; state.yLock=true;
-      requestRender();
-    });
-    window.addEventListener('mouseup',()=>{ yDrag=false; });
-
-    let xDrag=false, xDragStart=0, xRefSpan=0;
-    xHandle.addEventListener('mousedown',(e)=>{
-      e.preventDefault(); xDrag=true; xDragStart=e.clientX; xRefSpan=state.viewEnd-state.viewStart;
-    });
-    window.addEventListener('mousemove',(e)=>{
-      if(!xDrag) return;
-      const dx = (e.clientX - xDragStart);
-      const scale = Math.exp(-dx*0.0035);
-      const newSpan = clamp(xRefSpan*scale, 60*1000*10, 365*24*60*60*1000*50);
-      const mid = (state.viewStart+state.viewEnd)/2;
-      state.viewStart = mid - newSpan/2; state.viewEnd = mid + newSpan/2;
-      requestRender();
-    });
-    window.addEventListener('mouseup',()=>{ xDrag=false; });
-
-    function drawCandles(ctx, data, tf, yMap, t0, t1, colorUp, colorDn, alphaMul=1){
-      if(!data || !data.length) return;
-      const alpha = (TF_ALPHA[tf] ?? 0.5) * alphaMul;
-      for(const d of data){
-        const t = d.t, t2 = t + tfMs(tf);
-        if(t2<t0 || t>t1) continue;
-        const nx = (t - t0) / (t1 - t0);
-        const nx2 = (Math.min(t2,t1) - t0) / (t1 - t0);
-        const cx = nx*ctx.canvas.width, cx2 = nx2*ctx.canvas.width;
-        const cw = Math.max(1, (cx2-cx)*0.7);
-        const yO = yMap(d.o), yH = yMap(d.h), yL = yMap(d.l), yC = yMap(d.c);
-        const up = d.c>=d.o;
-        const wick = 'rgba(42,54,75,'+Math.min(1,alpha+0.2)+')';
-        ctx.strokeStyle = wick; ctx.lineWidth = Math.max(1, Math.floor(cw*0.2));
-        ctx.beginPath(); ctx.moveTo(cx, yH); ctx.lineTo(cx, yL); ctx.stroke();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = up ? `rgba(91,212,156,${alpha})` : `rgba(239,107,115,${alpha})`;
-        ctx.fillStyle   = up ? `rgba(91,212,156,${Math.min(1,alpha*0.9)})` : `rgba(239,107,115,${Math.min(1,alpha*0.9)})`;
-        const top = Math.min(yO,yC), bottom=Math.max(yO,yC), bh=Math.max(1, bottom-top);
-        ctx.beginPath(); ctx.rect(cx - cw/2, top, cw, bh); ctx.fill(); ctx.stroke();
-      }
-    }
-
-    function computeAutoYBounds(){
-      const t0 = state.viewStart, t1=state.viewEnd;
-      const tf = currentTF();
-      const arrMain = dataStore[tf].filter(d=>d.t>=t0 && d.t<=t1);
-      let min=Infinity, max=-Infinity;
-      const update = d=>{ if(d.l<min)min=d.l; if(d.h>max)max=d.h; };
-      (arrMain.length?arrMain:dataStore[tf]).forEach(update);
-      for(const hi of higherTFs(tf)){
-        const arr = dataStore[hi];
-        (arr||[]).forEach(d=>{ if(d.t+tfMs(hi)<t0 || d.t>t1) return; update(d); });
-      }
-      if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
-      return {min,max};
-    }
-    const activeYMin = ()=> state.yLock && state.yMin!=null ? state.yMin : computeAutoYBounds().min;
-    const activeYMax = ()=> state.yLock && state.yMax!=null ? state.yMax : computeAutoYBounds().max;
-
-    function drawLine(ctx, xs, ys, color, width=1.5){
-      if(!xs.length) return;
-      ctx.strokeStyle=color; ctx.lineWidth=width; ctx.beginPath();
-      for(let i=0;i<xs.length;i++){ const x=xs[i], y=ys[i]; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
-      ctx.stroke();
-    }
-
-    function drawRSI(ctx, data, t0, t1){
-      const closes = data.map(d=>d.c);
-      const r = RSIarr(closes, state.rsiPeriod);
-      const w = ctx.canvas.width, h = ctx.canvas.height;
-      drawBackdrop(ctx,w,h); drawGrid(ctx,w,h);
-      const xs=[], ys=[];
-      const min=0, max=100; const map = v => h - ((v-min)/(max-min))*(h-20)-10;
-      const start = data.findIndex(d=>d.t>=t0); const end = data.findIndex(d=>d.t>t1);
-      const s = start>=0? start:0, e = end>=0? end:data.length;
-      for(let i=s;i<e;i++){
-        const nx = (data[i].t - t0) / (t1 - t0); xs.push(nx*w); ys.push(map(r[i]));
-      }
-      ctx.strokeStyle='rgba(195,232,141,0.95)'; ctx.lineWidth=1.4; ctx.beginPath();
-      ys.forEach((y,i)=>{ const x=xs[i]; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke();
-      ctx.strokeStyle='rgba(200,200,200,.25)'; ctx.setLineDash([4,4]); ctx.beginPath();
-      const y30=map(30), y70=map(70); ctx.moveTo(0,y30); ctx.lineTo(w,y30); ctx.moveTo(0,y70); ctx.lineTo(w,y70); ctx.stroke();
-      ctx.setLineDash([]);
-    }
-    function drawStoch(ctx, data, t0, t1){
-      const highs=data.map(d=>d.h), lows=data.map(d=>d.l), closes=data.map(d=>d.c);
-      const st = Stoch(highs,lows,closes, state.stochCfg.k, state.stochCfg.ks, state.stochCfg.d);
-      const w = ctx.canvas.width, h = ctx.canvas.height;
-      drawBackdrop(ctx,w,h); drawGrid(ctx,w,h);
-      const xsK=[], ysK=[], xsD=[], ysD=[];
-      const min=0, max=100; const map = v => h - ((v-min)/(max-min))*(h-20)-10;
-      const start = data.findIndex(d=>d.t>=t0); const end = data.findIndex(d=>d.t>t1);
-      const s = start>=0? start:0, e = end>=0? end:data.length;
-      for(let i=s;i<e;i++){
-        const nx = (data[i].t - t0) / (t1 - t0); const x=nx*w;
-        xsK.push(x); ysK.push(map(st.k[i]));
-        xsD.push(x); ysD.push(map(st.d[i]));
-      }
-      drawLine(ctx,xsK,ysK,'#9fe2ff',1.5);
-      drawLine(ctx,xsD,ysD,'#7aa2f7',1.2);
-      ctx.strokeStyle='rgba(200,200,200,.25)'; ctx.setLineDash([4,4]); ctx.beginPath();
-      const y20=map(20), y80=map(80); ctx.moveTo(0,y20); ctx.lineTo(w,y20); ctx.moveTo(0,y80); ctx.lineTo(w,y80); ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
-    function movingAverage(arr, period){ const out=[]; let sum=0; for(let i=0;i<arr.length;i++){ sum+=arr[i]; if(i>=period) sum-=arr[i-period]; out.push(i>=period-1?sum/period:NaN);} return out; }
-    function detectSignals(t0,t1){
-      const total3 = state.overlays.total3;
-      const btcd = state.overlays.btcd;
-      const ethbtc = state.overlays.ethbtc;
-      if(!(total3.length && btcd.length && ethbtc.length)) return {score:0, early:[], strong:[]};
-      const inRange = (arr)=> arr.filter(p=>p.t>=t0 && p.t<=t1);
-      const t3 = inRange(total3), bd = inRange(btcd), eb = inRange(ethbtc);
-      if(!(t3.length && bd.length && eb.length)) return {score:0, early:[], strong:[]};
-      const t3v=t3.map(p=>p.v), bdv=bd.map(p=>p.v), ebv=eb.map(p=>p.v);
-      const t3ma=movingAverage(t3v,20), bdma=movingAverage(bdv,20), ebma=movingAverage(ebv,20);
-      const ia=t3v.length-1, ib=bdv.length-1, ic=ebv.length-1;
-      const chA = ia>5 ? (t3v[ia]-t3v[ia-5])/t3v[ia-5] : 0;
-      const chBpct = ib>5 ? (bdv[ib]-bdv[ib-5])/bdv[ib-5]:0;
-      const chC = ic>5 ? (ebv[ic]-ebv[ic-5])/ebv[ic-5] : 0;
-      const condA = t3v[ia] > (t3ma[ia]||t3v[ia]) && chA > 0.03;
-      const condB = bdv[ib] < (bdma[ib]||bdv[ib]) && chBpct < -0.015;
-      const condC = ebv[ic] > (ebma[ic]||ebv[ic]) && chC > 0.01;
-      const score = [condA,condB,condC].filter(Boolean).length;
-      const early=[], strong=[];
-      if(t3v[ia] > (t3ma[ia]||t3v[ia])) early.push('TOTAL3 ponad MA');
-      if(bdv[ib] < (bdma[ib]||bdv[ib])) early.push('BTCD poniżej MA');
-      if(ebv[ic] > (ebma[ic]||ebv[ic])) early.push('ETH/BTC ponad MA');
-      if(condA) strong.push('TOTAL3 wybija (+)');
-      if(condB) strong.push('BTCD spada (risk-on)');
-      if(condC) strong.push('ETH/BTC rośnie');
-      return {score, early, strong};
-    }
-    function alertBars(t0,t1){
-      const res = detectSignals(t0,t1);
-      total3Alert.textContent = res.strong.includes('TOTAL3 wybija (+)') ? 'TOTAL3: mocny trend wzrostowy' : (res.early.includes('TOTAL3 ponad MA') ? 'TOTAL3: wczesny sygnał powyżej MA' : '');
-      total3Alert.className = 'alert-bar ' + (total3Alert.textContent.includes('mocny')?'alert-green':'');
-      btcdAlert.textContent = res.strong.includes('BTCD spada (risk-on)') ? 'BTCD: silny spadek dominacji' : (res.early.includes('BTCD poniżej MA') ? 'BTCD: wczesny sygnał poniżej MA' : '');
-      btcdAlert.className = 'alert-bar ' + (btcdAlert.textContent.includes('silny')?'alert-green':'');
-      ethbtcAlert.textContent = res.strong.includes('ETH/BTC rośnie') ? 'ETH/BTC: mocny przepływ do ETH/altów' : (res.early.includes('ETH/BTC ponad MA') ? 'ETH/BTC: wczesny sygnał powyżej MA' : '');
-      ethbtcAlert.className = 'alert-bar ' + (ethbtcAlert.textContent.includes('mocny')?'alert-green':'');
-      comboAlert.textContent = res.score>=2 ? `Sygnał łączony: ${res.score}/3 — możliwy alt sezon` : (res.score===1? 'Sygnał łączony: 1/3 — obserwuj' : 'Sygnał łączony: 0/3');
-      comboAlert.className = 'alert-bar ' + (res.score>=2 ? 'alert-green' : res.score===0 ? 'alert-red':'');
-    }
-
-    function drawOverlayPanel(canvas, series, color='#7aa2f7'){
-      const {w,h} = resizeCanvasToDisplaySize(canvas);
-      const ctx = canvas.getContext('2d');
-      drawBackdrop(ctx,w,h); drawGrid(ctx,w,h);
-      const t0 = state.viewStart, t1 = state.viewEnd;
-      const arr = series.filter(p=>p.t>=t0 && p.t<=t1);
-      const use = arr.length? arr : series.slice(-Math.floor(series.length*0.6));
-      if(!use.length) return;
-      let min=Infinity, max=-Infinity; for(const p of use){ if(p.v<min)min=p.v; if(p.v>max)max=p.v; }
-      if(max===min){ max=min+1; }
-      const xs=[], ys=[];
-      for(const p of use){
-        const nx = (p.t - (arr.length?t0:use[0].t)) / ((arr.length?t1:use[use.length-1].t) - (arr.length?t0:use[0].t) || 1);
-        xs.push(nx*w);
-        ys.push(h - ((p.v-min)/(max-min))*(h-20)-10);
-      }
-      drawLine(ctx, xs, ys, color, 1.6);
-      const vals = use.map(p=>p.v); const ma = SMA(vals, 20);
-      const xs2=[], ys2=[];
-      for(let i=0;i<use.length;i++){
-        const nx = (use[i].t - (arr.length?t0:use[0].t)) / ((arr.length?t1:use[use.length-1].t) - (arr.length?t0:use[0].t) || 1);
-        xs2.push(nx*w); ys2.push(h - (((ma[i]||vals[i])-min)/(max-min))*(h-20)-10);
-      }
-      drawLine(ctx, xs2, ys2, '#ffcc66', 1.2);
-      canvas.style.opacity = '1';
-      canvas.parentElement.style.display = 'block';
-    }
-
-    function render(){
-      const {w:W,h:H} = resizeCanvasToDisplaySize(chartCanvas);
-      const cctx = chartCanvas.getContext('2d');
-      drawBackdrop(cctx,W,H); drawGrid(cctx,W,H);
-      const tf = currentTF();
-      const t0 = state.viewStart, t1=state.viewEnd;
-      const mainData = dataStore[tf];
-      const yMin = activeYMin(), yMax = activeYMax();
-      const yMap = v => H - ((v-yMin)/(yMax-yMin))*(H-20) - 10;
-
-      const highs = higherTFs(tf);
-      highs.forEach((hi, i)=>{
-        const arr = dataStore[hi];
-        cctx.save();
-        cctx.globalAlpha = 0.25 - i*0.06;
-        drawCandles(cctx, arr, hi, yMap, t0, t1, '#5bd49c', '#ef6b73', 0.7);
-        cctx.restore();
-      });
-
-      drawCandles(cctx, mainData, tf, yMap, t0, t1, '#5bd49c', '#ef6b73', 1);
-
-      cctx.save();
-      cctx.strokeStyle='rgba(255,204,102,.95)';
-      cctx.fillStyle='rgba(255,204,102,.1)';
-      cctx.lineWidth=1.4;
-      for(const s of tools.shapes){
-        if(s.type==='trend'){
-          cctx.beginPath(); cctx.moveTo(s.points[0].x, s.points[0].y); cctx.lineTo(s.points[1].x, s.points[1].y); cctx.stroke();
-        } else if(s.type==='hline'){
-          cctx.beginPath(); cctx.moveTo(0,s.y); cctx.lineTo(W,s.y); cctx.stroke();
-        } else if(s.type==='rect'){
-          const {x1,y1,x2,y2}=s.rect; const x=Math.min(x1,x2), y=Math.min(y1,y2), w=Math.abs(x2-x1), h=Math.abs(y2-y1);
-          cctx.beginPath(); cctx.rect(x,y,w,h); cctx.fill(); cctx.stroke();
-        }
-      }
-      cctx.restore();
-
-      const rsiCtx = rsiCanvas.getContext('2d');
-      resizeCanvasToDisplaySize(rsiCanvas);
-      drawRSI(rsiCtx, mainData, t0, t1);
-
-      const stCtx = stochCanvas.getContext('2d');
-      resizeCanvasToDisplaySize(stochCanvas);
-      drawStoch(stCtx, mainData, t0, t1);
-
-      drawOverlayPanel(total3Canvas, state.overlays.total3, '#7dcfff');
-      drawOverlayPanel(btcdCanvas, state.overlays.btcd, '#bb9af7');
-      drawOverlayPanel(ethbtcCanvas, state.overlays.ethbtc, '#5bd49c');
-
-      const {w:Ws,h:Hs} = resizeCanvasToDisplaySize(signalCanvas);
-      const sctx = signalCanvas.getContext('2d');
-      drawBackdrop(sctx,Ws,Hs); drawGrid(sctx,Ws,Hs);
-      alertBars(t0,t1);
-
-      const tfName = tf;
-      chartStatus.textContent = `${state.symbol} (${tfName}) MTFA`;
-
-      // Toggle overlay visibility according to switches
-      total3Canvas.parentElement.style.display = toggleTotal3.checked ? 'block' : 'none';
-      btcdCanvas.parentElement.style.display = toggleBtcd.checked ? 'block' : 'none';
-      ethbtcCanvas.parentElement.style.display = toggleEthBtc.checked ? 'block' : 'none';
-      comboAlert.parentElement.style.display = (toggleTotal3.checked || toggleBtcd.checked || toggleEthBtc.checked) ? 'block' : 'block';
-    }
-
-    let raf = null, pending=false;
-    function requestRender(){ if(pending) return; pending=true; raf=requestAnimationFrame(()=>{ pending=false; render(); }); }
-
-    requestRender();
-
-    loadBtn.addEventListener('click', ()=>{
-      state.symbol = symbolInput.value.trim().toUpperCase() || 'BTCUSDT';
-      showToast('Załadowano dane (syntetyczne) dla: '+state.symbol, 1500);
-      requestRender();
-    });
-    liveBtn.addEventListener('click', ()=>{
-      state.live = !state.live; liveBtn.textContent = state.live? 'Live ON':'Live OFF';
-      showToast('Tryb live (symulacja): '+(state.live?'ON':'OFF'));
-    });
-    mobileBtn.addEventListener('click', ()=>{
-      root.classList.toggle('mobile'); requestRender();
-    });
-
-    let drawing=false, draft=null;
-    chartCanvas.addEventListener('mousedown',(e)=>{
-      if(tools.active==='cursor') return;
-      drawing=true;
-      const r = chartCanvas.getBoundingClientRect();
-      const x = (e.clientX - r.left) * (chartCanvas.width / chartCanvas.clientWidth);
-      const y = (e.clientY - r.top) * (chartCanvas.height / chartCanvas.clientHeight);
-      if(tools.active==='trend'){ draft={type:'trend', points:[{x,y},{x,y}]}; }
-      else if(tools.active==='hline'){ draft={type:'hline', y}; }
-      else if(tools.active==='rect'){ draft={type:'rect', rect:{x1:x,y1:y,x2:x,y2:y}}; }
-      if(draft) tools.shapes.push(draft);
-      requestRender();
-    });
-    window.addEventListener('mousemove',(e)=>{
-      if(!drawing || !draft) return;
-      const r = chartCanvas.getBoundingClientRect();
-      const x = (e.clientX - r.left) * (chartCanvas.width / chartCanvas.clientWidth);
-      const y = (e.clientY - r.top) * (chartCanvas.height / chartCanvas.clientHeight);
-      if(draft.type==='trend'){ draft.points[1]={x,y}; }
-      else if(draft.type==='hline'){ draft.y=y; }
-      else if(draft.type==='rect'){ draft.rect.x2=x; draft.rect.y2=y; }
-      requestRender();
-    });
-    window.addEventListener('mouseup',()=>{
-      if(drawing){ drawing=false; draft=null; }
-    });
-
-    // Switches behaviors
-    function updateAlertsToggle(){
-      const barEls = [total3Alert, btcdAlert, ethbtcAlert, comboAlert];
-      barEls.forEach(el=>{
-        el.style.opacity = toggleAlerts.checked ? '1' : '0.15';
-      });
-    }
-    toggleAlerts.addEventListener('change', ()=>{ updateAlertsToggle(); requestRender(); });
-    toggleEarly.addEventListener('change', ()=>{ showToast('Wczesne sygnały: ' + (toggleEarly.checked?'ON':'OFF')); requestRender(); });
-    toggleTotal3.addEventListener('change', ()=> requestRender());
-    toggleBtcd.addEventListener('change', ()=> requestRender());
-    toggleEthBtc.addEventListener('change', ()=> requestRender());
-
-    // Handle resize
-    window.addEventListener('resize', ()=> requestRender());
-
-    // Simulated live mode: append new candle every few seconds on active TF and rebuild overlays occasionally
-    setInterval(()=>{
-      if(!state.live) return;
-      const tf = currentTF();
-      const ms = tfMs(tf);
-      const arr = dataStore['1m']; // drive base from 1m
-      const last = arr[arr.length-1];
-      const t = last.t + tfMs('1m');
-      // generate one more 1m step based on last close
-      const price = last.c;
-      const rnd = (Math.random()-0.5)*0.004;
-      const o = price;
-      const c = Math.max(500, price*(1+rnd));
-      const h = Math.max(o,c)*(1+Math.random()*0.002);
-      const l = Math.min(o,c)*(1-Math.random()*0.002);
-      arr.push({t,o,h,l,c,v:90+Math.random()*40});
-
-      // rollup affected frames cheaply (recompute end segments)
-      for(const tfi of TF_CHAIN){
-        const key=tfi.key;
-        if(key==='1m') continue;
-        const frame=tfMs(key);
-        const rolled = rollup(arr.slice(-Math.min(arr.length, Math.ceil((frame*100)/tfMs('1m')))), frame); // last window
-        const dst = dataStore[key];
-        // Merge last bucket
-        const lastBucket = rolled[rolled.length-1];
-        if(!dst.length || lastBucket.t > dst[dst.length-1].t){
-          dst.push(lastBucket);
+    // Aggregate to higher timeframe
+    function aggregate(data, stepSec, aggSec) {
+      const bucket = new Map();
+      for (const d of data) {
+        const t0 = Math.floor(d.time / aggSec) * aggSec;
+        const key = t0;
+        if (!bucket.has(key)) {
+          bucket.set(key, { time: t0, open: d.open, high: d.high, low: d.low, close: d.close, volume: d.volume });
         } else {
-          dst[dst.length-1] = lastBucket;
+          const b = bucket.get(key);
+          b.high = Math.max(b.high, d.high);
+          b.low = Math.min(b.low, d.low);
+          b.close = d.close;
+          b.volume += d.volume;
         }
       }
-      // Rebuild overlays from daily occasionally
-      if(Math.random()<0.2) buildOverlays();
-      requestRender();
-    }, 1200);
+      return Array.from(bucket.values()).sort((a,b)=>a.time-b.time);
+    }
 
-    updateAlertsToggle();
-    statusEl.textContent = 'Dane gotowe (syntetyczne). Kliknij wykres aby zejść w TF, Backspace / PPM aby wrócić.';
+    // Indicators
+    function SMA(values, period) {
+      const out = new Array(values.length).fill(null);
+      let sum = 0;
+      for (let i=0; i<values.length; i++) {
+        sum += values[i];
+        if (i >= period) sum -= values[i - period];
+        if (i >= period - 1) out[i] = sum / period;
+      }
+      return out;
+    }
+
+    function RSI(close, period=14) {
+      const out = new Array(close.length).fill(null);
+      let gains = 0, losses = 0;
+      for (let i=1; i<close.length; i++) {
+        const ch = close[i] - close[i-1];
+        const gain = Math.max(ch, 0);
+        const loss = Math.max(-ch, 0);
+        if (i <= period) {
+          gains += gain;
+          losses += loss;
+          if (i === period) {
+            let rs = (gains/period) / (losses/period || 1e-10);
+            out[i] = 100 - 100 / (1 + rs);
+          }
+        } else {
+          gains = (gains * (period - 1) + gain) / period;
+          losses = (losses * (period - 1) + loss) / period;
+          let rs = gains / (losses || 1e-10);
+          out[i] = 100 - 100 / (1 + rs);
+        }
+      }
+      return out;
+    }
+
+    function Stochastic(high, low, close, kPeriod=14, dPeriod=3, smooth=3) {
+      const kRaw = new Array(close.length).fill(null);
+      for (let i=0; i<close.length; i++) {
+        if (i < kPeriod - 1) continue;
+        let h = -Infinity, l = Infinity;
+        for (let j=i-kPeriod+1; j<=i; j++) {
+          h = Math.max(h, high[j]);
+          l = Math.min(l, low[j]);
+        }
+        const denom = (h - l) || 1e-10;
+        kRaw[i] = ((close[i] - l) / denom) * 100;
+      }
+      const kSmooth = SMA(kRaw.map(v => v ?? 0), smooth);
+      const dLine = SMA(kSmooth.map(v => v ?? 0), dPeriod);
+      const outK = kSmooth.map((v,i) => (i < kPeriod - 1 + smooth - 1 ? null : v));
+      const outD = dLine.map((v,i) => (i < kPeriod - 1 + smooth - 1 + dPeriod - 1 ? null : v));
+      return { k: outK, d: outD };
+    }
+
+    function applyChartTheme() {
+      const c = chartColors();
+      chart.applyOptions({
+        layout: { background: { color: c.background }, textColor: c.text },
+        grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
+        timeScale: { borderColor: c.grid },
+        rightPriceScale: { borderColor: c.grid }
+      });
+      dotMain.style.background = isDark ? '#22c55e' : '#16a34a';
+    }
+
+    // Interval controls
+    const intervalButtons = Array.from(document.querySelectorAll('.intervals .btn'));
+    let currentIntervalKey = 'D';
+
+    function setActiveIntervalButton(key) {
+      intervalButtons.forEach(b => {
+        if (b.dataset.int === key) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+      infoInterval.textContent = 'Interval: ' + intByKey[key].label;
+    }
+
+    intervalButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.int;
+        if (key === currentIntervalKey) return;
+        currentIntervalKey = key;
+        setActiveIntervalButton(key);
+        refreshDataForInterval();
+      });
+    });
+
+    // Generate base minute data and then aggregate as needed on-the-fly
+    const nowSec = Math.floor(Date.now() / 1000);
+    const BASE_STEP = 60; // 1-minute base
+    const baseData = generateData(nowSec - 400*BASE_STEP, 400, 20000, 0.0025, BASE_STEP);
+
+    function seriesSetDataFromCandles(series, candles) {
+      series.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
+    }
+
+    function computeForInterval(key) {
+      const main = intByKey[key];
+      // Compute main candles
+      let mainCandlesData;
+      if (key === '1') mainCandlesData = baseData;
+      else if (key === '5') mainCandlesData = aggregate(baseData, 60, 300);
+      else if (key === '15') mainCandlesData = aggregate(baseData, 60, 900);
+      else if (key === '60') mainCandlesData = aggregate(baseData, 60, 3600);
+      else if (key === '240') mainCandlesData = aggregate(baseData, 60, 14400);
+      else if (key === 'D') mainCandlesData = aggregate(baseData, 60, 86400);
+      else if (key === 'W') mainCandlesData = aggregate(baseData, 60, 604800);
+      else if (key === 'M') mainCandlesData = aggregate(baseData, 60, 2629800);
+      else if (key === 'Y') mainCandlesData = aggregate(baseData, 60, 31557600);
+
+      const htfKeys = higherIntervals(key);
+      const htfData = htfKeys.map(k => {
+        const step = intByKey[k].seconds;
+        return aggregate(baseData, 60, step);
+      });
+
+      return { mainCandlesData, htfData, htfKeys };
+    }
+
+    function updateIndicators(candles) {
+      const close = candles.map(c => c.close);
+      const high = candles.map(c => c.high);
+      const low = candles.map(c => c.low);
+      const times = candles.map(c => c.time);
+
+      const rsiPeriod = parseInt(document.getElementById('rsiPeriod').value) || 14;
+      const rsi = RSI(close, rsiPeriod);
+      const rsiData = times.map((t,i) => rsi[i] == null ? { time: t, value: null } : { time: t, value: rsi[i] });
+      rsiLine.setData(rsiData);
+      // Reference lines 70/30
+      rsiUpper.setData(times.map(t => ({ time: t, value: 70 })));
+      rsiLower.setData(times.map(t => ({ time: t, value: 30 })));
+
+      const kPeriod = parseInt(document.getElementById('stochK').value) || 14;
+      const dPeriod = parseInt(document.getElementById('stochD').value) || 3;
+      const sPeriod = parseInt(document.getElementById('stochS').value) || 3;
+      const { k, d } = Stochastic(high, low, close, kPeriod, dPeriod, sPeriod);
+      const kData = times.map((t,i) => k[i] == null ? { time: t, value: null } : { time: t, value: k[i] });
+      const dData = times.map((t,i) => d[i] == null ? { time: t, value: null } : { time: t, value: d[i] });
+      stochKLine.setData(kData);
+      stochDLine.setData(dData);
+      // Reference lines 80/20
+      stochUpper.setData(times.map(t => ({ time: t, value: 80 })));
+      stochLower.setData(times.map(t => ({ time: t, value: 20 })));
+    }
+
+    function refreshDataForInterval() {
+      const { mainCandlesData, htfData, htfKeys } = computeForInterval(currentIntervalKey);
+      seriesSetDataFromCandles(mainCandles, mainCandlesData);
+      seriesSetDataFromCandles(htf1, htfData[0] ?? []);
+      seriesSetDataFromCandles(htf2, htfData[1] ?? []);
+      seriesSetDataFromCandles(htf3, htfData[2] ?? []);
+
+      // Update labels for legend visibility
+      document.querySelector('#legend .row:nth-child(2)').style.display = htfData[0] ? 'flex' : 'none';
+      document.querySelector('#legend .row:nth-child(3)').style.display = htfData[1] ? 'flex' : 'none';
+      document.querySelector('#legend .row:nth-child(4)').style.display = htfData[2] ? 'flex' : 'none';
+
+      updateIndicators(mainCandlesData);
+    }
+
+    // Apply indicator settings
+    document.getElementById('applyIndicators').addEventListener('click', () => {
+      const { mainCandlesData } = computeForInterval(currentIntervalKey);
+      updateIndicators(mainCandlesData);
+    });
+
+    // Draggable panel heights via scaleMargins manipulation
+    // We'll capture mouse drag on invisible gutters near top and bottom of main area.
+    let draggingTop = false;
+    let draggingBottom = false;
+
+    function setPaneFractions(rsiFrac, stochFrac) {
+      // Clamp
+      rsiFrac = Math.max(0.08, Math.min(0.5, rsiFrac));
+      stochFrac = Math.max(0.08, Math.min(0.5, stochFrac));
+      const mainFrac = Math.max(0.2, 1 - rsiFrac - stochFrac);
+
+      chart.priceScale(RSI_SCALE).applyOptions({ scaleMargins: { top: 0.02, bottom: 1 - rsiFrac } });
+      chart.priceScale('right').applyOptions({ scaleMargins: { top: rsiFrac + 0.02, bottom: stochFrac + 0.02 } });
+      chart.priceScale(STOCH_SCALE).applyOptions({ scaleMargins: { top: 1 - stochFrac, bottom: 0.02 } });
+    }
+
+    // Default: 1/8 each
+    let rsiFrac = 1/8;
+    let stochFrac = 1/8;
+    setPaneFractions(rsiFrac, stochFrac);
+
+    // Create draggable overlays
+    const topDivider = document.createElement('div');
+    topDivider.style.position = 'absolute';
+    topDivider.style.left = '0';
+    topDivider.style.right = '0';
+    topDivider.style.height = '8px';
+    topDivider.style.cursor = 'row-resize';
+    topDivider.style.zIndex = '20';
+
+    const bottomDivider = topDivider.cloneNode(true);
+
+    chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+      // no-op, but forces layout events
+    });
+
+    function layoutDividers() {
+      const { height } = chartContainer.getBoundingClientRect();
+      const topY = Math.round(height * rsiFrac) + 6;
+      const bottomY = Math.round(height * (1 - stochFrac)) - 6;
+      topDivider.style.top = (topY - 4) + 'px';
+      bottomDivider.style.top = (bottomY - 4) + 'px';
+    }
+    window.addEventListener('resize', layoutDividers);
+    chartContainer.appendChild(topDivider);
+    chartContainer.appendChild(bottomDivider);
+    layoutDividers();
+
+    function onMouseDownFactory(which) {
+      return (e) => {
+        e.preventDefault();
+        draggingTop = which === 'top';
+        draggingBottom = which === 'bottom';
+        document.body.style.userSelect = 'none';
+      };
+    }
+    function onMouseMove(e) {
+      if (!draggingTop && !draggingBottom) return;
+      const rect = chartContainer.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const h = rect.height;
+      if (draggingTop) {
+        rsiFrac = Math.max(0.08, Math.min(0.5, y / h));
+      } else if (draggingBottom) {
+        stochFrac = Math.max(0.08, Math.min(0.5, 1 - (y / h)));
+      }
+      setPaneFractions(rsiFrac, stochFrac);
+      layoutDividers();
+    }
+    function onMouseUp() {
+      draggingTop = draggingBottom = false;
+      document.body.style.userSelect = '';
+    }
+    topDivider.addEventListener('mousedown', onMouseDownFactory('top'));
+    bottomDivider.addEventListener('mousedown', onMouseDownFactory('bottom'));
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    // Touch support
+    topDivider.addEventListener('touchstart', (e)=>{ onMouseDownFactory('top')(e.touches[0]); }, {passive:true});
+    bottomDivider.addEventListener('touchstart', (e)=>{ onMouseDownFactory('bottom')(e.touches[0]); }, {passive:true});
+    window.addEventListener('touchmove', (e)=>{ onMouseMove(e.touches[0]); }, {passive:true});
+    window.addEventListener('touchend', onMouseUp);
+
+    // Initialize
+    setActiveIntervalButton(currentIntervalKey);
+    applyTheme();
+    refreshDataForInterval();
+
   </script>
 </body>
 </html>
