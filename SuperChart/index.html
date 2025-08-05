@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kaskadowy wykres świec krypto (live) z RSI i Stoch</title>
+  <style>
+    :root{
+      --bg:#0f1217;
+      --panel:#121720;
+      --grid:#232a35;
+      --muted:#6b778c;
+      --text:#d8dee9;
+      --bull:#5bd49c;
+      --bear:#e57373;
+      --accent:#7aa2f7;
+      --accent2:#bb9af7;
+      --accent3:#7dcfff;
+      --rsi:#c3e88d;
+      --stoch:%239fe2ff;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;background:var(--bg);color:var(--text);margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+    header{
+      display:flex;gap:.75rem;align-items:center;justify-content:space-between;
+      padding:.75rem 1rem;background:linear-gradient(180deg,#0f131b,#0d1219);
+      border-bottom:1px solid #1e2633; position:sticky; top:0; z-index:2;
+    }
+    header .left, header .right{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap}
+    select, input, button{
+      background:#0f1622;border:1px solid #1f2a3a;color:var(--text);
+      padding:.45rem .6rem;border-radius:.4rem; outline:none;
+    }
+    button{cursor:pointer}
+    button:hover, select:hover{border-color:#2b3a52}
+    .container{
+      display:grid; grid-template-rows:150px 1fr 150px; height:calc(100% - 60px);
+    }
+    .panel{
+      background:var(--panel); border-top:1px solid #1b2432; border-bottom:1px solid #1b2432;
+    }
+    .row{display:grid; grid-template-columns:260px 1fr; height:100%}
+    .sidebar{
+      padding:.6rem;border-right:1px solid #1b2432; overflow:auto;
+      background:linear-gradient(180deg,#101722,#0f141d);
+    }
+    .sidebar h3{margin:.4rem 0 .6rem;color:#aab7cf;font-weight:600;font-size:.95rem}
+    .tf-level{
+      display:flex; flex-direction:column; gap:.25rem; margin-bottom:.75rem;
+    }
+    .tf-level .label{
+      color:#8ea0bb; font-size:.8rem; display:flex; align-items:center; gap:.4rem;
+    }
+    .legend{
+      display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.5rem;
+    }
+    .badge{
+      font-size:.7rem; padding:.2rem .35rem; border-radius:.3rem; border:1px solid #223045;
+      color:#b5c3da; background:#0f1724;
+    }
+    .canvas-wrap{position:relative; background:var(--panel)}
+    canvas{display:block; width:100%; height:100%}
+    .status{
+      position:absolute; top:.4rem; right:.6rem; background:#0f1622;
+      border:1px solid #1f2a3a; border-radius:.4rem; padding:.25rem .5rem; color:#aab7cf;
+      font-size:.78rem; display:flex; gap:.5rem; align-items:center; pointer-events:none;
+    }
+    .toast{
+      position:fixed; bottom:10px; left:50%; transform:translateX(-50%);
+      background:#0f1622;border:1px solid #223045; padding:.5rem .75rem; border-radius:.4rem;
+      color:#b5c3da; font-size:.8rem; opacity:.95; z-index:5;
+    }
+    .help{
+      color:#8aa0c2; font-size:.82rem; margin-top:.25rem; line-height:1.35;
+    }
+    .muted{color:var(--muted)}
+    .spacer{flex:1}
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "p5": "https://cdn.jsdelivr.net/npm/p5@1.9.3/lib/p5.min.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header>
+    <div class="left">
+      <strong>Crypto Multi-Drill Candles</strong>
+      <span class="muted">Live</span>
+      <div class="spacer"></div>
+    </div>
+    <div class="right">
+      <label class="muted">Rynek</label>
+      <select id="exchange">
+        <option value="binance">Binance (REST)</option>
+        <option value="coinbase">Coinbase (REST)</option>
+      </select>
+      <label class="muted">Symbol</label>
+      <input id="symbol" placeholder="BTCUSDT lub BTC-USD" value="BTCUSDT" />
+      <label class="muted">Strefa</label>
+      <select id="timezone">
+        <option value="exchange">Czas giełdy</option>
+        <option value="local" selected>Twój lokalny</option>
+      </select>
+      <button id="loadBtn">Załaduj</button>
+      <button id="liveBtn">Live ON</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="panel" id="rsiPanel">
+      <div class="canvas-wrap">
+        <canvas id="rsi"></canvas>
+        <div class="status" id="rsiStatus">RSI(14)</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="sidebar">
+        <h3>Ustawienia</h3>
+        <div class="tf-level">
+          <div class="label">Tryb nawigacji</div>
+          <div class="help">Kliknij świecę aby wejść głębiej. PPM lub Backspace aby cofnąć poziom. Kółko/gest: zoom, przeciągnij: przesuwanie.</div>
+        </div>
+        <div class="tf-level">
+          <div class="label">Kolory i intensywność</div>
+          <div class="help">Im krótszy interwał, tym żywsza barwa. Dłuższe ramy są przygaszone.</div>
+        </div>
+        <div class="tf-level">
+          <div class="label">Wskaźniki</div>
+          <div class="legend">
+            <span class="badge">RSI(14)</span>
+            <span class="badge">%K(14,3)</span>
+            <span class="badge">%D(3)</span>
+          </div>
+        </div>
+        <div class="tf-level">
+          <div class="label">Głębokość</div>
+          <div class="help">Roczne › Miesięczne › Tygodniowe › Dzienne › 4h › 1h › 30m › 15m › 5m › 1m</div>
+        </div>
+        <div class="tf-level">
+          <div class="label">Status</div>
+          <div id="status" class="help">Oczekiwanie na dane…</div>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="chart"></canvas>
+        <div class="status" id="chartStatus">BTCUSDT (1m) Live</div>
+      </div>
+    </div>
+    <div class="panel" id="stochPanel">
+      <div class="canvas-wrap">
+        <canvas id="stoch"></canvas>
+        <div class="status" id="stochStatus">Stochastic (14,3,3)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" style="display:none"></div>
+
+  <script type="module">
+    // Core configuration
+    const TF_CHAIN = [
+      {key:'1y',  label:'Roczne',         exch:['binance','coinbase'], binance:'1M', coinbase:'1M',  approxMs:365*24*60*60*1000},
+      {key:'1M',  label:'Miesięczne',     exch:['binance','coinbase'], binance:'1w', coinbase:'1w',  approxMs:30*24*60*60*1000},
+      {key:'1w',  label:'Tygodniowe',     exch:['binance','coinbase'], binance:'1d', coinbase:'1d',  approxMs:7*24*60*60*1000},
+      {key:'1d',  label:'Dzienne',        exch:['binance','coinbase'], binance:'4h', coinbase:'4h', approxMs:24*60*60*1000},
+      {key:'4h',  label:'4 godziny',      exch:['binance','coinbase'], binance:'1h', coinbase:'1h', approxMs:4*60*60*1000},
+      {key:'1h',  label:'1 godzina',      exch:['binance','coinbase'], binance:'30m',coinbase:'30m',approxMs:60*60*1000},
+      {key:'30m', label:'30 minut',       exch:['binance','coinbase'], binance:'15m',coinbase:'15m',approxMs:30*60*1000},
+      {key:'15m', label:'15 minut',       exch:['binance','coinbase'], binance:'5m', coinbase:'5m', approxMs:15*60*1000},
+      {key:'5m',  label:'5 minut',        exch:['binance','coinbase'], binance:'1m', coinbase:'1m', approxMs:5*60*1000},
+      {key:'1m',  label:'1 minuta',       exch:['binance','coinbase'], binance:'1m', coinbase:'1m', approxMs:60*1000}
+    ];
+    // Visual intensity per TF (longer -> lower alpha)
+    const TF_ALPHA = {
+      '1y':0.18,'1M':0.22,'1w':0.26,'1d':0.32,'4h':0.42,'1h':0.5,'30m':0.58,'15m':0.66,'5m':0.74,'1m':0.9
+    };
+
+    // UI elements
+    const chartCanvas = document.getElementById('chart');
+    const rsiCanvas = document.getElementById('rsi');
+    const stochCanvas = document.getElementById('stoch');
+    const statusEl = document.getElementById('status');
+    const toastEl = document.getElementById('toast');
+    const exchangeSel = document.getElementById('exchange');
+    const symbolInput = document.getElementById('symbol');
+    const timezoneSel = document.getElementById('timezone');
+    const loadBtn = document.getElementById('loadBtn');
+    const liveBtn = document.getElementById('liveBtn');
+    const chartStatus = document.getElementById('chartStatus');
+
+    // State
+    let state = {
+      exch:'binance',
+      symbol:'BTCUSDT',
+      tz:'local',
+      live:true,
+      levelIndex:0, // start yearly
+      // visible range for X (in ms)
+      viewStart:Date.now()-365*24*60*60*1000*5,
+      viewEnd:Date.now()+24*60*60*1000,
+      // data cache per timeframe: array of {t,o,h,l,c,v}
+      data:{},
+      // animation
+      lastRedraw:0,
+    };
+
+    // Helpers
+    const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+    const lerp = (a,b,t)=>a+(b-a)*t;
+    const showToast = (msg, timeout=2200)=>{
+      toastEl.textContent = msg;
+      toastEl.style.display='block';
+      setTimeout(()=>toastEl.style.display='none', timeout);
+    };
+    const fmtTime = (ts)=>{
+      const d = new Date(ts);
+      if(state.tz==='exchange') return d.toUTCString();
+      return d.toLocaleString();
+    };
+    function resizeCanvasToDisplaySize(canvas) {
+      const ratio = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth * ratio;
+      const h = canvas.clientHeight * ratio;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w; canvas.height = h;
+      }
+      return {w,h,ratio};
+    }
+
+    // Random placeholder gradient background (procedural asset)
+    function drawBackdrop(ctx,w,h){
+      const g = ctx.createLinearGradient(0,0,w,h);
+      g.addColorStop(0,'#0d1320');
+      g.addColorStop(1,'#0a0f19');
+      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+      ctx.globalAlpha = 0.08;
+      for(let i=0;i<6;i++){
+        const cx = Math.random()*w, cy=Math.random()*h, r = Math.random()*Math.min(w,h)*0.5;
+        const grd = ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+        grd.addColorStop(0, ['#21304a','#222b40','#1c2640'][i%3]);
+        grd.addColorStop(1,'transparent');
+        ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Fetchers: Binance and Coinbase REST klines
+    async function fetchKlines(exchange, symbol, interval, limit=1000, endTimeMs=Date.now()){
+      if(exchange==='binance'){
+        // Binance requires symbol like BTCUSDT. map intervals directly or via TF_CHAIN
+        const url = new URL('https://api.binance.com/api/v3/klines');
+        url.searchParams.set('symbol', symbol);
+        url.searchParams.set('interval', interval);
+        url.searchParams.set('limit', String(limit));
+        url.searchParams.set('endTime', String(endTimeMs));
+        const r = await fetch(url.toString());
+        if(!r.ok) throw new Error('Binance HTTP '+r.status);
+        const arr = await r.json();
+        return arr.map(k=>({
+          t: k[0],
+          o: +k[1],
+          h: +k[2],
+          l: +k[3],
+          c: +k[4],
+          v: +k[5]
+        }));
+      } else {
+        // Coinbase Advanced Trade API (public candles)
+        // Product like BTC-USD
+        // Intervals: 1m 5m 15m 1h 6h 24h (we'll roll up to required)
+        // Use /api/v3/brokerage/products/{product_id}/candles?granularity=ONE_MINUTE etc.
+        const map = {
+          '1m':'ONE_MINUTE','5m':'FIVE_MINUTE','15m':'FIFTEEN_MINUTE',
+          '1h':'ONE_HOUR','4h':'SIX_HOUR','1d':'ONE_DAY','1w':'ONE_DAY','1M':'ONE_DAY'
+        };
+        const g = map[interval] || 'ONE_MINUTE';
+        const url = new URL(`https://api.coinbase.com/api/v3/brokerage/products/${symbol}/candles`);
+        url.searchParams.set('granularity', g);
+        // Coinbase returns recent-first; provide limit via start/end time window
+        const endISO = new Date(endTimeMs).toISOString();
+        const startISO = new Date(endTimeMs - limit*60*1000*5).toISOString(); // broad window
+        url.searchParams.set('start', startISO);
+        url.searchParams.set('end', endISO);
+        const r = await fetch(url.toString());
+        if(!r.ok) throw new Error('Coinbase HTTP '+r.status);
+        const json = await r.json();
+        const arr = (json.candles||[]).map(c=>({
+          t: new Date(c.start).getTime(),
+          o: +c.open,
+          h: +c.high,
+          l: +c.low,
+          c: +c.close,
+          v: +c.volume
+        })).sort((a,b)=>a.t-b.t);
+        return arr;
+      }
+    }
+
+    // Rollup aggregation to higher custom frames (e.g., 1y from 1M, 1M from 1w, etc.)
+    function rollup(data, frameMs){
+      if(!data || !data.length) return [];
+      const buckets = [];
+      let bucketStart = Math.floor(data[0].t / frameMs) * frameMs;
+      let o = data[0].o, h = data[0].h, l = data[0].l, v = 0, c = data[0].c;
+      for(const d of data){
+        const k = Math.floor(d.t / frameMs) * frameMs;
+        if(k !== bucketStart){
+          buckets.push({t:bucketStart, o, h, l, c, v});
+          bucketStart = k; o = d.o; h = d.h; l = d.l; v = 0;
+        }
+        h = Math.max(h, d.h);
+        l = Math.min(l, d.l);
+        c = d.c;
+        v += d.v || 0;
+      }
+      buckets.push({t:bucketStart, o, h, l, c, v});
+      return buckets;
+    }
+
+    // Compute frame milliseconds by TF key
+    function tfMs(tf){
+      switch(tf){
+        case '1m':return 60*1000;
+        case '5m':return 5*60*1000;
+        case '15m':return 15*60*1000;
+        case '30m':return 30*60*1000;
+        case '1h':return 60*60*1000;
+        case '4h':return 4*60*60*1000;
+        case '1d':return 24*60*60*1000;
+        case '1w':return 7*24*60*60*1000;
+        case '1M':return 30*24*60*60*1000;
+        case '1y':return 365*24*60*60*1000;
+      }
+      return 60*1000;
+    }
+
+    // Indicators: RSI(14), Stochastic (14,3,3 like TradingView default smoothing)
+    function SMA(values, period){
+      const out=[]; let sum=0;
+      for(let i=0;i<values.length;i++){
+        sum+=values[i];
+        if(i>=period) sum-=values[i-period];
+        if(i>=period-1) out.push(sum/period); else out.push(NaN);
+      }
+      return out;
+    }
+    function RSI(closes, period=14){
+      const out=[]; let gains=[], losses=[];
+      for(let i=1;i<closes.length;i++){
+        const ch = closes[i]-closes[i-1];
+        gains.push(ch>0?ch:0);
+        losses.push(ch<0?-ch:0);
+      }
+      let avgGain = gains.slice(0,period).reduce((a,b)=>a+b,0)/period;
+      let avgLoss = losses.slice(0,period).reduce((a,b)=>a+b,0)/period;
+      for(let i=0;i<closes.length;i++){
+        if(i===0){ out.push(NaN); continue; }
+        if(i<period){ out.push(NaN); continue; }
+        if(i>period){
+          const ch = closes[i]-closes[i-1];
+          const g = ch>0?ch:0, l = ch<0?-ch:0;
+          avgGain = (avgGain*(period-1)+g)/period;
+          avgLoss = (avgLoss*(period-1)+l)/period;
+        }
+        const rs = avgLoss===0 ? 100 : avgGain/avgLoss;
+        const rsi = 100 - (100/(1+rs));
+        out.push(rsi);
+      }
+      return out;
+    }
+    function Stochastic(highs, lows, closes, kPeriod=14, kSmoothing=3, dPeriod=3){
+      const kRaw=[];
+      for(let i=0;i<closes.length;i++){
+        const from = Math.max(0, i-kPeriod+1);
+        const hh = Math.max(...highs.slice(from, i+1));
+        const ll = Math.min(...lows.slice(from, i+1));
+        const denom = (hh-ll) || 1e-9;
+        kRaw.push(((closes[i]-ll)/denom)*100);
+      }
+      const k = SMA(kRaw, kSmoothing);
+      const d = SMA(k, dPeriod);
+      return {k,d};
+    }
+
+    // Color scale by timeframe
+    function colorForTF(tf){
+      // palette from muted cyan -> blue -> violet with intensity by alpha
+      const base = {
+        '1y':'#6b7b95','1M':'#6b87a8','1w':'#6b93bb','1d':'#67a1ce',
+        '4h':'#63aee1','1h':'#5dbcf2','30m':'#60c7f7','15m':'#6ad0fb',
+        '5m':'#73d8fd','1m':'#7de0ff'
+      }[tf] || '#7de0ff';
+      return base;
+    }
+
+    // Drill map: which child TF to show next
+    function childTF(tf){
+      const idx = TF_CHAIN.findIndex(t=>t.key===tf);
+      if(idx<0 || idx>=TF_CHAIN.length-1) return null;
+      return TF_CHAIN[idx+1].key;
+    }
+
+    // Candlestick rendering
+    function drawGrid(ctx,w,h, yLabels=[]){
+      ctx.strokeStyle='#1e2633'; ctx.lineWidth=1;
+      ctx.beginPath();
+      for(let i=0;i<10;i++){
+        const y = Math.round((i+1)*h/11)+.5;
+        ctx.moveTo(0,y); ctx.lineTo(w,y);
+      }
+      ctx.stroke();
+      // y labels
+      ctx.fillStyle='#7f8ca1';
+      ctx.textAlign='right'; ctx.textBaseline='middle';
+      ctx.font='12px system-ui, Arial';
+      const pad=4;
+      for(const yl of yLabels){
+        const y = yl.y;
+        ctx.fillText(yl.text, w-pad, y);
+      }
+    }
+
+    function yScale(vals, h, pad=10){
+      let min=Infinity, max=-Infinity;
+      for(const v of vals){ if(v<min)min=v; if(v>max)max=v; }
+      if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
+      if(max===min){ max=min+1; }
+      const range = max-min;
+      const f = (v)=> h - ((v-min)/(range))* (h-2*pad) - pad;
+      return {min,max, map:f};
+    }
+
+    // Build hierarchy data on demand and cache
+    async function ensureData(tf){
+      // If we have, return
+      if(state.data[tf] && state.data[tf].length) return state.data[tf];
+
+      const ex = state.exch;
+      let sym = state.symbol.trim();
+      if(ex==='binance'){
+        // ensure uppercase without dash
+        sym = sym.replace(/[-/]/g,'').toUpperCase();
+      } else {
+        // Coinbase needs dash
+        if(!sym.includes('-')){
+          // heuristic: if ends with USDT or BUSD, translate to USD
+          if(sym.toUpperCase().endsWith('USDT')) sym = sym.slice(0,-4)+'-USD';
+          else if(sym.toUpperCase().endsWith('USD')) sym = sym.slice(0,-3)+'-USD';
+          else sym = sym.toUpperCase() + '-USD';
+        }
+      }
+
+      // Determine base interval to fetch from exchange
+      const chainItem = TF_CHAIN.find(t=>t.key===tf);
+      let fetchInterval = chainItem[ex];
+      // For yearly we will aggregate from monthly (1M) which we mapped to weekly on exchange; better: get 1d and roll to monthly then yearly
+      // To have enough data for deep drill, fetch 1m for lower, 1d for higher
+      let limit = 1000;
+
+      // two paths: if fetchInterval equals '1m' we can fetch directly; else we'll fetch the exchange-supported and roll to our tf
+      const endTime = Date.now();
+
+      let baseData = await fetchKlines(ex, sym, fetchInterval, limit, endTime);
+
+      // If our tf is same as exchange interval, use directly, else roll to our tf using target frameMs
+      const targetMs = tfMs(tf);
+      const exchMs = tfMs(fetchInterval);
+      let data;
+      if(targetMs===exchMs){
+        data = baseData;
+      } else {
+        data = rollup(baseData, targetMs);
+      }
+
+      // For topmost yearly, aggregate from monthly if needed (already handled by roll)
+      // Cache
+      state.data[tf] = data;
+      return data;
+    }
+
+    function getChainPath(){
+      return TF_CHAIN.map(t=>t.key);
+    }
+
+    // Map visible window to indices quickly
+    function sliceByTime(data, startMs, endMs){
+      if(!data || !data.length) return [];
+      const out = data.filter(d=>d.t>=startMs && d.t<=endMs);
+      return out.length ? out : data; // fall back to all if filter empty (zoomed too far)
+    }
+
+    // Draw candlesticks for the whole chain, faded by TF
+    function drawCandles(ctx, data, tf, x0, x1, yScaleMap, timeStart, timeEnd){
+      if(!data || !data.length) return;
+      const color = colorForTF(tf);
+      const alpha = TF_ALPHA[tf] ?? 0.5;
+      const w = ctx.canvas.width;
+      const h = ctx.canvas.height;
+      const tSpan = timeEnd - timeStart;
+      ctx.lineWidth = 1;
+      for(const d of data){
+        const t = d.t;
+        const nx = (t - timeStart) / tSpan;
+        const cx = x0 + nx * (x1-x0);
+        const nextT = t + tfMs(tf);
+        const nx2 = (Math.min(nextT, timeEnd) - timeStart) / tSpan;
+        const cx2 = x0 + nx2 * (x1-x0);
+        const cw = Math.max(1, (cx2 - cx) * 0.7);
+
+        const yO = yScaleMap.map(d.o);
+        const yH = yScaleMap.map(d.h);
+        const yL = yScaleMap.map(d.l);
+        const yC = yScaleMap.map(d.c);
+
+        const up = d.c>=d.o;
+        ctx.strokeStyle = up ? `rgba(91,212,156,${alpha})` : `rgba(229,115,115,${alpha})`;
+        ctx.fillStyle   = up ? `rgba(91,212,156,${alpha*0.7})` : `rgba(229,115,115,${alpha*0.7})`;
+
+        // Wick
+        ctx.beginPath();
+        ctx.moveTo(cx, yH); ctx.lineTo(cx, yL);
+        ctx.stroke();
+
+        // Body
+        const top = Math.min(yO, yC);
+        const bottom = Math.max(yO, yC);
+        const bh = Math.max(1, bottom - top);
+        ctx.fillRect(cx - cw/2, top, cw, bh);
+        // Outline subtle
+        ctx.globalAlpha = 0.6;
+        ctx.strokeRect(cx - cw/2, top, cw, bh);
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function priceBoundsFromChain(datasets){
+      let min=Infinity, max=-Infinity;
+      for(const arr of datasets){
+        if(!arr) continue;
+        for(const d of arr){
+          if(d.l<min)min=d.l;
+          if(d.h>max)max=d.h;
+        }
+      }
+      if(!isFinite(min)||!isFinite(max)){ min=0; max=1; }
+      return {min,max};
+    }
+
+    // Build deepest series for indicators (we choose current level tf for indicators)
+    function extractCloses(data){ return data.map(d=>d.c); }
+    function extractHighs(data){ return data.map(d=>d.h); }
+    function extractLows(data){ return data.map(d=>d.l); }
+
+    // Interaction: zoom & pan
+    let isPanning = false, panStartX = 0, panStartStart=0, panStartEnd=0;
+    function attachInteractions(canvas){
+      canvas.addEventListener('wheel', (e)=>{
+        e.preventDefault();
+        const mx = e.offsetX * (canvas.width/canvas.clientWidth);
+        const frac = mx / canvas.width;
+        const tStart = state.viewStart;
+        const tEnd = state.viewEnd;
+        const span = tEnd - tStart;
+        const zoom = Math.exp(-e.deltaY * 0.0015);
+        const newSpan = clamp(span * zoom, 60*1000*10, 365*24*60*60*1000*50);
+        const pivot = tStart + span * frac;
+        state.viewStart = pivot - newSpan * frac;
+        state.viewEnd   = pivot + newSpan * (1-frac);
+        requestRender();
+      }, {passive:false});
+
+      canvas.addEventListener('mousedown', (e)=>{
+        if(e.button===2){ // right click to go up
+          levelUp();
+          return;
+        }
+        isPanning = true;
+        panStartX = e.clientX;
+        panStartStart = state.viewStart;
+        panStartEnd = state.viewEnd;
+      });
+      window.addEventListener('mousemove', (e)=>{
+        if(!isPanning) return;
+        const dx = (e.clientX - panStartX);
+        const px = dx * (canvas.width/canvas.clientWidth);
+        const span = panStartEnd - panStartStart;
+        const shift = px / canvas.width * span;
+        state.viewStart = panStartStart - shift;
+        state.viewEnd   = panStartEnd   - shift;
+        requestRender();
+      });
+      window.addEventListener('mouseup', ()=>{ isPanning=false; });
+      window.addEventListener('contextmenu', (e)=>{
+        if(e.target===canvas){ e.preventDefault(); }
+      });
+      window.addEventListener('keydown', (e)=>{
+        if(e.key==='Backspace'){ e.preventDefault(); levelUp(); }
+      });
+      canvas.addEventListener('click', (e)=>{
+        // Drill-in on nearest candle
+        drillIntoAt(e.offsetX, canvas);
+      });
+    }
+
+    function currentTF(){ return TF_CHAIN[state.levelIndex].key; }
+    function levelUp(){
+      if(state.levelIndex>0){
+        state.levelIndex--;
+        showToast('Cofnięto do: '+TF_CHAIN[state.levelIndex].label);
+        requestRender();
+      }
+    }
+    async function drillIntoAt(x, canvas){
+      // map x to time
+      const ratio = canvas.width/canvas.clientWidth;
+      const mx = x*ratio;
+      const t = state.viewStart + (state.viewEnd - state.viewStart)*(mx/canvas.width);
+      const tf = currentTF();
+      const data = state.data[tf]||[];
+      if(!data.length) return;
+      // find candle containing t
+      const ms = tfMs(tf);
+      const bucket = Math.floor(t/ms)*ms;
+      const child = childTF(tf);
+      if(!child){ showToast('To jest najniższy interwał.'); return; }
+      // Set view to that bucket +/- one span
+      state.levelIndex++;
+      state.viewStart = bucket;
+      state.viewEnd = bucket + tfMs(child) * Math.max(120, 200); // show some child candles
+      // Ensure child data exists
+      await ensureData(child);
+      showToast('Wejście w: '+TF_CHAIN[state.levelIndex].label);
+      requestRender();
+    }
+
+    // Main render loop
+    async function render(){
+      const {w:W,h:H} = resizeCanvasToDisplaySize(chartCanvas);
+      const {w:Wrsi,h:Hrsi} = resizeCanvasToDisplaySize(rsiCanvas);
+      const {w:Wst,h:Hst} = resizeCanvasToDisplaySize(stochCanvas);
+      const ctx = chartCanvas.getContext('2d');
+      const rsiCtx = rsiCanvas.getContext('2d');
+      const stCtx = stochCanvas.getContext('2d');
+
+      // Backdrops
+      drawBackdrop(ctx,W,H);
+      drawBackdrop(rsiCtx,Wrsi,Hrsi);
+      drawBackdrop(stCtx,Wst,Hst);
+
+      // Load required data for chain up to current level and children until 1m
+      const path = getChainPath();
+      // Ensure base data for each visible level onward
+      for(const tf of path){
+        try{
+          await ensureData(tf);
+        }catch(err){
+          statusEl.textContent = 'Błąd pobierania: '+err.message;
+        }
+      }
+
+      // Build datasets per TF cut to view
+      const t0 = state.viewStart, t1 = state.viewEnd;
+      const chainIdx = TF_CHAIN.findIndex(t=>t.key===currentTF());
+      const visibleTFs = TF_CHAIN.slice(0, chainIdx+1).map(t=>t.key)
+        .concat(TF_CHAIN.slice(chainIdx+1).map(t=>t.key));
+      const datasets = visibleTFs.map(tf=> sliceByTime(state.data[tf], t0, t1));
+
+      // Price scale from all to keep consistent
+      const {min, max} = priceBoundsFromChain(datasets);
+      const yMap = yScale([min,max], H, 12);
+
+      // Grid + price labels
+      const yLabels=[];
+      for(let i=0;i<5;i++){
+        const v = lerp(min,max, i/4);
+        const y = yMap.map(v);
+        yLabels.push({y, text: v.toFixed(2)});
+      }
+      drawGrid(ctx, W, H, yLabels);
+
+      // Draw each TF behind to front
+      for(const tf of TF_CHAIN.map(t=>t.key)){
+        const data = sliceByTime(state.data[tf], t0, t1);
+        drawCandles(ctx, data, tf, 0, W, yMap, t0, t1);
+      }
+
+      // Indicators on current level
+      const tf = currentTF();
+      const curData = sliceByTime(state.data[tf], t0, t1);
+      const closes = extractCloses(curData);
+      const highs = extractHighs(curData);
+      const lows = extractLows(curData);
+      // RSI
+      const rsi = RSI(closes,14);
+      // RSI scale 0-100
+      rsiCtx.strokeStyle='#1e2633'; rsiCtx.lineWidth=1;
+      rsiCtx.beginPath();
+      for(const y of [30,50,70]){
+        const yy = Hrsi - (y/100)*(Hrsi-14) - 7;
+        rsiCtx.moveTo(0,yy); rsiCtx.lineTo(Wrsi,yy);
+      }
+      rsiCtx.stroke();
+      rsiCtx.strokeStyle='#c3e88d'; rsiCtx.lineWidth=1.5;
+      rsiCtx.beginPath();
+      for(let i=0;i<rsi.length;i++){
+        const x = i/(Math.max(1,rsi.length-1))*Wrsi;
+        const yVal = clamp(rsi[i]||0,0,100);
+        const y = Hrsi - (yVal/100)*(Hrsi-14) - 7;
+        if(i===0) rsiCtx.moveTo(x,y); else rsiCtx.lineTo(x,y);
+      }
+      rsiCtx.stroke();
+
+      // Stochastic
+      const {k,d} = Stochastic(highs,lows,closes,14,3,3);
+      // bounds 0..100 grid
+      stCtx.strokeStyle='#1e2633'; stCtx.lineWidth=1;
+      stCtx.beginPath();
+      for(const y of [20,50,80]){
+        const yy = Hst - (y/100)*(Hst-14) - 7;
+        stCtx.moveTo(0,yy); stCtx.lineTo(Wst,yy);
+      }
+      stCtx.stroke();
+      // %K
+      stCtx.strokeStyle='#9fe2ff'; stCtx.lineWidth=1.5; stCtx.beginPath();
+      for(let i=0;i<k.length;i++){
+        const x = i/(Math.max(1,k.length-1))*Wst;
+        const yVal = clamp(k[i]||0,0,100);
+        const y = Hst - (yVal/100)*(Hst-14) - 7;
+        if(i===0) stCtx.moveTo(x,y); else stCtx.lineTo(x,y);
+      }
+      stCtx.stroke();
+      // %D
+      stCtx.strokeStyle='#bb9af7'; stCtx.lineWidth=1.5; stCtx.beginPath();
+      for(let i=0;i<d.length;i++){
+        const x = i/(Math.max(1,d.length-1))*Wst;
+        const yVal = clamp(d[i]||0,0,100);
+        const y = Hst - (yVal/100)*(Hst-14) - 7;
+        if(i===0) stCtx.moveTo(x,y); else stCtx.lineTo(x,y);
+      }
+      stCtx.stroke();
+
+      // Status
+      document.getElementById('rsiStatus').textContent = `RSI(14) — ${tf}`;
+      document.getElementById('stochStatus').textContent = `Stochastic (14,3,3) — ${tf}`;
+      chartStatus.textContent = `${state.symbol} (${tf}) ${state.live?'Live':'Paused'}`;
+      statusEl.textContent = `Świece: ${curData.length}. Zakres: ${new Date(t0).toLocaleString()} — ${new Date(t1).toLocaleString()}`;
+      state.lastRedraw = performance.now();
+    }
+
+    let pending = false;
+    function requestRender(){
+      if(pending) return;
+      pending = true;
+      requestAnimationFrame(async()=>{
+        pending = false;
+        await render();
+      });
+    }
+
+    // Live updater: periodically fetch newest batches on the lowest needed exchange interval
+    async function liveTick(){
+      if(!state.live) return;
+      // refresh the lowest-level dataset to keep everything flowing
+      try{
+        const ex = state.exch;
+        let sym = state.symbol.trim();
+        if(ex==='binance') sym = sym.replace(/[-/]/g,'').toUpperCase();
+        else {
+          if(!sym.includes('-')){
+            if(sym.toUpperCase().endsWith('USDT')) sym = sym.slice(0,-4)+'-USD';
+            else if(!sym.endsWith('-USD')) sym = sym.toUpperCase()+'-USD';
+          }
+        }
+        // choose 1m as base refresh
+        const baseInterval = TF_CHAIN[TF_CHAIN.length-1][ex]; // 1m
+        const latest = await fetchKlines(ex, sym, baseInterval, 500, Date.now());
+        state.data['1m'] = latest;
+        // rebuild higher levels from available exchange-supported data if necessary
+        // For simplicity, we re-fetch direct per TF mapping used earlier, to keep them updated as well
+        for(const tf of ['5m','15m','30m','1h','4h','1d','1w','1M']){
+          try{
+            const chainItem = TF_CHAIN.find(t=>t.key===tf);
+            const inter = chainItem[ex];
+            const arr = await fetchKlines(ex, sym, inter, 800, Date.now());
+            const targetMs = tfMs(tf);
+            const interMs = tfMs(inter);
+            state.data[tf] = (interMs===targetMs) ? arr : rollup(arr, targetMs);
+          }catch(_){/* ignore */}
+        }
+        // For yearly from monthly
+        if(state.data['1M'] && state.data['1M'].length){
+          state.data['1y'] = rollup(state.data['1M'], tfMs('1y'));
+        }
+        requestRender();
+      }catch(err){
+        statusEl.textContent = 'Live błąd: '+err.message;
+      }
+    }
+
+    // Controls
+    loadBtn.addEventListener('click', async ()=>{
+      state.exch = exchangeSel.value;
+      state.symbol = symbolInput.value.trim() || (state.exch==='binance'?'BTCUSDT':'BTC-USD');
+      state.tz = timezoneSel.value==='local'?'local':'exchange';
+      state.data = {};
+      state.levelIndex = 0;
+      state.viewStart = Date.now() - 365*24*60*60*1000*8;
+      state.viewEnd = Date.now() + 24*60*60*1000;
+      showToast('Ładowanie…');
+      await ensureData('1M').catch(()=>{});
+      state.data['1y'] = rollup(state.data['1M']||[], tfMs('1y'));
+      for(const tf of ['1w','1d','4h','1h','30m','15m','5m','1m']){
+        await ensureData(tf).catch(()=>{});
+      }
+      requestRender();
+      showToast('Załadowano: '+state.symbol);
+    });
+
+    liveBtn.addEventListener('click', ()=>{
+      state.live = !state.live;
+      liveBtn.textContent = state.live?'Live ON':'Live OFF';
+      chartStatus.textContent = `${state.symbol} (${currentTF()}) ${state.live?'Live':'Paused'}`;
+      if(state.live) liveTick();
+    });
+
+    attachInteractions(chartCanvas);
+    window.addEventListener('resize', requestRender);
+
+    // Initial boot
+    (async function boot(){
+      await loadBtn.click();
+      requestRender();
+      // polling timer
+      setInterval(liveTick, 5000);
+    })();
+  </script>
+</body>
+</html>
