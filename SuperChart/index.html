@@ -1,27 +1,45 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Generator promptu: Zaawansowany wykres multi-interwałowy</title>
+  <title>TradingView-like Multi-Timeframe Shadow Candles with RSI & Stoch</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
-      --bg: #0e1116;
-      --panel: #121722;
-      --text: #e5e7eb;
+      --bg: #0b1020;
+      --panel: #12182a;
+      --text: #e6edf6;
       --muted: #9aa4b2;
       --accent: #3b82f6;
-      --border: #253043;
-      --shadow: rgba(0,0,0,0.3);
+      --accent-2: #22c55e;
+      --border: #273148;
+      --shadow: rgba(0,0,0,0.35);
+      --candle-up: #22c55e;
+      --candle-down: #ef4444;
+      --htf1: rgba(59,130,246,0.35);
+      --htf2: rgba(59,130,246,0.22);
+      --htf3: rgba(59,130,246,0.12);
+      --grid: #1a2236;
+      --panel-2: #0e1426;
+      --divider: #2a3550;
     }
     .light {
       --bg: #f6f7fb;
       --panel: #ffffff;
+      --panel-2: #ffffff;
       --text: #111827;
       --muted: #6b7280;
       --accent: #2563eb;
+      --accent-2: #16a34a;
       --border: #e5e7eb;
       --shadow: rgba(0,0,0,0.08);
+      --candle-up: #16a34a;
+      --candle-down: #dc2626;
+      --htf1: rgba(37,99,235,0.35);
+      --htf2: rgba(37,99,235,0.22);
+      --htf3: rgba(37,99,235,0.12);
+      --grid: #e9eef6;
+      --divider: #e5e7eb;
     }
     html, body {
       height: 100%;
@@ -38,83 +56,36 @@
     }
     .toolbar {
       display: flex;
-      gap: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
       align-items: center;
-      padding: 12px;
+      padding: 10px 12px;
       background: var(--panel);
       border-bottom: 1px solid var(--border);
       box-shadow: 0 2px 8px var(--shadow);
-      flex-wrap: wrap;
     }
     .title {
       font-weight: 700;
       margin-right: auto;
     }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 8px;
+    .btn, .select {
+      appearance: none;
       border: 1px solid var(--border);
       background: transparent;
       color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
       user-select: none;
-      white-space: nowrap;
+      font-size: 14px;
     }
     .btn:hover { background: rgba(59,130,246,0.08); border-color: var(--accent); }
     .btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-    .select, textarea {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 12px;
-    }
-    .panel-inline {
-      display:flex; gap:8px; align-items:center; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
-    }
-    .container {
-      position: relative;
-      display: grid;
-      grid-template-columns: 1fr 400px;
-      gap: 12px;
-      padding: 12px;
-      min-height: 0;
-    }
-    #preview {
-      position: relative;
-      border: 1px dashed var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      background: linear-gradient(135deg, rgba(59,130,246,0.08), transparent);
-      overflow: auto;
-    }
-    .sidebar {
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 12px;
-      min-height: 0;
-    }
-    #prompt {
-      width: 100%;
-      height: 100%;
-      min-height: 220px;
-      resize: vertical;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      line-height: 1.4;
-    }
-    .hint {
-      font-size: 12px;
-      color: var(--muted);
-    }
     .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
-    .intervals { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
-    .intervals::-webkit-scrollbar { display:none; }
+    .intervals { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
     .pill {
-      background: var(--panel);
+      background: var(--panel-2);
       color: var(--text);
       border: 1px solid var(--border);
       border-radius: 9999px;
@@ -122,166 +93,529 @@
       font-size: 12px;
       opacity: 0.95;
     }
-    @media (max-width: 1000px) {
-      .container { grid-template-columns: 1fr; }
+    .layout {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100%;
+    }
+    .chart-wrap {
+      position: relative;
+      height: 100%;
+      width: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto 1fr auto;
+      grid-template-columns: 1fr;
+      gap: 0;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+    }
+    .panel-header {
+      display:flex; align-items:center; justify-content: space-between;
+      gap: 8px; padding: 6px 10px; background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px; color: var(--muted);
+    }
+    .panel {
+      position: relative;
+      overflow: hidden;
+      background: var(--panel);
+    }
+    .divider {
+      height: 6px;
+      background: var(--divider);
+      cursor: row-resize;
+    }
+    #statusBar {
+      font-size:12px; color: var(--muted); padding:6px 10px; background: var(--panel); border-top:1px solid var(--border);
+      display:flex; gap:8px; justify-content: space-between; align-items:center;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 800px) {
+      .title { font-size: 14px; }
+      .btn, .select { font-size: 13px; padding: 6px 10px; }
+      .panel-header { font-size: 11px; padding: 4px 8px; }
+      #statusBar { font-size: 11px; padding: 4px 8px; }
     }
   </style>
+
   <script type="importmap">
   {
-    "imports": {}
+    "imports": {
+      "lightweight-charts": "https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.4/dist/lightweight-charts.esm.production.js"
+    }
   }
   </script>
 </head>
 <body>
-  <div class="app light" id="appRoot">
+  <div class="app light" id="app">
     <div class="toolbar">
-      <div class="title">Generator promptu dla wykresu multi-interwałowego</div>
-      <div class="row">
-        <button class="btn" id="toggleTheme">Tryb: Jasny</button>
-        <button class="btn" id="copyPrompt">Kopiuj prompt</button>
-      </div>
+      <div class="title">Multi-Interval Chart with Shadow Candles, RSI & Stochastic</div>
+      <div class="row intervals" id="intervalButtons"></div>
+      <select id="symbolSelect" class="select">
+        <option value="SYNTH">SYNTH</option>
+      </select>
+      <button class="btn" id="toggleTheme">Theme: Light</button>
+      <button class="btn" id="toggleIndicators">Toggle Indicators</button>
     </div>
 
-    <div class="container">
-      <div id="preview">
-        <div class="row" style="margin-bottom:8px;">
-          <div class="pill">Przegląd: Streszczenie wymagań</div>
+    <div class="layout">
+      <div class="chart-wrap" id="chartWrap">
+        <div class="panel-header">
+          <span id="mainHdr">Main Chart</span>
+          <span id="tfHdr">Interval: -</span>
         </div>
-        <ul id="summary" style="margin-top:0; padding-left:18px;">
-          <li>Do 3 poziomów wyższego interwału nakładanych na świeczki (3. poziom najbardziej transparentny).</li>
-          <li>Mapowanie: H4 -> D1, D1 -> M, M -> Y (M tylko do 2. stopnia), wszystko niższe do 3. stopnia.</li>
-          <li>Obsługiwane interwały: m1, m5, m15, H1, H4, D1, tygodniowe, miesięczne, roczne. Najwyższy bazowy: roczne świece.</li>
-          <li>Tryb ciemny i jasny do wyboru. Responsywny: mobilny i desktop. Dopasowanie do okna.</li>
-          <li>Pełne narzędzia jak w TradingView lub zbliżone, z cieniami interwałów świec.</li>
-          <li>Wskaźniki: RSI i Stochastic Oscillator, możliwość dodawania i zmiany rozmiaru przez przeciąganie.</li>
-          <li>Domyślnie RSI na górze (1/8 wysokości), Stochastic na dole (1/8 wysokości).</li>
-        </ul>
-        <div class="pill">Poniżej znajduje się wygenerowany prompt w języku polskim. Możesz go skopiować lub edytować.</div>
+        <div class="panel" id="mainPanel"></div>
+        <div class="divider" id="div1"></div>
+        <div class="panel" id="rsiPanel"></div>
+        <div class="divider" id="div2"></div>
+        <div class="panel" id="stochPanel"></div>
       </div>
-
-      <div class="sidebar">
-        <div class="panel-inline">
-          <span style="font-weight:600;">Opcje:</span>
-          <label class="row"><input id="optTV" type="checkbox" checked /> Preferuj TradingView (lub odpowiednik)</label>
-          <label class="row"><input id="optTools" type="checkbox" checked /> Wymuś narzędzia rysunkowe</label>
-          <label class="row"><input id="optMobile" type="checkbox" checked /> Wersja mobilna</label>
-          <label class="row"><input id="optLightDark" type="checkbox" checked /> Tryb jasny/ciemny</label>
-        </div>
-        <textarea id="prompt" spellcheck="false"></textarea>
-        <div class="row" style="justify-content: space-between;">
-          <div class="hint">Wskazówka: Zaznacz opcje powyżej, aby doprecyzować prompt. Kliknij „Kopiuj prompt”.</div>
-          <div class="pill" id="status">Gotowy</div>
-        </div>
+      <div id="statusBar">
+        <span id="statusLeft">Ready</span>
+        <span id="statusRight">HTF overlays active</span>
       </div>
     </div>
   </div>
 
   <script type="module">
-    // Theme handling
-    const app = document.getElementById('appRoot');
-    const toggleThemeBtn = document.getElementById('toggleTheme');
+    import { createChart, CrosshairMode } from 'lightweight-charts';
+
+    // Basic theme
+    const app = document.getElementById('app');
+    const themeBtn = document.getElementById('toggleTheme');
     let isDark = false;
     function applyTheme() {
       app.classList.toggle('light', !isDark);
-      toggleThemeBtn.textContent = 'Tryb: ' + (isDark ? 'Ciemny' : 'Jasny');
+      themeBtn.textContent = 'Theme: ' + (isDark ? 'Dark' : 'Light');
+      recolorAll();
     }
-    toggleThemeBtn.addEventListener('click', () => { isDark = !isDark; applyTheme(); });
-    applyTheme();
+    themeBtn.addEventListener('click', () => { isDark = !isDark; applyTheme(); });
 
-    // Options
-    const optTV = document.getElementById('optTV');
-    const optTools = document.getElementById('optTools');
-    const optMobile = document.getElementById('optMobile');
-    const optLightDark = document.getElementById('optLightDark');
-    const promptEl = document.getElementById('prompt');
-    const statusEl = document.getElementById('status');
+    // Intervals mapping
+    const intervals = ['M1','M5','M15','H1','H4','D1','W1','MN','Y1'];
+    const intervalButtons = document.getElementById('intervalButtons');
 
-    function buildPrompt() {
-      const parts = [];
-      parts.push(
-        'Jesteś specjalistą od tworzenia stron WWW oraz wykresów i wskaźników tradingowych. ' +
-        'Zaprojektuj i zaimplementuj w pełni responsywną aplikację wykresową (desktop + mobile) z trybem jasnym i ciemnym. ' +
-        'Wykres ma wyświetlać świeczki głównego interwału oraz do 3 wyższych interwałów nałożonych jako półtransparentne świece (każdy wyższy stopień bardziej transparentny; 3. stopień najbardziej).'
-      );
-      parts.push(
-        'Wymagania dotyczące interwałów i mapowania w górę: ' +
-        'Obsługiwane interwały: m1, m5, m15, H1, H4, D1, tygodniowe (W1), miesięczne (M), roczne (Y). ' +
-        'Zasada 3 stopni w górę dotyczy wszystkich interwałów niższych niż miesięczny. ' +
-        'Dla świec H4 pokaż nakładkę D1 oraz D1->M; dla D1 pokaż M oraz M->Y; jeżeli wybrany miesięczny (M), to pokazuj tylko roczne (Y) – czyli do drugiego stopnia interwału. ' +
-        'Najwyższym bazowym interwałem są roczne świece.'
-      );
-      if (optTV.checked) {
-        parts.push(
-          'Preferowane jest użycie wykresu TradingView (lub równoważnego zbliżonego pod względem funkcjonalności), ' +
-          'z pełną dostępnością typowych narzędzi TradingView (przybory rysunkowe, crosshair, skala czasu/ceny, zoom/scroll) ' +
-          'oraz z cieniami interwałów świec dla wyższych TF (świece HTF półtransparentne).'
-        );
-      } else {
-        parts.push(
-          'Możesz użyć dowolnej biblioteki wykresowej z funkcjonalnościami zbliżonymi do TradingView, ' +
-          'zapewniając narzędzia rysunkowe, crosshair, skalowanie i przewijanie oraz półtransparentne nakładki świec HTF.'
-        );
-      }
-      if (optTools.checked) {
-        parts.push(
-          'Zapewnij widoczne narzędzia analizy technicznej i rysunkowe, ' +
-          'a także panel wyboru interwałów: m1, m5, m15, H1, H4, D1, W1, M, Y. ' +
-          'Wykres musi automatycznie dopasowywać się do rozmiaru okna.'
-        );
-      }
-      parts.push(
-        'Wskaźniki: dodaj możliwość włączania RSI oraz Stochastic Oscillator (parametry konfigurowalne). ' +
-        'Umożliw przeciąganie separatorów/pasków, aby zmienić wysokość paneli wskaźników. ' +
-        'Domyślnie RSI ma znajdować się u góry wykresu i zajmować 1/8 wysokości, a Stochastic u dołu i również 1/8 wysokości okna.'
-      );
-      if (optLightDark.checked) {
-        parts.push('Aplikacja powinna posiadać przełącznik trybu jasnego i ciemnego oraz odpowiednią paletę kolorów dla obu trybów.');
-      }
-      if (optMobile.checked) {
-        parts.push('Projekt musi być mobilny i przeglądarkowy (RWD), z optymalnym UX na ekranach dotykowych i desktopowych.');
-      }
-      parts.push(
-        'Logika interwałów (transparentność): ' +
-        'Świeczki głównego interwału są w pełnej nieprzezroczystości. ' +
-        'Pierwszy wyższy interwał (HTF1) ~35% opacity, drugi (HTF2) ~22%, trzeci (HTF3) ~12%. ' +
-        'W przypadku interwału M (miesięcznego) nakładaj tylko Y (roczne) jako HTF1 (brak dalszych stopni).'
-      );
-      parts.push(
-        'Upewnij się, że: ' +
-        'a) interfejs zawiera szybkie przyciski wyboru interwału, ' +
-        'b) wyświetlany jest bieżący interwał i tryb, ' +
-        'c) wykres dopasowuje się do okna (fit to content), ' +
-        'd) dane są dostępne również w wyższych interwałach przez agregację (np. z m1 w górę).'
-      );
-      parts.push(
-        'Wynik: dostarcz kompletny, działający komponent/aplikację z powyższymi wymaganiami, ' +
-        'z czytelną strukturą i możliwością łatwej rozbudowy.'
-      );
-      return parts.join('\n\n');
+    function upIntervals(base) {
+      const idx = intervals.indexOf(base);
+      if (idx === -1) return [];
+      const up1 = intervals[Math.min(idx + 1, intervals.length - 1)];
+      const up2 = intervals[Math.min(idx + 2, intervals.length - 1)];
+      const up3 = intervals[Math.min(idx + 3, intervals.length - 1)];
+      if (base === 'MN') return ['Y1']; // monthly only second degree (yearly)
+      if (base === 'Y1') return []; // top
+      return [up1, up2, up3].filter((v,i)=>v && (idx+i+1) < intervals.length);
     }
 
-    function updatePrompt() {
-      promptEl.value = buildPrompt();
+    // UI create interval buttons
+    let currentInterval = 'H4';
+    intervals.forEach(iv => {
+      const b = document.createElement('button');
+      b.className = 'btn';
+      b.textContent = iv;
+      if (iv === currentInterval) b.classList.add('active');
+      b.addEventListener('click', () => {
+        currentInterval = iv;
+        document.querySelectorAll('#intervalButtons .btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        tfHdr.textContent = 'Interval: ' + currentInterval;
+        rebuildSeries();
+      });
+      intervalButtons.appendChild(b);
+    });
+
+    // Panels and charts
+    const mainEl = document.getElementById('mainPanel');
+    const rsiEl = document.getElementById('rsiPanel');
+    const stochEl = document.getElementById('stochPanel');
+    const tfHdr = document.getElementById('tfHdr');
+
+    // Sizing model: default RSI 1/8, Stoch 1/8
+    function setInitialHeights() {
+      const wrap = document.getElementById('chartWrap');
+      const total = wrap.clientHeight - 12; // subtract dividers approx
+      const indi = Math.max(80, Math.round(total/8));
+      rsiEl.style.height = indi+'px';
+      stochEl.style.height = indi+'px';
+      mainEl.style.height = (wrap.clientHeight - (rsiEl.offsetHeight + stochEl.offsetHeight + div1.offsetHeight + div2.offsetHeight)) + 'px';
     }
 
-    [optTV, optTools, optMobile, optLightDark].forEach(el => el.addEventListener('change', updatePrompt));
-    updatePrompt();
+    const chartMain = createChart(mainEl, chartOptions());
+    const chartRSI = createChart(rsiEl, subChartOptions());
+    const chartStoch = createChart(stochEl, subChartOptions());
 
-    // Copy prompt
-    document.getElementById('copyPrompt').addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(promptEl.value);
-        statusEl.textContent = 'Skopiowano do schowka';
-        statusEl.style.background = 'rgba(34,197,94,0.15)';
-        setTimeout(() => { statusEl.textContent = 'Gotowy'; statusEl.style.background = ''; }, 1500);
-      } catch (e) {
-        statusEl.textContent = 'Błąd kopiowania';
-        statusEl.style.background = 'rgba(239,68,68,0.2)';
-        setTimeout(() => { statusEl.textContent = 'Gotowy'; statusEl.style.background = ''; }, 2000);
+    const priceSeries = chartMain.addCandlestickSeries({
+      upColor: getCss('--candle-up'), downColor: getCss('--candle-down'),
+      borderVisible: false, wickUpColor: getCss('--candle-up'), wickDownColor: getCss('--candle-down'),
+    });
+
+    // HTF overlays as line series boxes (simulate transparent candles using OHLC boxes)
+    const htf1Series = chartMain.addCandlestickSeries({ upColor: getCss('--htf1'), downColor: getCss('--htf1'),
+      wickUpColor: getCss('--htf1'), wickDownColor: getCss('--htf1'), borderColor: getCss('--htf1') });
+    const htf2Series = chartMain.addCandlestickSeries({ upColor: getCss('--htf2'), downColor: getCss('--htf2'),
+      wickUpColor: getCss('--htf2'), wickDownColor: getCss('--htf2'), borderColor: getCss('--htf2') });
+    const htf3Series = chartMain.addCandlestickSeries({ upColor: getCss('--htf3'), downColor: getCss('--htf3'),
+      wickUpColor: getCss('--htf3'), wickDownColor: getCss('--htf3'), borderColor: getCss('--htf3') });
+
+    // RSI line
+    const rsiLine = chartRSI.addLineSeries({ color: getCss('--accent'), lineWidth: 2 });
+    const rsi50 = chartRSI.addLineSeries({ color: getCss('--muted'), lineWidth: 1 });
+    const rsi30 = chartRSI.addLineSeries({ color: '#f59e0b', lineWidth: 1 });
+    const rsi70 = chartRSI.addLineSeries({ color: '#f59e0b', lineWidth: 1 });
+
+    // Stochastic
+    const stochK = chartStoch.addLineSeries({ color: getCss('--accent'), lineWidth: 2 });
+    const stochD = chartStoch.addLineSeries({ color: getCss('--accent-2'), lineWidth: 2 });
+    const stoch20 = chartStoch.addLineSeries({ color: '#f59e0b', lineWidth: 1 });
+    const stoch80 = chartStoch.addLineSeries({ color: '#f59e0b', lineWidth: 1 });
+
+    // Crosshair sync (basic)
+    [chartMain, chartRSI, chartStoch].forEach(ch => ch.applyOptions({ crosshair: { mode: CrosshairMode.Normal } }));
+    chartMain.timeScale().subscribeVisibleTimeRangeChange(range => {
+      if (range) {
+        chartRSI.timeScale().setVisibleRange(range);
+        chartStoch.timeScale().setVisibleRange(range);
       }
     });
 
-    // No external assets needed; all UI is procedural.
+    // Procedural price generator: synthetic OHLC minute data for ~2 years
+    const baseStart = Date.UTC(2022,0,1) / 1000;
+    const m1Data = generateSyntheticOHLC(baseStart, 60, 60*24*365*2, 100, 0.0012);
+    const ohlcStore = {
+      M1: m1Data,
+      M5: aggregate(m1Data, 5*60),
+      M15: aggregate(m1Data, 15*60),
+      H1: aggregate(m1Data, 60*60),
+      H4: aggregate(m1Data, 4*60*60),
+      D1: aggregate(m1Data, 24*60*60),
+      W1: aggregate(m1Data, 7*24*60*60),
+      MN: aggregateCalendar(m1Data, 'month'),
+      Y1: aggregateCalendar(m1Data, 'year'),
+    };
+
+    // Indicators config
+    let rsiPeriod = 14;
+    let stochKPeriod = 14, stochDPeriod = 3, stochSmooth = 3;
+
+    function rebuildSeries() {
+      const main = mapKey(currentInterval);
+      const ups = upIntervals(currentInterval).map(mapKey);
+      // set main candles
+      priceSeries.setData(ohlcStore[main]);
+      // HTF candles assignment w/ transparency order (htf1->least transparent)
+      htf1Series.setData(ups[0] ? ohlcStore[ups[0]] : []);
+      htf2Series.setData(ups[1] ? ohlcStore[ups[1]] : []);
+      htf3Series.setData(ups[2] ? ohlcStore[ups[2]] : []);
+      // Indicators computed from main interval closes
+      const closes = ohlcStore[main].map(d => ({ time: d.time, value: d.close }));
+      const rsi = computeRSI(closes, rsiPeriod);
+      rsiLine.setData(rsi);
+      rsi50.setData(closes.map(c=>({time:c.time, value:50})));
+      rsi30.setData(closes.map(c=>({time:c.time, value:30})));
+      rsi70.setData(closes.map(c=>({time:c.time, value:70})));
+
+      const stoch = computeStochastic(ohlcStore[main], stochKPeriod, stochDPeriod, stochSmooth);
+      stochK.setData(stoch.k);
+      stochD.setData(stoch.d);
+      stoch20.setData(stoch.k.map(x=>({time:x.time, value:20})));
+      stoch80.setData(stoch.k.map(x=>({time:x.time, value:80})));
+      statusLeft.textContent = `Loaded ${currentInterval} with overlays: ${ups.join(', ') || 'none'}`;
+      fitAll();
+    }
+
+    function mapKey(iv) {
+      switch(iv) {
+        case 'M1': return 'M1';
+        case 'M5': return 'M5';
+        case 'M15': return 'M15';
+        case 'H1': return 'H1';
+        case 'H4': return 'H4';
+        case 'D1': return 'D1';
+        case 'W1': return 'W1';
+        case 'MN': return 'MN';
+        case 'Y1': return 'Y1';
+      }
+    }
+
+    function chartOptions() {
+      return {
+        layout: {
+          background: { color: getCss('--panel') },
+          textColor: getCss('--text'),
+        },
+        rightPriceScale: { borderColor: getCss('--grid') },
+        timeScale: { borderColor: getCss('--grid'), timeVisible: true, secondsVisible: false },
+        grid: { vertLines: { color: getCss('--grid') }, horzLines: { color: getCss('--grid') } },
+        crosshair: { mode: CrosshairMode.Normal },
+      };
+    }
+    function subChartOptions() {
+      const o = chartOptions();
+      o.rightPriceScale.autoScale = true;
+      return o;
+    }
+
+    function recolorAll() {
+      const options = chartOptions();
+      chartMain.applyOptions(options);
+      chartRSI.applyOptions(subChartOptions());
+      chartStoch.applyOptions(subChartOptions());
+      priceSeries.applyOptions({
+        upColor: getCss('--candle-up'), downColor: getCss('--candle-down'),
+        wickUpColor: getCss('--candle-up'), wickDownColor: getCss('--candle-down'),
+      });
+      htf1Series.applyOptions({ upColor: getCss('--htf1'), downColor: getCss('--htf1'), wickUpColor: getCss('--htf1'), wickDownColor: getCss('--htf1'), borderColor: getCss('--htf1') });
+      htf2Series.applyOptions({ upColor: getCss('--htf2'), downColor: getCss('--htf2'), wickUpColor: getCss('--htf2'), wickDownColor: getCss('--htf2'), borderColor: getCss('--htf2') });
+      htf3Series.applyOptions({ upColor: getCss('--htf3'), downColor: getCss('--htf3'), wickUpColor: getCss('--htf3'), wickDownColor: getCss('--htf3'), borderColor: getCss('--htf3') });
+      rsiLine.applyOptions({ color: getCss('--accent') });
+      rsi50.applyOptions({ color: getCss('--muted') });
+      rsi30.applyOptions({ color: '#f59e0b' });
+      rsi70.applyOptions({ color: '#f59e0b' });
+      stochK.applyOptions({ color: getCss('--accent') });
+      stochD.applyOptions({ color: getCss('--accent-2') });
+      fitAll();
+    }
+
+    function fitAll() {
+      chartMain.timeScale().fitContent();
+      chartRSI.timeScale().fitContent();
+      chartStoch.timeScale().fitContent();
+    }
+
+    function getCss(varName) {
+      return getComputedStyle(app).getPropertyValue(varName).trim();
+    }
+
+    // Procedural OHLC generator
+    function generateSyntheticOHLC(startTimeSec, stepSec, count, basePrice=100, drift=0.0005) {
+      let t = startTimeSec;
+      let price = basePrice;
+      const out = [];
+      function rnd() { return (Math.random()*2-1); }
+      for (let i=0;i<count;i++) {
+        const open = price;
+        const change = drift*price + rnd()*0.5;
+        let close = Math.max(1, open + change);
+        const high = Math.max(open, close) + Math.random()*0.6;
+        const low = Math.min(open, close) - Math.random()*0.6;
+        price = close;
+        out.push({ time: t, open: round(open), high: round(high), low: round(low), close: round(close) });
+        t += stepSec;
+      }
+      return out;
+    }
+    function round(v){ return Math.round(v*100)/100; }
+
+    // Time aggregation (fixed seconds)
+    function aggregate(src, frameSec) {
+      const out = [];
+      let bucketStart = Math.floor(src[0].time / frameSec) * frameSec;
+      let o, h, l, c;
+      for (const d of src) {
+        const key = Math.floor(d.time / frameSec) * frameSec;
+        if (key !== bucketStart) {
+          out.push({ time: bucketStart, open: o, high: h, low: l, close: c });
+          bucketStart = key;
+          o = d.open; h = d.high; l = d.low; c = d.close;
+        } else {
+          if (o === undefined) { o = d.open; h = d.high; l = d.low; c = d.close; }
+          else {
+            h = Math.max(h, d.high);
+            l = Math.min(l, d.low);
+            c = d.close;
+          }
+        }
+      }
+      if (o !== undefined) out.push({ time: bucketStart, open: o, high: h, low: l, close: c });
+      return out;
+    }
+
+    // Calendar aggregation for months/years
+    function ymd(utcSec) {
+      const d = new Date(utcSec*1000);
+      return { y: d.getUTCFullYear(), m: d.getUTCMonth()+1, day: d.getUTCDate() };
+    }
+    function monthKey(t){ const d = new Date(t*1000); return `${d.getUTCFullYear()}-${d.getUTCMonth()}`; }
+    function yearKey(t){ const d = new Date(t*1000); return `${d.getUTCFullYear()}`; }
+    function startOfMonth(t){ const d=new Date(t*1000); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)/1000; }
+    function startOfYear(t){ const d=new Date(t*1000); return Date.UTC(d.getUTCFullYear(), 0, 1)/1000; }
+
+    function aggregateCalendar(src, type) {
+      const out = [];
+      let keyFn = type==='month' ? monthKey : yearKey;
+      let timeStartFn = type==='month' ? startOfMonth : startOfYear;
+      let curKey = keyFn(src[0].time);
+      let tStart = timeStartFn(src[0].time);
+      let o = src[0].open, h = src[0].high, l = src[0].low, c = src[0].close;
+      for (let i=1;i<src.length;i++){
+        const d = src[i];
+        const k = keyFn(d.time);
+        if (k !== curKey) {
+          out.push({ time: tStart, open:o, high:h, low:l, close:c });
+          curKey = k;
+          tStart = timeStartFn(d.time);
+          o = d.open; h = d.high; l = d.low; c = d.close;
+        } else {
+          h = Math.max(h, d.high);
+          l = Math.min(l, d.low);
+          c = d.close;
+        }
+      }
+      out.push({ time: tStart, open:o, high:h, low:l, close:c });
+      return out;
+    }
+
+    // Indicators
+    function computeRSI(closes, period=14) {
+      if (!closes || closes.length === 0) return [];
+      const out = [];
+      let gains=0, losses=0;
+      for (let i=1;i<=period;i++){
+        const diff = closes[i].value - closes[i-1].value;
+        if (diff>=0) gains += diff; else losses -= diff;
+      }
+      let avgGain = gains/period;
+      let avgLoss = losses/period;
+      function rsiVal() {
+        if (avgLoss === 0) return 100;
+        const rs = avgGain / avgLoss;
+        return 100 - (100/(1+rs));
+      }
+      for (let i=0;i<closes.length;i++){
+        if (i < period) {
+          out.push({ time: closes[i].time, value: 50 });
+        } else if (i === period) {
+          out.push({ time: closes[i].time, value: Math.round(rsiVal()*100)/100 });
+        } else {
+          const diff = closes[i].value - closes[i-1].value;
+          const gain = diff > 0 ? diff : 0;
+          const loss = diff < 0 ? -diff : 0;
+          avgGain = (avgGain*(period-1) + gain)/period;
+          avgLoss = (avgLoss*(period-1) + loss)/period;
+          out.push({ time: closes[i].time, value: Math.round(rsiVal()*100)/100 });
+        }
+      }
+      return out;
+    }
+
+    function SMA(values, period) {
+      const out = [];
+      let sum = 0;
+      for (let i=0;i<values.length;i++){
+        sum += values[i];
+        if (i >= period) sum -= values[i-period];
+        if (i >= period-1) out.push(sum/period);
+        else out.push(undefined);
+      }
+      return out;
+    }
+
+    function computeStochastic(ohlc, kPeriod=14, dPeriod=3, smooth=3) {
+      const kRaw = [];
+      for (let i=0;i<ohlc.length;i++){
+        if (i < kPeriod-1) { kRaw.push(undefined); continue; }
+        let lowest = Infinity, highest = -Infinity;
+        for (let j=i-kPeriod+1; j<=i; j++){
+          lowest = Math.min(lowest, ohlc[j].low);
+          highest = Math.max(highest, ohlc[j].high);
+        }
+        const c = ohlc[i].close;
+        const k = (highest === lowest) ? 50 : ((c - lowest) / (highest - lowest)) * 100;
+        kRaw.push(k);
+      }
+      const kSm = SMA(kRaw.map(v=>v===undefined?0:v), smooth).map((v,i)=>kRaw[i]===undefined?undefined:v);
+      const dLine = SMA(kSm.map(v=>v===undefined?0:v), dPeriod).map((v,i)=>kSm[i]===undefined?undefined:v);
+
+      const kSeries = [];
+      const dSeries = [];
+      for (let i=0;i<ohlc.length;i++){
+        if (kSm[i] !== undefined) kSeries.push({ time: ohlc[i].time, value: Math.max(0, Math.min(100, Math.round(kSm[i]*100)/100)) });
+        if (dLine[i] !== undefined) dSeries.push({ time: ohlc[i].time, value: Math.max(0, Math.min(100, Math.round(dLine[i]*100)/100)) });
+      }
+      return { k: kSeries, d: dSeries };
+    }
+
+    // Dividers drag to resize panels
+    const div1 = document.getElementById('div1');
+    const div2 = document.getElementById('div2');
+    function installDivider(div, topEl, bottomEl) {
+      let dragging = false;
+      let startY = 0;
+      let startTopH = 0;
+      let startBotH = 0;
+      div.addEventListener('mousedown', (e)=>start(e));
+      div.addEventListener('touchstart', (e)=>start(e.touches[0]));
+      function start(e) {
+        dragging = true;
+        startY = e.clientY;
+        startTopH = topEl.getBoundingClientRect().height;
+        startBotH = bottomEl.getBoundingClientRect().height;
+        document.body.style.cursor = 'row-resize';
+        e.preventDefault();
+      }
+      window.addEventListener('mousemove', (e)=>move(e));
+      window.addEventListener('touchmove', (e)=>move(e.touches[0]));
+      function move(e){
+        if (!dragging) return;
+        const dy = e.clientY - startY;
+        const newTop = Math.max(60, startTopH + dy);
+        const newBot = Math.max(60, startBotH - dy);
+        topEl.style.height = newTop + 'px';
+        bottomEl.style.height = newBot + 'px';
+        // Recompute main height if divider1
+        if (div === div1) {
+          // mainEl already topEl here, bottomEl is rsiEl
+        }
+        syncResize();
+      }
+      window.addEventListener('mouseup', stop);
+      window.addEventListener('touchend', stop);
+      function stop(){
+        if (!dragging) return;
+        dragging = false;
+        document.body.style.cursor = 'default';
+        syncResize();
+      }
+    }
+    installDivider(div1, mainEl, rsiEl);
+    installDivider(div2, rsiEl, stochEl);
+
+    function syncResize() {
+      chartMain.resize(mainEl.clientWidth, mainEl.clientHeight);
+      chartRSI.resize(rsiEl.clientWidth, rsiEl.clientHeight);
+      chartStoch.resize(stochEl.clientWidth, stochEl.clientHeight);
+    }
+
+    window.addEventListener('resize', () => {
+      setInitialHeights();
+      syncResize();
+      fitAll();
+    });
+
+    // Toggle show/hide indicators
+    const toggleIndicatorsBtn = document.getElementById('toggleIndicators');
+    let indicatorsVisible = true;
+    toggleIndicatorsBtn.addEventListener('click', () => {
+      indicatorsVisible = !indicatorsVisible;
+      rsiEl.style.display = indicatorsVisible ? '' : 'none';
+      stochEl.style.display = indicatorsVisible ? '' : 'none';
+      div1.style.display = indicatorsVisible ? '' : 'none';
+      div2.style.display = indicatorsVisible ? '' : 'none';
+      setInitialHeights();
+      syncResize();
+      fitAll();
+    });
+
+    // Init
+    const statusLeft = document.getElementById('statusLeft');
+    const statusRight = document.getElementById('statusRight');
+    tfHdr.textContent = 'Interval: ' + currentInterval;
+    setInitialHeights();
+    syncResize();
+    rebuildSeries();
+    applyTheme();
+    statusRight.textContent = 'HTF1=35% HTF2=22% HTF3=12% opacity';
+
   </script>
 </body>
 </html>
