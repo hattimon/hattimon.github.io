@@ -228,20 +228,28 @@ helpModal.addEventListener('click',(e)=>{ const card=e.target.closest('.modal-ca
 
 // Język
 function applyLang(){
+  // Ustaw teksty data-i18n
   tSync();
+  // Nazwa motywu i pogody
   const th=themeFor(level);
   themeName.textContent = th.name[LANG];
   weatherName.textContent = weather;
+  // Przycisk pokazuje język do przełączenia
   langBtn.textContent = (LANG==='en'?'Polski':'English');
+  // Przycisk muzyki
   musicBtn.textContent = musicOn ? i18nText('musicOn') : i18nText('musicOff');
 }
 langBtn.addEventListener('click',(e)=>{
   e.preventDefault();
   LANG = (LANG==='en'?'pl':'en');
+  // odśwież pogodę/motyw nazwy
+  const th=themeFor(level);
+  themeName.textContent = th.name[LANG];
+  // jeżeli aktualny string pogody nie jest w słowniku, losuj nową etykietę w bieżącym języku
   applyLang();
 });
 
-// Level codes UI
+// Level codes – safe: only set starting level (1..30)
 applyCodeBtn.addEventListener('click',()=>{
   const code=(codeInput.value||'').trim().toUpperCase();
   const msgShort = (LANG==='en'?'Enter 7 chars.':'Wpisz 7 znaków.');
@@ -253,7 +261,7 @@ applyCodeBtn.addEventListener('click',()=>{
   else { codeStatus.textContent=msgBad; }
 });
 
-// Map
+// Map and tiles
 let grid=[], trees=[], mushrooms=[], houseCells=[];
 function isWall(c,r){if(r<0||c<0||r>=ROWS||c>=COLS)return true;return grid[r][c]===1}
 function genMap(level){
@@ -293,7 +301,7 @@ function genMap(level){
 function inHouse(x,y){const c=(x/CELL)|0, r=(y/CELL)|0; return grid[r] && grid[r][c]===2;}
 function inCaveCenter(x,y){return Math.hypot(x-cave.x,y-cave.y)<cave.r*0.6;}
 
-// Reset
+// Level reset
 function resetLevel(){
   mumins.length=0; fearClouds.length=0; blueClouds.length=0; projs.length=0; iceBolts.length=0;
   boltPickups.length=0; cloudPickups.length=0; traps.length=0; hattis.length=0;
@@ -696,6 +704,7 @@ function update(now){
     level++;
     overlay.hidden=false;
     document.querySelector('#overlay .ttl').textContent = (LANG==='en'?'Level complete':'Poziom ukończony');
+    document.querySelector('#overlay .desc')?.remove(); // bezpiecznie
     playing=false; return;
   }
 
@@ -912,4 +921,111 @@ function draw(){
   }
 
   // buka
-  const glow=10+6*Math
+  const glow=10+6*Math.sin(performance.now()/180);
+  ctx.save(); ctx.translate(boka.x,boka.y);
+  ctx.shadowColor='#7ad1ff'; ctx.shadowBlur=glow;
+  ctx.fillStyle=boka.cloudActive?'#5aa7d4':'#7ad1ff';
+  ctx.beginPath(); ctx.ellipse(0,2,boka.r*0.93,boka.r*1.3,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=boka.cloudActive?'rgba(120,160,190,0.5)':'rgba(170,220,255,0.5)';
+  ctx.beginPath(); ctx.ellipse(0,8,boka.r*1.1,6,0,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+  const el=Math.hypot(boka.lookX,boka.lookY)||1; const ex=(boka.lookX/el)*2.2, ey=(boka.lookY/el)*2.2;
+  ctx.fillStyle='#eef9ff';
+  ctx.beginPath(); ctx.ellipse(-4,-4,3,4,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(4,-4,3,4,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#0b1c10'; ctx.beginPath(); ctx.arc(-4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // local cloud vignette
+  if(boka.cloudActive){
+    const radius=CLOUD_MAX_RADIUS*(boka.cloud/7.0)*2;
+    const grd=ctx.createRadialGradient(boka.x,boka.y,10,boka.x,boka.y,Math.max(20,radius));
+    grd.addColorStop(0,'rgba(0,0,0,0.6)');
+    grd.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(boka.x,boka.y,Math.max(20,radius),0,Math.PI*2); ctx.fill();
+  }
+
+  // Hatifnatowie – smukłe ciała, oczy w kierunku Buki, łapki 3–5 palców
+  for(const h of hattis){
+    ctx.save(); ctx.translate(h.x,h.y); ctx.scale(h.scale,h.scale);
+
+    // ciało
+    ctx.shadowColor='rgba(255,245,150,0.9)'; ctx.shadowBlur=12;
+    ctx.fillStyle='rgba(255,255,210,0.97)';
+    ctx.beginPath(); ctx.ellipse(0,0,5.5,13.5,0,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+
+    // oczy w stronę Buki
+    const dx=boka.x-h.x, dy=boka.y-h.y, d=Math.hypot(dx,dy)||1;
+    const ox=(dx/d)*1.6, oy=(dy/d)*1.6;
+    ctx.fillStyle='#333';
+    ctx.beginPath(); ctx.arc(-1.8+ox,-3.0+oy,1.15,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( 1.8+ox,-3.0+oy,1.15,0,Math.PI*2); ctx.fill();
+
+    // ręce + palce
+    const armLen = h.armLen||10, spread=h.handSpread||0.9;
+    const yArm = 1.5, bodyW=5.5;
+
+    function hand(dir,fingers){
+      const baseX = dir*(bodyW-1), baseY=yArm;
+      ctx.strokeStyle='rgba(255,255,230,0.95)'; ctx.lineWidth=1.6;
+      ctx.beginPath(); ctx.moveTo(baseX,baseY); ctx.lineTo(baseX+dir*armLen, baseY); ctx.stroke();
+      const handX=baseX+dir*armLen, handY=baseY;
+      const n=fingers; const fingerLen=4.6;
+      for(let i=0;i<n;i++){
+        const t = n===1?0:(i/(n-1)-0.5);
+        const ang=t*spread;
+        const fx=handX + Math.cos(ang)*fingerLen;
+        const fy=handY + Math.sin(ang)*fingerLen + t*2;
+        ctx.beginPath(); ctx.moveTo(handX,handY); ctx.lineTo(fx,fy); ctx.stroke();
+        ctx.beginPath(); ctx.arc(fx,fy,0.9,0,Math.PI*2); ctx.fillStyle='rgba(255,255,235,0.95)'; ctx.fill();
+      }
+    }
+    hand(-1, h.fingersL||4);
+    hand( 1, h.fingersR||4);
+
+    ctx.restore();
+  }
+
+  // Weather / frame
+  if(weather==='Noc'){ ctx.fillStyle='rgba(0,0,30,0.25)'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+  else if(weather==='Deszcz'){
+    ctx.strokeStyle='rgba(180,200,255,0.25)';
+    for(let i=0;i<50;i++){
+      const x=(performance.now()/10 + i*50)%canvas.width;
+      const y=(i*37 + performance.now()/3)%canvas.height;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+4,y+10); ctx.stroke();
+    }
+  } else if(weather==='Mgła'){
+    ctx.fillStyle='rgba(200,220,220,0.08)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='rgba(200,220,220,0.08)'; ctx.fillRect(20,20,canvas.width-40,canvas.height-40);
+  }
+  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.strokeRect(0.5,0.5,canvas.width-1,canvas.height-1);
+}
+
+// Final win
+function finalWin(){
+  playing=false;
+  startWinLoop();
+}
+
+// Start game
+function startGame(fullReset=false){
+  if(fullReset){
+    score=0;
+    Object.assign(boka, baseBoka());
+  }
+  resetLevel();
+  overlay.hidden=true; paused=false; pauseOv.hidden=true;
+  lastTick=performance.now();
+  playing=true;
+  // i18n sync on start
+  applyLang();
+  startBackground();
+  requestAnimationFrame(update);
+}
+
+// Initial i18n sync so buttons are correct before first start
+applyLang();
+
+})();
