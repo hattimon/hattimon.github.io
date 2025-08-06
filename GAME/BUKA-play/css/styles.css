@@ -3,6 +3,7 @@ body {
   background: var(--bg, #0b1c10);
   color: #fff;
   font-family: Arial, sans-serif;
+  overflow: hidden; /* Prevent scrollbars from overlays */
 }
 .container {
   max-width: 900px;
@@ -37,9 +38,11 @@ h1.pix {
 }
 .lbl {
   margin-right: 5px;
+  display: inline-block; /* Ensure labels align with values */
 }
 .val {
   margin-bottom: 5px;
+  display: inline-block; /* Ensure values align with labels */
 }
 .bar {
   width: 100px;
@@ -47,10 +50,12 @@ h1.pix {
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid var(--accent, #2d5b33);
   margin-bottom: 5px;
+  display: inline-block;
 }
 .fill {
   height: 100%;
   background: var(--accent, #2d5b33);
+  transition: width 0.3s; /* Smooth bar updates */
 }
 canvas {
   border: 1px solid var(--accent, #2d5b33);
@@ -66,17 +71,22 @@ canvas {
   justify-content: center;
   align-items: center;
   z-index: 10;
+  pointer-events: auto; /* Ensure overlays are clickable */
 }
 #panicDim {
   background: rgba(255, 100, 100, 0.3);
+  z-index: 11; /* Above other overlays */
 }
 #globalFog {
   background: rgba(0, 0, 0, 0.5);
   transition: opacity 1.5s;
+  z-index: 12; /* Above panicDim */
 }
 .card {
   padding: 20px;
   text-align: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
 }
 .ttl {
   font-size: 18px;
@@ -84,11 +94,13 @@ canvas {
 }
 .desc {
   margin-bottom: 15px;
+  max-width: 400px;
 }
 .guide-content {
   max-height: 400px;
   overflow-y: auto;
   text-align: left;
+  padding: 10px;
 }
 .guide-content h1 {
   font-size: 18px;
@@ -105,6 +117,7 @@ canvas {
   padding: 5px 10px;
   cursor: pointer;
   border-radius: 3px;
+  margin: 5px 0;
 }
 .btn:hover {
   background: var(--wall, #23402a);
@@ -114,5 +127,6 @@ input.pix {
   color: #fff;
   border: 1px solid var(--accent, #2d5b33);
   padding: 5px;
-  margin-bottom: 5px;
+  margin: 5px 0;
+  width: 100px;
 }
