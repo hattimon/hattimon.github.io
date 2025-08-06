@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>HNT Price Chart Demo</title>
+  <title>HNT Price Chart + Halving Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
@@ -107,7 +107,7 @@
       display:grid;gap:18px;
       grid-template-columns: 1.6fr 1fr;
     }
-    @media (max-width: 980px){
+    @media (max-width: 1180px){
       main{grid-template-columns:1fr}
     }
     .card{
@@ -187,6 +187,32 @@
     }
     .chg.up{background:rgba(91,210,139,.18); color:#a6ffd0; border:1px solid rgba(91,210,139,.5)}
     .chg.down{background:rgba(255,107,107,.18); color:#ffd0d0; border:1px solid rgba(255,107,107,.5)}
+
+    .halving{
+      display:grid;gap:12px;
+      grid-template-columns: 1fr 1fr;
+    }
+    .halving .stat{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      padding:12px;
+    }
+    .halving .label{font-size:12px;color:var(--muted)}
+    .halving .value{font-size:18px;font-weight:700;margin-top:4px}
+    .countdown{
+      display:flex;gap:8px;flex-wrap:wrap;margin-top:8px
+    }
+    .cd-box{
+      background:rgba(124,255,196,.08);
+      border:1px solid rgba(124,255,196,.35);
+      border-radius:10px;
+      padding:8px 10px;
+      min-width:70px;
+      text-align:center;
+    }
+    .cd-box .num{font-weight:800;font-size:18px}
+    .cd-box .lbl{font-size:11px;color:var(--muted)}
     .footer{
       margin-top:auto;text-align:center;color:var(--muted);font-size:12px;opacity:.8;
     }
@@ -252,6 +278,37 @@
             This demo pulls historical HNT prices and renders a smooth area chart with an overlay moving average. If data is unavailable, a high‑quality synthetic series is generated to keep the chart usable.
           </div>
         </div>
+
+        <div class="tile">
+          <h4 data-i18n="halvingHeader">Bitcoin Halving</h4>
+          <div class="countdown" id="halvingCountdown">
+            <div class="cd-box"><div class="num" id="cdDays">—</div><div class="lbl" data-i18n="days">Days</div></div>
+            <div class="cd-box"><div class="num" id="cdHours">—</div><div class="lbl" data-i18n="hours">Hours</div></div>
+            <div class="cd-box"><div class="num" id="cdMins">—</div><div class="lbl" data-i18n="mins">Minutes</div></div>
+            <div class="cd-box"><div class="num" id="cdSecs">—</div><div class="lbl" data-i18n="secs">Seconds</div></div>
+          </div>
+          <div class="halving" style="margin-top:10px">
+            <div class="stat">
+              <div class="label" data-i18n="nextHalving">Next halving</div>
+              <div class="value" id="nextHalvingDate">—</div>
+            </div>
+            <div class="stat">
+              <div class="label" data-i18n="estBlock">Estimated block</div>
+              <div class="value" id="nextHalvingBlock">—</div>
+            </div>
+            <div class="stat">
+              <div class="label" data-i18n="lastHalving">Last halving</div>
+              <div class="value" id="lastHalvingDate">—</div>
+            </div>
+            <div class="stat">
+              <div class="label" data-i18n="blockReward">Block reward after</div>
+              <div class="value" id="blockReward">—</div>
+            </div>
+          </div>
+          <div style="color:var(--muted);font-size:12px;margin-top:8px" data-i18n="halvingNote">
+            Dates are approximate and generated locally for demo purposes.
+          </div>
+        </div>
       </aside>
     </main>
 
@@ -276,7 +333,15 @@
         updated: "Updated just now",
         about: "About",
         aboutTxt: "This demo pulls historical HNT prices and renders a smooth area chart with an overlay moving average. If data is unavailable, a high‑quality synthetic series is generated to keep the chart usable.",
-        footerNote: "For demonstration purposes only"
+        footerNote: "For demonstration purposes only",
+        // Halving
+        halvingHeader: "Bitcoin Halving",
+        days: "Days", hours: "Hours", mins: "Minutes", secs: "Seconds",
+        nextHalving: "Next halving",
+        estBlock: "Estimated block",
+        lastHalving: "Last halving",
+        blockReward: "Block reward after",
+        halvingNote: "Dates are approximate and generated locally for demo purposes."
       },
       pl: {
         appTitle: "Helium (HNT) — Wykres na żywo",
@@ -291,10 +356,18 @@
         updated: "Zaktualizowano przed chwilą",
         about: "O projekcie",
         aboutTxt: "Ta demonstracja pobiera historyczne ceny HNT i rysuje gładki wykres obszarowy z nakładką średniej kroczącej. Gdy dane są niedostępne, generowana jest wysokiej jakości seria syntetyczna, aby wykres pozostał użyteczny.",
-        footerNote: "Wyłącznie do celów demonstracyjnych"
+        footerNote: "Wyłącznie do celów demonstracyjnych",
+        // Halving
+        halvingHeader: "Halving Bitcoina",
+        days: "Dni", hours: "Godziny", mins: "Minuty", secs: "Sekundy",
+        nextHalving: "Następny halving",
+        estBlock: "Szacowany blok",
+        lastHalving: "Ostatni halving",
+        blockReward: "Nagroda za blok po",
+        halvingNote: "Daty są przybliżone i generowane lokalnie do celów demo."
       }
     };
-    let currentLang = "en";
+    let currentLang = "pl"; // default to PL per user
     const t = (key)=> i18n[currentLang][key] ?? key;
     function applyTranslations(){
       document.querySelectorAll("[data-i18n]").forEach(el=>{
@@ -302,23 +375,39 @@
         el.textContent = t(key);
       });
       document.getElementById("btnLang").textContent = currentLang === "en" ? "Polski" : "English";
+      // Update dynamic halving labels below numbers
+      document.querySelector('#cdDays + .lbl').textContent = t('days');
+      document.querySelector('#cdHours + .lbl').textContent = t('hours');
+      document.querySelector('#cdMins + .lbl').textContent = t('mins');
+      document.querySelector('#cdSecs + .lbl').textContent = t('secs');
     }
 
     // Music (procedural tone)
-    let audioCtx = null, osc = null, isMusicOn = false;
+    let audioCtx = null, osc = null, isMusicOn = false, musicGain = null;
     function toggleMusic(){
       if(!audioCtx){
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
       if(!isMusicOn){
         osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+        musicGain = audioCtx.createGain();
         osc.type = "sine";
-        osc.frequency.value = 432; // gentle tone
-        gain.gain.value = 0.04;
-        osc.connect(gain).connect(audioCtx.destination);
+        // subtle generative vibrato
+        const baseFreq = 432;
+        let t = 0;
+        const lfo = () => {
+          if(!isMusicOn) return;
+          t += 0.016;
+          const vibrato = Math.sin(t*2.2)*2 + Math.sin(t*0.6)*1;
+          osc.frequency.value = baseFreq + vibrato;
+          requestAnimationFrame(lfo);
+        };
+        osc.frequency.value = baseFreq;
+        musicGain.gain.value = 0.03;
+        osc.connect(musicGain).connect(audioCtx.destination);
         osc.start();
         isMusicOn = true;
+        requestAnimationFrame(lfo);
       }else{
         if(osc){ try{ osc.stop(); }catch{} }
         isMusicOn = false;
@@ -330,14 +419,14 @@
     function ema(series, period=10){
       if(!series.length) return [];
       const k = 2/(period+1);
-      let emaArr = [];
+      const out = [];
       let prev = series[0];
       for(let i=0;i<series.length;i++){
         const val = series[i]*k + prev*(1-k);
-        emaArr.push(val);
+        out.push(val);
         prev = val;
       }
-      return emaArr;
+      return out;
     }
     // High-quality synthetic generator (fallback)
     function generateSynthetic(startTs, points, base=5, vol=0.03){
@@ -357,7 +446,6 @@
 
     // Data fetchers with robust fallback
     async function fetchFromCoinGecko(range){
-      // CoinGecko simple API for Helium v2 id is "helium"
       const daysMap = { "7d":7, "30d":30, "90d":90, "1y":365 };
       const days = daysMap[range] || 7;
       const url = `https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=${days}&interval=hourly`;
@@ -368,13 +456,11 @@
       return j.prices.map(([ts, price])=>({ t: ts, p: price }));
     }
     async function fetchFromAlternative(range){
-      // Public Kraken/others may not have HNT. So we synthesize here as "alternative".
       const points = range === "1y" ? 365*24 : (range === "90d" ? 90*24 : range === "30d" ? 30*24 : 7*24);
       const start = Date.now() - points*3600*1000;
       return generateSynthetic(start, points, 5+Math.random()*2, 0.05);
     }
     async function getSeries(range){
-      // Try CoinGecko first, fallback to synthetic if any failure
       try{
         const cg = await fetchFromCoinGecko(range);
         return cg;
@@ -423,7 +509,7 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: { duration: 700, easing: "easeOutCubic" },
+        animation: { duration: 500, easing: "easeOutCubic" },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -438,7 +524,7 @@
             callbacks: {
               label: ctx => {
                 const val = ctx.parsed.y;
-                return (currentLang==="pl" ? "Cena: " : "Price: ") + "$" + val.toFixed(3);
+                return (currentLang==="pl" ? "Cena: " : "Price: ") + "$" + (isFinite(val)?val.toFixed(3):val);
               }
             }
           }
@@ -451,9 +537,12 @@
               callback: (v, i, ticks) => {
                 const ts = chart.data.labels[i];
                 const d = new Date(ts);
-                const short = (l) => l.padStart(2,"0");
+                const pad = (n)=> String(n).padStart(2,"0");
                 if ((ticks.length>10 && i%Math.ceil(ticks.length/6)!==0)) return "";
-                return `${d.getMonth()+1}/${short(String(d.getDate()))} ${short(String(d.getHours()))}:00`;
+                // Localized short format
+                return currentLang==="pl"
+                  ? `${pad(d.getDate())}.${pad(d.getMonth()+1)} ${pad(d.getHours())}:00`
+                  : `${d.getMonth()+1}/${pad(d.getDate())} ${pad(d.getHours())}:00`;
               }
             },
             grid: { color: "rgba(34,48,104,.25)" }
@@ -482,7 +571,6 @@
     document.getElementById("btnLang").addEventListener("click", ()=>{
       currentLang = currentLang === "en" ? "pl" : "en";
       applyTranslations();
-      // update tooltip language by re-setting the dataset labels
       chart.update();
     });
 
@@ -491,10 +579,15 @@
     // Load and render data
     async function loadRange(range){
       setStatus(true);
-      const series = await getSeries(range);
-      renderSeries(series);
-      setStatus(false);
-      updateOverview(series);
+      try{
+        const series = await getSeries(range);
+        renderSeries(series);
+        updateOverview(series);
+      } catch(e){
+        console.error(e);
+      } finally {
+        setStatus(false);
+      }
     }
     function renderSeries(series){
       if(!series || !series.length){
@@ -518,13 +611,13 @@
       const chg = last - first;
       const pct = first ? (chg/first*100) : 0;
       const priceEl = document.getElementById("lastPrice");
-      priceEl.textContent = "$" + last.toFixed(3);
+      priceEl.textContent = "$" + (isFinite(last)? last.toFixed(3) : last);
 
       const chgEl = document.getElementById("changeBadge");
       const up = pct >= 0;
       chgEl.className = "chg " + (up ? "up" : "down");
       const sign = up ? "+" : "";
-      chgEl.textContent = `${sign}${pct.toFixed(2)}%`;
+      chgEl.textContent = `${sign}${isFinite(pct)?pct.toFixed(2):pct}%`;
       document.getElementById("updated").textContent = t("updated");
     }
 
@@ -537,8 +630,55 @@
       }
     }
 
+    // Halving data (self-contained, no external APIs)
+    // Known Bitcoin halving history and next estimate (UTC)
+    const halvings = [
+      { height: 210000, date: new Date(Date.UTC(2012,10,28,15,24)), reward: 25 },
+      { height: 420000, date: new Date(Date.UTC(2016,6,9,16,46)), reward: 12.5 },
+      { height: 630000, date: new Date(Date.UTC(2020,4,11,19,23)), reward: 6.25 },
+      { height: 840000, date: new Date(Date.UTC(2024,3,20,0,9)), reward: 3.125 }, // occurred Apr 20, 2024
+      // Next predicted (example): assuming ~4 years, set placeholder
+      { height: 1050000, date: new Date(Date.UTC(2028,2,31,12,0)), reward: 1.5625 }
+    ];
+    function formatDate(d){
+      const pad = n=> String(n).padStart(2,"0");
+      return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())} UTC`;
+    }
+    function setHalvingUI(){
+      const now = new Date();
+      // Find last and next relative to now
+      const past = halvings.filter(h=>h.date<=now).sort((a,b)=>a.date-b.date);
+      const future = halvings.filter(h=>h.date>now).sort((a,b)=>a.date-b.date);
+      const last = past[past.length-1] ?? halvings[0];
+      const next = future[0] ?? halvings[halvings.length-1];
+
+      document.getElementById("lastHalvingDate").textContent = formatDate(last.date);
+      document.getElementById("blockReward").textContent = next ? `${next.reward} BTC` : `${last.reward} BTC`;
+      document.getElementById("nextHalvingDate").textContent = formatDate(next.date);
+      document.getElementById("nextHalvingBlock").textContent = next.height.toLocaleString();
+
+      // Countdown
+      function updateCountdown(){
+        const target = next.date.getTime();
+        const diff = Math.max(0, target - Date.now());
+        const s = Math.floor(diff/1000);
+        const days = Math.floor(s/86400);
+        const hours = Math.floor((s%86400)/3600);
+        const mins = Math.floor((s%3600)/60);
+        const secs = s%60;
+        const pad = n=> String(n).padStart(2,"0");
+        document.getElementById("cdDays").textContent = days;
+        document.getElementById("cdHours").textContent = pad(hours);
+        document.getElementById("cdMins").textContent = pad(mins);
+        document.getElementById("cdSecs").textContent = pad(secs);
+      }
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    }
+
     // Initial
     applyTranslations();
+    setHalvingUI();
     loadRange("7d");
 
     // Resize fix for gradient after container size changes
