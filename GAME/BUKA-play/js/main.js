@@ -1,5 +1,5 @@
 (() => {
-// Stałe, helpery i konfiguracja — jak w działającej wersji
+// Stałe, helpery i konfiguracja — mechanika bez zmian
 const CELL=32, COLS=25, ROWS=18;
 const MIN_BOARD=Math.min(COLS*CELL, ROWS*CELL);
 const CLOUD_MAX_RADIUS=Math.floor(MIN_BOARD/5);
@@ -41,12 +41,17 @@ function shade(hex, f){
 const WEATHERS = ['Dzień','Noc','Deszcz','Mgła','Słońce','Pochmurno'];
 function randomWeather(){ return WEATHERS[Math.floor(Math.random()*WEATHERS.length)]; }
 
-// Kody poziomów deterministyczne (wyświetlane w HUD – nie blokują startu)
+// Kody poziomów
 function levelCodeFor(level){
   const base="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let s=""; let x=level*9301+49297;
   for(let i=0;i<7;i++){ x=(x*1103515245+12345)>>>0; s+=base[x%base.length]; }
   return s;
+}
+function levelFromCode(code){
+  code=(code||"").toUpperCase();
+  for(let L=1;L<=30;L++){ if(levelCodeFor(L)===code) return L; }
+  return null;
 }
 
 // DOM
@@ -64,7 +69,11 @@ const musicBtn=document.getElementById('musicBtn'), musicBg=document.getElementB
 const sfxBobek=document.getElementById('sfxBobek'), sfxDeathMumin=document.getElementById('sfxDeathMumin'), sfxDeathKij=document.getElementById('sfxDeathKij'), sfxWin=document.getElementById('sfxWin'), sfxAmmo=document.getElementById('sfxAmmo');
 const panicDim=document.getElementById('panicDim'), globalFog=document.getElementById('globalFog');
 
-// Audio zarządzanie
+// Kody – UI
+const codeInput=document.getElementById('codeInput');
+const applyCodeBtn=document.getElementById('applyCodeBtn');
+const codeStatus=document.getElementById('codeStatus');
+
 let musicOn=true;
 function stopAllMusic(){ musicBg.pause(); musicPanic.pause(); sfxWin.pause(); }
 function startBackground(){ if(!musicOn) return; stopAllMusic(); musicBg.currentTime=0; musicBg.loop=true; musicBg.play(); }
@@ -115,6 +124,15 @@ musicBtn.addEventListener('click',()=>{
 startBtn.addEventListener('click',()=>{ startGame(true); });
 resumeBtn.addEventListener('click',()=>{ paused=false; pauseOv.hidden=true; });
 
+// Kody – bezpieczne: jedynie ustawiają poziom startowy (1..30)
+applyCodeBtn.addEventListener('click',()=>{
+  const code=(codeInput.value||'').trim().toUpperCase();
+  if(!code || code.length!==7){ codeStatus.textContent='Wpisz 7 znaków.'; return; }
+  const L=levelFromCode(code);
+  if(L){ level=L; codeStatus.textContent='Załadowano poziom: '+L; }
+  else { codeStatus.textContent='Nieprawidłowy kod.'; }
+});
+
 // Mapa i kafle
 let grid=[], trees=[], mushrooms=[], houseCells=[];
 function isWall(c,r){if(r<0||c<0||r>=ROWS||c>=COLS)return true;return grid[r][c]===1}
@@ -143,11 +161,10 @@ function genMap(level){
   }
   for(let rr2=dr;rr2<dr+3;rr2++) for(let cc=dc;cc<dc+3;cc++){ grid[rr2][cc]=2; houseCells.push({c:cc,r:rr2}); }
 
-  // Drzewa i muchomory
   const treeCount=18+Math.floor(level*1.4);
   for(let i=0;i<treeCount;i++){
     const c=1+((Math.random()*(COLS-2))|0), r=1+((Math.random()*(ROWS-2))|0);
-    if(grid[r][c]!==0 && grid[r][c]!==2) continue; // pozwól w domku na dekoracje (ale nie na pułapki)
+    if(grid[r][c]!==0 && grid[r][c]!==2) continue;
     const x=c*CELL+CELL/2, y=r*CELL+CELL/2;
     trees.push({x,y});
     if(Math.random()<0.28) mushrooms.push({x:x+((Math.random()*18)|0)-9, y:y+6+((Math.random()*7)|0), r:6, alive:true, timer:0});
@@ -156,22 +173,18 @@ function genMap(level){
 function inHouse(x,y){const c=(x/CELL)|0, r=(y/CELL)|0; return grid[r] && grid[r][c]===2;}
 function inCaveCenter(x,y){return Math.hypot(x-cave.x,y-cave.y)<cave.r*0.6;}
 
-// Reset poziomu — właściwa kolejność
+// Reset poziomu
 function resetLevel(){
-  // 1) wyczyść stan
   mumins.length=0; fearClouds.length=0; blueClouds.length=0; projs.length=0; iceBolts.length=0;
   boltPickups.length=0; cloudPickups.length=0; traps.length=0; hattis.length=0;
   panic=false; panicDim.hidden=true; globalFog.hidden=true; globalFog.style.opacity='0';
 
-  // 2) wygeneruj mapę
   genMap(level);
 
-  // 3) pełny reset postaci
   Object.assign(boka, baseBoka());
   hunter.alive=true; hunter.x=COLS*CELL-80; hunter.y=ROWS*CELL-80; hunter.frozen=0; hunter.freezeHits=0; hunter.tShot=0; hunter.burning=null;
   bobek.active=false; bobek.callsLeft=3; bobek.plan=[]; bobek.building=null;
 
-  // 4) populacja
   const d=diff(level);
   for(let i=0;i<d.muminBase;i++){
     const c=1+((Math.random()*(COLS-2))|0), r=1+((Math.random()*(ROWS-2))|0);
@@ -183,7 +196,6 @@ function resetLevel(){
   placePickups(boltPickups,5,'bolt');
   placePickups(cloudPickups,5,'cloud');
 
-  // 5) HUD + theme
   updateHUDTheme(); updateHUD();
 }
 
@@ -215,7 +227,7 @@ function placePickups(arr,count,shape){
     let x=0,y=0;
     for(let t=0;t<100;t++){
       const c=1+((Math.random()*(COLS-2))|0), r=1+((Math.random()*(ROWS-2))|0);
-      if(grid[r][c]!==0) continue; // TYLKO wolne korytarze, nie domek
+      if(grid[r][c]!==0) continue;
       x=c*CELL+CELL/2; y=r*CELL+CELL/2; break;
     }
     arr.push({x,y,r:10, alive:true, shape, timer:0});
@@ -246,7 +258,7 @@ function updatePickups(arr, kind, dt){
   }
 }
 
-// Chmura i mrożenia
+// Chmury/mrożenia – mechanika bez zmian
 function tryUseCloudBasic(){
   if(boka.cloudActive || boka.ammoCloud<=0) return false;
   boka.ammoCloud--; cloudStockFill.style.width=Math.min(100,(boka.ammoCloud/20)*100)+'%';
@@ -280,7 +292,7 @@ function freezeInRadius(radius, seconds){
   }
 }
 
-// Bobek — nie stawia w domku
+// Bobek / pułapki – bez zmian mechaniki
 function triggerBobek(){
   if(bobek.active || bobek.callsLeft<=0) return;
   bobek.callsLeft--; sfxBobek.currentTime=0; sfxBobek.play();
@@ -298,7 +310,7 @@ function planWebSpotsNearHouse(n){
     for(let t=0;t<300;t++){
       const c = rightSide ? ((COLS/2)|0)+((Math.random()*((COLS-2)-(COLS/2)))|0) : 1+((Math.random()*((COLS/2)-2))|0);
       const r = 1+((Math.random()*(ROWS-2))|0);
-      if(grid[r][c]!==0) continue; // ZAKAZ: żadnych pułapek na domku (tile 2) ani ścianach
+      if(grid[r][c]!==0) continue;
       const x=c*CELL+CELL/2, y=r*CELL+CELL/2;
       spots.push({x,y}); break;
     }
@@ -321,7 +333,6 @@ function updateBobek(dt){
       const moved=moveCircle({x:bobek.x,y:bobek.y}, Math.cos(bobek.dir)*bobek.speed, Math.sin(bobek.dir)*bobek.speed, bobek.r);
       bobek.x=moved.x; bobek.y=moved.y;
       if(d<12){
-        // Ostateczne bezpieczeństwo: Nie twórz pułapki, jeśli punkt przypadkiem w domu
         if(!inHouse(target.x,target.y)){
           const trap={x:target.x,y:target.y,r:12,active:false,buildProgress:0, burning: null};
           traps.push(trap);
@@ -338,8 +349,6 @@ function updateBobek(dt){
     }
   }
 }
-
-// Pułapki
 function updateTraps(dt){
   for(const t of traps){
     if(t.burning!=null){ t.burning += dt; if(t.burning>=15){ t.active=false; t.burning=null; } }
@@ -416,7 +425,6 @@ function update(now){
   if(boka.globalFreeze>0) boka.globalFreeze-=dt;
   globalFreezeT.textContent = boka.globalFreeze>0? Math.ceil(boka.globalFreeze)+'s':'—';
 
-  // muchomor: x3 prędkość i miękkie zmniejszanie
   if(boka.growT>0){
     boka.growT=Math.max(0,boka.growT-dt); boka.growSpeedMul=3.0;
     const t=boka.growT/15; const scale=1+(4-1)*t; boka.r=BOKA_R_BASE*scale;
@@ -438,7 +446,6 @@ function update(now){
   if(boka.poison>0){ boka.hp -= d.projDps*dt; boka.poison=Math.max(0,boka.poison-dt); }
   hpFill.style.width=Math.max(0,Math.min(100,(boka.hp/HP_MAX)*100))+'%';
 
-  // Włóczykij
   if(hunter.alive){
     if(hunter.frozen>0) hunter.frozen-=dt;
     else{
@@ -477,7 +484,6 @@ function update(now){
     freezeT.textContent = (hunter.frozen>0? Math.ceil(hunter.frozen)+'s':'0s');
   } else freezeT.textContent='—';
 
-  // Pociski
   for(let i=projs.length-1;i>=0;i--){
     const p=projs[i]; p.ttl-=dt; if(p.ttl<=0){projs.splice(i,1); continue;}
     const moved=moveCircle(p, p.vx, p.vy, 2); p.x=moved.x; p.y=moved.y;
@@ -500,10 +506,8 @@ function update(now){
     for(const h of hattis){ if(Math.hypot(b.x-h.x,b.y-h.y)<h.r*h.scale+6){ h.scale*=1.10; b.ttl=0; break; } }
   }
 
-  // Bobek i sieci
   updateBobek(dt); updateTraps(dt);
 
-  // Muminki
   let aliveCount=0;
   for(const m of mumins){
     if(!m.alive) continue; aliveCount++;
@@ -543,7 +547,6 @@ function update(now){
     }
   }
 
-  // Chmurki nagród
   for(let i=fearClouds.length-1;i>=0;i--){
     const f=fearClouds[i]; f.ttl-=dt; if(f.ttl<=0){fearClouds.splice(i,1); continue;}
     if(Math.hypot(f.x-boka.x,f.y-boka.y)<boka.r+f.r){ boka.hp=Math.min(HP_MAX, boka.hp+5); score+=10; scoreEl.textContent=score; fearClouds.splice(i,1); }
@@ -557,7 +560,6 @@ function update(now){
     }
   }
 
-  // Koniec poziomu
   const totalM=mumins.length||1;
   progressEl.textContent=Math.round(((totalM-aliveCount)/totalM)*100)+'%';
   leftEl.textContent=aliveCount;
@@ -571,7 +573,6 @@ function update(now){
     playing=false; return;
   }
 
-  // Muchomory
   for(const m of mushrooms){
     if(m.alive===false){
       m.timer=(m.timer||60)-dt;
@@ -584,7 +585,6 @@ function update(now){
     }
   }
 
-  // Pickupy i Hatifnatowie
   updatePickups(boltPickups,'alt', dt);
   updatePickups(cloudPickups,'cloud', dt);
 
@@ -617,7 +617,7 @@ function update(now){
   requestAnimationFrame(update);
 }
 
-// Pomocnicze AI
+// AI helpers
 function nearestBlockingTrap(src, dst){
   let best=null, bestD=1e9;
   for(const t of traps){
@@ -642,11 +642,12 @@ function goTowards(obj, tx, ty, speed){
   obj.x=moved.x; obj.y=moved.y;
 }
 
-// Rysowanie
+// Rysowanie – wygląd z drugiego skryptu
 function draw(){
   const th=themeFor(level);
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  // kafle
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const x=c*CELL,y=r*CELL,w=CELL,h=CELL;
     const t=grid[r][c];
@@ -655,51 +656,186 @@ function draw(){
     if(t===2){ ctx.strokeStyle='rgba(200,255,220,0.25)'; ctx.strokeRect(x+3,y+3,w-6,h-6); }
   }
 
-  // jaskinia
+  // jaskinia – kamienie + otwór
   {
     const cx=cave.x, cy=cave.y, r=cave.r;
+    for(let i=0;i<18;i++){
+      const ang=i*(Math.PI*2/18);
+      const rx=cx+Math.cos(ang)*r*0.9 + ((Math.random()*9)|0)-4;
+      const ry=cy+Math.sin(ang)*r*0.9 + ((Math.random()*9)|0)-4;
+      const cr=4+((Math.random()*3)|0);
+      const grd=ctx.createRadialGradient(rx,ry,1,rx,ry,cr);
+      grd.addColorStop(0,'#3b3b3b'); grd.addColorStop(1,'#121212');
+      ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(rx,ry,cr,0,Math.PI*2); ctx.fill();
+    }
     ctx.fillStyle='rgba(10,10,10,0.9)'; ctx.beginPath(); ctx.arc(cx,cy,r*0.6,0,Math.PI*2); ctx.fill();
   }
 
-  // drzewa / muchomory (prosty pikselart)
+  // drzewa / muchomory
   for(const t of trees){
     ctx.fillStyle=shade(th.accent,0.4); ctx.fillRect(t.x-6, t.y+5, 12, 6);
     ctx.fillStyle=th.accent; ctx.beginPath(); ctx.moveTo(t.x, t.y-18); ctx.lineTo(t.x-12, t.y+8); ctx.lineTo(t.x+12, t.y+8); ctx.closePath(); ctx.fill();
+    ctx.fillStyle=shade(th.accent,0.5); ctx.fillRect(t.x-2, t.y+8, 4, 8);
   }
   for(const m of mushrooms){
     if(m.alive===false) continue;
     ctx.fillStyle='#eddcc8'; ctx.fillRect(m.x-2, m.y-4, 4, 6);
     ctx.fillStyle='#d3222a'; ctx.beginPath(); ctx.ellipse(m.x, m.y-4, 8, 5, 0, 0, Math.PI, true); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(m.x-3,m.y-6,1.2,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(m.x+2,m.y-5,1.4,0,Math.PI*2); ctx.fill();
   }
 
-  // pickupy
-  ctx.fillStyle='#5ab0ff'; for(const p of boltPickups){ if(p.alive){ ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill(); } }
-  ctx.fillStyle='rgba(180,220,255,0.95)'; for(const p of cloudPickups){ if(p.alive){ ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2); ctx.fill(); } }
+  // pickupy – piorun (błyskawica) i chmurka
+  for(const p of boltPickups){
+    if(!p.alive) continue;
+    const g=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,12);
+    g.addColorStop(0,'#dff4ff'); g.addColorStop(1,'#5ab0ff');
+    ctx.strokeStyle='#aee1ff'; ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y-10); ctx.lineTo(p.x+5, p.y-2); ctx.lineTo(p.x+1, p.y-2); ctx.lineTo(p.x+8, p.y+10); ctx.lineTo(p.x-4, p.y+0); ctx.lineTo(p.x+2, p.y+0); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+  }
+  for(const p of cloudPickups){
+    if(!p.alive) continue;
+    ctx.fillStyle='rgba(180,220,255,0.95)';
+    const x=p.x, y=p.y;
+    ctx.beginPath();
+    ctx.arc(x-6,y,6,0,Math.PI*2);
+    ctx.arc(x,y-4,7,0,Math.PI*2);
+    ctx.arc(x+7,y,5,0,Math.PI*2);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='rgba(120,170,210,0.8)'; ctx.stroke();
+  }
 
-  // pułapki
+  // pułapki – pajęczyny z progresem/paleniem
   for(const t of traps){
     const build=t.active?1:Math.min(1,(t.buildProgress||0));
+    ctx.save();
+    ctx.globalAlpha = 0.4 + 0.6*build;
+    const R = 12*build;
     ctx.strokeStyle=t.burning!=null ? 'rgba(255,140,80,0.9)' : 'rgba(220,220,255,0.9)';
-    const R=12*build; ctx.beginPath(); ctx.arc(t.x,t.y,R,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(t.x,t.y,R,0,Math.PI*2); ctx.stroke();
+    for(let a=0;a<6;a++){
+      const ang=a*Math.PI/3;
+      ctx.beginPath(); ctx.moveTo(t.x,t.y);
+      ctx.lineTo(t.x+Math.cos(ang)*R, t.y+Math.sin(ang)*R); ctx.stroke();
+    }
+    for(let r=4;r<=R;r+=4){
+      ctx.beginPath(); ctx.arc(t.x,t.y,r,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
   }
 
   // chmurki
-  ctx.fillStyle='rgba(255,230,120,0.55)'; fearClouds.forEach(f=>{ ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill(); });
-  ctx.fillStyle='rgba(140,200,255,0.7)'; blueClouds.forEach(b=>{ ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill(); });
+  fearClouds.forEach(f=>{ ctx.fillStyle='rgba(255,230,120,0.55)'; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill(); });
+  blueClouds.forEach(b=>{ ctx.fillStyle='rgba(140,200,255,0.7)'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill(); });
 
-  // muminki
-  ctx.fillStyle='#f7f7f7'; mumins.forEach(m=>{ if(m.alive){ ctx.beginPath(); ctx.ellipse(m.x,m.y,8,11,0,0,Math.PI*2); ctx.fill(); } });
+  // Muminki – bardziej szczegółowe
+  mumins.forEach(m=>{
+    if(!m.alive) return;
+    ctx.save(); ctx.translate(m.x,m.y);
+    const body = m.trapped? 'rgba(180,120,120,0.9)' : (m.frozen>0? 'rgba(220,240,255,0.95)' : (m.hide ? 'rgba(255,255,255,0.8)' : '#f7f7f7'));
+    ctx.fillStyle=body;
+    ctx.beginPath(); ctx.ellipse(0,4,8,11,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0,-10,6,5,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-3,-15,2,3,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(3,-15,2,3,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
 
-  // ogniki / pioruny
-  ctx.fillStyle='rgba(255,140,80,0.9)'; projs.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fill(); });
-  ctx.strokeStyle='rgba(160,220,255,0.9)'; iceBolts.forEach(b=>{ ctx.beginPath(); ctx.moveTo(b.x-3,b.y); ctx.lineTo(b.x+3,b.y); ctx.stroke(); });
+  // Ogniki (pociski)
+  projs.forEach(p=>{
+    const grd=ctx.createRadialGradient(p.x,p.y,0.5,p.x,p.y,6);
+    grd.addColorStop(0,'rgba(255,240,160,1)');
+    grd.addColorStop(0.6,'rgba(255,140,80,0.9)');
+    grd.addColorStop(1,'rgba(255,80,40,0)');
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill();
+  });
 
-  // hunter / bobek / buka
-  if(hunter.alive){ ctx.fillStyle='#7de6a9'; ctx.beginPath(); ctx.ellipse(hunter.x,hunter.y,9,14,0,0,Math.PI*2); ctx.fill(); }
-  if(bobek.active){ ctx.fillStyle='#101010'; ctx.beginPath(); ctx.arc(bobek.x,bobek.y,8,0,Math.PI*2); ctx.fill(); }
-  ctx.fillStyle='#7ad1ff'; ctx.beginPath(); ctx.ellipse(boka.x,boka.y,boka.r*0.93,boka.r*1.3,0,0,Math.PI*2); ctx.fill();
+  // Pioruny
+  iceBolts.forEach(b=>{
+    ctx.strokeStyle='rgba(160,220,255,0.9)';
+    ctx.beginPath(); ctx.moveTo(b.x-3,b.y); ctx.lineTo(b.x+3,b.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(b.x,b.y-3); ctx.lineTo(b.x,b.y+3); ctx.stroke();
+  });
 
+  // Hunter
+  if(hunter.alive){
+    ctx.save(); ctx.translate(hunter.x,hunter.y);
+    const frozen=hunter.frozen>0;
+    ctx.fillStyle=frozen ? 'rgba(160,240,220,0.9)' : '#7de6a9';
+    ctx.beginPath(); ctx.moveTo(-8,-10); ctx.lineTo(8,-10); ctx.lineTo(0,-26); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#e8f7ef'; ctx.beginPath(); ctx.ellipse(0,-6,5,4,0,0,Math.PI*2); ctx.fill();
+    const dx=boka.x-hunter.x, dy=boka.y-hunter.y, d=Math.hypot(dx,dy)||1; const ox=(dx/d)*1.5, oy=(dy/d)*1.5;
+    ctx.fillStyle='#213a2b'; ctx.beginPath(); ctx.arc(-1+ox,-6+oy,1.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=frozen ? 'rgba(160,240,220,0.9)' : '#7de6a9';
+    ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(-9,14); ctx.lineTo(9,14); ctx.closePath(); ctx.fill();
+    const ang=Math.atan2(dy,dx);
+    ctx.strokeStyle='#1c3b2a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(ang)*12, Math.sin(ang)*12); ctx.stroke(); ctx.lineWidth=1;
+    if(frozen){ ctx.strokeStyle='rgba(180,255,255,0.8)'; ctx.strokeRect(-11,-28,22,44); }
+    ctx.restore();
+  }
+
+  // Bobek
+  if(bobek.active){
+    ctx.save(); ctx.translate(bobek.x,bobek.y);
+    ctx.fillStyle='#101010'; ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.fill();
+    for(let i=0;i<6;i++){ const a=i*(Math.PI*2/6); ctx.strokeStyle='#1d1d1d'; ctx.beginPath(); ctx.moveTo(Math.cos(a)*6,Math.sin(a)*6); ctx.lineTo(Math.cos(a)*10,Math.sin(a)*10); ctx.stroke(); }
+    const ex=Math.cos(bobek.dir)*1.5, ey=Math.sin(bobek.dir)*1.5;
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-2,-2,1.8,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(2,-2,1.8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(-2+ex,-2+ey,0.6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(2+ex,-2+ey,0.6,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // Buka – z poświatą i oczami
+  const glow=10+6*Math.sin(performance.now()/180);
+  ctx.save(); ctx.translate(boka.x,boka.y);
+  ctx.shadowColor='#7ad1ff'; ctx.shadowBlur=glow;
+  ctx.fillStyle=boka.cloudActive?'#5aa7d4':'#7ad1ff';
+  ctx.beginPath(); ctx.ellipse(0,2,boka.r*0.93,boka.r*1.3,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=boka.cloudActive?'rgba(120,160,190,0.5)':'rgba(170,220,255,0.5)';
+  ctx.beginPath(); ctx.ellipse(0,8,boka.r*1.1,6,0,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+  const el=Math.hypot(boka.lookX,boka.lookY)||1; const ex=(boka.lookX/el)*2.2, ey=(boka.lookY/el)*2.2;
+  ctx.fillStyle='#eef9ff';
+  ctx.beginPath(); ctx.ellipse(-4,-4,3,4,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(4,-4,3,4,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#0b1c10'; ctx.beginPath(); ctx.arc(-4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // chmura lokalna
+  if(boka.cloudActive){
+    const radius=CLOUD_MAX_RADIUS*(boka.cloud/7.0)*2;
+    const grd=ctx.createRadialGradient(boka.x,boka.y,10,boka.x,boka.y,Math.max(20,radius));
+    grd.addColorStop(0,'rgba(0,0,0,0.6)');
+    grd.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(boka.x,boka.y,Math.max(20,radius),0,Math.PI*2); ctx.fill();
+  }
+
+  // Hatifnatowie
+  for(const h of hattis){
+    ctx.save(); ctx.translate(h.x,h.y); ctx.scale(h.scale,h.scale);
+    ctx.shadowColor='rgba(255,245,150,0.9)'; ctx.shadowBlur=12;
+    ctx.fillStyle='rgba(255,255,200,0.95)';
+    ctx.beginPath(); ctx.ellipse(0,0,6,12,0,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    const dx=boka.x-h.x, dy=boka.y-h.y, d=Math.hypot(dx,dy)||1; const ox=(dx/d)*1.5, oy=(dy/d)*1.5;
+    ctx.fillStyle='#333'; ctx.beginPath(); ctx.arc(-2+ox,-2+oy,1.2,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(2+ox,-2+oy,1.2,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // pogoda / ramka
   if(weather==='Noc'){ ctx.fillStyle='rgba(0,0,30,0.25)'; ctx.fillRect(0,0,canvas.width,canvas.height); }
+  else if(weather==='Deszcz'){
+    ctx.strokeStyle='rgba(180,200,255,0.25)';
+    for(let i=0;i<50;i++){
+      const x=(performance.now()/10 + i*50)%canvas.width;
+      const y=(i*37 + performance.now()/3)%canvas.height;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+4,y+10); ctx.stroke();
+    }
+  } else if(weather==='Mgła'){
+    ctx.fillStyle='rgba(200,220,220,0.08)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='rgba(200,220,220,0.08)'; ctx.fillRect(20,20,canvas.width-40,canvas.height-40);
+  }
   ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.strokeRect(0.5,0.5,canvas.width-1,canvas.height-1);
 }
 
@@ -709,11 +845,11 @@ function finalWin(){
   startWinLoop();
 }
 
-// Start gry (reset nie przyspiesza)
+// Start gry
 function startGame(fullReset=false){
   if(fullReset){
     score=0;
-    Object.assign(boka, baseBoka()); // reset mnożników i promienia
+    Object.assign(boka, baseBoka());
   }
   resetLevel();
   overlay.hidden=true; paused=false; pauseOv.hidden=true;
