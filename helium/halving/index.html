@@ -1,376 +1,179 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helium Halving Countdown</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            background: linear-gradient(180deg, #1A1A3D 0%, #2A4066 30%, #2E4A6A 50%, #006666 70%, #008080 100%);
-            color: #00CED1;
-            font-family: 'Orbitron', sans-serif;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        .background-animation {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50" font-size="20" fill="#00CED120">101010</text></svg>') repeat;
-            opacity: 0.1;
-            animation: scrollBackground 20s linear infinite;
-            z-index: 0;
-        }
-
-        @keyframes scrollBackground {
-            0% { background-position: 0 0; }
-            100% { background-position: 100px 100px; }
-        }
-
-        .container {
-            text-align: center;
-            z-index: 1;
-            padding: 20px;
-            width: 90%;
-            max-width: 1200px;
-        }
-
-        .controls {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-        }
-
-        .controls button {
-            background: #2E4A6A;
-            color: #00CED1;
-            border: 1px solid #00CED1;
-            padding: 5px 10px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 0.9rem;
-        }
-
-        .controls button:hover {
-            background: #00CED1;
-            color: #1A1A3D;
-        }
-
-        h1 {
-            font-size: 3rem;
-            text-shadow: 0 0 10px #00CED1, 0 0 20px #00CED1;
-            animation: flicker 1.5s infinite alternate;
-            margin-bottom: 20px;
-        }
-
-        @keyframes flicker {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.8; }
-        }
-
-        .countdown {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding: 15px;
-            background: rgba(46, 74, 106, 0.8);
-            border-radius: 10px;
-            box-shadow: 0 0 15px #00CED1;
-        }
-
-        .countdown div {
-            background: #2E4A6A;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 8px #00CED1;
-            font-size: 1.5rem;
-            min-width: 70px;
-            text-align: center;
-            transition: transform 0.3s;
-        }
-
-        .countdown div:hover {
-            transform: scale(1.1);
-            animation: glitch 0.3s linear infinite;
-        }
-
-        .countdown span {
-            display: block;
-            font-size: 0.8rem;
-            color: #E0FFFF;
-        }
-
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(2px, -2px); }
-            60% { transform: translate(-2px, 0); }
-            80% { transform: translate(2px, 2px); }
-            100% { transform: translate(0); }
-        }
-
-        .date, .small-clock, .elapsed-time, .next-halving, .hnt-price {
-            margin: 10px 0;
-            color: #E0FFFF;
-            text-align: center;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            max-width: 100%;
-            padding: 20px;
-            justify-items: center;
-        }
-
-        .stat-card {
-            background: #2E4A6A;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #00CED1;
-            transition: box-shadow 0.3s;
-            max-width: 300px;
-            text-align: justify;
-        }
-
-        .stat-card:hover {
-            box-shadow: 0 0 20px #00CED1;
-        }
-
-        .stat-card h3 {
-            margin: 0 0 10px;
-            font-size: 1.2rem;
-            text-shadow: 0 0 5px #00CED1;
-        }
-
-        .stat-card p {
-            margin: 0;
-            color: #E0FFFF;
-            font-size: 0.9rem;
-        }
-
-        #hntChart {
-            max-width: 100%;
-            margin-top: 20px;
-            background: rgba(46, 74, 106, 0.8);
-            border-radius: 10px;
-            padding: 10px;
-            box-shadow: 0 0 15px #00CED1;
-        }
-
-        canvas {
-            max-width: 100%;
-        }
-
-        @media (max-width: 768px) {
-            h1 { font-size: 2rem; }
-            .countdown div { font-size: 1.2rem; min-width: 60px; padding: 8px; }
-            .countdown { padding: 10px; }
-            .stats { grid-template-columns: 1fr; }
-            .stat-card { max-width: 100%; }
-            #hntChart { height: 300px; }
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>Twoja strona</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Chart.js + adapter czasu do osi X -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
 </head>
 <body>
-    <div class="background-animation"></div>
-    <div class="controls">
-        <button id="muteButton">Mute</button>
-        <button onclick="changeLanguage('en')">English</button>
-        <button onclick="changeLanguage('pl')">Polski</button>
-    </div>
-    <div class="container">
-        <h1>Helium Halving Countdown</h1>
-        <div class="countdown">
-            <div id="elapsed-days"><span>Days</span></div>
-            <div id="elapsed-hours"><span>Hours</span></div>
-            <div id="elapsed-minutes"><span>Minutes</span></div>
-            <div id="elapsed-seconds"><span>Seconds</span></div>
-        </div>
-        <div class="date" id="current-date">Date: <span id="date"></span></div>
-        <div class="small-clock" id="clock">Current Time: <span id="time"></span> (Local)</div>
-        <div class="elapsed-time" id="elapsed-time">Time since last halving (Aug 1, 2025): <span id="elapsed"></span></div>
-        <div class="next-halving" id="next-halving">Time until next halving (Aug 1, 2027): <span id="next"></span></div>
-        <div class="hnt-price" id="hnt-price">Current HNT Price: <span id="hnt-price-value">Loading...</span> USD</div>
-        <div class="stats">
-            <div class="stat-card">
-                <h3>Past Halvings</h3>
-                <p>2019: 60M HNT minted<br>Aug 1, 2021: 60M HNT minted<br>Aug 1, 2023: 30M HNT minted<br>Aug 1, 2025: 15M HNT minted</p>
-            </div>
-            <div class="stat-card">
-                <h3>Block Reward</h3>
-                <p>Pre-2021: 5M HNT/month<br>Post-2021: 2.5M HNT/month<br>Post-2023: 1.25M HNT/month<br>Post-2025: 0.625M HNT/month</p>
-            </div>
-            <div class="stat-card">
-                <h3>Network Stats</h3>
-                <p>Price: $2.79<br>Market Cap: $519M<br>Circulating: 186M HNT<br>Max: 223M HNT</p>
-            </div>
-            <div class="stat-card">
-                <h3>Proof-of-Coverage</h3>
-                <p>Consensus: PoC (HoneyBadger BFT)<br>Rewards for coverage & data</p>
-            </div>
-        </div>
-        <p style="color: #E0FFFF; text-align: center; margin-top: 20px;">Read the full article: <a href="https://blog.helium.com/helium-birthday-237e923a15b7" style="color: #00CED1;">Helium 6th Birthday & Third Halving</a></p>
-        <div id="hntChart" style="width: 100%; height: 400px;"></div>
-    </div>
-    <audio id="backgroundMusic" loop>
-        <source src="bg.mp3" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
-    <script>
-        let lang = 'en';
-        const lastHalving = new Date('2025-08-01T00:00:00Z');
-        const nextHalving = new Date('2027-08-01T00:00:00Z');
-        let useUTC = false;
-        let isMuted = false;
-        let chart;
 
-        async function fetchHntPrice() {
-            try {
-                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd');
-                const data = await response.json();
-                const price = data.helium.usd;
-                document.getElementById('hnt-price-value').textContent = price.toFixed(2);
-            } catch (error) {
-                document.getElementById('hnt-price-value').textContent = 'Error';
-                console.error('Error fetching HNT price:', error);
-            }
-        }
+  <!-- Audio: tylko zmiana źródła na bg.mp3 -->
+  <audio id="bgmb3-audio" src="bg.mp3" preload="auto" loop></audio>
 
-        async function fetchHntHistory() {
-            try {
-                const response = await fetch('https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=max');
-                const data = await response.json();
-                const prices = data.prices.map(item => ({ x: new Date(item[0]), y: item[1] }));
-                if (chart) chart.destroy();
-                const ctx = document.getElementById('hntChart').getContext('2d');
-                chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        datasets: [{
-                            label: 'HNT Price (USD)',
-                            data: prices,
-                            borderColor: '#00CED1',
-                            backgroundColor: 'rgba(0, 206, 209, 0.2)',
-                            fill: true,
-                            tension: 0.1,
-                            pointRadius: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: { type: 'time', time: { unit: 'month' }, title: { display: true, text: 'Date', color: '#E0FFFF' } },
-                            y: { title: { display: true, text: 'Price (USD)', color: '#E0FFFF' }, beginAtZero: false }
-                        },
-                        plugins: {
-                            legend: { labels: { color: '#E0FFFF' } }
-                        }
-                    }
-                });
-            } catch (error) {
-                console.error('Error fetching HNT history:', error);
-            }
-        }
+  <!-- Przycisk GII (pozostawiasz swój, jeśli już masz) -->
+  <button id="bgmb3-toggle" aria-pressed="false">BG MB3: Off</button>
 
-        function updateCountdown() {
-            const now = useUTC ? new Date().toUTCString() : new Date();
-            const elapsedDiff = now - lastHalving;
-            const nextDiff = nextHalving - now;
+  <!-- Kontener na cenę (jeśli masz już swój, zostaw identyczny ID) -->
+  <div>
+    Cena HNT: <span id="hnt-price">--</span> USD
+  </div>
 
-            const elapsedDays = Math.floor(elapsedDiff / (1000 * 60 * 60 * 24));
-            const elapsedHours = Math.floor((elapsedDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const elapsedMinutes = Math.floor((elapsedDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const elapsedSeconds = Math.floor((elapsedDiff % (1000 * 60)) / 1000);
-            const nextDays = Math.floor(nextDiff / (1000 * 60 * 60 * 24));
-            const nextHours = Math.floor((nextDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const nextMinutes = Math.floor((nextDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const nextSeconds = Math.floor((nextDiff % (1000 * 60)) / 1000);
+  <!-- Canvas wykresu (jeśli masz już swój, zachowaj id="hnt-chart") -->
+  <canvas id="hnt-chart" height="300"></canvas>
 
-            document.getElementById('elapsed-days').innerHTML = elapsedDays + '<span>' + (lang === 'pl' ? 'Dni' : 'Days') + '</span>';
-            document.getElementById('elapsed-hours').innerHTML = elapsedHours + '<span>' + (lang === 'pl' ? 'Godzin' : 'Hours') + '</span>';
-            document.getElementById('elapsed-minutes').innerHTML = elapsedMinutes + '<span>' + (lang === 'pl' ? 'Minut' : 'Minutes') + '</span>';
-            document.getElementById('elapsed-seconds').innerHTML = elapsedSeconds + '<span>' + (lang === 'pl' ? 'Sekund' : 'Seconds') + '</span>';
-            document.getElementById('elapsed').textContent = `${elapsedDays} ${lang === 'pl' ? 'dni' : 'days'}, ${elapsedHours} ${lang === 'pl' ? 'godzin' : 'hours'}, ${elapsedMinutes} ${lang === 'pl' ? 'minut' : 'minutes'}, ${elapsedSeconds} ${lang === 'pl' ? 'sekund' : 'seconds'}`;
-            document.getElementById('next').textContent = `${nextDays} ${lang === 'pl' ? 'dni' : 'days'}, ${nextHours} ${lang === 'pl' ? 'godzin' : 'hours'}, ${nextMinutes} ${lang === 'pl' ? 'minut' : 'minutes'}, ${nextSeconds} ${lang === 'pl' ? 'sekund' : 'seconds'}`;
-        }
+  <script>
+    // Istniejące sterowanie audio – pozostawione bez zmian poza tym, że src to bg.mp3
+    (function() {
+      const audioEl = document.getElementById('bgmb3-audio');
+      const toggleBtn = document.getElementById('bgmb3-toggle');
+      const LS_KEY = 'bgmb3_enabled';
 
-        function updateClock() {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString();
-            const timeStr = useUTC ? now.toUTCString().split(' ')[4] : now.toLocaleTimeString();
-            document.getElementById('date').textContent = dateStr;
-            document.getElementById('time').textContent = timeStr + (useUTC ? ' (UTC)' : ' (Local)');
-            document.getElementById('clock').onclick = () => {
-                useUTC = !useUTC;
-                updateClock();
+      let enabled = localStorage.getItem(LS_KEY);
+      if (enabled === null) {
+        enabled = '1';
+        localStorage.setItem(LS_KEY, '1');
+      }
+
+      function setBtnState(on) {
+        if (!toggleBtn) return;
+        toggleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        toggleBtn.textContent = `BG MB3: ${on ? 'On' : 'Off'}`;
+      }
+
+      async function startAudioIfEnabled() {
+        if (enabled === '1') {
+          try {
+            await audioEl.play();
+          } catch {
+            const unlock = () => {
+              audioEl.play().catch(() => {});
+              window.removeEventListener('pointerdown', unlock);
+              window.removeEventListener('keydown', unlock);
             };
+            window.addEventListener('pointerdown', unlock, { once: true });
+            window.addEventListener('keydown', unlock, { once: true });
+          }
+        } else {
+          audioEl.pause();
+          audioEl.currentTime = 0;
         }
+        setBtnState(enabled === '1');
+      }
 
-        function changeLanguage(newLang) {
-            lang = newLang;
-            document.querySelector('h1').textContent = lang === 'pl' ? 'Licznik Halvingu Helium' : 'Helium Halving Countdown';
-            document.getElementById('current-date').textContent = lang === 'pl' ? 'Data: ' + document.getElementById('date').textContent : 'Date: ' + document.getElementById('date').textContent;
-            document.getElementById('clock').textContent = lang === 'pl' ? 'Aktualny czas: ' + document.getElementById('time').textContent : 'Current Time: ' + document.getElementById('time').textContent;
-            document.getElementById('elapsed-time').textContent = lang === 'pl' ? 'Czas od ostatniego halvingu (1 sie 2025): ' + document.getElementById('elapsed').textContent : 'Time since last halving (Aug 1, 2025): ' + document.getElementById('elapsed').textContent;
-            document.getElementById('next-halving').textContent = lang === 'pl' ? 'Czas do następnego halvingu (1 sie 2027): ' + document.getElementById('next').textContent : 'Time until next halving (Aug 1, 2027): ' + document.getElementById('next').textContent;
-            document.getElementById('hnt-price').textContent = lang === 'pl' ? 'Aktualna cena HNT: ' + document.getElementById('hnt-price-value').textContent + ' USD' : 'Current HNT Price: ' + document.getElementById('hnt-price-value').textContent + ' USD';
-
-            const stats = document.querySelectorAll('.stat-card');
-            if (lang === 'pl') {
-                stats[0].querySelector('h3').textContent = 'Poprzednie Halvingi';
-                stats[0].querySelector('p').innerHTML = '2019: 60M HNT wybito<br>1 sie 2021: 60M HNT wybito<br>1 sie 2023: 30M HNT wybito<br>1 sie 2025: 15M HNT wybito';
-                stats[1].querySelector('h3').textContent = 'Nagroda za Blok';
-                stats[1].querySelector('p').innerHTML = 'Przed 2021: 5M HNT/miesiąc<br>Po 2021: 2.5M HNT/miesiąc<br>Po 2023: 1.25M HNT/miesiąc<br>Po 2025: 0.625M HNT/miesiąc';
-                stats[2].querySelector('h3').textContent = 'Statystyki Sieci';
-                stats[2].querySelector('p').innerHTML = 'Cena: 2,79 USD<br>Kapitalizacja: 519M USD<br>W obiegu: 186M HNT<br>Maksymalna: 223M HNT';
-                stats[3].querySelector('h3').textContent = 'Proof-of-Coverage';
-                stats[3].querySelector('p').innerHTML = 'Konsensus: PoC (HoneyBadger BFT)<br>Nagrody za zasięg i dane';
-            } else {
-                stats[0].querySelector('h3').textContent = 'Past Halvings';
-                stats[0].querySelector('p').innerHTML = '2019: 60M HNT minted<br>Aug 1, 2021: 60M HNT minted<br>Aug 1, 2023: 30M HNT minted<br>Aug 1, 2025: 15M HNT minted';
-                stats[1].querySelector('h3').textContent = 'Block Reward';
-                stats[1].querySelector('p').innerHTML = 'Pre-2021: 5M HNT/month<br>Post-2021: 2.5M HNT/month<br>Post-2023: 1.25M HNT/month<br>Post-2025: 0.625M HNT/month';
-                stats[2].querySelector('h3').textContent = 'Network Stats';
-                stats[2].querySelector('p').innerHTML = 'Price: $2.79<br>Market Cap: $519M<br>Circulating: 186M HNT<br>Max: 223M HNT';
-                stats[3].querySelector('h3').textContent = 'Proof-of-Coverage';
-                stats[3].querySelector('p').innerHTML = 'Consensus: PoC (HoneyBadger BFT)<br>Rewards for coverage & data';
-            }
-            updateCountdown();
-        }
-
-        document.getElementById('muteButton').addEventListener('click', () => {
-            const audio = document.getElementById('backgroundMusic');
-            isMuted = !isMuted;
-            audio.muted = isMuted;
-            document.getElementById('muteButton').textContent = isMuted ? 'Unmute' : 'Mute';
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', async () => {
+          enabled = (enabled === '1') ? '0' : '1';
+          localStorage.setItem(LS_KEY, enabled);
+          await startAudioIfEnabled();
         });
+      }
 
-        setInterval(updateCountdown, 1000);
-        setInterval(updateClock, 1000);
-        setInterval(fetchHntPrice, 60000); // Update price every minute
-        setInterval(fetchHntHistory, 3600000); // Update chart every hour
-        fetchHntPrice();
-        fetchHntHistory();
-        updateCountdown();
-        updateClock();
-    </script>
+      document.addEventListener('DOMContentLoaded', startAudioIfEnabled);
+    })();
+  </script>
+
+  <script>
+    // Wykres HNT + aktualizacja ceny z CoinGecko (pełna historia, dokładność)
+    (function() {
+      const priceEl = document.getElementById('hnt-price');
+      const chartCanvas = document.getElementById('hnt-chart');
+
+      const COINGECKO_PRICE = 'https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd';
+      const COINGECKO_HISTORY = 'https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=max';
+
+      let chart;
+
+      function formatUSD(v) {
+        if (v >= 1) return `$${v.toFixed(2)}`;
+        if (v >= 0.01) return `$${v.toFixed(4)}`;
+        return `$${v.toFixed(6)}`;
+      }
+
+      async function fetchJSON(url) {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      }
+
+      async function updateSpotPrice() {
+        try {
+          const data = await fetchJSON(COINGECKO_PRICE);
+          const price = data?.helium?.usd;
+          if (typeof price === 'number' && priceEl) {
+            priceEl.textContent = price.toFixed(price >= 1 ? 2 : (price >= 0.01 ? 4 : 6));
+          }
+        } catch {
+          // ciche pominięcie
+        }
+      }
+
+      function buildChart(labels, values) {
+        if (!chartCanvas) return;
+        if (chart) chart.destroy();
+        chart = new Chart(chartCanvas.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'HNT/USD',
+              data: values,
+              borderColor: '#3b82f6',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.1
+            }]
+          },
+          options: {
+            parsing: false,
+            animation: false,
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                type: 'time',
+                time: { tooltipFormat: 'yyyy-MM-dd HH:mm' },
+                ticks: { maxRotation: 0, autoSkip: true }
+              },
+              y: {
+                ticks: {
+                  callback: v => formatUSD(Number(v)).replace('$', '')
+                }
+              }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                intersect: false,
+                callbacks: {
+                  label: ctx => ` ${formatUSD(ctx.parsed.y)}`
+                }
+              }
+            }
+          }
+        });
+      }
+
+      async function loadFullHistory() {
+        const raw = await fetchJSON(COINGECKO_HISTORY);
+        const prices = raw?.prices || [];
+        const labels = prices.map(p => new Date(p[0]));
+        const values = prices.map(p => p[1]);
+        buildChart(labels, values);
+      }
+
+      function startPricePolling(intervalMs = 60000) {
+        updateSpotPrice();
+        setInterval(updateSpotPrice, intervalMs);
+      }
+
+      document.addEventListener('DOMContentLoaded', async () => {
+        try { await loadFullHistory(); } catch {}
+        startPricePolling(60000);
+      });
+    })();
+  </script>
 </body>
 </html>
