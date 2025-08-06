@@ -1,5 +1,5 @@
 (() => {
-// Stałe, helpery i konfiguracja — mechanika bez zmian
+// Config (mechanics unchanged)
 const CELL=32, COLS=25, ROWS=18;
 const MIN_BOARD=Math.min(COLS*CELL, ROWS*CELL);
 const CLOUD_MAX_RADIUS=Math.floor(MIN_BOARD/5);
@@ -8,6 +8,7 @@ const HP_MAX=100;
 const BOKA_BASE_SPEED=3.1, BOKA_R_BASE=14;
 const HUNTER_R=11, HUNTER_AIM_RANGE=360;
 
+// Difficulty
 function diff(level){
   const t=(level-1)/29;
   return {
@@ -20,28 +21,32 @@ function diff(level){
     projDps: (14/10)*3
   };
 }
+
+// Themes, weather
 const THEMES = [
-  {name:'Las', bg:'#0b1c10', path:'#0f2a18', wall:'#23402a', accent:'#2d5b33'},
-  {name:'Morze', bg:'#06202b', path:'#0b2c3a', wall:'#16495c', accent:'#2b7a8a'},
-  {name:'Jesień', bg:'#1d1208', path:'#2a170b', wall:'#5a2e12', accent:'#7a4a1e'},
-  {name:'Zima', bg:'#0a1520', path:'#0e1f30', wall:'#254a6b', accent:'#9ec9f0'},
-  {name:'Wiosna', bg:'#0c1d12', path:'#12321c', wall:'#2f663d', accent:'#5cbf7a'},
-  {name:'Noc', bg:'#05070e', path:'#0a1020', wall:'#1a2a4a', accent:'#3c5a8a'},
-  {name:'Słonecznie', bg:'#13200d', path:'#1a2c12', wall:'#355a2a', accent:'#6bcf66'},
-  {name:'Pochmurno', bg:'#0e1612', path:'#15211b', wall:'#2a4237', accent:'#6aa39a'},
-  {name:'Mgła', bg:'#0a1614', path:'#0e1f1d', wall:'#1f3d3a', accent:'#8fd0cc'},
-  {name:'Burza', bg:'#0a0d14', path:'#10182a', wall:'#233259', accent:'#6aa0ff'}
+  {name:['Forest','Las'], bg:'#0b1c10', path:'#0f2a18', wall:'#23402a', accent:'#2d5b33'},
+  {name:['Sea','Morze'], bg:'#06202b', path:'#0b2c3a', wall:'#16495c', accent:'#2b7a8a'},
+  {name:['Autumn','Jesień'], bg:'#1d1208', path:'#2a170b', wall:'#5a2e12', accent:'#7a4a1e'},
+  {name:['Winter','Zima'], bg:'#0a1520', path:'#0e1f30', wall:'#254a6b', accent:'#9ec9f0'},
+  {name:['Spring','Wiosna'], bg:'#0c1d12', path:'#12321c', wall:'#2f663d', accent:'#5cbf7a'},
+  {name:['Night','Noc'], bg:'#05070e', path:'#0a1020', wall:'#1a2a4a', accent:'#3c5a8a'},
+  {name:['Sunny','Słonecznie'], bg:'#13200d', path:'#1a2c12', wall:'#355a2a', accent:'#6bcf66'},
+  {name:['Cloudy','Pochmurno'], bg:'#0e1612', path:'#15211b', wall:'#2a4237', accent:'#6aa39a'},
+  {name:['Fog','Mgła'], bg:'#0a1614', path:'#0e1f1d', wall:'#1f3d3a', accent:'#8fd0cc'},
+  {name:['Storm','Burza'], bg:'#0a0d14', path:'#10182a', wall:'#233259', accent:'#6aa0ff'}
+];
+const WEATHERS = [
+  ['Day','Dzień'], ['Night','Noc'], ['Rain','Deszcz'], ['Fog','Mgła'], ['Sun','Słońce'], ['Cloudy','Pochmurno']
 ];
 function themeFor(level){ return THEMES[(level-1)%THEMES.length]; }
+function randomWeather(){ return WEATHERS[Math.floor(Math.random()*WEATHERS.length)]; }
 function shade(hex, f){
   const c = hex.replace('#','');
   const r=parseInt(c.substr(0,2),16), g=parseInt(c.substr(2,2),16), b=parseInt(c.substr(4,2),16);
   return `rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`;
 }
-const WEATHERS = ['Dzień','Noc','Deszcz','Mgła','Słońce','Pochmurno'];
-function randomWeather(){ return WEATHERS[Math.floor(Math.random()*WEATHERS.length)]; }
 
-// Kody poziomów
+// Codes
 function levelCodeFor(level){
   const base="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let s=""; let x=level*9301+49297;
@@ -52,6 +57,91 @@ function levelFromCode(code){
   code=(code||"").toUpperCase();
   for(let L=1;L<=30;L++){ if(levelCodeFor(L)===code) return L; }
   return null;
+}
+
+// Language
+let LANG='en';
+const $ = s => document.querySelector(s);
+const i18nDict = {
+  title: {en:'BUKA in Moomin Valley', pl:'BUKA w Dolinie Muminków'},
+  help: {en:'Guide', pl:'Poradnik'},
+  targets: {en:'Targets', pl:'Cele'},
+  moomins: {en:'Moomins', pl:'Muminki'},
+  bolts: {en:'Bolts', pl:'Pioruny'},
+  clouds: {en:'Clouds', pl:'Chmurki'},
+  mushrooms: {en:'Mushrooms', pl:'Muchomory'},
+  theme: {en:'Theme', pl:'Motyw'},
+  weather: {en:'Weather', pl:'Pogoda'},
+  score: {en:'Score', pl:'Punkty'},
+  progress: {en:'Progress', pl:'Postęp'},
+  level: {en:'Level', pl:'Poziom'},
+  hunterFreeze: {en:'Snufkin freeze', pl:'Zamrożenie Włóczykija'},
+  globalFreeze: {en:'Global Freeze', pl:'Global Freeze'},
+  levelCode: {en:'Level code', pl:'Kod poziomu'},
+  musicOn: {en:'Music: ON', pl:'Muzyka: ON'},
+  musicOff: {en:'Music: OFF', pl:'Muzyka: OFF'},
+  startTitle: {en:'Buka awakens the frost…', pl:'Buka budzi mróz…'},
+  controls: {en:'Controls: Shift – cloud (hold 3s: strong; ≥6s: global), Ctrl – bolt, WASD/Arrows – move, P – pause, R – restart.',
+             pl:'Sterowanie: Shift – chmura (trzymaj 3s: mocna; ≥6s: globalna), Ctrl – piorun, WASD/Strzałki – ruch, P – pauza, R – restart.'},
+  controlsShort: {en:'Shift – cloud (3s/6s), Ctrl – bolt, WASD/Arrows – move, P – resume, R – restart.',
+                  pl:'Shift – chmura (3s/6s), Ctrl – piorun, WASD/Strzałki – ruch, P – wznów, R – restart.'},
+  codeLabel: {en:'Level code (7 chars)', pl:'Kod poziomu (7 znaków)'},
+  applyCode: {en:'Codes', pl:'Kody'},
+  start: {en:'Start', pl:'Start'},
+  pause: {en:'Pause', pl:'Pauza'},
+  resume: {en:'Resume', pl:'Wznów'},
+  guideTitle:{en:'Game guide', pl:'Poradnik gry'},
+  close:{en:'Close', pl:'Zamknij'},
+  welcomeH:{en:'Welcome to Moomin Valley', pl:'Witaj w Dolinie Muminków'},
+  welcomeP:{en:'You are Buka – a frigid force. Eliminate all Moomins while dealing with Snufkin and Hattifatteners.',
+            pl:'Wcielasz się w Bukę – lodowatą siłę. Wyeliminuj wszystkie Muminki, radząc sobie z Włóczykijem i Hatifnatami.'},
+  controlsH:{en:'Controls', pl:'Sterowanie'},
+  ctrlMove:{en:'Move: WASD or Arrows.', pl:'Ruch: WASD lub Strzałki.'},
+  ctrlBolt:{en:'Bolt (ice shot): Ctrl – consumes bolt ammo, freezes the target.', pl:'Piorun: Ctrl – zużywa amunicję, zamraża cel.'},
+  ctrlCloud:{en:'Frost cloud: hold Shift to charge:', pl:'Chmura mrozu: przytrzymaj Shift, aby ładować:'},
+  ctrlCloudS:{en:'Tap: small cloud (7s), freezes nearby.', pl:'Krótkie naciśnięcie: mała chmura (7s), mrozi w pobliżu.'},
+  ctrlCloudM:{en:'≥3s: strong cloud (bigger radius, 30s freeze), costs 10 clouds.', pl:'≥3s: silna chmura (większy zasięg, 30s), koszt 10 chmurek.'},
+  ctrlCloudG:{en:'≥6s: global freeze for 60s, costs 100 clouds.', pl:'≥6s: globalne zamrożenie na 60s, koszt 100 chmurek.'},
+  ctrlPause:{en:'P – pause/resume.', pl:'P – pauza/wznów.'},
+  ctrlRestart:{en:'R – restart level.', pl:'R – restart poziomu.'},
+  goalH:{en:'Goal', pl:'Cel'},
+  goalP:{en:'Eliminate all Moomins. 30 levels with rising difficulty and themes.', pl:'Wyeliminuj wszystkie Muminki. 30 poziomów o rosnącej trudności i motywach.'},
+  hudH:{en:'Resources & HUD', pl:'Zasoby i HUD'},
+  hudHp:{en:'HP: green bar – avoid flames and Hattifatteners.', pl:'Życie: zielony pasek – unikaj ogników i Hatifnatów.'},
+  hudClouds:{en:'Clouds: blue bar – for clouds and global freeze.', pl:'Chmurki: niebieski pasek – do chmur i globalnego zamrożenia.'},
+  hudBolts:{en:'Bolts: light blue bar – each shot costs 1.', pl:'Pioruny: jasnoniebieski pasek – każdy strzał koszt 1.'},
+  hudGf:{en:'Global Freeze: remaining time.', pl:'Global Freeze: pozostały czas.'},
+  hudCode:{en:'Level code: 7 chars to start at a level.', pl:'Kod poziomu: 7 znaków do startu na poziomie.'},
+  objectsH:{en:'Objects', pl:'Obiekty'},
+  objMoomins:{en:'Moomins: run to house if they see you; outside you can eliminate by proximity.', pl:'Muminki: uciekają do domku; poza domkiem możesz je wyeliminować bliskością.'},
+  objHunter:{en:'Snufkin: shoots flames (DoT). Freeze with bolts/clouds; summons Hattifatteners; disappears after many freezes.', pl:'Włóczykij: strzela ognikami. Zamrażaj piorunami/chmurą; wzywa Hatifnatów; znika po wielu zamrożeniach.'},
+  objHatti:{en:'Hattifatteners: chase Buka; contact hurts, then they flee; bolt hits may grow them.', pl:'Hatifnatowie: gonią Bukę; kontakt rani, potem uciekają; piorun ich powiększa.'},
+  objBobek:{en:'Bobek: call in cave (center + release Shift). Builds webs (traps); Snufkin can burn them.', pl:'Bobek: wezwij w jaskini (środek + puść Shift). Buduje pajęczyny; Włóczykij je pali.'},
+  objTraps:{en:'Traps: immobilize Moomins; burned ones vanish.', pl:'Pułapki: unieruchamiają Muminki; spalone znikają.'},
+  objBoltPick:{en:'Bolt pickup: +10 ammo.', pl:'Pioruny – pickup: +10 amunicji.'},
+  objCloudPick:{en:'Cloud pickup: +5 clouds.', pl:'Chmurki – pickup: +5 chmurek.'},
+  objShrooms:{en:'Mushrooms: 15s growth (3x speed, bigger reach).', pl:'Muchomory: 15s wzrost (3x prędkość, większy zasięg).'},
+  objHouse:{en:'House: 3×3 passable; can’t eliminate Moomin inside.', pl:'Domek: 3×3 przechodni; w środku nie wyeliminujesz Muminka.'},
+  objCave:{en:'Cave: call Bobek here.', pl:'Jaskinia: tu wzywasz Bobka.'},
+  tacticsH:{en:'Tactics', pl:'Taktyka'},
+  tac1:{en:'Combine clouds and bolts.', pl:'Łącz chmury i pioruny.'},
+  tac2:{en:'Place webs on house routes.', pl:'Stawiaj pajęczyny na trasach przy domku.'},
+  tac3:{en:'Watch Snufkin’s aim.', pl:'Uważaj na celowanie Włóczykija.'},
+  tac4:{en:'Save Global Freeze for crises.', pl:'Global Freeze zostaw na kryzysy.'},
+  tac5:{en:'Use mushrooms to sweep.', pl:'Muchomorami czyść trudniejsze miejsca.'},
+  codesH:{en:'Level codes', pl:'Kody poziomów'},
+  codesP:{en:'Enter code on start screen to jump to a level.', pl:'Wpisz kod na ekranie startu, by wskoczyć do poziomu.'},
+  musicH:{en:'Music', pl:'Muzyka'},
+  musicP:{en:'Music ON/OFF toggles background and panic tracks.', pl:'Muzyka ON/OFF przełącza tło i motyw paniki.'},
+  glhfH:{en:'Good luck!', pl:'Powodzenia!'},
+  glhfP:{en:'Experiment with map, weather and themes.', pl:'Eksperymentuj z mapą, pogodą i motywami.'}
+};
+function tSync(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.getAttribute('data-i18n'); const item=i18nDict[key];
+    if(!item) return; el.textContent=item[LANG];
+  });
+  document.title = (LANG==='en'? 'BUKA in Moomin Valley' : 'BUKA w Dolinie Muminków');
 }
 
 // DOM
@@ -68,19 +158,22 @@ const freezeT=document.getElementById('freezeT'), progressEl=document.getElement
 const musicBtn=document.getElementById('musicBtn'), musicBg=document.getElementById('musicBg'), musicPanic=document.getElementById('musicPanic');
 const sfxBobek=document.getElementById('sfxBobek'), sfxDeathMumin=document.getElementById('sfxDeathMumin'), sfxDeathKij=document.getElementById('sfxDeathKij'), sfxWin=document.getElementById('sfxWin'), sfxAmmo=document.getElementById('sfxAmmo');
 const panicDim=document.getElementById('panicDim'), globalFog=document.getElementById('globalFog');
-
-// Kody – UI
 const codeInput=document.getElementById('codeInput');
 const applyCodeBtn=document.getElementById('applyCodeBtn');
 const codeStatus=document.getElementById('codeStatus');
+const helpBtn=document.getElementById('helpBtn');
+const helpModal=document.getElementById('helpModal');
+const helpClose=document.getElementById('helpClose');
+const langBtn=document.getElementById('langBtn');
 
+// Audio
 let musicOn=true;
 function stopAllMusic(){ musicBg.pause(); musicPanic.pause(); sfxWin.pause(); }
 function startBackground(){ if(!musicOn) return; stopAllMusic(); musicBg.currentTime=0; musicBg.loop=true; musicBg.play(); }
 function startPanic(){ if(!musicOn) return; musicBg.pause(); musicPanic.currentTime=0; musicPanic.loop=false; musicPanic.play(); }
 function startWinLoop(){ stopAllMusic(); sfxWin.currentTime=0; sfxWin.loop=true; sfxWin.play(); }
 
-// Stan gry
+// Game state
 const boka=baseBoka();
 function baseBoka(){
   return {x:48,y:48,r:BOKA_R_BASE,hp:HP_MAX,poison:0,
@@ -94,10 +187,11 @@ const hattis=[]; let panic=false;
 const cave={x:COLS*CELL-64,y:ROWS*CELL-64,r:26};
 const bobek={active:false, x:0,y:0,r:8, dir:0, speed:4.5, callsLeft:3, plan:[], building:null};
 const traps=[];
-let level=1, score=0, playing=false, paused=false, weather='Dzień';
+let level=1, score=0, playing=false, paused=false;
+let weather=WEATHERS[0];
 let lastTick=0;
 
-// Wejście
+// Input
 const keys=new Set();
 window.addEventListener('keydown',e=>{
   const mv=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'];
@@ -118,22 +212,38 @@ window.addEventListener('keyup',e=>{
 });
 musicBtn.addEventListener('click',()=>{
   musicOn=!musicOn;
-  musicBtn.textContent='Muzyka: '+(musicOn?'ON':'OFF');
+  musicBtn.textContent = musicOn ? i18nDict.musicOn[LANG] : i18nDict.musicOff[LANG];
   if(!musicOn){ stopAllMusic(); } else { if(panic) startPanic(); else startBackground(); }
 });
 startBtn.addEventListener('click',()=>{ startGame(true); });
 resumeBtn.addEventListener('click',()=>{ paused=false; pauseOv.hidden=true; });
 
-// Kody – bezpieczne: jedynie ustawiają poziom startowy (1..30)
+// Codes
 applyCodeBtn.addEventListener('click',()=>{
   const code=(codeInput.value||'').trim().toUpperCase();
-  if(!code || code.length!==7){ codeStatus.textContent='Wpisz 7 znaków.'; return; }
+  if(!code || code.length!==7){ codeStatus.textContent=(LANG==='en'?'Enter 7 chars.':'Wpisz 7 znaków.'); return; }
   const L=levelFromCode(code);
-  if(L){ level=L; codeStatus.textContent='Załadowano poziom: '+L; }
-  else { codeStatus.textContent='Nieprawidłowy kod.'; }
+  if(L){ level=L; codeStatus.textContent=(LANG==='en'?'Loaded level: ':'Załadowano poziom: ')+L; }
+  else { codeStatus.textContent=(LANG==='en'?'Invalid code.':'Nieprawidłowy kod.'); }
 });
 
-// Mapa i kafle
+// Guide modal
+helpBtn.addEventListener('click',()=>{ helpModal.hidden=false; });
+helpClose.addEventListener('click',()=>{ helpModal.hidden=true; });
+helpModal.addEventListener('click',(e)=>{ const card=e.target.closest('.modal-card'); if(!card) helpModal.hidden=true; });
+
+// Language switch
+function applyLang(){
+  langBtn.textContent = (LANG==='en' ? 'Polski' : 'English');
+  tSync();
+  const th=themeFor(level);
+  themeName.textContent = th.name[LANG==='en'?0:1];
+  weatherName.textContent = weather[LANG==='en'?0:1];
+  document.title = (LANG==='en'? i18nDict.title.en : i18nDict.title.pl);
+}
+langBtn.addEventListener('click',()=>{ LANG = (LANG==='en'?'pl':'en'); applyLang(); });
+
+// Map
 let grid=[], trees=[], mushrooms=[], houseCells=[];
 function isWall(c,r){if(r<0||c<0||r>=ROWS||c>=COLS)return true;return grid[r][c]===1}
 function genMap(level){
@@ -152,7 +262,7 @@ function genMap(level){
       if(dir===2&&c>1)c--; if(dir===3&&c<COLS-2)c++;
     }
   }
-  // Domek 3x3 – kafel 2 (przechodni)
+  // House 3x3 (tile=2 passable)
   let dr=0,dc=0;
   for(let tries=0;tries<500;tries++){
     const r=2+((Math.random()*(ROWS-5))|0), c=2+((Math.random()*(COLS-5))|0);
@@ -173,7 +283,7 @@ function genMap(level){
 function inHouse(x,y){const c=(x/CELL)|0, r=(y/CELL)|0; return grid[r] && grid[r][c]===2;}
 function inCaveCenter(x,y){return Math.hypot(x-cave.x,y-cave.y)<cave.r*0.6;}
 
-// Reset poziomu
+// Reset
 function resetLevel(){
   mumins.length=0; fearClouds.length=0; blueClouds.length=0; projs.length=0; iceBolts.length=0;
   boltPickups.length=0; cloudPickups.length=0; traps.length=0; hattis.length=0;
@@ -199,15 +309,16 @@ function resetLevel(){
   updateHUDTheme(); updateHUD();
 }
 
-// HUD
+// HUD/theme/weather
 function updateHUDTheme(){
   const th=themeFor(level);
   document.documentElement.style.setProperty('--bg', th.bg);
   document.documentElement.style.setProperty('--path', th.path);
   document.documentElement.style.setProperty('--wall', th.wall);
   document.documentElement.style.setProperty('--accent', th.accent);
-  themeName.textContent=th.name;
-  weather=randomWeather(); weatherName.textContent=weather;
+  themeName.textContent = th.name[LANG==='en'?0:1];
+  weather=randomWeather();
+  weatherName.textContent = weather[LANG==='en'?0:1];
   levelCodeEl.textContent=levelCodeFor(level);
 }
 function updateHUD(){
@@ -221,7 +332,7 @@ function updateHUD(){
   globalFreezeT.textContent = boka.globalFreeze>0 ? Math.ceil(boka.globalFreeze)+'s' : '—';
 }
 
-// Pickupy
+// Pickups
 function placePickups(arr,count,shape){
   for(let i=0;i<count;i++){
     let x=0,y=0;
@@ -237,11 +348,8 @@ function updatePickups(arr, kind, dt){
   for(let i=0;i<arr.length;i++){
     const p=arr[i];
     if(p.alive && Math.hypot(p.x-boka.x,p.y-boka.y)<boka.r+p.r){
-      if(kind==='alt'){
-        boka.ammoAlt=Math.min(999,boka.ammoAlt+10); ammoAltFill.style.width=Math.min(100,(boka.ammoAlt/100)*100)+'%';
-      } else {
-        boka.ammoCloud+=5; cloudStockFill.style.width=Math.min(100,(boka.ammoCloud/20)*100)+'%';
-      }
+      if(kind==='alt'){ boka.ammoAlt=Math.min(999,boka.ammoAlt+10); }
+      else { boka.ammoCloud+=5; }
       sfxAmmo.currentTime=0; sfxAmmo.play();
       p.alive=false; p.timer=pickupRespawn;
     } else if(!p.alive && p.timer>0){
@@ -258,7 +366,7 @@ function updatePickups(arr, kind, dt){
   }
 }
 
-// Chmury/mrożenia – mechanika bez zmian
+// Clouds / freezing
 function tryUseCloudBasic(){
   if(boka.cloudActive || boka.ammoCloud<=0) return false;
   boka.ammoCloud--; cloudStockFill.style.width=Math.min(100,(boka.ammoCloud/20)*100)+'%';
@@ -292,7 +400,7 @@ function freezeInRadius(radius, seconds){
   }
 }
 
-// Bobek / pułapki – bez zmian mechaniki
+// Bobek / traps
 function triggerBobek(){
   if(bobek.active || bobek.callsLeft<=0) return;
   bobek.callsLeft--; sfxBobek.currentTime=0; sfxBobek.play();
@@ -361,7 +469,7 @@ function updateTraps(dt){
   }
 }
 
-// Hatifnatowie
+// Hattifatteners (with cute hands 3–5 fingers)
 function summonHattis(onDeathBurst){
   const count = onDeathBurst? 15 : 10;
   hattis.length=0;
@@ -371,7 +479,13 @@ function summonHattis(onDeathBurst){
     if(side===1){ x=COLS*CELL-2; y=((Math.random()*ROWS*CELL)|0); }
     if(side===2){ y=2; x=((Math.random()*COLS*CELL)|0); }
     if(side===3){ y=ROWS*CELL-2; x=((Math.random()*COLS*CELL)|0); }
-    hattis.push({x,y,r:10, flee:false, scale:1});
+    hattis.push({
+      x,y,r:10, flee:false, scale:1,
+      handSpan: 6 + Math.random()*3,
+      fingersL: 3 + (Math.random()*3|0),
+      fingersR: 3 + (Math.random()*3|0),
+      armLen: 8 + Math.random()*4
+    });
   }
   panic=true; panicDim.hidden=false; startPanic();
 }
@@ -379,7 +493,7 @@ function checkHattisClear(){
   if(hattis.length===0){ panic=false; panicDim.hidden=true; startBackground(); }
 }
 
-// Ruch/kolizje
+// Movement
 function moveCircle(obj,vx,vy,rad){
   let nx=obj.x+vx, ny=obj.y+vy;
   const minX=rad, minY=rad, maxX=COLS*CELL-rad, maxY=ROWS*CELL-rad;
@@ -387,7 +501,7 @@ function moveCircle(obj,vx,vy,rad){
   const c=(nx/CELL)|0, r=(ny/CELL)|0;
   for(let rr2=r-1;rr2<=r+1;rr2++) for(let cc=c-1;cc<=c+1;cc++){
     if(!grid[rr2]||grid[rr2][cc]===undefined) continue;
-    if(grid[rr2][cc]===0 || grid[rr2][cc]===2) continue; // dom przepuszcza
+    if(grid[rr2][cc]===0 || grid[rr2][cc]===2) continue;
     const rx=cc*CELL, ry=rr2*CELL;
     const cx=Math.max(rx,Math.min(nx,rx+CELL));
     const cy=Math.max(ry,Math.min(ny,ry+CELL));
@@ -401,7 +515,7 @@ function moveCircle(obj,vx,vy,rad){
   return {x:nx,y:ny};
 }
 
-// Ctrl – piorun
+// Fire bolt
 function fireIceBolt(){
   if(boka.ammoAlt<=0) return;
   const dirLen=Math.hypot(boka.lookX,boka.lookY)||1;
@@ -410,7 +524,7 @@ function fireIceBolt(){
   iceBolts.push({x:boka.x+ux*16, y:boka.y+uy*16, vx:ux*7.0, vy:uy*7.0, ttl:2.5});
 }
 
-// Pętla
+// Loop
 function update(now){
   if(!playing) return;
   const d=diff(level);
@@ -568,8 +682,8 @@ function update(now){
     if(level>=30){ finalWin(); return; }
     level++;
     overlay.hidden=false;
-    document.querySelector('#overlay .ttl').textContent = 'Poziom ukończony';
-    document.querySelector('#overlay .desc').innerHTML = 'Przejdź do następnego poziomu.<br>Kod: '+levelCodeFor(level);
+    document.querySelector('#overlay .ttl').textContent = (LANG==='en'?'Level complete':'Poziom ukończony');
+    document.querySelector('#overlay .desc').innerHTML = (LANG==='en'?'Proceed to next level.<br>Code: ':'Przejdź do następnego poziomu.<br>Kod: ')+levelCodeFor(level);
     playing=false; return;
   }
 
@@ -608,8 +722,8 @@ function update(now){
   if(boka.hp<=0){
     stopAllMusic();
     playing=false; overlay.hidden=false;
-    document.querySelector('#overlay .ttl').textContent='Przegrana';
-    document.querySelector('#overlay .desc').textContent='Hatifnatowie i ogniki cię wyczerpały. Spróbuj ponownie.';
+    document.querySelector('#overlay .ttl').textContent=(LANG==='en'?'Defeat':'Przegrana');
+    document.querySelector('#overlay .desc').textContent=(LANG==='en'?'Hattifatteners and flames drained you. Try again.':'Hatifnatowie i ogniki cię wyczerpały. Spróbuj ponownie.');
     return;
   }
 
@@ -617,7 +731,7 @@ function update(now){
   requestAnimationFrame(update);
 }
 
-// AI helpers
+// Helpers
 function nearestBlockingTrap(src, dst){
   let best=null, bestD=1e9;
   for(const t of traps){
@@ -642,12 +756,11 @@ function goTowards(obj, tx, ty, speed){
   obj.x=moved.x; obj.y=moved.y;
 }
 
-// Rysowanie – wygląd z drugiego skryptu
+// Draw (upgraded visuals, new Hatti hands)
 function draw(){
   const th=themeFor(level);
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // kafle
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const x=c*CELL,y=r*CELL,w=CELL,h=CELL;
     const t=grid[r][c];
@@ -656,7 +769,7 @@ function draw(){
     if(t===2){ ctx.strokeStyle='rgba(200,255,220,0.25)'; ctx.strokeRect(x+3,y+3,w-6,h-6); }
   }
 
-  // jaskinia – kamienie + otwór
+  // cave
   {
     const cx=cave.x, cy=cave.y, r=cave.r;
     for(let i=0;i<18;i++){
@@ -671,7 +784,7 @@ function draw(){
     ctx.fillStyle='rgba(10,10,10,0.9)'; ctx.beginPath(); ctx.arc(cx,cy,r*0.6,0,Math.PI*2); ctx.fill();
   }
 
-  // drzewa / muchomory
+  // trees / mushrooms
   for(const t of trees){
     ctx.fillStyle=shade(th.accent,0.4); ctx.fillRect(t.x-6, t.y+5, 12, 6);
     ctx.fillStyle=th.accent; ctx.beginPath(); ctx.moveTo(t.x, t.y-18); ctx.lineTo(t.x-12, t.y+8); ctx.lineTo(t.x+12, t.y+8); ctx.closePath(); ctx.fill();
@@ -684,7 +797,7 @@ function draw(){
     ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(m.x-3,m.y-6,1.2,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(m.x+2,m.y-5,1.4,0,Math.PI*2); ctx.fill();
   }
 
-  // pickupy – piorun (błyskawica) i chmurka
+  // pickups
   for(const p of boltPickups){
     if(!p.alive) continue;
     const g=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,12);
@@ -706,7 +819,7 @@ function draw(){
     ctx.strokeStyle='rgba(120,170,210,0.8)'; ctx.stroke();
   }
 
-  // pułapki – pajęczyny z progresem/paleniem
+  // traps
   for(const t of traps){
     const build=t.active?1:Math.min(1,(t.buildProgress||0));
     ctx.save();
@@ -725,11 +838,11 @@ function draw(){
     ctx.restore();
   }
 
-  // chmurki
+  // reward clouds
   fearClouds.forEach(f=>{ ctx.fillStyle='rgba(255,230,120,0.55)'; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill(); });
   blueClouds.forEach(b=>{ ctx.fillStyle='rgba(140,200,255,0.7)'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill(); });
 
-  // Muminki – bardziej szczegółowe
+  // moomins
   mumins.forEach(m=>{
     if(!m.alive) return;
     ctx.save(); ctx.translate(m.x,m.y);
@@ -742,7 +855,7 @@ function draw(){
     ctx.restore();
   });
 
-  // Ogniki (pociski)
+  // flames
   projs.forEach(p=>{
     const grd=ctx.createRadialGradient(p.x,p.y,0.5,p.x,p.y,6);
     grd.addColorStop(0,'rgba(255,240,160,1)');
@@ -751,14 +864,14 @@ function draw(){
     ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill();
   });
 
-  // Pioruny
+  // bolts
   iceBolts.forEach(b=>{
     ctx.strokeStyle='rgba(160,220,255,0.9)';
     ctx.beginPath(); ctx.moveTo(b.x-3,b.y); ctx.lineTo(b.x+3,b.y); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(b.x,b.y-3); ctx.lineTo(b.x,b.y+3); ctx.stroke();
   });
 
-  // Hunter
+  // hunter
   if(hunter.alive){
     ctx.save(); ctx.translate(hunter.x,hunter.y);
     const frozen=hunter.frozen>0;
@@ -768,95 +881,4 @@ function draw(){
     const dx=boka.x-hunter.x, dy=boka.y-hunter.y, d=Math.hypot(dx,dy)||1; const ox=(dx/d)*1.5, oy=(dy/d)*1.5;
     ctx.fillStyle='#213a2b'; ctx.beginPath(); ctx.arc(-1+ox,-6+oy,1.2,0,Math.PI*2); ctx.fill();
     ctx.fillStyle=frozen ? 'rgba(160,240,220,0.9)' : '#7de6a9';
-    ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(-9,14); ctx.lineTo(9,14); ctx.closePath(); ctx.fill();
-    const ang=Math.atan2(dy,dx);
-    ctx.strokeStyle='#1c3b2a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(ang)*12, Math.sin(ang)*12); ctx.stroke(); ctx.lineWidth=1;
-    if(frozen){ ctx.strokeStyle='rgba(180,255,255,0.8)'; ctx.strokeRect(-11,-28,22,44); }
-    ctx.restore();
-  }
-
-  // Bobek
-  if(bobek.active){
-    ctx.save(); ctx.translate(bobek.x,bobek.y);
-    ctx.fillStyle='#101010'; ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.fill();
-    for(let i=0;i<6;i++){ const a=i*(Math.PI*2/6); ctx.strokeStyle='#1d1d1d'; ctx.beginPath(); ctx.moveTo(Math.cos(a)*6,Math.sin(a)*6); ctx.lineTo(Math.cos(a)*10,Math.sin(a)*10); ctx.stroke(); }
-    const ex=Math.cos(bobek.dir)*1.5, ey=Math.sin(bobek.dir)*1.5;
-    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-2,-2,1.8,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(2,-2,1.8,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(-2+ex,-2+ey,0.6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(2+ex,-2+ey,0.6,0,Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
-
-  // Buka – z poświatą i oczami
-  const glow=10+6*Math.sin(performance.now()/180);
-  ctx.save(); ctx.translate(boka.x,boka.y);
-  ctx.shadowColor='#7ad1ff'; ctx.shadowBlur=glow;
-  ctx.fillStyle=boka.cloudActive?'#5aa7d4':'#7ad1ff';
-  ctx.beginPath(); ctx.ellipse(0,2,boka.r*0.93,boka.r*1.3,0,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle=boka.cloudActive?'rgba(120,160,190,0.5)':'rgba(170,220,255,0.5)';
-  ctx.beginPath(); ctx.ellipse(0,8,boka.r*1.1,6,0,0,Math.PI*2); ctx.fill();
-  ctx.shadowBlur=0;
-  const el=Math.hypot(boka.lookX,boka.lookY)||1; const ex=(boka.lookX/el)*2.2, ey=(boka.lookY/el)*2.2;
-  ctx.fillStyle='#eef9ff';
-  ctx.beginPath(); ctx.ellipse(-4,-4,3,4,0,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(4,-4,3,4,0,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#0b1c10'; ctx.beginPath(); ctx.arc(-4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(4+ex,-4+ey,1.6,0,Math.PI*2); ctx.fill();
-  ctx.restore();
-
-  // chmura lokalna
-  if(boka.cloudActive){
-    const radius=CLOUD_MAX_RADIUS*(boka.cloud/7.0)*2;
-    const grd=ctx.createRadialGradient(boka.x,boka.y,10,boka.x,boka.y,Math.max(20,radius));
-    grd.addColorStop(0,'rgba(0,0,0,0.6)');
-    grd.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(boka.x,boka.y,Math.max(20,radius),0,Math.PI*2); ctx.fill();
-  }
-
-  // Hatifnatowie
-  for(const h of hattis){
-    ctx.save(); ctx.translate(h.x,h.y); ctx.scale(h.scale,h.scale);
-    ctx.shadowColor='rgba(255,245,150,0.9)'; ctx.shadowBlur=12;
-    ctx.fillStyle='rgba(255,255,200,0.95)';
-    ctx.beginPath(); ctx.ellipse(0,0,6,12,0,0,Math.PI*2); ctx.fill();
-    ctx.shadowBlur=0;
-    const dx=boka.x-h.x, dy=boka.y-h.y, d=Math.hypot(dx,dy)||1; const ox=(dx/d)*1.5, oy=(dy/d)*1.5;
-    ctx.fillStyle='#333'; ctx.beginPath(); ctx.arc(-2+ox,-2+oy,1.2,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(2+ox,-2+oy,1.2,0,Math.PI*2); ctx.fill();
-    ctx.restore();
-  }
-
-  // pogoda / ramka
-  if(weather==='Noc'){ ctx.fillStyle='rgba(0,0,30,0.25)'; ctx.fillRect(0,0,canvas.width,canvas.height); }
-  else if(weather==='Deszcz'){
-    ctx.strokeStyle='rgba(180,200,255,0.25)';
-    for(let i=0;i<50;i++){
-      const x=(performance.now()/10 + i*50)%canvas.width;
-      const y=(i*37 + performance.now()/3)%canvas.height;
-      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+4,y+10); ctx.stroke();
-    }
-  } else if(weather==='Mgła'){
-    ctx.fillStyle='rgba(200,220,220,0.08)'; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle='rgba(200,220,220,0.08)'; ctx.fillRect(20,20,canvas.width-40,canvas.height-40);
-  }
-  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.strokeRect(0.5,0.5,canvas.width-1,canvas.height-1);
-}
-
-// Finał
-function finalWin(){
-  playing=false;
-  startWinLoop();
-}
-
-// Start gry
-function startGame(fullReset=false){
-  if(fullReset){
-    score=0;
-    Object.assign(boka, baseBoka());
-  }
-  resetLevel();
-  overlay.hidden=true; paused=false; pauseOv.hidden=true;
-  lastTick=performance.now();
-  playing=true;
-  startBackground();
-  requestAnimationFrame(update);
-}
-
-})();
+    ctx.beginPath();
