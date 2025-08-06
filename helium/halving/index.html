@@ -2,30 +2,211 @@
 <html lang="pl">
 <head>
   <meta charset="utf-8">
-  <title>Twoja strona</title>
+  <title>HNT – Wykres i Statystyki + BG MB3</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Chart.js + adapter czasu do osi X -->
+
+  <!-- Chart.js i adapter czasu -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121a2b;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #3b82f6;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --border: #1f2937;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      height: 100%;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .brand {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-weight: 700;
+      letter-spacing: .3px;
+    }
+    .brand .loupe {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #26324a, #111827 60%);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 0 18px rgba(59,130,246,.25);
+      position: relative;
+    }
+    .brand .loupe::after {
+      content: "";
+      position: absolute;
+      width: 12px; height: 4px;
+      background: #26324a;
+      right: -6px; bottom: -3px;
+      border-radius: 2px;
+      transform: rotate(35deg);
+      border: 1px solid var(--border);
+    }
+    #gii-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    button {
+      background: #1f2a44;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button[aria-pressed="true"] {
+      background: #123369;
+      border-color: #254b87;
+      color: #dbeafe;
+      box-shadow: 0 0 0 2px rgba(59,130,246,.25) inset;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0 24px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 6px;
+    }
+    .value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .muted {
+      color: var(--muted);
+    }
+    #chart-card {
+      height: 420px;
+    }
+    #hnt-chart {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    ul.clean {
+      list-style: none;
+      padding-left: 0;
+      margin: 8px 0 0 0;
+    }
+    ul.clean li {
+      padding: 4px 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.06);
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 900px) {
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-2 { grid-template-columns: 1fr; }
+      #chart-card { height: 360px; }
+    }
+  </style>
 </head>
 <body>
 
-  <!-- Audio: tylko zmiana źródła na bg.mp3 -->
-  <audio id="bgmb3-audio" src="bg.mp3" preload="auto" loop></audio>
+  <header>
+    <div class="brand">
+      <div class="loupe" title="Lupa"></div>
+      <div>Helium HNT – Wykres i Statystyki</div>
+    </div>
+    <div id="gii-controls">
+      <button id="bgmb3-toggle" aria-pressed="false">BG MB3: Off</button>
+    </div>
+    <audio id="bgmb3-audio" src="bg.mp3" preload="auto" loop></audio>
+  </header>
 
-  <!-- Przycisk GII (pozostawiasz swój, jeśli już masz) -->
-  <button id="bgmb3-toggle" aria-pressed="false">BG MB3: Off</button>
+  <div class="container">
 
-  <!-- Kontener na cenę (jeśli masz już swój, zostaw identyczny ID) -->
-  <div>
-    Cena HNT: <span id="hnt-price">--</span> USD
+    <div class="stats">
+      <div class="card">
+        <div class="label">Price</div>
+        <div class="value"><span id="hnt-price">--</span> <span class="muted">USD</span></div>
+      </div>
+      <div class="card">
+        <div class="label">Market Cap</div>
+        <div class="value" id="hnt-mcap">--</div>
+      </div>
+      <div class="card">
+        <div class="label">Circulating</div>
+        <div class="value"><span id="hnt-circ">--</span> <span class="muted">HNT</span></div>
+      </div>
+      <div class="card">
+        <div class="label">Max Supply</div>
+        <div class="value"><span id="hnt-max">223,000,000</span> <span class="muted">HNT</span></div>
+      </div>
+    </div>
+
+    <div class="card" id="chart-card">
+      <canvas id="hnt-chart"></canvas>
+    </div>
+
+    <div class="grid-2" style="margin-top: 12px;">
+      <div class="card">
+        <h3 style="margin: 0 0 8px;">Past Halvings</h3>
+        <ul id="hnt-halvings" class="clean"></ul>
+      </div>
+      <div class="card">
+        <h3 style="margin: 0 0 8px;">Block Reward</h3>
+        <ul id="hnt-rewards" class="clean"></ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 12px;">
+      <h3 style="margin: 0 0 8px;">Proof-of-Coverage</h3>
+      <div id="hnt-poc">
+        <div>Consensus: PoC (HoneyBadger BFT)</div>
+        <div>Rewards for coverage & data</div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Canvas wykresu (jeśli masz już swój, zachowaj id="hnt-chart") -->
-  <canvas id="hnt-chart" height="300"></canvas>
-
   <script>
-    // Istniejące sterowanie audio – pozostawione bez zmian poza tym, że src to bg.mp3
+    // Audio: sterowanie BG MB3 (bg.mp3) z GII + pamiętanie stanu
     (function() {
       const audioEl = document.getElementById('bgmb3-audio');
       const toggleBtn = document.getElementById('bgmb3-toggle');
@@ -172,6 +353,144 @@
       document.addEventListener('DOMContentLoaded', async () => {
         try { await loadFullHistory(); } catch {}
         startPricePolling(60000);
+      });
+    })();
+  </script>
+
+  <script>
+    // Halvings, Block Reward i Network Stats – dynamiczne i autoaktualne
+    (function() {
+      // Konfiguracja halvingów (co 24 mies. od 2019-08-01)
+      const HALVING_START = new Date(Date.UTC(2019, 7, 1)); // 2019-08-01
+      const HALVING_INTERVAL_MONTHS = 24;
+      const INITIAL_MONTHLY_MINT = 5_000_000; // HNT/mies. przed 2021-08
+      const MAX_SUPPLY = 223_000_000;
+
+      function addMonthsUTC(date, months) {
+        const d = new Date(date.getTime());
+        const y = d.getUTCFullYear();
+        const m = d.getUTCMonth();
+        const day = d.getUTCDate();
+        return new Date(Date.UTC(y, m + months, day));
+      }
+      function formatDateUTC(d) {
+        const y = d.getUTCFullYear();
+        the_m = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        return `${y}-${the_m}-${day}`;
+      }
+      function computeHalvingLevel(now = new Date()) {
+        const monthsSinceStart = (now.getUTCFullYear() - HALVING_START.getUTCFullYear()) * 12 +
+                                 (now.getUTCMonth() - HALVING_START.getUTCMonth());
+        return Math.max(0, Math.floor(monthsSinceStart / HALVING_INTERVAL_MONTHS));
+      }
+      function monthlyMintAtLevel(level) {
+        return INITIAL_MONTHLY_MINT / Math.pow(2, level);
+      }
+      function formatInt(n) {
+        return Math.round(n).toLocaleString();
+      }
+
+      function renderHalvings() {
+        const ul = document.getElementById('hnt-halvings');
+        if (!ul) return;
+        ul.innerHTML = '';
+
+        const now = new Date();
+        const items = [];
+        // Zgodnie z pierwotną listą – stały wpis
+        items.push({ label: '2019', text: '60M HNT minted' });
+
+        let level = 1;
+        let date = addMonthsUTC(HALVING_START, HALVING_INTERVAL_MONTHS * level); // 2021-08-01
+        while (date.getTime() <= now.getTime() + 1000 * 60 * 60 * 24 * 730) { // ~2 lata naprzód
+          const annualMint = 60_000_000 / Math.pow(2, level - 1); // 60M, 30M, 15M...
+          const label = formatDateUTC(date);
+          items.push({ label, text: `${annualMint.toLocaleString()} HNT minted` });
+          level += 1;
+          date = addMonthsUTC(HALVING_START, HALVING_INTERVAL_MONTHS * level);
+          if (level > 10) break;
+        }
+
+        for (const it of items) {
+          const li = document.createElement('li');
+          li.textContent = `${it.label}: ${it.text}`;
+          ul.appendChild(li);
+        }
+      }
+
+      function renderRewards() {
+        const ul = document.getElementById('hnt-rewards');
+        if (!ul) return;
+        ul.innerHTML = '';
+
+        const nowLevel = computeHalvingLevel();
+        const mapping = [
+          { label: 'Pre-2021', level: 0, value: monthlyMintAtLevel(0) },
+          { label: 'Post-2021', level: 1, value: monthlyMintAtLevel(1) },
+          { label: 'Post-2023', level: 2, value: monthlyMintAtLevel(2) },
+          { label: 'Post-2025', level: 3, value: monthlyMintAtLevel(3) },
+        ];
+
+        mapping.forEach(m => {
+          const li = document.createElement('li');
+          const active = (m.level === nowLevel) ? ' (current)' : '';
+          li.textContent = `${m.label}: ${formatInt(m.value)} HNT/month${active}`;
+          ul.appendChild(li);
+        });
+      }
+
+      // Network Stats z CoinGecko
+      const COINGECKO_MARKET = 'https://api.coingecko.com/api/v3/coins/helium?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false';
+
+      async function fetchJSON(url) {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      }
+      function fmtUSD(n) {
+        if (!Number.isFinite(n)) return '--';
+        if (n >= 1) return `$${n.toFixed(2)}`;
+        if (n >= 0.01) return `$${n.toFixed(4)}`;
+        return `$${n.toFixed(6)}`;
+      }
+      function fmtInt(n) {
+        return Number.isFinite(n) ? Math.round(n).toLocaleString() : '--';
+      }
+
+      async function updateNetworkStats() {
+        try {
+          const data = await fetchJSON(COINGECKO_MARKET);
+          const md = data?.market_data;
+          const price = md?.current_price?.usd;
+          const mcap = md?.market_cap?.usd;
+          const circ = md?.circulating_supply;
+
+          const priceEl = document.getElementById('hnt-price');
+          const mcapEl = document.getElementById('hnt-mcap');
+          const circEl = document.getElementById('hnt-circ');
+          const maxEl = document.getElementById('hnt-max');
+
+          if (priceEl && typeof price === 'number') priceEl.textContent = (price >= 1 ? price.toFixed(2) : (price >= 0.01 ? price.toFixed(4) : price.toFixed(6)));
+          if (mcapEl && typeof mcap === 'number') mcapEl.textContent = `$${fmtInt(mcap)}`;
+          if (circEl && typeof circ === 'number') circEl.textContent = fmtInt(circ);
+          if (maxEl) maxEl.textContent = MAX_SUPPLY.toLocaleString();
+
+          document.querySelectorAll('[data-hnt-price]').forEach(el => {
+            if (typeof price === 'number') el.textContent = (price >= 1 ? price.toFixed(2) : (price >= 0.01 ? price.toFixed(4) : price.toFixed(6)));
+          });
+        } catch {}
+      }
+
+      function startStatsPolling(intervalMs = 60000) {
+        updateNetworkStats();
+        setInterval(updateNetworkStats, intervalMs);
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        renderHalvings();
+        renderRewards();
+        startStatsPolling(60000);
       });
     })();
   </script>
