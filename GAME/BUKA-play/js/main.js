@@ -41,6 +41,91 @@ function shade(hex, f){
 const WEATHERS = ['Dzień','Noc','Deszcz','Mgła','Słońce','Pochmurno'];
 function randomWeather(){ return WEATHERS[Math.floor(Math.random()*WEATHERS.length)]; }
 
+// Language support
+let currentLang = 'pl'; // Default to Polish
+const translations = {
+  pl: {
+    title: 'BUKA w Dolinie Muminków',
+    start: 'Start',
+    resume: 'Wznów',
+    pause: 'Pauza',
+    guide: 'Przewodnik',
+    music: 'Muzyka',
+    on: 'WŁ.',
+    off: 'WYŁ.',
+    levelComplete: 'Poziom ukończony',
+    gameOver: 'Przegrana',
+    nextLevel: 'Przejdź do następnego poziomu.<br>Kod: ',
+    gameOverDesc: 'Hatifnatowie i ogniki cię wyczerpały. Spróbuj ponownie.',
+    controls: 'Sterowanie: Shift – chmura (trzymaj 3s: mocna; ≥6s: globalna), Ctrl – piorun, WASD/Strzałki – ruch, P – pauza, R – restart.',
+    codePrompt: 'Kod poziomu (7 znaków): ',
+    codeInvalid: 'Nieprawidłowy kod.',
+    codeLength: 'Wpisz 7 znaków.',
+    codeLoaded: 'Załadowano poziom: ',
+    guideContent: `
+      # Przewodnik po grze: BUKA w Dolinie Muminków
+      ## Cel gry
+      Twoim zadaniem jest pokonanie wszystkich Muminków na poziomie, unikając ataków Włóczykija i Hatifnatów. Zbieraj chmurki i pioruny, aby zwiększyć swoje możliwości.
+      ## Sterowanie
+      - **WASD/Strzałki**: Ruch Buką.
+      - **Shift**: Aktywacja chmury (3s dla mocnej, 6s dla globalnej).
+      - **Ctrl**: Strzał piorunem.
+      - **P**: Pauza.
+      - **R**: Restart poziomu.
+      ## Mechanika
+      - **Chmurki**: Zamrażają Muminki i Włóczykija w promieniu. Globalna chmura wymaga 100 jednostek.
+      - **Pioruny**: Zamrażają pojedyncze cele.
+      - **Muchomory**: Zwiększają rozmiar i prędkość Buką na 15 sekund.
+      - **Bobek**: Wzywany w jaskini, tworzy pułapki-pajęczyny.
+      - **Hatifnatowie**: Pojawiają się po zamrożeniu Włóczykija, uciekają po ataku.
+      ## Wskazówki
+      - Używaj chmur strategicznie, aby zamrozić wiele celów naraz.
+      - Unikaj ogników Włóczykija, które zatruwają Bukę.
+      - Zbieraj niebieskie chmurki dla zdrowia i amunicji.
+    `
+  },
+  en: {
+    title: 'The Groke in Moominvalley',
+    start: 'Start',
+    resume: 'Resume',
+    pause: 'Pause',
+    guide: 'Guide',
+    music: 'Music',
+    on: 'ON',
+    off: 'OFF',
+    levelComplete: 'Level Completed',
+    gameOver: 'Game Over',
+    nextLevel: 'Proceed to the next level.<br>Code: ',
+    gameOverDesc: 'Hattifatteners and fireflies have drained you. Try again.',
+    controls: 'Controls: Shift – cloud (hold 3s: strong; ≥6s: global), Ctrl – lightning, WASD/Arrows – move, P – pause, R – restart.',
+    codePrompt: 'Level code (7 characters): ',
+    codeInvalid: 'Invalid code.',
+    codeLength: 'Enter 7 characters.',
+    codeLoaded: 'Loaded level: ',
+    guideContent: `
+      # Game Guide: The Groke in Moominvalley
+      ## Objective
+      Your goal is to defeat all Moomins on the level while avoiding attacks from Snufkin and Hattifatteners. Collect clouds and lightning to enhance your abilities.
+      ## Controls
+      - **WASD/Arrows**: Move the Groke.
+      - **Shift**: Activate cloud (3s for strong, 6s for global).
+      - **Ctrl**: Fire lightning bolt.
+      - **P**: Pause.
+      - **R**: Restart level.
+      ## Mechanics
+      - **Clouds**: Freeze Moomins and Snufkin in a radius. Global cloud requires 100 units.
+      - **Lightning**: Freezes single targets.
+      - **Mushrooms**: Increase the Groke's size and speed for 15 seconds.
+      - **Little My**: Summoned in the cave, creates web traps.
+      - **Hattifatteners**: Appear after freezing Snufkin, flee after attacking.
+      ## Tips
+      - Use clouds strategically to freeze multiple targets at once.
+      - Avoid Snufkin's fireflies, which poison the Groke.
+      - Collect blue clouds for health and ammo.
+    `
+  }
+};
+
 // Level codes
 function levelCodeFor(level){
   const base="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -58,6 +143,7 @@ function levelFromCode(code){
 const canvas=document.getElementById('game'), ctx=canvas.getContext('2d');
 const overlay=document.getElementById('overlay'), startBtn=document.getElementById('startBtn');
 const pauseOv=document.getElementById('pause'), resumeBtn=document.getElementById('resumeBtn');
+const guideOv=document.getElementById('guide') || document.createElement('div'); // Fallback if not in HTML
 const leftEl=document.getElementById('left'), mushLeftEl=document.getElementById('mushLeft');
 const lvlEl=document.getElementById('level'), scoreEl=document.getElementById('score');
 const levelCodeEl=document.getElementById('levelCode');
@@ -68,17 +154,75 @@ const freezeT=document.getElementById('freezeT'), progressEl=document.getElement
 const musicBtn=document.getElementById('musicBtn'), musicBg=document.getElementById('musicBg'), musicPanic=document.getElementById('musicPanic');
 const sfxBobek=document.getElementById('sfxBobek'), sfxDeathMumin=document.getElementById('sfxDeathMumin'), sfxDeathKij=document.getElementById('sfxDeathKij'), sfxWin=document.getElementById('sfxWin'), sfxAmmo=document.getElementById('sfxAmmo');
 const panicDim=document.getElementById('panicDim'), globalFog=document.getElementById('globalFog');
-
-// Level codes – UI
 const codeInput=document.getElementById('codeInput');
 const applyCodeBtn=document.getElementById('applyCodeBtn');
 const codeStatus=document.getElementById('codeStatus');
+const langBtn=document.getElementById('langBtn') || document.createElement('button'); // Fallback
+const guideBtn=document.getElementById('guideBtn') || document.createElement('button'); // Fallback
 
+// Setup guide overlay if not in HTML
+if (!guideOv.id) {
+  guideOv.id = 'guide';
+  guideOv.className = 'overlay';
+  guideOv.innerHTML = `
+    <div class="card panel8">
+      <div class="ttl pix">${translations[currentLang].guide}</div>
+      <div class="desc guide-content"></div>
+      <button id="closeGuideBtn" class="btn pix">${translations[currentLang].resume}</button>
+    </div>
+  `;
+  document.body.appendChild(guideOv);
+  guideOv.hidden = true;
+}
+const closeGuideBtn = document.getElementById('closeGuideBtn');
+
+// Language and guide UI
+function updateLanguage() {
+  const t = translations[currentLang];
+  document.querySelector('h1.pix').textContent = t.title;
+  startBtn.textContent = t.start;
+  resumeBtn.textContent = t.resume;
+  musicBtn.textContent = `${t.music}: ${musicOn ? t.on : t.off}`;
+  document.querySelector('#overlay .ttl').textContent = playing ? t.levelComplete : t.title;
+  document.querySelector('#overlay .desc').innerHTML = playing ? `${t.nextLevel}${levelCodeFor(level)}` : t.controls;
+  document.querySelector('#pause .ttl').textContent = t.pause;
+  document.querySelector('#pause .desc').textContent = t.controls;
+  document.querySelector('#guide .ttl').textContent = t.guide;
+  document.querySelector('#guide .desc').innerHTML = t.guideContent.replace(/\n/g, '<br>').replace(/## (.*?)<br>/g, '<h2>$1</h2>').replace(/# (.*?)<br>/g, '<h1>$1</h1>');
+  closeGuideBtn.textContent = t.resume;
+  codeInput.placeholder = t.codePrompt;
+  langBtn.textContent = currentLang === 'pl' ? 'English' : 'Polski';
+  guideBtn.textContent = t.guide;
+}
+
+// Music controls
 let musicOn=true;
 function stopAllMusic(){ musicBg.pause(); musicPanic.pause(); sfxWin.pause(); }
 function startBackground(){ if(!musicOn) return; stopAllMusic(); musicBg.currentTime=0; musicBg.loop=true; musicBg.play(); }
 function startPanic(){ if(!musicOn) return; musicBg.pause(); musicPanic.currentTime=0; musicPanic.loop=false; musicPanic.play(); }
 function startWinLoop(){ stopAllMusic(); sfxWin.currentTime=0; sfxWin.loop=true; sfxWin.play(); }
+
+// Event listeners
+musicBtn.addEventListener('click',()=>{
+  musicOn=!musicOn;
+  musicBtn.textContent=`${translations[currentLang].music}: ${musicOn ? translations[currentLang].on : translations[currentLang].off}`;
+  if(!musicOn){ stopAllMusic(); } else { if(panic) startPanic(); else startBackground(); }
+});
+startBtn.addEventListener('click',()=>{ startGame(true); guideOv.hidden=true; });
+resumeBtn.addEventListener('click',()=>{ paused=false; pauseOv.hidden=true; });
+closeGuideBtn.addEventListener('click',()=>{ guideOv.hidden=true; });
+guideBtn.addEventListener('click',()=>{ guideOv.hidden=false; paused=true; });
+langBtn.addEventListener('click',()=>{
+  currentLang = currentLang === 'pl' ? 'en' : 'pl';
+  updateLanguage();
+});
+applyCodeBtn.addEventListener('click',()=>{
+  const code=(codeInput.value||'').trim().toUpperCase();
+  if(!code || code.length!==7){ codeStatus.textContent=translations[currentLang].codeLength; return; }
+  const L=levelFromCode(code);
+  if(L){ level=L; codeStatus.textContent=`${translations[currentLang].codeLoaded}${L}`; }
+  else { codeStatus.textContent=translations[currentLang].codeInvalid; }
+});
 
 // Game state
 const boka=baseBoka();
@@ -104,7 +248,7 @@ window.addEventListener('keydown',e=>{
   if(mv.includes(e.code)){ e.preventDefault(); keys.add(e.code); }
   if(e.code==='ShiftLeft' || e.code==='ShiftRight'){ e.preventDefault(); if(!boka.charging){ boka.charging=true; boka.chargeT=0; } }
   if(e.code==='ControlLeft' || e.code==='ControlRight'){ e.preventDefault(); fireIceBolt(); }
-  if(e.code==='KeyP'){ e.preventDefault(); paused=!paused; pauseOv.hidden=!paused; }
+  if(e.code==='KeyP'){ e.preventDefault(); paused=!paused; pauseOv.hidden=!paused; guideOv.hidden=true; }
   if(e.code==='KeyR'){ e.preventDefault(); startGame(true); }
 });
 window.addEventListener('keyup',e=>{
@@ -115,22 +259,6 @@ window.addEventListener('keyup',e=>{
   }
   const mv=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'];
   if(mv.includes(e.code)) keys.delete(e.code);
-});
-musicBtn.addEventListener('click',()=>{
-  musicOn=!musicOn;
-  musicBtn.textContent='Muzyka: '+(musicOn?'ON':'OFF');
-  if(!musicOn){ stopAllMusic(); } else { if(panic) startPanic(); else startBackground(); }
-});
-startBtn.addEventListener('click',()=>{ startGame(true); });
-resumeBtn.addEventListener('click',()=>{ paused=false; pauseOv.hidden=true; });
-
-// Level codes – safe: only set starting level (1..30)
-applyCodeBtn.addEventListener('click',()=>{
-  const code=(codeInput.value||'').trim().toUpperCase();
-  if(!code || code.length!==7){ codeStatus.textContent='Wpisz 7 znaków.'; return; }
-  const L=levelFromCode(code);
-  if(L){ level=L; codeStatus.textContent='Załadowano poziom: '+L; }
-  else { codeStatus.textContent='Nieprawidłowy kod.'; }
 });
 
 // Map and tiles
@@ -159,7 +287,7 @@ function genMap(level){
     let ok=true; for(let rr2=r;rr2<r+3;rr2++) for(let cc=c;cc<c+3;cc++) if(isWall(cc,rr2)) ok=false;
     if(ok){dr=r;dc=c;break;}
   }
-  for(let rr2=dr;rr2<dr+3;rr2++) for(let cc=dc;cc<dc+3;cc++){ grid[rr2][cc]=2; houseCells.push({c:cc,r:rr2}); }
+  for(let rr2=dr;rr2<dr+3;rr2++) for(let cc=dc;cc<c+3;cc++){ grid[rr2][cc]=2; houseCells.push({c:cc,r:rr2}); }
 
   const treeCount=18+Math.floor(level*1.4);
   for(let i=0;i<treeCount;i++){
@@ -197,6 +325,7 @@ function resetLevel(){
   placePickups(cloudPickups,5,'cloud');
 
   updateHUDTheme(); updateHUD();
+  updateLanguage();
 }
 
 // HUD
@@ -258,7 +387,7 @@ function updatePickups(arr, kind, dt){
   }
 }
 
-// Clouds/freezing – mechanics unchanged
+// Clouds/freezing
 function tryUseCloudBasic(){
   if(boka.cloudActive || boka.ammoCloud<=0) return false;
   boka.ammoCloud--; cloudStockFill.style.width=Math.min(100,(boka.ammoCloud/20)*100)+'%';
@@ -292,7 +421,7 @@ function freezeInRadius(radius, seconds){
   }
 }
 
-// Bobek / traps – mechanics unchanged
+// Bobek / traps
 function triggerBobek(){
   if(bobek.active || bobek.callsLeft<=0) return;
   bobek.callsLeft--; sfxBobek.currentTime=0; sfxBobek.play();
@@ -387,7 +516,7 @@ function moveCircle(obj,vx,vy,rad){
   const c=(nx/CELL)|0, r=(ny/CELL)|0;
   for(let rr2=r-1;rr2<=r+1;rr2++) for(let cc=c-1;cc<=c+1;cc++){
     if(!grid[rr2]||grid[rr2][cc]===undefined) continue;
-    if(grid[rr2][cc]===0 || grid[rr2][cc]===2) continue; // house passable
+    if(grid[rr2][cc]===0 || grid[rr2][cc]===2) continue;
     const rx=cc*CELL, ry=rr2*CELL;
     const cx=Math.max(rx,Math.min(nx,rx+CELL));
     const cy=Math.max(ry,Math.min(ny,ry+CELL));
@@ -568,8 +697,8 @@ function update(now){
     if(level>=30){ finalWin(); return; }
     level++;
     overlay.hidden=false;
-    document.querySelector('#overlay .ttl').textContent = 'Poziom ukończony';
-    document.querySelector('#overlay .desc').innerHTML = 'Przejdź do następnego poziomu.<br>Kod: '+levelCodeFor(level);
+    document.querySelector('#overlay .ttl').textContent = translations[currentLang].levelComplete;
+    document.querySelector('#overlay .desc').innerHTML = `${translations[currentLang].nextLevel}${levelCodeFor(level)}`;
     playing=false; return;
   }
 
@@ -608,8 +737,8 @@ function update(now){
   if(boka.hp<=0){
     stopAllMusic();
     playing=false; overlay.hidden=false;
-    document.querySelector('#overlay .ttl').textContent='Przegrana';
-    document.querySelector('#overlay .desc').textContent='Hatifnatowie i ogniki cię wyczerpały. Spróbuj ponownie.';
+    document.querySelector('#overlay .ttl').textContent=translations[currentLang].gameOver;
+    document.querySelector('#overlay .desc').textContent=translations[currentLang].gameOverDesc;
     return;
   }
 
@@ -642,7 +771,7 @@ function goTowards(obj, tx, ty, speed){
   obj.x=moved.x; obj.y=moved.y;
 }
 
-// Drawing – updated visuals from provided script
+// Drawing – visuals from provided script
 function draw(){
   const th=themeFor(level);
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -729,7 +858,7 @@ function draw(){
   fearClouds.forEach(f=>{ ctx.fillStyle='rgba(255,230,120,0.55)'; ctx.beginPath(); ctx.arc(f.x,f.y,f.r,0,Math.PI*2); ctx.fill(); });
   blueClouds.forEach(b=>{ ctx.fillStyle='rgba(140,200,255,0.7)'; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill(); });
 
-  // Mumins – detailed
+  // Mumins
   mumins.forEach(m=>{
     if(!m.alive) return;
     ctx.save(); ctx.translate(m.x,m.y);
@@ -786,7 +915,7 @@ function draw(){
     ctx.restore();
   }
 
-  // Buka – with glow and eyes
+  // Buka
   const glow=10+6*Math.sin(performance.now()/180);
   ctx.save(); ctx.translate(boka.x,boka.y);
   ctx.shadowColor='#7ad1ff'; ctx.shadowBlur=glow;
@@ -843,6 +972,9 @@ function draw(){
 function finalWin(){
   playing=false;
   startWinLoop();
+  overlay.hidden=false;
+  document.querySelector('#overlay .ttl').textContent=translations[currentLang].levelComplete;
+  document.querySelector('#overlay .desc').textContent='Congratulations! You have completed all levels!';
 }
 
 // Start game
@@ -852,11 +984,14 @@ function startGame(fullReset=false){
     Object.assign(boka, baseBoka());
   }
   resetLevel();
-  overlay.hidden=true; paused=false; pauseOv.hidden=true;
+  overlay.hidden=true; paused=false; pauseOv.hidden=true; guideOv.hidden=true;
   lastTick=performance.now();
   playing=true;
   startBackground();
   requestAnimationFrame(update);
 }
+
+// Initialize language
+updateLanguage();
 
 })();
