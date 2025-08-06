@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Helium Halving Countdown</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             margin: 0;
@@ -123,7 +124,7 @@
             100% { transform: translate(0); }
         }
 
-        .date, .small-clock, .elapsed-time, .next-halving {
+        .date, .small-clock, .elapsed-time, .next-halving, .hnt-price {
             margin: 10px 0;
             color: #E0FFFF;
             text-align: center;
@@ -164,12 +165,26 @@
             font-size: 0.9rem;
         }
 
+        #hntChart {
+            max-width: 100%;
+            margin-top: 20px;
+            background: rgba(46, 74, 106, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 0 15px #00CED1;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
         @media (max-width: 768px) {
             h1 { font-size: 2rem; }
             .countdown div { font-size: 1.2rem; min-width: 60px; padding: 8px; }
             .countdown { padding: 10px; }
             .stats { grid-template-columns: 1fr; }
             .stat-card { max-width: 100%; }
+            #hntChart { height: 300px; }
         }
     </style>
 </head>
@@ -192,6 +207,7 @@
         <div class="small-clock" id="clock">Current Time: <span id="time"></span> (Local)</div>
         <div class="elapsed-time" id="elapsed-time">Time since last halving (Aug 1, 2025): <span id="elapsed"></span></div>
         <div class="next-halving" id="next-halving">Time until next halving (Aug 1, 2027): <span id="next"></span></div>
+        <div class="hnt-price" id="hnt-price">Current HNT Price: <span id="hnt-price-value">Loading...</span> USD</div>
         <div class="stats">
             <div class="stat-card">
                 <h3>Past Halvings</h3>
@@ -211,6 +227,7 @@
             </div>
         </div>
         <p style="color: #E0FFFF; text-align: center; margin-top: 20px;">Read the full article: <a href="https://blog.helium.com/helium-birthday-237e923a15b7" style="color: #00CED1;">Helium 6th Birthday & Third Halving</a></p>
+        <div id="hntChart" style="width: 100%; height: 400px;"></div>
     </div>
     <audio id="backgroundMusic" loop>
         <source src="bg.mp3" type="audio/mpeg">
@@ -222,6 +239,56 @@
         const nextHalving = new Date('2027-08-01T00:00:00Z');
         let useUTC = false;
         let isMuted = false;
+        let chart;
+
+        async function fetchHntPrice() {
+            try {
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd');
+                const data = await response.json();
+                const price = data.helium.usd;
+                document.getElementById('hnt-price-value').textContent = price.toFixed(2);
+            } catch (error) {
+                document.getElementById('hnt-price-value').textContent = 'Error';
+                console.error('Error fetching HNT price:', error);
+            }
+        }
+
+        async function fetchHntHistory() {
+            try {
+                const response = await fetch('https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=max');
+                const data = await response.json();
+                const prices = data.prices.map(item => ({ x: new Date(item[0]), y: item[1] }));
+                if (chart) chart.destroy();
+                const ctx = document.getElementById('hntChart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            label: 'HNT Price (USD)',
+                            data: prices,
+                            borderColor: '#00CED1',
+                            backgroundColor: 'rgba(0, 206, 209, 0.2)',
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { type: 'time', time: { unit: 'month' }, title: { display: true, text: 'Date', color: '#E0FFFF' } },
+                            y: { title: { display: true, text: 'Price (USD)', color: '#E0FFFF' }, beginAtZero: false }
+                        },
+                        plugins: {
+                            legend: { labels: { color: '#E0FFFF' } }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching HNT history:', error);
+            }
+        }
 
         function updateCountdown() {
             const now = useUTC ? new Date().toUTCString() : new Date();
@@ -264,6 +331,7 @@
             document.getElementById('clock').textContent = lang === 'pl' ? 'Aktualny czas: ' + document.getElementById('time').textContent : 'Current Time: ' + document.getElementById('time').textContent;
             document.getElementById('elapsed-time').textContent = lang === 'pl' ? 'Czas od ostatniego halvingu (1 sie 2025): ' + document.getElementById('elapsed').textContent : 'Time since last halving (Aug 1, 2025): ' + document.getElementById('elapsed').textContent;
             document.getElementById('next-halving').textContent = lang === 'pl' ? 'Czas do następnego halvingu (1 sie 2027): ' + document.getElementById('next').textContent : 'Time until next halving (Aug 1, 2027): ' + document.getElementById('next').textContent;
+            document.getElementById('hnt-price').textContent = lang === 'pl' ? 'Aktualna cena HNT: ' + document.getElementById('hnt-price-value').textContent + ' USD' : 'Current HNT Price: ' + document.getElementById('hnt-price-value').textContent + ' USD';
 
             const stats = document.querySelectorAll('.stat-card');
             if (lang === 'pl') {
@@ -297,6 +365,10 @@
 
         setInterval(updateCountdown, 1000);
         setInterval(updateClock, 1000);
+        setInterval(fetchHntPrice, 60000); // Update price every minute
+        setInterval(fetchHntHistory, 3600000); // Update chart every hour
+        fetchHntPrice();
+        fetchHntHistory();
         updateCountdown();
         updateClock();
     </script>
