@@ -13,9 +13,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            background: linear-gradient(180deg, #2A1A3D 0%, #4B0082 100%);
-            color: #BF00FF;
+            justify-content: flex-start;
+            background: linear-gradient(180deg, #1A1A3D 0%, #2A4066 30%, #2E4A6A 50%, #006666 70%, #008080 100%);
+            color: #00CED1;
             font-family: 'Orbitron', sans-serif;
             overflow-x: hidden;
             position: relative;
@@ -27,7 +27,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50" font-size="20" fill="#BF00FF20">101010</text></svg>') repeat;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><text x="10" y="50" font-size="20" fill="#00CED120">101010</text></svg>') repeat;
             opacity: 0.1;
             animation: scrollBackground 20s linear infinite;
             z-index: 0;
@@ -42,11 +42,36 @@
             text-align: center;
             z-index: 1;
             padding: 20px;
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .controls button {
+            background: #2E4A6A;
+            color: #00CED1;
+            border: 1px solid #00CED1;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .controls button:hover {
+            background: #00CED1;
+            color: #1A1A3D;
         }
 
         h1 {
             font-size: 3rem;
-            text-shadow: 0 0 10px #BF00FF, 0 0 20px #BF00FF;
+            text-shadow: 0 0 10px #00CED1, 0 0 20px #00CED1;
             animation: flicker 1.5s infinite alternate;
             margin-bottom: 20px;
         }
@@ -59,17 +84,21 @@
         .countdown {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(46, 74, 106, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 15px #00CED1;
         }
 
         .countdown div {
-            background: #4B0082;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px #BF00FF;
-            font-size: 2.5rem;
-            min-width: 100px;
+            background: #2E4A6A;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 8px #00CED1;
+            font-size: 1.5rem;
+            min-width: 70px;
             text-align: center;
             transition: transform 0.3s;
         }
@@ -81,8 +110,8 @@
 
         .countdown span {
             display: block;
-            font-size: 1rem;
-            color: #E6E6FA;
+            font-size: 0.8rem;
+            color: #E0FFFF;
         }
 
         @keyframes glitch {
@@ -94,97 +123,83 @@
             100% { transform: translate(0); }
         }
 
-        .small-clock {
-            font-size: 1rem;
-            margin-bottom: 10px;
-            color: #E6E6FA;
-        }
-
-        .elapsed-time {
-            font-size: 0.8rem;
-            color: #DDA0DD;
-            margin-bottom: 20px;
+        .date, .small-clock, .elapsed-time, .next-halving {
+            margin: 10px 0;
+            color: #E0FFFF;
+            text-align: center;
         }
 
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
-            max-width: 1200px;
+            max-width: 100%;
             padding: 20px;
+            justify-items: center;
         }
 
         .stat-card {
-            background: #4B0082;
+            background: #2E4A6A;
             padding: 15px;
             border-radius: 10px;
-            box-shadow: 0 0 10px #BF00FF;
+            box-shadow: 0 0 10px #00CED1;
             transition: box-shadow 0.3s;
+            max-width: 300px;
+            text-align: justify;
         }
 
         .stat-card:hover {
-            box-shadow: 0 0 20px #BF00FF;
+            box-shadow: 0 0 20px #00CED1;
         }
 
         .stat-card h3 {
             margin: 0 0 10px;
             font-size: 1.2rem;
-            text-shadow: 0 0 5px #BF00FF;
+            text-shadow: 0 0 5px #00CED1;
         }
 
         .stat-card p {
             margin: 0;
-            color: #E6E6FA;
+            color: #E0FFFF;
             font-size: 0.9rem;
-        }
-
-        .language-toggle {
-            margin-top: 20px;
-            font-size: 1rem;
-        }
-
-        .language-toggle button {
-            background: #4B0082;
-            color: #BF00FF;
-            border: 1px solid #BF00FF;
-            padding: 5px 10px;
-            margin: 0 5px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        .language-toggle button:hover {
-            background: #BF00FF;
-            color: #2A1A3D;
         }
 
         @media (max-width: 768px) {
             h1 { font-size: 2rem; }
-            .countdown div { font-size: 1.5rem; min-width: 80px; padding: 15px; }
+            .countdown div { font-size: 1.2rem; min-width: 60px; padding: 8px; }
+            .countdown { padding: 10px; }
             .stats { grid-template-columns: 1fr; }
+            .stat-card { max-width: 100%; }
         }
     </style>
 </head>
 <body>
     <div class="background-animation"></div>
+    <div class="controls">
+        <button id="muteButton">Mute</button>
+        <button onclick="changeLanguage('en')">English</button>
+        <button onclick="changeLanguage('pl')">Polski</button>
+    </div>
     <div class="container">
         <h1>Helium Halving Countdown</h1>
         <div class="countdown">
-            <div id="days"><span>Days</span></div>
-            <div id="hours"><span>Hours</span></div>
-            <div id="minutes"><span>Minutes</span></div>
-            <div id="seconds"><span>Seconds</span></div>
+            <div id="elapsed-days"><span>Days</span></div>
+            <div id="elapsed-hours"><span>Hours</span></div>
+            <div id="elapsed-minutes"><span>Minutes</span></div>
+            <div id="elapsed-seconds"><span>Seconds</span></div>
         </div>
+        <div class="date" id="current-date">Date: <span id="date"></span></div>
         <div class="small-clock" id="clock">Current Time: <span id="time"></span> (Local)</div>
-        <div class="elapsed-time" id="elapsed-time">Time since last halving (Aug 1, 2023): <span id="elapsed"></span></div>
+        <div class="elapsed-time" id="elapsed-time">Time since last halving (Aug 1, 2025): <span id="elapsed"></span></div>
+        <div class="next-halving" id="next-halving">Time until next halving (Aug 1, 2027): <span id="next"></span></div>
         <div class="stats">
             <div class="stat-card">
                 <h3>Past Halvings</h3>
-                <p>2019: 60M HNT minted<br>Aug 1, 2021: 60M HNT minted<br>Aug 1, 2023: 30M HNT minted</p>
+                <p>2019: 60M HNT minted<br>Aug 1, 2021: 60M HNT minted<br>Aug 1, 2023: 30M HNT minted<br>Aug 1, 2025: 15M HNT minted</p>
             </div>
             <div class="stat-card">
                 <h3>Block Reward</h3>
-                <p>Pre-2021: 5M HNT/month<br>Post-2021: 2.5M HNT/month<br>Post-2023: 1.25M HNT/month</p>
+                <p>Pre-2021: 5M HNT/month<br>Post-2021: 2.5M HNT/month<br>Post-2023: 1.25M HNT/month<br>Post-2025: 0.625M HNT/month</p>
             </div>
             <div class="stat-card">
                 <h3>Network Stats</h3>
@@ -195,40 +210,46 @@
                 <p>Consensus: PoC (HoneyBadger BFT)<br>Rewards for coverage & data</p>
             </div>
         </div>
-        <div class="language-toggle">
-            <button onclick="changeLanguage('en')">English</button>
-            <button onclick="changeLanguage('pl')">Polski</button>
-        </div>
+        <p style="color: #E0FFFF; text-align: center; margin-top: 20px;">Read the full article: <a href="https://blog.helium.com/helium-birthday-237e923a15b7" style="color: #00CED1;">Helium 6th Birthday & Third Halving</a></p>
     </div>
+    <audio id="backgroundMusic" loop>
+        <source src="bg.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
     <script>
         let lang = 'en';
-        const halvingDate = new Date('2025-08-01T00:00:00Z');
-        const lastHalving = new Date('2023-08-01T00:00:00Z');
+        const lastHalving = new Date('2025-08-01T00:00:00Z');
+        const nextHalving = new Date('2027-08-01T00:00:00Z');
         let useUTC = false;
+        let isMuted = false;
 
         function updateCountdown() {
             const now = useUTC ? new Date().toUTCString() : new Date();
-            const timeDiff = halvingDate - now;
+            const elapsedDiff = now - lastHalving;
+            const nextDiff = nextHalving - now;
 
-            if (timeDiff <= 0) {
-                document.querySelector('.countdown').innerHTML = '<div>Halving Occurred!</div>';
-                return;
-            }
+            const elapsedDays = Math.floor(elapsedDiff / (1000 * 60 * 60 * 24));
+            const elapsedHours = Math.floor((elapsedDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const elapsedMinutes = Math.floor((elapsedDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const elapsedSeconds = Math.floor((elapsedDiff % (1000 * 60)) / 1000);
+            const nextDays = Math.floor(nextDiff / (1000 * 60 * 60 * 24));
+            const nextHours = Math.floor((nextDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const nextMinutes = Math.floor((nextDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const nextSeconds = Math.floor((nextDiff % (1000 * 60)) / 1000);
 
-            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-
-            document.getElementById('days').innerHTML = days + '<span>' + (lang === 'pl' ? 'Dni' : 'Days') + '</span>';
-            document.getElementById('hours').innerHTML = hours + '<span>' + (lang === 'pl' ? 'Godzin' : 'Hours') + '</span>';
-            document.getElementById('minutes').innerHTML = minutes + '<span>' + (lang === 'pl' ? 'Minut' : 'Minutes') + '</span>';
-            document.getElementById('seconds').innerHTML = seconds + '<span>' + (lang === 'pl' ? 'Sekund' : 'Seconds') + '</span>';
+            document.getElementById('elapsed-days').innerHTML = elapsedDays + '<span>' + (lang === 'pl' ? 'Dni' : 'Days') + '</span>';
+            document.getElementById('elapsed-hours').innerHTML = elapsedHours + '<span>' + (lang === 'pl' ? 'Godzin' : 'Hours') + '</span>';
+            document.getElementById('elapsed-minutes').innerHTML = elapsedMinutes + '<span>' + (lang === 'pl' ? 'Minut' : 'Minutes') + '</span>';
+            document.getElementById('elapsed-seconds').innerHTML = elapsedSeconds + '<span>' + (lang === 'pl' ? 'Sekund' : 'Seconds') + '</span>';
+            document.getElementById('elapsed').textContent = `${elapsedDays} ${lang === 'pl' ? 'dni' : 'days'}, ${elapsedHours} ${lang === 'pl' ? 'godzin' : 'hours'}, ${elapsedMinutes} ${lang === 'pl' ? 'minut' : 'minutes'}, ${elapsedSeconds} ${lang === 'pl' ? 'sekund' : 'seconds'}`;
+            document.getElementById('next').textContent = `${nextDays} ${lang === 'pl' ? 'dni' : 'days'}, ${nextHours} ${lang === 'pl' ? 'godzin' : 'hours'}, ${nextMinutes} ${lang === 'pl' ? 'minut' : 'minutes'}, ${nextSeconds} ${lang === 'pl' ? 'sekund' : 'seconds'}`;
         }
 
         function updateClock() {
             const now = new Date();
+            const dateStr = now.toLocaleDateString();
             const timeStr = useUTC ? now.toUTCString().split(' ')[4] : now.toLocaleTimeString();
+            document.getElementById('date').textContent = dateStr;
             document.getElementById('time').textContent = timeStr + (useUTC ? ' (UTC)' : ' (Local)');
             document.getElementById('clock').onclick = () => {
                 useUTC = !useUTC;
@@ -236,28 +257,48 @@
             };
         }
 
-        function updateElapsedTime() {
-            const now = new Date();
-            const elapsedDiff = now - lastHalving;
-            const daysElapsed = Math.floor(elapsedDiff / (1000 * 60 * 60 * 24));
-            const hoursElapsed = Math.floor((elapsedDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            document.getElementById('elapsed').textContent = `${daysElapsed} days, ${hoursElapsed} hours`;
-        }
-
         function changeLanguage(newLang) {
             lang = newLang;
             document.querySelector('h1').textContent = lang === 'pl' ? 'Licznik Halvingu Helium' : 'Helium Halving Countdown';
+            document.getElementById('current-date').textContent = lang === 'pl' ? 'Data: ' + document.getElementById('date').textContent : 'Date: ' + document.getElementById('date').textContent;
             document.getElementById('clock').textContent = lang === 'pl' ? 'Aktualny czas: ' + document.getElementById('time').textContent : 'Current Time: ' + document.getElementById('time').textContent;
-            document.getElementById('elapsed-time').textContent = lang === 'pl' ? 'Czas od ostatniego halvingu (1 sie 2023): ' + document.getElementById('elapsed').textContent : 'Time since last halving (Aug 1, 2023): ' + document.getElementById('elapsed').textContent;
+            document.getElementById('elapsed-time').textContent = lang === 'pl' ? 'Czas od ostatniego halvingu (1 sie 2025): ' + document.getElementById('elapsed').textContent : 'Time since last halving (Aug 1, 2025): ' + document.getElementById('elapsed').textContent;
+            document.getElementById('next-halving').textContent = lang === 'pl' ? 'Czas do następnego halvingu (1 sie 2027): ' + document.getElementById('next').textContent : 'Time until next halving (Aug 1, 2027): ' + document.getElementById('next').textContent;
+
+            const stats = document.querySelectorAll('.stat-card');
+            if (lang === 'pl') {
+                stats[0].querySelector('h3').textContent = 'Poprzednie Halvingi';
+                stats[0].querySelector('p').innerHTML = '2019: 60M HNT wybito<br>1 sie 2021: 60M HNT wybito<br>1 sie 2023: 30M HNT wybito<br>1 sie 2025: 15M HNT wybito';
+                stats[1].querySelector('h3').textContent = 'Nagroda za Blok';
+                stats[1].querySelector('p').innerHTML = 'Przed 2021: 5M HNT/miesiąc<br>Po 2021: 2.5M HNT/miesiąc<br>Po 2023: 1.25M HNT/miesiąc<br>Po 2025: 0.625M HNT/miesiąc';
+                stats[2].querySelector('h3').textContent = 'Statystyki Sieci';
+                stats[2].querySelector('p').innerHTML = 'Cena: 2,79 USD<br>Kapitalizacja: 519M USD<br>W obiegu: 186M HNT<br>Maksymalna: 223M HNT';
+                stats[3].querySelector('h3').textContent = 'Proof-of-Coverage';
+                stats[3].querySelector('p').innerHTML = 'Konsensus: PoC (HoneyBadger BFT)<br>Nagrody za zasięg i dane';
+            } else {
+                stats[0].querySelector('h3').textContent = 'Past Halvings';
+                stats[0].querySelector('p').innerHTML = '2019: 60M HNT minted<br>Aug 1, 2021: 60M HNT minted<br>Aug 1, 2023: 30M HNT minted<br>Aug 1, 2025: 15M HNT minted';
+                stats[1].querySelector('h3').textContent = 'Block Reward';
+                stats[1].querySelector('p').innerHTML = 'Pre-2021: 5M HNT/month<br>Post-2021: 2.5M HNT/month<br>Post-2023: 1.25M HNT/month<br>Post-2025: 0.625M HNT/month';
+                stats[2].querySelector('h3').textContent = 'Network Stats';
+                stats[2].querySelector('p').innerHTML = 'Price: $2.79<br>Market Cap: $519M<br>Circulating: 186M HNT<br>Max: 223M HNT';
+                stats[3].querySelector('h3').textContent = 'Proof-of-Coverage';
+                stats[3].querySelector('p').innerHTML = 'Consensus: PoC (HoneyBadger BFT)<br>Rewards for coverage & data';
+            }
             updateCountdown();
         }
 
+        document.getElementById('muteButton').addEventListener('click', () => {
+            const audio = document.getElementById('backgroundMusic');
+            isMuted = !isMuted;
+            audio.muted = isMuted;
+            document.getElementById('muteButton').textContent = isMuted ? 'Unmute' : 'Mute';
+        });
+
         setInterval(updateCountdown, 1000);
         setInterval(updateClock, 1000);
-        setInterval(updateElapsedTime, 1000);
         updateCountdown();
         updateClock();
-        updateElapsedTime();
     </script>
 </body>
 </html>
