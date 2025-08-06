@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>BUKA w Dolinie Muminków</title>
+<link rel="preload" as="audio" href="assets/audio/happy.mp3">
+<link rel="preload" as="audio" href="assets/audio/dark.mp3">
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+  <h1>BUKA w Dolinie Muminków</h1>
+
+  <div class="hud">
+    <div class="row">
+      <div class="badge">Cele: Muminki <span id="left">0</span> • Pioruny 5 • Chmurki 5 • Muchomory <span id="mushLeft">?</span></div>
+      <div class="badge">Motyw: <span id="themeName">Las</span> • Pogoda: <span id="weatherName">Dzień</span></div>
+    </div>
+    <div class="row">
+      <div class="badge">Punkty: <span id="score">0</span></div>
+    </div>
+    <div class="row">
+      <div class="badge">Poziom: <span id="level">1</span>/10</div>
+      <div class="badge">Zamrożenie Włóczykija: <span id="freezeT">0s</span></div>
+      <div class="badge">Postęp: <span id="progress">0%</span></div>
+      <div class="badge">Zamrożenie globalne: <span id="globalFreezeT">—</span></div>
+    </div>
+    <div class="row">
+      <div class="badge">Amunicja Alt (Pioruny): <span id="ammoAltText">100</span></div>
+      <div class="badge">Amunicja Spacja (Chmura): <span id="ammoCloudText">5</span></div>
+    </div>
+    <div class="row">
+      <div class="meter frost" title="Czas trwania aktywnej chmury"><div id="frostFill" class="fill"></div></div>
+    </div>
+    <div class="row">
+      <div class="meter cloudStock" title="Zapasy chmury (skala do 20)"><div id="cloudStockFill" class="fill"></div></div>
+      <div class="meter ammoAltBar" title="Amunicja piorunów (skala do 100)"><div id="ammoAltFill" class="fill"></div></div>
+    </div>
+    <div class="row">
+      <div class="meter hp" title="Życie"><div id="hpFill" class="fill"></div></div>
+      <button id="musicBtn" class="mute">Muzyka: ON</button>
+    </div>
+    <div class="row controls">
+      Sterowanie: <kbd>WASD</kbd>/<kbd>Strzałki</kbd> – ruch, <kbd>Spacja</kbd> – chmura (przytrzymanie: super/global), <kbd>Alt</kbd> – piorun,
+      <kbd>P</kbd> – pauza, <kbd>R</kbd> – restart
+    </div>
+  </div>
+
+  <div class="grid">
+    <canvas id="game" width="800" height="576"></canvas>
+    <div id="overlay" class="overlay">
+      <div class="card">
+        <div id="title" class="ttl">Buka budzi mróz…</div>
+        <div id="desc" class="desc">
+          Zbieraj małe pioruny (+10 Alt) i małe chmurki (+5 Spacja). Przytrzymaj Spację 3 s – super-chmura (×2, 30 s, -10 ammo). Przytrzymaj ≥6 s – globalne zamrożenie (60 s, -100 ammo).
+          Zjedz wszystkie Muminki, aby przejść poziom. Włóczykij po 10 zamrożeniach znika, ale gra trwa.
+        </div>
+        <button id="startBtn">Start</button>
+      </div>
+    </div>
+    <div id="panicDim" class="panic-dim" hidden></div>
+  </div>
+</div>
+
+<audio id="musicHappy" loop preload="auto" src="assets/audio/happy.mp3"></audio>
+<audio id="musicDark" loop preload="auto" src="assets/audio/dark.mp3"></audio>
+<audio id="musicPanic" loop preload="auto" src="assets/audio/panic.mp3"></audio>
+
+<script src="js/main.js"></script>
+</body>
+</html>

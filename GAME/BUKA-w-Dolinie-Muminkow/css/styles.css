@@ -1,0 +1,30 @@
+:root{
+  --cell: 32px; --cols: 25; --rows: 18;
+  --bg:#0b1c10; --path:#0f2a18; --wall:#23402a;
+  --tree:#2d5b33; --buka:#7ad1ff; --text:#e6ffe6;
+}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial,sans-serif}
+.wrap{min-height:100%;display:grid;place-items:center;gap:10px;padding:10px}
+h1{margin:6px 0 2px;font-size:20px}
+.hud{display:grid;grid-template-columns:1fr;gap:6px;align-items:center;min-width:820px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.badge{background:#173a24;border:1px solid #2a5b3c;padding:6px 10px;border-radius:8px}
+.meter{position:relative;flex:1;min-width:260px;height:16px;background:#113621;border:1px solid #2a5b3c;border-radius:6px;overflow:hidden}
+.meter>.fill{position:absolute;inset:0;width:0%}
+.hp .fill{background:linear-gradient(90deg,#36d17c,#8fffd0)}
+.frost .fill{background:linear-gradient(90deg,#000,#333)}
+.cloudStock .fill{background:linear-gradient(90deg,#203848,#3b5c70)}
+.ammoAltBar .fill{background:linear-gradient(90deg,#85c6ff,#4190ff)}
+.grid{position:relative;width:calc(var(--cell)*var(--cols));height:calc(var(--cell)*var(--rows));background:var(--path);border-radius:10px;overflow:hidden;box-shadow:0 0 0 3px #163c25 inset,0 10px 30px rgba(0,0,0,.35)}
+canvas{width:100%;height:100%;image-rendering:pixelated}
+.controls{opacity:.9;font-size:14px}
+.controls kbd{background:#113621;border:1px solid #215035;border-bottom-width:3px;padding:2px 6px;border-radius:5px;font-family:ui-monospace,Menlo,monospace}
+.overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.55);color:white;text-align:center;padding:24px;backdrop-filter:blur(2px)}
+.overlay[hidden]{display:none !important;pointer-events:none}
+.overlay .card{background:rgba(16,40,28,.9);border:1px solid #2a5b3c;border-radius:12px;padding:18px 20px;max-width:560px}
+.ttl{font-size:22px;margin-bottom:6px}
+.desc{opacity:.9;margin-bottom:10px}
+button{background:#2a5b3c;color:white;border:0;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer}
+button:hover{filter:brightness(1.1)}
+.mute{background:#20543a}
+.panic-dim{position:absolute;inset:0;background:rgba(0,0,0,.5);pointer-events:none}
