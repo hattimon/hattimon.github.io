@@ -27,6 +27,10 @@
     --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--background-color);
@@ -119,36 +123,6 @@ h1, h2, h3 {
     border: 1px solid rgba(41, 171, 226, 0.2);
     box-shadow: var(--shadow);
     padding: 20px;
-    box-sizing: border-box;
-}
-
-.chart-container::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: -10px;
-    right: -10px;
-    bottom: -10px;
-    background: inherit;
-    z-index: -1;
-    filter: blur(10px);
-    opacity: 0.7;
-}
-
-.chart-canvas-container {
-    height: 100%;
-    width: 100%;
-    position: relative;
-}
-
-.chart-loading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    color: var(--primary-color);
-    font-size: 1.2rem;
 }
 
 .chart-controls {
@@ -173,6 +147,22 @@ h1, h2, h3 {
 .chart-controls button.active {
     background: var(--primary-color);
     color: white;
+}
+
+.chart-canvas-container {
+    height: 400px;
+    width: 100%;
+    position: relative;
+}
+
+.chart-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--primary-color);
+    font-size: 1.2rem;
 }
 
 .chart-info {
@@ -310,10 +300,23 @@ li:hover {
     50% { opacity: 0.5; }
 }
 
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
 @media (max-width: 768px) {
     .chart-container {
-        height: 300px;
+        height: 350px;
         padding: 15px;
+    }
+    
+    .chart-canvas-container {
+        height: 250px;
     }
     
     .chart-controls {
@@ -381,7 +384,7 @@ li:hover {
                         <i class="fas fa-spinner fa-spin"></i><br>
                         Loading chart data...
                     </div>
-                    <canvas id="hnt-chart"></canvas>
+                    <canvas id="hnt-chart" style="display: none;"></canvas>
                 </div>
                 <div class="chart-info">
                     Data provided by CoinGecko API | Real-time HNT price data
@@ -530,25 +533,23 @@ const translations = {
     }
 };
 
-// Current settings - using memory instead of localStorage
+// Global variables
 let currentLanguage = 'en';
 let currentTheme = 'light';
 let hntChart = null;
-let currentTimeRange = '7';
+let currentTimeRange = 7;
 const pageLoadTime = new Date();
 
-// DOM elements
-const themeToggle = document.getElementById('theme-toggle');
-const languageToggle = document.getElementById('language-toggle');
-const soundToggle = document.getElementById('sound-toggle');
-const bgMusic = document.getElementById('bg-music');
-const lastUpdatedEl = document.getElementById('last-updated');
+// Initialize dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initDashboard();
+});
 
-// Initialize dashboard
 function initDashboard() {
     loadSettings();
     setupEventListeners();
-    loadHNTChart();
+    updateLastUpdatedText();
+    loadHNTChart(7);
     fetchHNTPrice();
     startCountdowns();
 }
@@ -557,22 +558,33 @@ async function loadHNTChart(days = 7) {
     const chartLoading = document.getElementById('chart-loading');
     const canvas = document.getElementById('hnt-chart');
     
+    if (!chartLoading || !canvas) return;
+    
     try {
         chartLoading.style.display = 'block';
         canvas.style.display = 'none';
         
-        // Fetch historical data from CoinGecko
         const daysParam = days === 'max' ? 'max' : days;
-        const response = await fetch(`https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=${daysParam}&interval=${days <= 7 ? 'hourly' : 'daily'}`);
+        const interval = days <= 7 ? 'hourly' : 'daily';
+        const response = await fetch(`https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=${daysParam}&interval=${interval}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (!data.prices || data.prices.length === 0) {
             throw new Error('No price data available');
         }
         
-        // Prepare chart data
         const chartData = {
-            labels: data.prices.map(price => moment(price[0]).format(days <= 7 ? 'MMM DD HH:mm' : 'MMM DD YYYY')),
+            labels: data.prices.map(price => {
+                const date = new Date(price[0]);
+                return days <= 7 ? 
+                    moment(date).format('MMM DD HH:mm') : 
+                    moment(date).format('MMM DD');
+            }),
             datasets: [{
                 label: 'HNT Price (USD)',
                 data: data.prices.map(price => price[1]),
@@ -589,7 +601,6 @@ async function loadHNTChart(days = 7) {
             }]
         };
         
-        // Chart configuration
         const config = {
             type: 'line',
             data: chartData,
@@ -602,10 +613,7 @@ async function loadHNTChart(days = 7) {
                         position: 'top',
                         labels: {
                             color: currentTheme === 'dark' ? '#f0f0f0' : '#333',
-                            font: {
-                                family: 'Segoe UI',
-                                size: 12
-                            }
+                            font: { family: 'Segoe UI', size: 12 }
                         }
                     },
                     tooltip: {
@@ -620,7 +628,7 @@ async function loadHNTChart(days = 7) {
                         displayColors: false,
                         callbacks: {
                             label: function(context) {
-                                return `Price: ${context.parsed.y.toFixed(4)}`;
+                                return `Price: $${context.parsed.y.toFixed(4)}`;
                             },
                             title: function(context) {
                                 return moment(data.prices[context[0].dataIndex][0]).format('MMM DD, YYYY HH:mm');
@@ -638,14 +646,10 @@ async function loadHNTChart(days = 7) {
                         display: true,
                         grid: {
                             color: currentTheme === 'dark' ? 'rgba(240, 240, 240, 0.1)' : 'rgba(51, 51, 51, 0.1)',
-                            borderColor: currentTheme === 'dark' ? 'rgba(240, 240, 240, 0.2)' : 'rgba(51, 51, 51, 0.2)'
                         },
                         ticks: {
                             color: currentTheme === 'dark' ? '#f0f0f0' : '#333',
-                            font: {
-                                family: 'Segoe UI',
-                                size: 10
-                            },
+                            font: { family: 'Segoe UI', size: 10 },
                             maxTicksLimit: 8
                         }
                     },
@@ -653,164 +657,12 @@ async function loadHNTChart(days = 7) {
                         display: true,
                         grid: {
                             color: currentTheme === 'dark' ? 'rgba(240, 240, 240, 0.1)' : 'rgba(51, 51, 51, 0.1)',
-                            borderColor: currentTheme === 'dark' ? 'rgba(240, 240, 240, 0.2)' : 'rgba(51, 51, 51, 0.2)'
                         },
                         ticks: {
                             color: currentTheme === 'dark' ? '#f0f0f0' : '#333',
-                            font: {
-                                family: 'Segoe UI',
-                                size: 10
-                            },
+                            font: { family: 'Segoe UI', size: 10 },
                             callback: function(value) {
-                                return '
-
-async function fetchHNTPrice() {
-    try {
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd&include_market_cap=true');
-        const data = await response.json();
-        
-        if (data.helium) {
-            const price = data.helium.usd;
-            const marketCap = data.helium.usd_market_cap;
-            
-            document.getElementById('current-price').textContent = `$${price.toFixed(4)}`;
-            document.getElementById('market-cap').textContent = `$${(marketCap / 1000000).toFixed(2)}M`;
-            
-            // Remove loading animation
-            document.getElementById('current-price').classList.remove('price-loading');
-            document.getElementById('market-cap').classList.remove('price-loading');
-        }
-    } catch (error) {
-        console.error('Failed to fetch HNT price:', error);
-        document.getElementById('current-price').textContent = 'Error loading price';
-        document.getElementById('market-cap').textContent = 'Error loading data';
-        
-        // Remove loading animation
-        document.getElementById('current-price').classList.remove('price-loading');
-        document.getElementById('market-cap').classList.remove('price-loading');
-    }
-}
-
-function loadSettings() {
-    // Load theme
-    if (currentTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-    } else {
-        document.body.classList.remove('dark-mode');
-        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-    }
-    
-    // Load language
-    applyTranslations();
-    moment.locale(currentLanguage);
-}
-
-function setupEventListeners() {
-    themeToggle.addEventListener('click', toggleTheme);
-    languageToggle.addEventListener('click', toggleLanguage);
-    soundToggle.addEventListener('click', toggleSound);
-    
-    // Chart time range buttons
-    document.querySelectorAll('.time-range').forEach(button => {
-        button.addEventListener('click', (e) => {
-            // Remove active class from all buttons
-            document.querySelectorAll('.time-range').forEach(btn => btn.classList.remove('active'));
-            // Add active class to clicked button
-            e.target.classList.add('active');
-            
-            const days = e.target.dataset.days;
-            currentTimeRange = days;
-            loadHNTChart(days === 'max' ? 'max' : parseInt(days));
-        });
-    });
-    
-    // Background music
-    if (bgMusic) {
-        bgMusic.volume = 0.3;
-        bgMusic.play().catch(e => console.log("Autoplay prevented:", e));
-    }
-}
-
-function toggleTheme() {
-    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.body.classList.toggle('dark-mode');
-    themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-    
-    // Reload chart with new theme
-    loadHNTChart(currentTimeRange === 'max' ? 'max' : parseInt(currentTimeRange));
-}
-
-function toggleLanguage() {
-    currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
-    applyTranslations();
-    moment.locale(currentLanguage);
-    updateLastUpdatedText();
-    
-    // Update chart with new language if needed
-    if (hntChart) {
-        loadHNTChart(currentTimeRange === 'max' ? 'max' : parseInt(currentTimeRange));
-    }
-}
-
-function applyTranslations() {
-    document.querySelectorAll('[data-translate]').forEach(element => {
-        const key = element.getAttribute('data-translate');
-        if (translations[key]) {
-            element.textContent = translations[key][currentLanguage];
-        }
-    });
-    languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
-}
-
-function toggleSound() {
-    if (!bgMusic) return;
-    
-    if (bgMusic.paused) {
-        bgMusic.play();
-        soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
-    } else {
-        bgMusic.pause();
-        soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
-    }
-}
-
-function updateCountdowns() {
-    const lastHalving = moment('2025-08-01');
-    const nextHalving = moment('2027-08-01');
-    const now = moment();
-    
-    const since = moment.duration(now.diff(lastHalving));
-    if (since.asMilliseconds() > 0) {
-        document.getElementById('time-since-halving').textContent = 
-            `${Math.floor(since.asDays())}d ${since.hours()}h ${since.minutes()}m ${since.seconds()}s`;
-    }
-    
-    const to = moment.duration(nextHalving.diff(now));
-    if (to.asMilliseconds() > 0) {
-        document.getElementById('time-to-halving').textContent = 
-            `${Math.floor(to.asDays())}d ${to.hours()}h ${to.minutes()}m ${to.seconds()}s`;
-    }
-}
-
-function updateLastUpdatedText() {
-    if (lastUpdatedEl) {
-        lastUpdatedEl.textContent = moment(pageLoadTime).format('LLLL');
-    }
-}
-
-function startCountdowns() {
-    // Update countdowns every second
-    setInterval(updateCountdowns, 1000);
-    // Initial call
-    updateCountdowns();
-}
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initDashboard);
-    </script>
-</body>
-</html> + value.toFixed(2);
+                                return '$' + value.toFixed(2);
                             }
                         },
                         beginAtZero: false
@@ -823,12 +675,10 @@ document.addEventListener('DOMContentLoaded', initDashboard);
             }
         };
         
-        // Destroy existing chart if it exists
         if (hntChart) {
             hntChart.destroy();
         }
         
-        // Create new chart
         const ctx = canvas.getContext('2d');
         hntChart = new Chart(ctx, config);
         
@@ -836,11 +686,11 @@ document.addEventListener('DOMContentLoaded', initDashboard);
         canvas.style.display = 'block';
         
     } catch (error) {
-        console.error('Failed to load chart data:', error);
+        console.error('Chart loading failed:', error);
         chartLoading.innerHTML = `
             <i class="fas fa-exclamation-triangle"></i><br>
             Failed to load chart data<br>
-            <small>Please try refreshing the page</small>
+            <small>Error: ${error.message}</small>
         `;
     }
 }
@@ -848,51 +698,94 @@ document.addEventListener('DOMContentLoaded', initDashboard);
 async function fetchHNTPrice() {
     try {
         const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd&include_market_cap=true');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (data.helium) {
             const price = data.helium.usd;
             const marketCap = data.helium.usd_market_cap;
             
-            document.getElementById('current-price').textContent = `$${price.toFixed(4)}`;
-            document.getElementById('market-cap').textContent = `$${(marketCap / 1000000).toFixed(2)}M`;
+            const priceEl = document.getElementById('current-price');
+            const marketCapEl = document.getElementById('market-cap');
             
-            // Remove loading animation
-            document.getElementById('current-price').classList.remove('price-loading');
-            document.getElementById('market-cap').classList.remove('price-loading');
+            if (priceEl) {
+                priceEl.textContent = `$${price.toFixed(4)}`;
+                priceEl.classList.remove('price-loading');
+            }
+            
+            if (marketCapEl) {
+                marketCapEl.textContent = `$${(marketCap / 1000000).toFixed(2)}M`;
+                marketCapEl.classList.remove('price-loading');
+            }
         }
     } catch (error) {
-        console.error('Failed to fetch HNT price:', error);
-        document.getElementById('current-price').textContent = 'Error loading price';
-        document.getElementById('market-cap').textContent = 'Error loading data';
+        console.error('Price fetch failed:', error);
+        const priceEl = document.getElementById('current-price');
+        const marketCapEl = document.getElementById('market-cap');
         
-        // Remove loading animation
-        document.getElementById('current-price').classList.remove('price-loading');
-        document.getElementById('market-cap').classList.remove('price-loading');
+        if (priceEl) {
+            priceEl.textContent = 'Error loading';
+            priceEl.classList.remove('price-loading');
+        }
+        
+        if (marketCapEl) {
+            marketCapEl.textContent = 'Error loading';
+            marketCapEl.classList.remove('price-loading');
+        }
     }
 }
 
 function loadSettings() {
-    // Load theme
+    const themeToggle = document.getElementById('theme-toggle');
+    
     if (currentTheme === 'dark') {
         document.body.classList.add('dark-mode');
-        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        if (themeToggle) themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
     } else {
         document.body.classList.remove('dark-mode');
-        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+        if (themeToggle) themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
     }
     
-    // Load language
     applyTranslations();
-    moment.locale(currentLanguage);
+    if (typeof moment !== 'undefined') {
+        moment.locale(currentLanguage);
+    }
 }
 
 function setupEventListeners() {
-    themeToggle.addEventListener('click', toggleTheme);
-    languageToggle.addEventListener('click', toggleLanguage);
-    soundToggle.addEventListener('click', toggleSound);
+    const themeToggle = document.getElementById('theme-toggle');
+    const languageToggle = document.getElementById('language-toggle');
+    const soundToggle = document.getElementById('sound-toggle');
+    const bgMusic = document.getElementById('bg-music');
     
-    // Background music
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+    }
+    
+    if (languageToggle) {
+        languageToggle.addEventListener('click', toggleLanguage);
+    }
+    
+    if (soundToggle) {
+        soundToggle.addEventListener('click', toggleSound);
+    }
+    
+    // Chart time range buttons
+    document.querySelectorAll('.time-range').forEach(button => {
+        button.addEventListener('click', (e) => {
+            document.querySelectorAll('.time-range').forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            const days = e.target.dataset.days;
+            currentTimeRange = days === 'max' ? 'max' : parseInt(days);
+            loadHNTChart(currentTimeRange);
+        });
+    });
+    
     if (bgMusic) {
         bgMusic.volume = 0.3;
         bgMusic.play().catch(e => console.log("Autoplay prevented:", e));
@@ -902,22 +795,26 @@ function setupEventListeners() {
 function toggleTheme() {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.body.classList.toggle('dark-mode');
-    themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     
-    // Reload TradingView widget with new theme
-    chartLoaded = false;
-    loadTradingViewWidget();
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    }
+    
+    if (hntChart) {
+        loadHNTChart(currentTimeRange);
+    }
 }
 
 function toggleLanguage() {
     currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
     applyTranslations();
-    moment.locale(currentLanguage);
-    updateLastUpdatedText();
     
-    // Reload TradingView widget with new language
-    chartLoaded = false;
-    loadTradingViewWidget();
+    if (typeof moment !== 'undefined') {
+        moment.locale(currentLanguage);
+    }
+    
+    updateLastUpdatedText();
 }
 
 function applyTranslations() {
@@ -927,11 +824,21 @@ function applyTranslations() {
             element.textContent = translations[key][currentLanguage];
         }
     });
-    languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
+    
+    const languageToggle = document.getElementById('language-toggle');
+    if (languageToggle) {
+        const span = languageToggle.querySelector('span');
+        if (span) {
+            span.textContent = currentLanguage === 'en' ? 'PL' : 'EN';
+        }
+    }
 }
 
 function toggleSound() {
-    if (!bgMusic) return;
+    const bgMusic = document.getElementById('bg-music');
+    const soundToggle = document.getElementById('sound-toggle');
+    
+    if (!bgMusic || !soundToggle) return;
     
     if (bgMusic.paused) {
         bgMusic.play();
@@ -948,33 +855,14 @@ function updateCountdowns() {
     const now = moment();
     
     const since = moment.duration(now.diff(lastHalving));
-    if (since.asMilliseconds() > 0) {
-        document.getElementById('time-since-halving').textContent = 
+    const sinceEl = document.getElementById('time-since-halving');
+    if (since.asMilliseconds() > 0 && sinceEl) {
+        sinceEl.textContent = 
             `${Math.floor(since.asDays())}d ${since.hours()}h ${since.minutes()}m ${since.seconds()}s`;
     }
     
     const to = moment.duration(nextHalving.diff(now));
-    if (to.asMilliseconds() > 0) {
-        document.getElementById('time-to-halving').textContent = 
-            `${Math.floor(to.asDays())}d ${to.hours()}h ${to.minutes()}m ${to.seconds()}s`;
-    }
-}
-
-function updateLastUpdatedText() {
-    if (lastUpdatedEl) {
-        lastUpdatedEl.textContent = moment(pageLoadTime).format('LLLL');
-    }
-}
-
-function startCountdowns() {
-    // Update countdowns every second
-    setInterval(updateCountdowns, 1000);
-    // Initial call
-    updateCountdowns();
-}
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initDashboard);
-    </script>
-</body>
-</html>
+    const toEl = document.getElementById('time-to-halving');
+    if (to.asMilliseconds() > 0 && toEl) {
+        toEl.textContent = 
+            `${Math.floor(to.asDays())}d ${to
