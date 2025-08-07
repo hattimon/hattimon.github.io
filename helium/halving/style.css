@@ -100,10 +100,19 @@ h1, h2, h3 {
     box-shadow: var(--shadow-hover);
 }
 
-.chart-container {
-    position: relative;
-    height: 400px;
+#cmc-chart-container {
+    height: 500px;
     width: 100%;
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.chart-source {
+    text-align: right;
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    margin-top: -15px;
+    margin-bottom: 15px;
 }
 
 .halving-container {
@@ -145,16 +154,22 @@ h1, h2, h3 {
     color: var(--primary-color);
 }
 
-.halving-history, .reward-history {
+.history-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.history-panel {
+    flex: 1;
     background-color: rgba(26, 62, 114, 0.1);
     padding: 20px;
     border-radius: 8px;
-    margin-bottom: 15px;
-    transition: var(--transition);
     border-left: 4px solid var(--secondary-color);
+    transition: var(--transition);
 }
 
-.halving-history:hover, .reward-history:hover {
+.history-panel:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-hover);
 }
@@ -217,28 +232,29 @@ li:hover {
     opacity: 1;
 }
 
-.chart-controls {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
+.loader {
+    border: 4px solid rgba(41, 171, 226, 0.2);
+    border-radius: 50%;
+    border-top: 4px solid var(--primary-color);
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+    display: none;
 }
 
-.chart-controls .btn {
-    padding: 6px 12px;
-    font-size: 0.9rem;
-    min-width: 60px;
-    text-align: center;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 @media (max-width: 768px) {
-    .halving-container {
-        grid-template-columns: 1fr;
+    #cmc-chart-container {
+        height: 300px;
     }
     
-    .chart-container {
-        height: 300px;
+    .halving-container {
+        grid-template-columns: 1fr;
     }
     
     header {
@@ -247,39 +263,6 @@ li:hover {
         gap: 15px;
     }
     
-    .chart-controls {
-        gap: 5px;
-    }
-    
-    .chart-controls .btn {
-        padding: 5px 8px;
-        font-size: 0.8rem;
-    }
-}
-
-/* Dodaj te style do istniejącego CSS */
-
-.history-container {
-    display: flex;
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.history-panel {
-    flex: 1;
-    background-color: rgba(26, 62, 114, 0.1);
-    padding: 20px;
-    border-radius: 8px;
-    border-left: 4px solid var(--secondary-color);
-    transition: var(--transition);
-}
-
-.history-panel:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-hover);
-}
-
-@media (max-width: 768px) {
     .history-container {
         flex-direction: column;
     }
