@@ -74,7 +74,7 @@ h1, h2, h3 {
     font-weight: bold;
     transition: var(--transition);
     display: flex;
-    align-items: center;
+    align-items: center; 
     gap: 5px;
 }
 
@@ -95,7 +95,7 @@ h1, h2, h3 {
     color: white;
 }
 
-.chart-section, .halving-section, .swap-section {
+.chart-section, .halving-section, .swap-section, .helium-info {
     background-color: var(--card-bg);
     border-radius: 10px;
     padding: 20px;
@@ -104,7 +104,7 @@ h1, h2, h3 {
     transition: var(--transition);
 }
 
-.chart-section:hover, .halving-section:hover, .swap-section:hover {
+.chart-section:hover, .halving-section:hover, .swap-section:hover, .helium-info:hover {
     transform: translateY(-5px);
     box-shadow: var(--shadow-hover);
 }
@@ -285,7 +285,7 @@ li:hover {
 
 .swap-frame {
     display: none;
-    width: 100%;
+    width: 480px;
     height: 600px;
     border-radius: 10px;
     overflow: hidden;
@@ -333,12 +333,34 @@ jup-button:hover {
     box-shadow: var(--shadow-hover);
 }
 
-.swap-fallback {
-    display: none;
-    color: var(--text-color);
-    text-align: center;
-    padding: 20px;
-    font-size: 1rem;
+.swap-container {
+    display: flex;
+    gap: 20px;
+}
+
+.helium-info {
+    flex: 1;
+}
+
+.copy-button {
+    background-color: var(--primary Dewey: primary-color;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+    font-size: 0.9rem;
+}
+
+.copy-button:hover {
+    background-color: var(--primary-hover);
+}
+
+.contract-address {
+    font-family: monospace;
+    font-size: 0.9rem;
+    word-break: break-all;
 }
 
 @media (max-width: 768px) {
@@ -347,11 +369,16 @@ jup-button:hover {
     }
     
     .swap-frame {
+        width: 100%;
         height: 500px;
     }
     
     .halving-container {
         grid-template-columns: 1fr;
+    }
+    
+    .swap-container {
+        flex-direction: column;
     }
     
     header {
@@ -410,29 +437,54 @@ jup-button:hover {
 
         <section class="swap-section">
             <h2 data-translate="swap-title">Jupiter Ultra Swap</h2>
-            <jup-button id="jupiter-button" title="Toggle Jupiter Swap">
-                <i class="fas fa-exchange-alt"></i>
-            </jup-button>
-            <div class="swap-frame" id="swap-frame">
-                <jup-swap
-                    input-mint="So11111111111111111111111111111111111111112"
-                    output-mint="hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux"
-                    fixed-mint="output"
-                    amount="1000000000"
-                    logo-uri="https://plugin.jup.ag/jupiter-logo-long.png"
-                    name="Jupiter Swap"
-                    primary-color="#29abe2"
-                    background-color="#f5f7fa"
-                    primary-text-color="#333"
-                    warning-color="#ff4d4f"
-                    interactive-color="#4fbce8"
-                    module-color="#1e293b"
-                    id="jupiter-swap"
-                    display-mode="integrated"
-                ></jup-swap>
-            </div>
-            <div class="swap-fallback" id="jupiter-swap-fallback">
-                Unable to load Jupiter Swap. Please ensure you are connected to the internet and try refreshing the page. For support, visit <a href="https://discord.gg/jup" target="_blank">Jupiter's Discord</a>.
+            <div class="swap-container">
+                <div>
+                    <jup-button id="jupiter-button" title="Toggle Jupiter Swap">
+                        <i class="fas fa-exchange-alt"></i>
+                    </jup-button>
+                    <div class="swap-frame" id="swap-frame">
+                        <jup-swap
+                            input-mint="So11111111111111111111111111111111111111112"
+                            output-mint="hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux"
+                            fixed-mint="output"
+                            amount="1000000000"
+                            logo-uri="https://plugin.jup.ag/jupiter-logo-long.png"
+                            name="Jupiter Swap"
+                            primary-color="#29abe2"
+                            background-color="#f5f7fa"
+                            primary-text-color="#333"
+                            warning-color="#ff4d4f"
+                            interactive-color="#4fbce8"
+                            module-color="#1e293b"
+                            id="jupiter-swap"
+                            display-mode="integrated"
+                        ></jup-swap>
+                    </div>
+                </div>
+                <div class="helium-info">
+                    <h3 data-translate="helium-project">About Helium Project</h3>
+                    <p data-translate="helium-desc">
+                        Helium is a decentralized wireless network that enables devices to connect to the internet using the LoRaWAN protocol. It incentivizes network coverage through cryptocurrency mining, rewarding participants with HNT tokens for providing connectivity.
+                    </p>
+                    <h4 data-translate="verified-contracts">Verified Token Contracts</h4>
+                    <p data-translate="verified-note">Verified token contracts are marked with a green checkmark in the Solana Explorer.</p>
+                    <div class="stat">
+                        <span>HNT:</span>
+                        <span class="contract-address">hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux</span>
+                        <button class="copy-button" onclick="copyToClipboard('hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux')">Copy</button>
+                    </div>
+                    <div class="stat">
+                        <span>IoT:</span>
+                        <span class="contract-address">iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns</span>
+                        <button class="copy-button" onclick="copyToClipboard('iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns')">Copy</button>
+                    </div>
+                    <div class="stat">
+                        <span>Mobile:</span>
+                        <span class="contract-address">mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6</span>
+                        <button class="copy-button" onclick="copyToClipboard('mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6')">Copy</button>
+                    </div>
+                    <p><a href="https://explorer.solana.com" target="_blank" data-translate="solana-explorer">Solana Blockchain Explorer</a></p>
+                </div>
             </div>
         </section>
 
@@ -573,10 +625,30 @@ jup-button:hover {
             "update-tooltip": {
                 "en": "Data refreshed on page load",
                 "pl": "Dane odświeżane przy wczytaniu strony"
+            },
+            "helium-project": {
+                "en": "About Helium Project",
+                "pl": "O projekcie Helium"
+            },
+            "helium-desc": {
+                "en": "Helium is a decentralized wireless network that enables devices to connect to the internet using the LoRaWAN protocol. It incentivizes network coverage through cryptocurrency mining, rewarding participants with HNT tokens for providing connectivity.",
+                "pl": "Helium to zdecentralizowana sieć bezprzewodowa umożliwiająca urządzeniom łączenie się z internetem za pomocą protokołu LoRaWAN. Zachęca do zapewniania pokrycia sieciowego poprzez wydobywanie kryptowalut, nagradzając uczestników tokenami HNT za zapewnienie łączności."
+            },
+            "verified-contracts": {
+                "en": "Verified Token Contracts",
+                "pl": "Zweryfikowane kontrakty tokenów"
+            },
+            "verified-note": {
+                "en": "Verified token contracts are marked with a green checkmark in the Solana Explorer.",
+                "pl": "Zweryfikowane kontrakty tokenów są oznaczone zielonym znaczkiem w eksploratorze Solana."
+            },
+            "solana-explorer": {
+                "en": "Solana Blockchain Explorer",
+                "pl": "Eksplorator blockchain Solana"
             }
         };
 
-        // Current settings - using memory instead of localStorage
+        // Current settings
         let currentLanguage = 'en';
         let currentTheme = 'light';
         let chartLoaded = false;
@@ -590,7 +662,6 @@ jup-button:hover {
         const jupiterButton = document.getElementById('jupiter-button');
         const swapFrame = document.getElementById('swap-frame');
         const jupiterSwap = document.getElementById('jupiter-swap');
-        const jupiterSwapFallback = document.getElementById('jupiter-swap-fallback');
 
         // Initialize dashboard
         function initDashboard() {
@@ -606,7 +677,6 @@ jup-button:hover {
         function loadTradingViewWidget() {
             if (chartLoaded) return;
 
-            // Explicitly set background color and related properties based on theme
             const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
             const gridColor = currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb';
             const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333333';
@@ -679,12 +749,10 @@ jup-button:hover {
             jupiterSwap.setAttribute('primary-text-color', textColor);
             jupiterSwap.setAttribute('module-color', moduleColor);
 
-            // Update swap frame background
             if (swapFrame) {
                 swapFrame.style.backgroundColor = moduleColor;
             }
 
-            // Update button background
             if (jupiterButton) {
                 jupiterButton.style.backgroundColor = currentTheme === 'dark' ? '#1a3e72' : '#29abe2';
             }
@@ -693,14 +761,8 @@ jup-button:hover {
         function checkJupiterSwapLoaded() {
             if (!jupiterSwap || !window.customElements.get('jup-swap') || !window.customElements.get('jup-button')) {
                 console.error('Jupiter Swap or Button failed to load. Ensure the script from https://terminal.jup.ag/main-v4.js is accessible.');
-                if (jupiterSwapFallback) {
-                    jupiterSwapFallback.style.display = 'block';
-                }
             } else {
                 console.log('Jupiter Swap and Button loaded successfully.');
-                if (jupiterSwapFallback) {
-                    jupiterSwapFallback.style.display = 'none';
-                }
             }
         }
 
@@ -716,7 +778,6 @@ jup-button:hover {
                     document.getElementById('current-price').textContent = `$${price.toFixed(4)}`;
                     document.getElementById('market-cap').textContent = `$${(marketCap / 1000000).toFixed(2)}M`;
 
-                    // Remove loading animation
                     document.getElementById('current-price').classList.remove('price-loading');
                     document.getElementById('market-cap').classList.remove('price-loading');
                 }
@@ -725,14 +786,20 @@ jup-button:hover {
                 document.getElementById('current-price').textContent = 'Error loading price';
                 document.getElementById('market-cap').textContent = 'Error loading data';
 
-                // Remove loading animation
                 document.getElementById('current-price').classList.remove('price-loading');
                 document.getElementById('market-cap').classList.remove('price-loading');
             }
         }
 
+        function copyToClipboard(text) {
+            navigator.clipboard.write(text).then(() => {
+                alert(translations['copy-success'][currentLanguage]);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+
         function loadSettings() {
-            // Load theme
             if (currentTheme === 'dark') {
                 document.body.classList.add('dark-mode');
                 themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
@@ -741,11 +808,8 @@ jup-button:hover {
                 themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
             }
 
-            // Load language
             applyTranslations();
             moment.locale(currentLanguage);
-
-            // Update Jupiter Swap theme
             updateJupiterSwapTheme();
         }
 
@@ -755,16 +819,12 @@ jup-button:hover {
             soundToggle.addEventListener('click', toggleSound);
             jupiterButton.addEventListener('click', toggleSwapFrame);
 
-            // Initialize Jupiter Terminal
             if (window.Jupiter) {
                 window.Jupiter.init({
                     displayMode: 'integrated',
                     integratedTargetId: 'jupiter-swap',
                     onSwapError: ({ error, quoteResponseMeta }) => {
                         console.error('Jupiter Swap Error:', error);
-                        if (jupiterSwapFallback) {
-                            jupiterSwapFallback.style.display = 'block';
-                        }
                     },
                     onSuccess: ({ txid, swapResult, quoteResponseMeta }) => {
                         console.log('Jupiter Swap Success:', txid);
@@ -778,7 +838,6 @@ jup-button:hover {
             document.body.classList.toggle('dark-mode');
             themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
 
-            // Reload TradingView widget and update Jupiter Swap with new theme
             chartLoaded = false;
             loadTradingViewWidget();
             updateJupiterSwapTheme();
@@ -791,7 +850,6 @@ jup-button:hover {
             moment.locale(currentLanguage);
             updateLastUpdatedText();
 
-            // Reload TradingView widget with new language
             chartLoaded = false;
             loadTradingViewWidget();
         }
@@ -807,7 +865,6 @@ jup-button:hover {
         }
 
         function toggleSound() {
-            // Audio disabled for GitHub Pages compatibility
             console.log('Audio toggle not supported in this environment.');
             soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
         }
@@ -843,13 +900,10 @@ jup-button:hover {
         }
 
         function startCountdowns() {
-            // Update countdowns every second
             setInterval(updateCountdowns, 1000);
-            // Initial call
             updateCountdowns();
         }
 
-        // Initialize when DOM is loaded
         document.addEventListener('DOMContentLoaded', initDashboard);
     </script>
 </body>
