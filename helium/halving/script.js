@@ -61,8 +61,8 @@ const translations = {
         "pl": "Ostatnia aktualizacja:"
     },
     "update-tooltip": {
-        "en": "Data updates every minute",
-        "pl": "Dane aktualizowane co minutę"
+        "en": "Live market data",
+        "pl": "Dane rynkowe na żywo"
     }
 };
 
@@ -70,19 +70,15 @@ const translations = {
 let currentLanguage = localStorage.getItem('hnt-lang') || 'en';
 let currentTheme = localStorage.getItem('hnt-theme') || 'light';
 let chart = null;
-
-// DOM elements
-const themeToggle = document.getElementById('theme-toggle');
-const languageToggle = document.getElementById('language-toggle');
-const soundToggle = document.getElementById('sound-toggle');
-const bgMusic = document.getElementById('bg-music');
-const lastUpdatedEl = document.getElementById('last-updated');
+let priceSeries = null;
+const CMC_API_URL = 'https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=5665&range=MAX';
 
 // Initialize dashboard
 function initDashboard() {
     loadSettings();
     setupEventListeners();
-    loadCMCChart();
+    initChart();
+    loadLiveData();
     startBackgroundTasks();
 }
 
@@ -100,111 +96,113 @@ function loadSettings() {
     applyTranslations();
 }
 
-async function loadCMCChart() {
-    document.getElementById('chart-loader').style.display = 'block';
-    
-    try {
-        // Try to load from cache first
-        const cachedData = localStorage.getItem('hnt-cached-chart-data');
-        const cachedTime = localStorage.getItem('hnt-cached-chart-time');
-        
-        if (cachedData && cachedTime) {
-            renderChart(JSON.parse(cachedData));
-            updateLastUpdatedText(new Date(parseInt(cachedTime)));
-        }
-        
-        // Fetch fresh data
-        const response = await fetch('https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=5665&range=MAX');
-        const data = await response.json();
-        
-        localStorage.setItem('hnt-cached-chart-data', JSON.stringify(data));
-        localStorage.setItem('hnt-cached-chart-time', Date.now().toString());
-        
-        renderChart(data);
-        updateLastUpdatedText();
-        
-    } catch (error) {
-        console.error('Error loading chart data:', error);
-        // Fallback to test data if API fails
-        renderChart(getFallbackData());
-    } finally {
-        document.getElementById('chart-loader').style.display = 'none';
-    }
-}
-
-function renderChart(data) {
+function initChart() {
     const container = document.getElementById('cmc-chart-container');
-    container.innerHTML = ''; // Clear previous chart
+    container.innerHTML = '';
     
-    // Prepare data
-    const points = data.data.points;
-    const chartData = Object.keys(points).map(timestamp => {
-        return {
-            time: parseInt(timestamp),
-            value: points[timestamp].v[0]
-        };
-    });
-    
-    // Create chart
     chart = LightweightCharts.createChart(container, {
-        width: container.clientWidth,
+        width: Math.max(container.parentElement.clientWidth, 1200),
         height: 500,
         layout: {
             backgroundColor: 'transparent',
             textColor: getComputedStyle(document.body).getPropertyValue('--text-color'),
         },
-        grid: {
-            vertLines: {
-                color: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-            },
-            horzLines: {
-                color: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        timeScale: {
+            rightOffset: 12,
+            barSpacing: 3,
+            fixLeftEdge: true,
+            fixRightEdge: true,
+            borderVisible: false,
+            timeVisible: true,
+            secondsVisible: false,
+            tickMarkFormatter: (time) => {
+                return moment.unix(time).format('MMM YYYY');
             },
         },
         rightPriceScale: {
-            borderColor: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            borderColor: 'rgba(197, 203, 206, 0.3)',
         },
-        timeScale: {
-            borderColor: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        grid: {
+            vertLines: {
+                color: 'rgba(197, 203, 206, 0.1)',
+            },
+            horzLines: {
+                color: 'rgba(197, 203, 206, 0.1)',
+            },
         },
     });
 
-    const areaSeries = chart.addAreaSeries({
+    priceSeries = chart.addAreaSeries({
         topColor: 'rgba(41, 171, 226, 0.4)',
         bottomColor: 'rgba(41, 171, 226, 0.0)',
         lineColor: 'rgba(41, 171, 226, 1)',
         lineWidth: 2,
     });
+}
 
-    areaSeries.setData(chartData);
-    
-    // Update current price display
-    if (chartData.length > 0) {
-        const currentPrice = chartData[chartData.length - 1].value;
-        document.getElementById('current-price').textContent = `${currentPrice.toFixed(2)} USD`;
+async function loadLiveData() {
+    try {
+        const response = await fetch(CMC_API_URL);
+        const data = await response.json();
         
-        const marketCap = (186011619 * currentPrice).toLocaleString('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            maximumFractionDigits: 0
-        });
-        document.getElementById('market-cap').textContent = marketCap;
+        if (!data.data || !data.data.points) {
+            throw new Error('Invalid data format');
+        }
+        
+        const points = data.data.points;
+        const chartData = Object.keys(points).map(timestamp => ({
+            time: parseInt(timestamp),
+            value: points[timestamp].v[0]
+        })).sort((a, b) => a.time - b.time);
+
+        priceSeries.setData(chartData);
+        
+        // Set visible range to show full history
+        if (chartData.length > 0) {
+            chart.timeScale().setVisibleRange({
+                from: chartData[0].time,
+                to: Math.floor(Date.now() / 1000)
+            });
+            
+            updatePriceInfo(chartData[chartData.length - 1].value);
+        }
+        
+    } catch (error) {
+        console.error('Error loading live data:', error);
+        // Fallback to API v2 if v3 fails
+        loadFallbackData();
     }
 }
 
-function getFallbackData() {
-    return {
-        data: {
-            points: {
-                "1577836800": { "v": [0.25] },
-                "1609459200": { "v": [1.20] },
-                "1640995200": { "v": [2.90] },
-                "1672531200": { "v": [2.70] },
-                "1704067200": { "v": [2.80] },
-                "1735689600": { "v": [2.76] } // Current date
-            }
+async function loadFallbackData() {
+    try {
+        const response = await fetch('https://api.coinmarketcap.com/data-api/v2/cryptocurrency/historical?id=5665&convertId=2781&timeStart=1561939200&timeEnd=' + Math.floor(Date.now() / 1000));
+        const data = await response.json();
+        
+        if (data.data && data.data.quotes) {
+            const chartData = data.data.quotes.map(item => ({
+                time: Math.floor(new Date(item.timeOpen).getTime() / 1000),
+                value: item.quote.USD.close
+            }));
+            
+            priceSeries.setData(chartData);
+            updatePriceInfo(chartData[chartData.length - 1].value);
         }
-    };
+    } catch (error) {
+        console.error('Error loading fallback data:', error);
+    }
+}
+
+function updatePriceInfo(price) {
+    document.getElementById('current-price').textContent = `${price.toFixed(4)} USD`;
+    
+    const marketCap = (186011619 * price).toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0
+    });
+    document.getElementById('market-cap').textContent = marketCap;
+    updateLastUpdatedText();
 }
 
 function setupEventListeners() {
@@ -223,13 +221,9 @@ function toggleTheme() {
     themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     localStorage.setItem('hnt-theme', currentTheme);
     
-    // Re-render chart with new theme
-    if (chart) {
-        const container = document.getElementById('cmc-chart-container');
-        const existingData = chart.data;
-        container.innerHTML = '';
-        renderChart(existingData);
-    }
+    // Recreate chart with new theme
+    initChart();
+    loadLiveData();
 }
 
 function toggleLanguage() {
@@ -274,13 +268,14 @@ function updateCountdowns() {
         `${to.days()}d ${to.hours()}h ${to.minutes()}m ${to.seconds()}s`;
 }
 
-function updateLastUpdatedText(date = new Date()) {
-    lastUpdatedEl.textContent = moment(date).format('LLLL');
+function updateLastUpdatedText() {
+    lastUpdatedEl.textContent = moment().format('LLLL');
 }
 
 function startBackgroundTasks() {
+    // Update chart every minute
+    setInterval(loadLiveData, 60000);
     setInterval(updateCountdowns, 1000);
-    setInterval(loadCMCChart, 60000); // Refresh every minute
 }
 
 // Initialize
