@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Helium (HNT) Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://terminal.jup.ag/main-v4.js" data-preload></script>
     <style>
 :root {
@@ -29,7 +30,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Orbitron', sans-serif;
     background-color: var(--background-color);
     color: var(--text-color);
     margin: 0;
@@ -74,7 +75,7 @@ h1, h2, h3 {
     font-weight: bold;
     transition: var(--transition);
     display: flex;
-    align-items: center; 
+    align-items: center;
     gap: 5px;
 }
 
@@ -342,25 +343,30 @@ jup-button:hover {
     flex: 1;
 }
 
-.copy-button {
-    background-color: var(--primary Dewey: primary-color;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-left: 10px;
-    font-size: 0.9rem;
-}
-
-.copy-button:hover {
-    background-color: var(--primary-hover);
-}
-
 .contract-address {
     font-family: monospace;
     font-size: 0.9rem;
     word-break: break-all;
+    cursor: pointer;
+    color: var(--primary-color);
+    transition: var(--transition);
+}
+
+.contract-address:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.solana-explorer-link {
+    color: var(--primary-color);
+    font-weight: bold;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.solana-explorer-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {
@@ -447,7 +453,7 @@ jup-button:hover {
                             input-mint="So11111111111111111111111111111111111111112"
                             output-mint="hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux"
                             fixed-mint="output"
-                            amount="1000000000"
+                            amount="1000000" <!-- 0.001 SOL in lamports -->
                             logo-uri="https://plugin.jup.ag/jupiter-logo-long.png"
                             name="Jupiter Swap"
                             primary-color="#29abe2"
@@ -467,23 +473,20 @@ jup-button:hover {
                         Helium is a decentralized wireless network that enables devices to connect to the internet using the LoRaWAN protocol. It incentivizes network coverage through cryptocurrency mining, rewarding participants with HNT tokens for providing connectivity.
                     </p>
                     <h4 data-translate="verified-contracts">Verified Token Contracts</h4>
-                    <p data-translate="verified-note">Verified token contracts are marked with a green checkmark in the Solana Explorer.</p>
+                    <p data-translate="verified-note">Verified token contracts are marked with a green checkmark in Jupiter Swap.</p>
                     <div class="stat">
                         <span>HNT:</span>
-                        <span class="contract-address">hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux</span>
-                        <button class="copy-button" onclick="copyToClipboard('hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux')">Copy</button>
+                        <a href="https://explorer.solana.com/address/hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux" target="_blank" class="contract-address" onclick="copyToClipboard('hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux')">hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux</a>
                     </div>
                     <div class="stat">
                         <span>IoT:</span>
-                        <span class="contract-address">iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns</span>
-                        <button class="copy-button" onclick="copyToClipboard('iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns')">Copy</button>
+                        <a href="https://explorer.solana.com/address/iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns" target="_blank" class="contract-address" onclick="copyToClipboard('iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns')">iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns</a>
                     </div>
                     <div class="stat">
                         <span>Mobile:</span>
-                        <span class="contract-address">mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6</span>
-                        <button class="copy-button" onclick="copyToClipboard('mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6')">Copy</button>
+                        <a href="https://explorer.solana.com/address/mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6" target="_blank" class="contract-address" onclick="copyToClipboard('mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6')">mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6</a>
                     </div>
-                    <p><a href="https://explorer.solana.com" target="_blank" data-translate="solana-explorer">Solana Blockchain Explorer</a></p>
+                    <p><a href="https://explorer.solana.com" target="_blank" class="solana-explorer-link" data-translate="solana-explorer">Solana Blockchain Explorer</a></p>
                 </div>
             </div>
         </section>
@@ -556,6 +559,10 @@ jup-button:hover {
             </div>
         </section>
     </div>
+
+    <audio id="background-music" loop>
+        <source src="bg.mp3" type="audio/mpeg">
+    </audio>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/pl.min.js"></script>
@@ -639,12 +646,16 @@ jup-button:hover {
                 "pl": "Zweryfikowane kontrakty tokenów"
             },
             "verified-note": {
-                "en": "Verified token contracts are marked with a green checkmark in the Solana Explorer.",
-                "pl": "Zweryfikowane kontrakty tokenów są oznaczone zielonym znaczkiem w eksploratorze Solana."
+                "en": "Verified token contracts are marked with a green checkmark in Jupiter Swap.",
+                "pl": "Zweryfikowane kontrakty tokenów są oznaczone zielonym znaczkiem w Jupiter Swap."
             },
             "solana-explorer": {
                 "en": "Solana Blockchain Explorer",
                 "pl": "Eksplorator blockchain Solana"
+            },
+            "copy-success": {
+                "en": "Address copied to clipboard!",
+                "pl": "Adres skopiowany do schowka!"
             }
         };
 
@@ -652,7 +663,9 @@ jup-button:hover {
         let currentLanguage = 'en';
         let currentTheme = 'light';
         let chartLoaded = false;
+        let isMusicPlaying = true;
         const pageLoadTime = new Date();
+        const audio = document.getElementById('background-music');
 
         // DOM elements
         const themeToggle = document.getElementById('theme-toggle');
@@ -672,6 +685,16 @@ jup-button:hover {
             checkJupiterSwapLoaded();
             fetchHNTPrice();
             startCountdowns();
+            playBackgroundMusic();
+        }
+
+        function playBackgroundMusic() {
+            if (audio) {
+                audio.play().catch(error => {
+                    console.error('Failed to play background music:', error);
+                });
+                soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
         }
 
         function loadTradingViewWidget() {
@@ -744,17 +767,20 @@ jup-button:hover {
             const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
             const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333';
             const moduleColor = currentTheme === 'dark' ? '#1e293b' : '#fff';
+            const interactiveColor = currentTheme === 'dark' ? '#4fbce8' : '#29abe2';
 
             jupiterSwap.setAttribute('background-color', bgColor);
             jupiterSwap.setAttribute('primary-text-color', textColor);
             jupiterSwap.setAttribute('module-color', moduleColor);
+            jupiterSwap.setAttribute('interactive-color', interactiveColor);
+            jupiterSwap.setAttribute('primary-color', interactiveColor);
 
             if (swapFrame) {
                 swapFrame.style.backgroundColor = moduleColor;
             }
 
             if (jupiterButton) {
-                jupiterButton.style.backgroundColor = currentTheme === 'dark' ? '#1a3e72' : '#29abe2';
+                jupiterButton.style.backgroundColor = interactiveColor;
             }
         }
 
@@ -792,7 +818,7 @@ jup-button:hover {
         }
 
         function copyToClipboard(text) {
-            navigator.clipboard.write(text).then(() => {
+            navigator.clipboard.writeText(text).then(() => {
                 alert(translations['copy-success'][currentLanguage]);
             }).catch(err => {
                 console.error('Failed to copy:', err);
@@ -823,11 +849,17 @@ jup-button:hover {
                 window.Jupiter.init({
                     displayMode: 'integrated',
                     integratedTargetId: 'jupiter-swap',
+                    slippage: 0.1, // Default low slippage of 0.1%
                     onSwapError: ({ error, quoteResponseMeta }) => {
                         console.error('Jupiter Swap Error:', error);
+                        alert('Swap failed: Check console for details.');
                     },
                     onSuccess: ({ txid, swapResult, quoteResponseMeta }) => {
                         console.log('Jupiter Swap Success:', txid);
+                        alert('Swap successful! Transaction ID: ' + txid);
+                    },
+                    onLoad: () => {
+                        console.log('Jupiter Swap loaded, network fee will reflect Solana network rates.');
                     }
                 });
             }
@@ -865,8 +897,16 @@ jup-button:hover {
         }
 
         function toggleSound() {
-            console.log('Audio toggle not supported in this environment.');
-            soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            if (isMusicPlaying) {
+                audio.pause();
+                soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            } else {
+                audio.play().catch(error => {
+                    console.error('Failed to play background music:', error);
+                });
+                soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
+            isMusicPlaying = !isMusicPlaying;
         }
 
         function toggleSwapFrame() {
@@ -889,7 +929,7 @@ jup-button:hover {
             const to = moment.duration(nextHalving.diff(now));
             if (to.asMilliseconds() > 0) {
                 document.getElementById('time-to-halving').textContent =
-                    `${Math.floor(to.asDays())}d ${to.hours()}h ${to.minutes()}m ${to.seconds()}s`;
+                    `${Math.floor(to.asDays())}d ${to.hours()}h ${to.minutes()}m ${since.seconds()}s`;
             }
         }
 
