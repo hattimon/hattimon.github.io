@@ -311,8 +311,18 @@ li:hover {
 }
 
 @media (max-width: 768px) {
-    .tradingview-widget-container {
+    .chart-container {
         height: 300px;
+        padding: 15px;
+    }
+    
+    .chart-controls {
+        justify-content: center;
+    }
+    
+    .chart-controls button {
+        padding: 6px 10px;
+        font-size: 0.8rem;
     }
     
     .halving-container {
@@ -658,11 +668,4 @@ async function loadHNTChart(days = 7) {
                         beginAtZero: false
                     }
                 },
-                animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuart'
-                }
-            }
-        };
-        
-        // Dest
+       
