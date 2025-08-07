@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Helium (HNT) Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://terminal.jup.ag/main-v4.js" data-preload></script>
     <style>
 :root {
     --primary-color: #29abe2;
@@ -282,13 +283,54 @@ li:hover {
     50% { opacity: 0.5; }
 }
 
-jup-swap {
+.swap-frame {
+    display: none;
     width: 100%;
     height: 600px;
     border-radius: 10px;
     overflow: hidden;
-    border: 1px solid rgba(41, 171, 226, 0.2);
+    border: 2px solid var(--primary-color);
     box-shadow: var(--shadow);
+    transition: var(--transition);
+    margin-top: 20px;
+    background-color: var(--card-bg);
+}
+
+.swap-frame.active {
+    display: block;
+    animation: slideDown 0.3s ease-in-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+jup-swap {
+    width: 100%;
+    height: 100%;
+}
+
+jup-button {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+jup-button:hover {
+    background-color: var(--primary-hover);
+    transform: scale(1.1);
+    box-shadow: var(--shadow-hover);
 }
 
 .swap-fallback {
@@ -304,7 +346,7 @@ jup-swap {
         height: 300px;
     }
     
-    jup-swap {
+    .swap-frame {
         height: 500px;
     }
     
@@ -320,6 +362,12 @@ jup-swap {
     
     .history-container {
         flex-direction: column;
+    }
+    
+    jup-button {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
     }
 }
     </style>
@@ -362,21 +410,27 @@ jup-swap {
 
         <section class="swap-section">
             <h2 data-translate="swap-title">Jupiter Ultra Swap</h2>
-            <jup-swap
-                input-mint="So11111111111111111111111111111111111111112"
-                output-mint="hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux"
-                fixed-mint="output"
-                amount="1000000000"
-                logo-uri="https://plugin.jup.ag/jupiter-logo-long.png"
-                name="Jupiter Swap"
-                primary-color="#29abe2"
-                background-color="#f5f7fa"
-                primary-text-color="#333"
-                warning-color="#ff4d4f"
-                interactive-color="#4fbce8"
-                module-color="#1e293b"
-                id="jupiter-swap"
-            ></jup-swap>
+            <jup-button id="jupiter-button" title="Toggle Jupiter Swap">
+                <i class="fas fa-exchange-alt"></i>
+            </jup-button>
+            <div class="swap-frame" id="swap-frame">
+                <jup-swap
+                    input-mint="So11111111111111111111111111111111111111112"
+                    output-mint="hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux"
+                    fixed-mint="output"
+                    amount="1000000000"
+                    logo-uri="https://plugin.jup.ag/jupiter-logo-long.png"
+                    name="Jupiter Swap"
+                    primary-color="#29abe2"
+                    background-color="#f5f7fa"
+                    primary-text-color="#333"
+                    warning-color="#ff4d4f"
+                    interactive-color="#4fbce8"
+                    module-color="#1e293b"
+                    id="jupiter-swap"
+                    display-mode="integrated"
+                ></jup-swap>
+            </div>
             <div class="swap-fallback" id="jupiter-swap-fallback">
                 Unable to load Jupiter Swap. Please ensure you are connected to the internet and try refreshing the page. For support, visit <a href="https://discord.gg/jup" target="_blank">Jupiter's Discord</a>.
             </div>
@@ -453,7 +507,6 @@ jup-swap {
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/pl.min.js"></script>
-    <script src="https://plugin.jup.ag/swap.js"></script>
     <script>
         // Translation dictionary
         const translations = {
@@ -534,6 +587,8 @@ jup-swap {
         const languageToggle = document.getElementById('language-toggle');
         const soundToggle = document.getElementById('sound-toggle');
         const lastUpdatedEl = document.getElementById('last-updated');
+        const jupiterButton = document.getElementById('jupiter-button');
+        const swapFrame = document.getElementById('swap-frame');
         const jupiterSwap = document.getElementById('jupiter-swap');
         const jupiterSwapFallback = document.getElementById('jupiter-swap-fallback');
 
@@ -623,16 +678,26 @@ jup-swap {
             jupiterSwap.setAttribute('background-color', bgColor);
             jupiterSwap.setAttribute('primary-text-color', textColor);
             jupiterSwap.setAttribute('module-color', moduleColor);
+
+            // Update swap frame background
+            if (swapFrame) {
+                swapFrame.style.backgroundColor = moduleColor;
+            }
+
+            // Update button background
+            if (jupiterButton) {
+                jupiterButton.style.backgroundColor = currentTheme === 'dark' ? '#1a3e72' : '#29abe2';
+            }
         }
 
         function checkJupiterSwapLoaded() {
-            if (!jupiterSwap || !window.customElements.get('jup-swap')) {
-                console.error('Jupiter Swap failed to load. Ensure the script from https://plugin.jup.ag/swap.js is accessible.');
+            if (!jupiterSwap || !window.customElements.get('jup-swap') || !window.customElements.get('jup-button')) {
+                console.error('Jupiter Swap or Button failed to load. Ensure the script from https://terminal.jup.ag/main-v4.js is accessible.');
                 if (jupiterSwapFallback) {
                     jupiterSwapFallback.style.display = 'block';
                 }
             } else {
-                console.log('Jupiter Swap loaded successfully.');
+                console.log('Jupiter Swap and Button loaded successfully.');
                 if (jupiterSwapFallback) {
                     jupiterSwapFallback.style.display = 'none';
                 }
@@ -688,6 +753,24 @@ jup-swap {
             themeToggle.addEventListener('click', toggleTheme);
             languageToggle.addEventListener('click', toggleLanguage);
             soundToggle.addEventListener('click', toggleSound);
+            jupiterButton.addEventListener('click', toggleSwapFrame);
+
+            // Initialize Jupiter Terminal
+            if (window.Jupiter) {
+                window.Jupiter.init({
+                    displayMode: 'integrated',
+                    integratedTargetId: 'jupiter-swap',
+                    onSwapError: ({ error, quoteResponseMeta }) => {
+                        console.error('Jupiter Swap Error:', error);
+                        if (jupiterSwapFallback) {
+                            jupiterSwapFallback.style.display = 'block';
+                        }
+                    },
+                    onSuccess: ({ txid, swapResult, quoteResponseMeta }) => {
+                        console.log('Jupiter Swap Success:', txid);
+                    }
+                });
+            }
         }
 
         function toggleTheme() {
@@ -727,6 +810,12 @@ jup-swap {
             // Audio disabled for GitHub Pages compatibility
             console.log('Audio toggle not supported in this environment.');
             soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+        }
+
+        function toggleSwapFrame() {
+            if (swapFrame) {
+                swapFrame.classList.toggle('active');
+            }
         }
 
         function updateCountdowns() {
