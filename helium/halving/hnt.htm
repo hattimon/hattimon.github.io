@@ -504,7 +504,7 @@ function initDashboard() {
 function loadTradingViewWidget() {
     if (chartLoaded) return;
     
-    // Set background color based on current theme
+    // Explicitly set background color based on theme
     const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
     
     const script = document.createElement('script');
@@ -520,6 +520,7 @@ function loadTradingViewWidget() {
         "locale": currentLanguage === 'pl' ? 'pl' : 'en',
         "enable_publishing": false,
         "backgroundColor": bgColor,
+        "gridColor": currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb',
         "hide_top_toolbar": false,
         "hide_side_toolbar": false,
         "allow_symbol_change": true,
@@ -537,7 +538,8 @@ function loadTradingViewWidget() {
         },
         "overrides": {
             "paneProperties.background": bgColor,
-            "paneProperties.backgroundType": "solid"
+            "paneProperties.backgroundType": "solid",
+            "paneProperties.gridProperties.color": currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb'
         },
         "hide_volume": true,
         "withdateranges": true,
