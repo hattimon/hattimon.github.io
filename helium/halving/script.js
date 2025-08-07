@@ -67,129 +67,144 @@ const translations = {
 };
 
 // Current settings
-let currentLanguage = 'en';
-let currentTheme = 'light';
-let currentChartRange = 'all';
-let priceChart;
-let chartData = {
-    all: null,
-    '1y': null,
-    '3m': null,
-    '1m': null
-};
+let currentLanguage = localStorage.getItem('hnt-lang') || 'en';
+let currentTheme = localStorage.getItem('hnt-theme') || 'light';
+let chart = null;
 
 // DOM elements
 const themeToggle = document.getElementById('theme-toggle');
 const languageToggle = document.getElementById('language-toggle');
 const soundToggle = document.getElementById('sound-toggle');
 const bgMusic = document.getElementById('bg-music');
-const priceChartCtx = document.getElementById('priceChart').getContext('2d');
 const lastUpdatedEl = document.getElementById('last-updated');
-const chart1mBtn = document.getElementById('chart-1m');
-const chart3mBtn = document.getElementById('chart-3m');
-const chart1yBtn = document.getElementById('chart-1y');
-const chartAllBtn = document.getElementById('chart-all');
 
 // Initialize dashboard
 function initDashboard() {
     loadSettings();
-    initChart();
     setupEventListeners();
-    loadData();
+    loadCMCChart();
     startBackgroundTasks();
 }
 
 function loadSettings() {
     // Load theme
-    const savedTheme = localStorage.getItem('hnt-theme');
-    if (savedTheme) {
-        currentTheme = savedTheme;
-        document.body.classList.toggle('dark-mode', currentTheme === 'dark');
-        updateThemeIcon();
+    if (currentTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+    } else {
+        document.body.classList.remove('dark-mode');
+        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
     }
     
     // Load language
-    const savedLang = localStorage.getItem('hnt-lang');
-    if (savedLang) {
-        currentLanguage = savedLang;
-        applyTranslations();
-    }
+    applyTranslations();
+}
+
+async function loadCMCChart() {
+    document.getElementById('chart-loader').style.display = 'block';
     
-    // Load chart range
-    const savedRange = localStorage.getItem('hnt-chart-range');
-    if (savedRange) {
-        currentChartRange = savedRange;
+    try {
+        // Try to load from cache first
+        const cachedData = localStorage.getItem('hnt-cached-chart-data');
+        const cachedTime = localStorage.getItem('hnt-cached-chart-time');
+        
+        if (cachedData && cachedTime) {
+            renderChart(JSON.parse(cachedData));
+            updateLastUpdatedText(new Date(parseInt(cachedTime)));
+        }
+        
+        // Fetch fresh data
+        const response = await fetch('https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=5665&range=MAX');
+        const data = await response.json();
+        
+        localStorage.setItem('hnt-cached-chart-data', JSON.stringify(data));
+        localStorage.setItem('hnt-cached-chart-time', Date.now().toString());
+        
+        renderChart(data);
+        updateLastUpdatedText();
+        
+    } catch (error) {
+        console.error('Error loading chart data:', error);
+        // Fallback to test data if API fails
+        renderChart(getFallbackData());
+    } finally {
+        document.getElementById('chart-loader').style.display = 'none';
     }
 }
 
-function initChart() {
-    priceChart = new Chart(priceChartCtx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'HNT Price (USD)',
-                data: [],
-                borderColor: '#29abe2',
-                backgroundColor: 'rgba(41, 171, 226, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.1,
-                pointRadius: 0,
-                pointHoverRadius: 5
-            }]
+function renderChart(data) {
+    const container = document.getElementById('cmc-chart-container');
+    container.innerHTML = ''; // Clear previous chart
+    
+    // Prepare data
+    const points = data.data.points;
+    const chartData = Object.keys(points).map(timestamp => {
+        return {
+            time: parseInt(timestamp),
+            value: points[timestamp].v[0]
+        };
+    });
+    
+    // Create chart
+    chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
+        height: 500,
+        layout: {
+            backgroundColor: 'transparent',
+            textColor: getComputedStyle(document.body).getPropertyValue('--text-color'),
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    title: {
-                        display: true,
-                        text: 'Price (USD)',
-                        color: () => getComputedStyle(document.body).getPropertyValue('--text-color')
-                    },
-                    grid: {
-                        color: () => currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                    },
-                    ticks: {
-                        color: () => getComputedStyle(document.body).getPropertyValue('--text-color')
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Date',
-                        color: () => getComputedStyle(document.body).getPropertyValue('--text-color')
-                    },
-                    grid: {
-                        color: () => currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-                    },
-                    ticks: {
-                        color: () => getComputedStyle(document.body).getPropertyValue('--text-color')
-                    }
-                }
+        grid: {
+            vertLines: {
+                color: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
             },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        color: () => getComputedStyle(document.body).getPropertyValue('--text-color')
-                    }
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: () => currentTheme === 'dark' ? '#1e293b' : '#fff',
-                    titleColor: () => currentTheme === 'dark' ? '#29abe2' : '#1a3e72',
-                    bodyColor: () => getComputedStyle(document.body).getPropertyValue('--text-color'),
-                    borderColor: () => currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-                    borderWidth: 1
-                }
+            horzLines: {
+                color: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+            },
+        },
+        rightPriceScale: {
+            borderColor: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        },
+        timeScale: {
+            borderColor: currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+        },
+    });
+
+    const areaSeries = chart.addAreaSeries({
+        topColor: 'rgba(41, 171, 226, 0.4)',
+        bottomColor: 'rgba(41, 171, 226, 0.0)',
+        lineColor: 'rgba(41, 171, 226, 1)',
+        lineWidth: 2,
+    });
+
+    areaSeries.setData(chartData);
+    
+    // Update current price display
+    if (chartData.length > 0) {
+        const currentPrice = chartData[chartData.length - 1].value;
+        document.getElementById('current-price').textContent = `${currentPrice.toFixed(2)} USD`;
+        
+        const marketCap = (186011619 * currentPrice).toLocaleString('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            maximumFractionDigits: 0
+        });
+        document.getElementById('market-cap').textContent = marketCap;
+    }
+}
+
+function getFallbackData() {
+    return {
+        data: {
+            points: {
+                "1577836800": { "v": [0.25] },
+                "1609459200": { "v": [1.20] },
+                "1640995200": { "v": [2.90] },
+                "1672531200": { "v": [2.70] },
+                "1704067200": { "v": [2.80] },
+                "1735689600": { "v": [2.76] } // Current date
             }
         }
-    });
+    };
 }
 
 function setupEventListeners() {
@@ -197,137 +212,24 @@ function setupEventListeners() {
     languageToggle.addEventListener('click', toggleLanguage);
     soundToggle.addEventListener('click', toggleSound);
     
-    chart1mBtn.addEventListener('click', () => updateChartRange('1m'));
-    chart3mBtn.addEventListener('click', () => updateChartRange('3m'));
-    chart1yBtn.addEventListener('click', () => updateChartRange('1y'));
-    chartAllBtn.addEventListener('click', () => updateChartRange('all'));
-}
-
-function loadData() {
-    // Try cache first
-    const cachedData = localStorage.getItem('hnt-cached-data');
-    if (cachedData) {
-        processData(JSON.parse(cachedData));
-        return;
-    }
-    
-    // Then fallback
-    fetch('hnt_fallback_data.json')
-        .then(response => response.json())
-        .then(data => processData(data))
-        .catch(error => {
-            console.error("Error loading fallback data:", error);
-            processData(generateMockData());
-        });
-}
-
-function processData(data) {
-    if (!data?.prices) return;
-    
-    // Update last point to current date
-    const now = Date.now();
-    if (data.prices.length > 0) {
-        data.prices[data.prices.length - 1][0] = now;
-    }
-    
-    // Process ranges
-    chartData.all = data;
-    chartData['1y'] = filterData(data, now - 365 * 86400000);
-    chartData['3m'] = filterData(data, now - 90 * 86400000);
-    chartData['1m'] = filterData(data, now - 30 * 86400000);
-    
-    updateChartRange(currentChartRange);
-    updatePriceDisplays(data.prices[data.prices.length - 1][1]);
-    updateLastUpdatedText();
-}
-
-function filterData(data, minTime) {
-    return {
-        prices: data.prices.filter(entry => entry[0] >= minTime)
-    };
-}
-
-function updateChartRange(range) {
-    if (!chartData[range]) return;
-    
-    currentChartRange = range;
-    localStorage.setItem('hnt-chart-range', range);
-    
-    // Update active button
-    [chart1mBtn, chart3mBtn, chart1yBtn, chartAllBtn].forEach(btn => {
-        btn.classList.remove('btn');
-        btn.classList.add('btn-outline');
-    });
-    document.getElementById(`chart-${range}`).classList.remove('btn-outline');
-    document.getElementById(`chart-${range}`).classList.add('btn');
-    
-    // Format labels
-    let dateFormat;
-    if (range === '1m' || range === '3m') dateFormat = 'MMM D';
-    else dateFormat = 'MMM YYYY';
-    
-    priceChart.data.labels = chartData[range].prices.map(entry => 
-        moment(entry[0]).format(dateFormat)
-    );
-    priceChart.data.datasets[0].data = chartData[range].prices.map(entry => entry[1]);
-    priceChart.update();
-}
-
-function updatePriceDisplays(price) {
-    document.getElementById('current-price').textContent = `${price.toFixed(2)} USD`;
-    
-    const marketCap = (186011619 * price).toLocaleString('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0
-    });
-    document.getElementById('market-cap').textContent = marketCap;
-}
-
-function fetchFreshData() {
-    fetch('https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=max')
-        .then(response => response.json())
-        .then(data => {
-            localStorage.setItem('hnt-cached-data', JSON.stringify(data));
-            localStorage.setItem('hnt-cached-time', Date.now().toString());
-            processData(data);
-        })
-        .catch(error => {
-            console.error('Error fetching fresh data:', error);
-        });
-}
-
-function generateMockData() {
-    const prices = [];
-    const now = Date.now();
-    const startDate = new Date('2019-07-01').getTime();
-    
-    for (let time = startDate; time <= now; time += 86400000) {
-        const days = (time - startDate) / 86400000;
-        let price;
-        
-        if (days < 365) price = 0.25 + (days / 365) * 0.5;
-        else if (days < 730) price = 1.0 + Math.sin((days - 365) / 365 * Math.PI) * 10;
-        else if (days < 1095) price = 10 - (days - 730) / 365 * 8;
-        else price = 2 + Math.sin(days / 90) * 1.5 + Math.random() * 0.5;
-        
-        prices.push([time, price * (0.95 + Math.random() * 0.1)]);
-    }
-    
-    return { prices };
+    // Background music
+    bgMusic.volume = 0.3;
+    bgMusic.play().catch(e => console.log("Autoplay prevented:", e));
 }
 
 function toggleTheme() {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.body.classList.toggle('dark-mode');
-    updateThemeIcon();
+    themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     localStorage.setItem('hnt-theme', currentTheme);
-    priceChart.update();
-}
-
-function updateThemeIcon() {
-    themeToggle.innerHTML = currentTheme === 'dark' ? 
-        '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    
+    // Re-render chart with new theme
+    if (chart) {
+        const container = document.getElementById('cmc-chart-container');
+        const existingData = chart.data;
+        container.innerHTML = '';
+        renderChart(existingData);
+    }
 }
 
 function toggleLanguage() {
@@ -377,8 +279,8 @@ function updateLastUpdatedText(date = new Date()) {
 }
 
 function startBackgroundTasks() {
-    setInterval(fetchFreshData, 60000);
     setInterval(updateCountdowns, 1000);
+    setInterval(loadCMCChart, 60000); // Refresh every minute
 }
 
 // Initialize
