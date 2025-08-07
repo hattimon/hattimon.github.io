@@ -91,7 +91,7 @@ function loadTradingViewWidget() {
     script.async = true;
     script.innerHTML = JSON.stringify({
         "autosize": true,
-        "symbol": "BINANCE:HNTUSDT",
+        "symbol": "GATEIO:HNTUSDT",
         "interval": "D",
         "timezone": "Etc/UTC",
         "theme": currentTheme,
