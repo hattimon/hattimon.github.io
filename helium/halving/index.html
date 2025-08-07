@@ -1,700 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>HNT Price Chart + Halving Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{
-      --bg:#0e1220;
-      --panel:#121833;
-      --panel-2:#1a2352;
-      --text:#e9eef9;
-      --muted:#a9b3d8;
-      --accent:#67d4ff;
-      --accent-2:#7cffc4;
-      --danger:#ff6b6b;
-      --ok:#5bd28b;
-      --grid:#223068;
-      --grid-2:#1b264f;
-      --card-shadow:0 10px 30px rgba(0,0,0,.35);
-      --radius:16px;
-    }
-    *{box-sizing:border-box}
-    html,body{
-      height:100%;
-      margin:0;
-      font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: radial-gradient(1200px 800px at 80% -10%, #1a2352 0%, #0e1220 55%, #0b0f1a 100%);
-      color:var(--text);
-    }
-    .wrap{
-      min-height:100%;
-      display:flex;
-      flex-direction:column;
-      gap:18px;
-      padding:20px;
-    }
-    header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:14px 18px;
-      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)) , linear-gradient(145deg, var(--panel), var(--panel-2));
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:var(--radius);
-      box-shadow:var(--card-shadow);
-      backdrop-filter:blur(8px);
-    }
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-    }
-    .logo{
-      width:42px;height:42px;border-radius:12px;
-      background:conic-gradient(from 220deg, var(--accent), var(--accent-2), #9ea6ff, var(--accent));
-      box-shadow:0 6px 18px rgba(103,212,255,.35), inset 0 0 18px rgba(124,255,196,.25);
-      position:relative;
-      overflow:hidden;
-    }
-    .logo::after{
-      content:"H";
-      position:absolute;inset:0;
-      display:grid;place-items:center;
-      font-weight:800;font-size:22px;color:#061023;
-      text-shadow:0 2px 8px rgba(255,255,255,.45);
-    }
-    .title{
-      display:flex;flex-direction:column;
-      line-height:1.1;
-    }
-    .title b{font-size:20px;letter-spacing:.2px}
-    .title span{font-size:12px;color:var(--muted)}
-    .controls{
-      display:flex;flex-wrap:wrap;gap:8px;
-      align-items:center;justify-content:flex-end;
-    }
-    button, .segmented{
-      appearance:none;border:0;outline:none;
-      border-radius:12px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
-      color:var(--text);
-      padding:10px 14px;
-      font-weight:600;
-      letter-spacing:.2px;
-      border:1px solid rgba(255,255,255,.08);
-      box-shadow:inset 0 0 0 0 rgba(255,255,255,0), 0 6px 16px rgba(0,0,0,.25);
-      cursor:pointer;
-      transition:.2s transform, .2s background, .2s box-shadow, .2s color;
-      backdrop-filter:blur(6px);
-    }
-    button:hover{transform:translateY(-1px)}
-    .segmented{
-      display:flex;padding:4px;background:rgba(255,255,255,.05);gap:4px;
-    }
-    .segmented button{
-      background:transparent;border:0;padding:8px 12px;border-radius:8px;
-      color:var(--muted);box-shadow:none;border:1px solid transparent;
-    }
-    .segmented button.active{
-      color:#05122b;background:linear-gradient(180deg, #90e7ff, #67d4ff);
-      border-color:rgba(255,255,255,.2);
-      text-shadow:0 1px 0 rgba(255,255,255,.6);
-    }
-    main{
-      display:grid;gap:18px;
-      grid-template-columns: 1.6fr 1fr;
-    }
-    @media (max-width: 1180px){
-      main{grid-template-columns:1fr}
-    }
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,0)) , linear-gradient(145deg, #0f1531, #0b1027 70%);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:var(--radius);
-      box-shadow:var(--card-shadow);
-      overflow:hidden;
-    }
-    .card-header{
-      padding:14px 16px;
-      display:flex;align-items:center;justify-content:space-between;
-      border-bottom:1px solid rgba(255,255,255,.06);
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
-    }
-    .card-header h3{
-      margin:0;font-size:16px;letter-spacing:.4px;
-    }
-    .badge{
-      padding:6px 10px;border-radius:999px;font-size:12px;
-      color:#061023;background:linear-gradient(180deg, #b6ffd1, #5bd28b);
-      border:1px solid rgba(255,255,255,.4);
-      text-shadow:0 1px 0 rgba(255,255,255,.7);
-    }
-    .chart-wrap{
-      position:relative;height:460px;
-      background:
-        linear-gradient(0deg, rgba(255,255,255,.02), rgba(255,255,255,0)),
-        repeating-linear-gradient(0deg, var(--grid) 0 1px, transparent 1px 48px),
-        repeating-linear-gradient(90deg, var(--grid-2) 0 1px, transparent 1px 72px),
-        radial-gradient(1200px 600px at 100% 0%, rgba(124,255,196,.06), transparent 40%),
-        radial-gradient(1400px 800px at 20% 100%, rgba(103,212,255,.05), transparent 45%);
-    }
-    canvas{display:block;width:100%;height:100%}
-    .legend{
-      position:absolute;left:12px;top:10px;
-      display:flex;gap:10px;flex-wrap:wrap;
-      font-size:12px;color:var(--muted)
-    }
-    .legend .dot{
-      width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;
-      box-shadow:0 0 10px rgba(103,212,255,.35);
-    }
-    .dot.price{background:linear-gradient(180deg, #90e7ff, #67d4ff)}
-    .dot.avg{background:linear-gradient(180deg, #c8ffea, #7cffc4)}
-    .status{
-      display:flex;gap:8px;align-items:center;color:var(--muted);font-size:12px;
-    }
-    .status .pulse{
-      width:10px;height:10px;border-radius:50%;
-      background:var(--ok);box-shadow:0 0 0 0 rgba(91,210,139,.6);
-      animation:pulse 2s infinite;
-    }
-    @keyframes pulse{
-      0%{box-shadow:0 0 0 0 rgba(91,210,139,.55)}
-      70%{box-shadow:0 0 0 10px rgba(91,210,139,0)}
-      100%{box-shadow:0 0 0 0 rgba(91,210,139,0)}
-    }
-    .side{
-      display:grid;gap:18px;
-    }
-    .tile{
-      padding:16px;border-radius:14px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
-      border:1px solid rgba(255,255,255,.08);
-      box-shadow:var(--card-shadow);
-    }
-    .tile h4{margin:0 0 10px 0}
-    .metric{
-      display:flex;align-items:baseline;gap:10px
-    }
-    .metric .big{
-      font-size:30px;font-weight:800;letter-spacing:.4px
-    }
-    .metric .chg{
-      font-size:14px;padding:4px 8px;border-radius:999px
-    }
-    .chg.up{background:rgba(91,210,139,.18); color:#a6ffd0; border:1px solid rgba(91,210,139,.5)}
-    .chg.down{background:rgba(255,107,107,.18); color:#ffd0d0; border:1px solid rgba(255,107,107,.5)}
-
-    .halving{
-      display:grid;gap:12px;
-      grid-template-columns: 1fr 1fr;
-    }
-    .halving .stat{
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:12px;
-      padding:12px;
-    }
-    .halving .label{font-size:12px;color:var(--muted)}
-    .halving .value{font-size:18px;font-weight:700;margin-top:4px}
-    .countdown{
-      display:flex;gap:8px;flex-wrap:wrap;margin-top:8px
-    }
-    .cd-box{
-      background:rgba(124,255,196,.08);
-      border:1px solid rgba(124,255,196,.35);
-      border-radius:10px;
-      padding:8px 10px;
-      min-width:70px;
-      text-align:center;
-    }
-    .cd-box .num{font-weight:800;font-size:18px}
-    .cd-box .lbl{font-size:11px;color:var(--muted)}
-    .footer{
-      margin-top:auto;text-align:center;color:var(--muted);font-size:12px;opacity:.8;
-    }
-  </style>
-  <script type="importmap">
-  {
-    "imports": {
-      "chart.js": "https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.js"
-    }
-  }
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helium (HNT) Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/pl.min.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
-        <div class="title">
-          <b data-i18n="appTitle">Helium (HNT) Live Chart</b>
-          <span data-i18n="appSubtitle">Smooth, reliable, and beautiful</span>
-        </div>
-      </div>
-      <div class="controls">
-        <div class="segmented" role="tablist" aria-label="range">
-          <button class="active" data-range="7d" role="tab" aria-selected="true" data-i18n="r7d">7D</button>
-          <button data-range="30d" role="tab" aria-selected="false" data-i18n="r30d">30D</button>
-          <button data-range="90d" role="tab" aria-selected="false" data-i18n="r90d">90D</button>
-          <button data-range="1y" role="tab" aria-selected="false" data-i18n="r1y">1Y</button>
-        </div>
-        <button id="btnMusic" aria-pressed="false" title="Toggle music" data-i18n="musicBtn">Muzyka On/Off</button>
-        <button id="btnLang" title="Switch language">Polski</button>
-      </div>
-    </header>
-
-    <main>
-      <section class="card">
-        <div class="card-header">
-          <h3><span data-i18n="chartTitle">HNT Price</span> • <small id="rangeLabel">7D</small></h3>
-          <div class="status"><span class="pulse" aria-hidden="true"></span><span id="feedStatus" data-i18n="statusLive">Live feed</span></div>
-        </div>
-        <div class="chart-wrap">
-          <div class="legend">
-            <span><span class="dot price"></span><span data-i18n="legendPrice">Price</span></span>
-            <span><span class="dot avg"></span><span data-i18n="legendAvg">Moving Avg</span></span>
-          </div>
-          <canvas id="chart" aria-label="HNT price chart" role="img"></canvas>
-        </div>
-      </section>
-
-      <aside class="side">
-        <div class="tile">
-          <h4 data-i18n="overview">Overview</h4>
-          <div class="metric">
-            <div class="big" id="lastPrice">$—</div>
-            <div class="chg" id="changeBadge">—</div>
-          </div>
-          <div style="color:var(--muted);margin-top:8px" id="updated" data-i18n="updated">Updated just now</div>
-        </div>
-
-        <div class="tile">
-          <h4 data-i18n="about">About</h4>
-          <div style="color:var(--muted)" id="aboutText" data-i18n="aboutTxt">
-            This demo pulls historical HNT prices and renders a smooth area chart with an overlay moving average. If data is unavailable, a high‑quality synthetic series is generated to keep the chart usable.
-          </div>
-        </div>
-
-        <div class="tile">
-          <h4 data-i18n="halvingHeader">Bitcoin Halving</h4>
-          <div class="countdown" id="halvingCountdown">
-            <div class="cd-box"><div class="num" id="cdDays">—</div><div class="lbl" data-i18n="days">Days</div></div>
-            <div class="cd-box"><div class="num" id="cdHours">—</div><div class="lbl" data-i18n="hours">Hours</div></div>
-            <div class="cd-box"><div class="num" id="cdMins">—</div><div class="lbl" data-i18n="mins">Minutes</div></div>
-            <div class="cd-box"><div class="num" id="cdSecs">—</div><div class="lbl" data-i18n="secs">Seconds</div></div>
-          </div>
-          <div class="halving" style="margin-top:10px">
-            <div class="stat">
-              <div class="label" data-i18n="nextHalving">Next halving</div>
-              <div class="value" id="nextHalvingDate">—</div>
+    <div class="container">
+        <header>
+            <h1 data-translate="title">Helium (HNT) Dashboard</h1>
+            <div class="controls">
+                <button id="language-toggle" class="btn">PL</button>
+                <button id="sound-toggle" class="btn">🔊</button>
             </div>
-            <div class="stat">
-              <div class="label" data-i18n="estBlock">Estimated block</div>
-              <div class="value" id="nextHalvingBlock">—</div>
+        </header>
+
+        <section class="chart-section">
+            <h2 data-translate="price-chart">HNT Price Chart</h2>
+            <div class="chart-container">
+                <canvas id="priceChart"></canvas>
             </div>
-            <div class="stat">
-              <div class="label" data-i18n="lastHalving">Last halving</div>
-              <div class="value" id="lastHalvingDate">—</div>
+        </section>
+
+        <section class="halving-section">
+            <h2 data-translate="halving-info">Halving Information</h2>
+            <div class="halving-container">
+                <div class="halving-stats">
+                    <div class="stat">
+                        <span data-translate="current-stage">Current emission stage:</span>
+                        <span class="value">Post-2025 (625k HNT/month)</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="last-halving">Last halving:</span>
+                        <span class="value" id="last-halving-date">2025-08-01</span>
+                        <span class="value" id="time-since-halving">6d 00h 00m 00s</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="next-halving">Next halving:</span>
+                        <span class="value" id="next-halving-date">2027-08-01</span>
+                        <span class="value" id="time-to-halving">723d 23h 59m 59s</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="current-price">Current price:</span>
+                        <span class="value" id="current-price">2.76 USD</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="market-cap">Market cap:</span>
+                        <span class="value" id="market-cap">$513,544,629</span>
+                    </div>
+                </div>
+
+                <div class="halving-stats">
+                    <div class="stat">
+                        <span data-translate="circulating">Circulating supply:</span>
+                        <span class="value" id="circulating-supply">186,011,619 HNT</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="max-supply">Max supply:</span>
+                        <span class="value">223,000,000 HNT</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="consensus">Consensus:</span>
+                        <span class="value">PoC – HoneyBadger BFT</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="rewards">Rewards for coverage and data transmission</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat">
-              <div class="label" data-i18n="blockReward">Block reward after</div>
-              <div class="value" id="blockReward">—</div>
+
+            <div class="halving-history">
+                <h3 data-translate="halving-history">Halving History</h3>
+                <ul>
+                    <li>2019: 60M HNT</li>
+                    <li>2021-08-01: 60M HNT</li>
+                    <li>2023-08-01: 30M HNT</li>
+                    <li>2025-08-01: 15M HNT</li>
+                    <li>2027-08-01: 7.5M HNT</li>
+                </ul>
             </div>
-          </div>
-          <div style="color:var(--muted);font-size:12px;margin-top:8px" data-i18n="halvingNote">
-            Dates are approximate and generated locally for demo purposes.
-          </div>
-        </div>
-      </aside>
-    </main>
 
-    <div class="footer">© <span id="year"></span> HNT Chart • <span data-i18n="footerNote">For demonstration purposes only</span></div>
-  </div>
+            <div class="reward-history">
+                <h3 data-translate="reward-history">Block Reward History</h3>
+                <ul>
+                    <li>Pre-2021: 5M HNT/month</li>
+                    <li>Post-2021: 2.5M HNT/month</li>
+                    <li>Post-2023: 1.25M HNT/month</li>
+                    <li>Post-2025: 625k HNT/month (current)</li>
+                </ul>
+            </div>
+        </section>
+    </div>
 
-  <script type="module">
-    import Chart from "chart.js";
+    <audio id="bg-music" loop>
+        <source src="bg.mp3" type="audio/mpeg">
+    </audio>
 
-    // Translations
-    const i18n = {
-      en: {
-        appTitle: "Helium (HNT) Live Chart",
-        appSubtitle: "Smooth, reliable, and beautiful",
-        r7d: "7D", r30d: "30D", r90d: "90D", r1y: "1Y",
-        musicBtn: "Music On/Off",
-        chartTitle: "HNT Price",
-        statusLive: "Live feed",
-        legendPrice: "Price",
-        legendAvg: "Moving Avg",
-        overview: "Overview",
-        updated: "Updated just now",
-        about: "About",
-        aboutTxt: "This demo pulls historical HNT prices and renders a smooth area chart with an overlay moving average. If data is unavailable, a high‑quality synthetic series is generated to keep the chart usable.",
-        footerNote: "For demonstration purposes only",
-        // Halving
-        halvingHeader: "Bitcoin Halving",
-        days: "Days", hours: "Hours", mins: "Minutes", secs: "Seconds",
-        nextHalving: "Next halving",
-        estBlock: "Estimated block",
-        lastHalving: "Last halving",
-        blockReward: "Block reward after",
-        halvingNote: "Dates are approximate and generated locally for demo purposes."
-      },
-      pl: {
-        appTitle: "Helium (HNT) — Wykres na żywo",
-        appSubtitle: "Płynny, niezawodny i estetyczny",
-        r7d: "7D", r30d: "30D", r90d: "90D", r1y: "1R",
-        musicBtn: "Muzyka On/Off",
-        chartTitle: "Cena HNT",
-        statusLive: "Transmisja na żywo",
-        legendPrice: "Cena",
-        legendAvg: "Średnia krocząca",
-        overview: "Przegląd",
-        updated: "Zaktualizowano przed chwilą",
-        about: "O projekcie",
-        aboutTxt: "Ta demonstracja pobiera historyczne ceny HNT i rysuje gładki wykres obszarowy z nakładką średniej kroczącej. Gdy dane są niedostępne, generowana jest wysokiej jakości seria syntetyczna, aby wykres pozostał użyteczny.",
-        footerNote: "Wyłącznie do celów demonstracyjnych",
-        // Halving
-        halvingHeader: "Halving Bitcoina",
-        days: "Dni", hours: "Godziny", mins: "Minuty", secs: "Sekundy",
-        nextHalving: "Następny halving",
-        estBlock: "Szacowany blok",
-        lastHalving: "Ostatni halving",
-        blockReward: "Nagroda za blok po",
-        halvingNote: "Daty są przybliżone i generowane lokalnie do celów demo."
-      }
-    };
-    let currentLang = "pl"; // default to PL per user
-    const t = (key)=> i18n[currentLang][key] ?? key;
-    function applyTranslations(){
-      document.querySelectorAll("[data-i18n]").forEach(el=>{
-        const key=el.getAttribute("data-i18n");
-        el.textContent = t(key);
-      });
-      document.getElementById("btnLang").textContent = currentLang === "en" ? "Polski" : "English";
-      // Update dynamic halving labels below numbers
-      document.querySelector('#cdDays + .lbl').textContent = t('days');
-      document.querySelector('#cdHours + .lbl').textContent = t('hours');
-      document.querySelector('#cdMins + .lbl').textContent = t('mins');
-      document.querySelector('#cdSecs + .lbl').textContent = t('secs');
-    }
-
-    // Music (procedural tone)
-    let audioCtx = null, osc = null, isMusicOn = false, musicGain = null;
-    function toggleMusic(){
-      if(!audioCtx){
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if(!isMusicOn){
-        osc = audioCtx.createOscillator();
-        musicGain = audioCtx.createGain();
-        osc.type = "sine";
-        // subtle generative vibrato
-        const baseFreq = 432;
-        let t = 0;
-        const lfo = () => {
-          if(!isMusicOn) return;
-          t += 0.016;
-          const vibrato = Math.sin(t*2.2)*2 + Math.sin(t*0.6)*1;
-          osc.frequency.value = baseFreq + vibrato;
-          requestAnimationFrame(lfo);
-        };
-        osc.frequency.value = baseFreq;
-        musicGain.gain.value = 0.03;
-        osc.connect(musicGain).connect(audioCtx.destination);
-        osc.start();
-        isMusicOn = true;
-        requestAnimationFrame(lfo);
-      }else{
-        if(osc){ try{ osc.stop(); }catch{} }
-        isMusicOn = false;
-      }
-      document.getElementById("btnMusic").setAttribute("aria-pressed", String(isMusicOn));
-    }
-
-    // Chart helpers
-    function ema(series, period=10){
-      if(!series.length) return [];
-      const k = 2/(period+1);
-      const out = [];
-      let prev = series[0];
-      for(let i=0;i<series.length;i++){
-        const val = series[i]*k + prev*(1-k);
-        out.push(val);
-        prev = val;
-      }
-      return out;
-    }
-    // High-quality synthetic generator (fallback)
-    function generateSynthetic(startTs, points, base=5, vol=0.03){
-      const data = [];
-      let price = base;
-      let t = 0;
-      for(let i=0;i<points;i++){
-        const dailyCycle = Math.sin(t*0.25)*0.25;
-        const trend = Math.sin(t*0.02)*0.6;
-        const noise = (Math.random()-0.5)*vol*base*2;
-        price = Math.max(0.2, price + trend*0.03 + dailyCycle*0.02 + noise);
-        data.push({ t: startTs + i*3600*1000, p: price });
-        t++;
-      }
-      return data;
-    }
-
-    // Data fetchers with robust fallback
-    async function fetchFromCoinGecko(range){
-      const daysMap = { "7d":7, "30d":30, "90d":90, "1y":365 };
-      const days = daysMap[range] || 7;
-      const url = `https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=${days}&interval=hourly`;
-      const r = await fetch(url, { headers: { "accept": "application/json" }});
-      if(!r.ok) throw new Error("CG HTTP "+r.status);
-      const j = await r.json();
-      if(!j.prices || !j.prices.length) throw new Error("CG empty");
-      return j.prices.map(([ts, price])=>({ t: ts, p: price }));
-    }
-    async function fetchFromAlternative(range){
-      const points = range === "1y" ? 365*24 : (range === "90d" ? 90*24 : range === "30d" ? 30*24 : 7*24);
-      const start = Date.now() - points*3600*1000;
-      return generateSynthetic(start, points, 5+Math.random()*2, 0.05);
-    }
-    async function getSeries(range){
-      try{
-        const cg = await fetchFromCoinGecko(range);
-        return cg;
-      }catch(e){
-        console.warn("CoinGecko failed, using fallback:", e?.message||e);
-        const alt = await fetchFromAlternative(range);
-        return alt;
-      }
-    }
-
-    // Chart setup
-    const ctx = document.getElementById("chart").getContext("2d");
-    const gradientPrice = ctx.createLinearGradient(0,0,0,400);
-    gradientPrice.addColorStop(0, "rgba(103,212,255,0.45)");
-    gradientPrice.addColorStop(1, "rgba(103,212,255,0.02)");
-    const gradientAvg = ctx.createLinearGradient(0,0,0,400);
-    gradientAvg.addColorStop(0, "rgba(124,255,196,0.35)");
-    gradientAvg.addColorStop(1, "rgba(124,255,196,0.02)");
-
-    const chart = new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: [],
-        datasets: [
-          {
-            label: "Price",
-            data: [],
-            tension: 0.28,
-            fill: true,
-            backgroundColor: gradientPrice,
-            borderColor: "#67d4ff",
-            borderWidth: 2,
-            pointRadius: 0,
-            pointHoverRadius: 3
-          },
-          {
-            label: "MA",
-            data: [],
-            tension: 0.2,
-            borderColor: "#7cffc4",
-            borderWidth: 1.5,
-            pointRadius: 0
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 500, easing: "easeOutCubic" },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            mode: "index", intersect: false,
-            backgroundColor: "rgba(10,14,28,0.92)",
-            borderColor: "rgba(255,255,255,.15)",
-            borderWidth: 1,
-            padding: 10,
-            titleColor: "#e9eef9",
-            bodyColor: "#cfd7ef",
-            displayColors: false,
-            callbacks: {
-              label: ctx => {
-                const val = ctx.parsed.y;
-                return (currentLang==="pl" ? "Cena: " : "Price: ") + "$" + (isFinite(val)?val.toFixed(3):val);
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            ticks: {
-              color: "#a9b3d8",
-              maxRotation: 0,
-              callback: (v, i, ticks) => {
-                const ts = chart.data.labels[i];
-                const d = new Date(ts);
-                const pad = (n)=> String(n).padStart(2,"0");
-                if ((ticks.length>10 && i%Math.ceil(ticks.length/6)!==0)) return "";
-                // Localized short format
-                return currentLang==="pl"
-                  ? `${pad(d.getDate())}.${pad(d.getMonth()+1)} ${pad(d.getHours())}:00`
-                  : `${d.getMonth()+1}/${pad(d.getDate())} ${pad(d.getHours())}:00`;
-              }
-            },
-            grid: { color: "rgba(34,48,104,.25)" }
-          },
-          y: {
-            ticks: { color: "#a9b3d8", callback: v => "$"+v },
-            grid: { color: "rgba(34,48,104,.2)" }
-          }
-        }
-      }
-    });
-
-    // UI handlers
-    const rangeButtons = Array.from(document.querySelectorAll('.segmented button'));
-    rangeButtons.forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        rangeButtons.forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById("rangeLabel").textContent = btn.dataset.range.toUpperCase();
-        loadRange(btn.dataset.range);
-      });
-    });
-
-    document.getElementById("btnMusic").addEventListener("click", toggleMusic);
-
-    document.getElementById("btnLang").addEventListener("click", ()=>{
-      currentLang = currentLang === "en" ? "pl" : "en";
-      applyTranslations();
-      chart.update();
-    });
-
-    document.getElementById("year").textContent = new Date().getFullYear();
-
-    // Load and render data
-    async function loadRange(range){
-      setStatus(true);
-      try{
-        const series = await getSeries(range);
-        renderSeries(series);
-        updateOverview(series);
-      } catch(e){
-        console.error(e);
-      } finally {
-        setStatus(false);
-      }
-    }
-    function renderSeries(series){
-      if(!series || !series.length){
-        chart.data.labels = [];
-        chart.data.datasets[0].data = [];
-        chart.data.datasets[1].data = [];
-        chart.update();
-        return;
-      }
-      const labels = series.map(d=>d.t);
-      const prices = series.map(d=>d.p);
-      const avg = ema(prices, Math.max(8, Math.floor(prices.length/40)));
-      chart.data.labels = labels;
-      chart.data.datasets[0].data = prices;
-      chart.data.datasets[1].data = avg;
-      chart.update();
-    }
-    function updateOverview(series){
-      const last = series[series.length-1]?.p ?? 0;
-      const first = series[0]?.p ?? last;
-      const chg = last - first;
-      const pct = first ? (chg/first*100) : 0;
-      const priceEl = document.getElementById("lastPrice");
-      priceEl.textContent = "$" + (isFinite(last)? last.toFixed(3) : last);
-
-      const chgEl = document.getElementById("changeBadge");
-      const up = pct >= 0;
-      chgEl.className = "chg " + (up ? "up" : "down");
-      const sign = up ? "+" : "";
-      chgEl.textContent = `${sign}${isFinite(pct)?pct.toFixed(2):pct}%`;
-      document.getElementById("updated").textContent = t("updated");
-    }
-
-    function setStatus(loading){
-      const el = document.getElementById("feedStatus");
-      if(loading){
-        el.textContent = currentLang === "pl" ? "Ładowanie danych..." : "Loading data...";
-      }else{
-        el.textContent = t("statusLive");
-      }
-    }
-
-    // Halving data (self-contained, no external APIs)
-    // Known Bitcoin halving history and next estimate (UTC)
-    const halvings = [
-      { height: 210000, date: new Date(Date.UTC(2012,10,28,15,24)), reward: 25 },
-      { height: 420000, date: new Date(Date.UTC(2016,6,9,16,46)), reward: 12.5 },
-      { height: 630000, date: new Date(Date.UTC(2020,4,11,19,23)), reward: 6.25 },
-      { height: 840000, date: new Date(Date.UTC(2024,3,20,0,9)), reward: 3.125 }, // occurred Apr 20, 2024
-      // Next predicted (example): assuming ~4 years, set placeholder
-      { height: 1050000, date: new Date(Date.UTC(2028,2,31,12,0)), reward: 1.5625 }
-    ];
-    function formatDate(d){
-      const pad = n=> String(n).padStart(2,"0");
-      return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())} UTC`;
-    }
-    function setHalvingUI(){
-      const now = new Date();
-      // Find last and next relative to now
-      const past = halvings.filter(h=>h.date<=now).sort((a,b)=>a.date-b.date);
-      const future = halvings.filter(h=>h.date>now).sort((a,b)=>a.date-b.date);
-      const last = past[past.length-1] ?? halvings[0];
-      const next = future[0] ?? halvings[halvings.length-1];
-
-      document.getElementById("lastHalvingDate").textContent = formatDate(last.date);
-      document.getElementById("blockReward").textContent = next ? `${next.reward} BTC` : `${last.reward} BTC`;
-      document.getElementById("nextHalvingDate").textContent = formatDate(next.date);
-      document.getElementById("nextHalvingBlock").textContent = next.height.toLocaleString();
-
-      // Countdown
-      function updateCountdown(){
-        const target = next.date.getTime();
-        const diff = Math.max(0, target - Date.now());
-        const s = Math.floor(diff/1000);
-        const days = Math.floor(s/86400);
-        const hours = Math.floor((s%86400)/3600);
-        const mins = Math.floor((s%3600)/60);
-        const secs = s%60;
-        const pad = n=> String(n).padStart(2,"0");
-        document.getElementById("cdDays").textContent = days;
-        document.getElementById("cdHours").textContent = pad(hours);
-        document.getElementById("cdMins").textContent = pad(mins);
-        document.getElementById("cdSecs").textContent = pad(secs);
-      }
-      updateCountdown();
-      setInterval(updateCountdown, 1000);
-    }
-
-    // Initial
-    applyTranslations();
-    setHalvingUI();
-    loadRange("7d");
-
-    // Resize fix for gradient after container size changes
-    const ro = new ResizeObserver(()=>{
-      const c = document.getElementById("chart");
-      const g1 = ctx.createLinearGradient(0,0,0,c.clientHeight);
-      g1.addColorStop(0, "rgba(103,212,255,0.45)");
-      g1.addColorStop(1, "rgba(103,212,255,0.02)");
-      chart.data.datasets[0].backgroundColor = g1;
-
-      const g2 = ctx.createLinearGradient(0,0,0,c.clientHeight);
-      g2.addColorStop(0, "rgba(124,255,196,0.35)");
-      g2.addColorStop(1, "rgba(124,255,196,0.02)");
-      chart.update("none");
-    });
-    ro.observe(document.querySelector(".chart-wrap"));
-  </script>
+    <script src="script.js"></script>
 </body>
 </html>
