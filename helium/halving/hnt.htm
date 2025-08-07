@@ -282,9 +282,22 @@ li:hover {
     50% { opacity: 0.5; }
 }
 
+jup-swap {
+    width: 100%;
+    height: 600px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(41, 171, 226, 0.2);
+    box-shadow: var(--shadow);
+}
+
 @media (max-width: 768px) {
     .tradingview-widget-container {
         height: 300px;
+    }
+    
+    jup-swap {
+        height: 500px;
     }
     
     .halving-container {
@@ -300,15 +313,6 @@ li:hover {
     .history-container {
         flex-direction: column;
     }
-}
-
-jup-swap {
-    width: 100%;
-    height: 600px;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid rgba(41, 171, 226, 0.2);
-    box-shadow: var(--shadow);
 }
     </style>
 </head>
@@ -352,7 +356,7 @@ jup-swap {
             <h2 data-translate="swap-title">Jupiter Ultra Swap</h2>
             <jup-swap
                 input-mint="So11111111111111111111111111111111111111112"
-                output-mint="HNTMbLG7rH76M9fA7v47gQYL3c1H3gR6jD1nXzD3rZg"
+                output-mint="hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux"
                 fixed-mint="output"
                 amount="1000000000"
                 logo-uri="https://plugin.jup.ag/jupiter-logo-long.png"
@@ -444,301 +448,309 @@ jup-swap {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/pl.min.js"></script>
     <script src="https://plugin.jup.ag/swap.js"></script>
     <script>
-// Translation dictionary
-const translations = {
-    "title": {
-        "en": "Helium (HNT) Dashboard",
-        "pl": "Panel Helium (HNT)"
-    },
-    "price-chart": {
-        "en": "HNT Price Chart",
-        "pl": "Wykres ceny HNT"
-    },
-    "swap-title": {
-        "en": "Jupiter Ultra Swap",
-        "pl": "Jupiter Ultra Swap"
-    },
-    "halving-info": {
-        "en": "Halving Information",
-        "pl": "Informacje o halvingu"
-    },
-    "current-stage": {
-        "en": "Current emission stage:",
-        "pl": "Aktualny etap emisji:"
-    },
-    "last-halving": {
-        "en": "Last halving:",
-        "pl": "Ostatni halving:"
-    },
-    "next-halving": {
-        "en": "Next halving:",
-        "pl": "Następny halving:"
-    },
-    "current-price": {
-        "en": "Current price:",
-        "pl": "Aktualna cena:"
-    },
-    "market-cap": {
-        "en": "Market cap:",
-        "pl": "Kapitalizacja:"
-    },
-    "circulating": {
-        "en": "Circulating supply:",
-        "pl": "Podaż w obiegu:"
-    },
-    "max-supply": {
-        "en": "Max supply:",
-        "pl": "Maksymalna podaż:"
-    },
-    "consensus": {
-        "en": "Consensus:",
-        "pl": "Konsensus:"
-    },
-    "halving-history": {
-        "en": "Halving History",
-        "pl": "Historia halvingów"
-    },
-    "reward-history": {
-        "en": "Block Reward History",
-        "pl": "Historia nagród blokowych"
-    },
-    "last-updated": {
-        "en": "Last updated:",
-        "pl": "Ostatnia aktualizacja:"
-    },
-    "update-tooltip": {
-        "en": "Data refreshed on page load",
-        "pl": "Dane odświeżane przy wczytaniu strony"
-    }
-};
+        // Translation dictionary
+        const translations = {
+            "title": {
+                "en": "Helium (HNT) Dashboard",
+                "pl": "Panel Helium (HNT)"
+            },
+            "price-chart": {
+                "en": "HNT Price Chart",
+                "pl": "Wykres ceny HNT"
+            },
+            "swap-title": {
+                "en": "Jupiter Ultra Swap",
+                "pl": "Jupiter Ultra Swap"
+            },
+            "halving-info": {
+                "en": "Halving Information",
+                "pl": "Informacje o halvingu"
+            },
+            "current-stage": {
+                "en": "Current emission stage:",
+                "pl": "Aktualny etap emisji:"
+            },
+            "last-halving": {
+                "en": "Last halving:",
+                "pl": "Ostatni halving:"
+            },
+            "next-halving": {
+                "en": "Next halving:",
+                "pl": "Następny halving:"
+            },
+            "current-price": {
+                "en": "Current price:",
+                "pl": "Aktualna cena:"
+            },
+            "market-cap": {
+                "en": "Market cap:",
+                "pl": "Kapitalizacja:"
+            },
+            "circulating": {
+                "en": "Circulating supply:",
+                "pl": "Podaż w obiegu:"
+            },
+            "max-supply": {
+                "en": "Max supply:",
+                "pl": "Maksymalna podaż:"
+            },
+            "consensus": {
+                "en": "Consensus:",
+                "pl": "Konsensus:"
+            },
+            "halving-history": {
+                "en": "Halving History",
+                "pl": "Historia halvingów"
+            },
+            "reward-history": {
+                "en": "Block Reward History",
+                "pl": "Historia nagród blokowych"
+            },
+            "last-updated": {
+                "en": "Last updated:",
+                "pl": "Ostatnia aktualizacja:"
+            },
+            "update-tooltip": {
+                "en": "Data refreshed on page load",
+                "pl": "Dane odświeżane przy wczytaniu strony"
+            }
+        };
 
-// Current settings - using memory instead of localStorage
-let currentLanguage = 'en';
-let currentTheme = 'light';
-let chartLoaded = false;
-const pageLoadTime = new Date();
+        // Current settings - using memory instead of localStorage
+        let currentLanguage = 'en';
+        let currentTheme = 'light';
+        let chartLoaded = false;
+        const pageLoadTime = new Date();
 
-// DOM elements
-const themeToggle = document.getElementById('theme-toggle');
-const languageToggle = document.getElementById('language-toggle');
-const soundToggle = document.getElementById('sound-toggle');
-const bgMusic = document.getElementById('bg-music');
-const lastUpdatedEl = document.getElementById('last-updated');
-const jupiterSwap = document.getElementById('jupiter-swap');
+        // DOM elements
+        const themeToggle = document.getElementById('theme-toggle');
+        const languageToggle = document.getElementById('language-toggle');
+        const soundToggle = document.getElementById('sound-toggle');
+        const bgMusic = document.getElementById('bg-music');
+        const lastUpdatedEl = document.getElementById('last-updated');
+        const jupiterSwap = document.getElementById('jupiter-swap');
 
-// Initialize dashboard
-function initDashboard() {
-    loadSettings();
-    setupEventListeners();
-    loadTradingViewWidget();
-    updateJupiterSwapTheme();
-    fetchHNTPrice();
-    startCountdowns();
-}
-
-function loadTradingViewWidget() {
-    if (chartLoaded) return;
-    
-    // Explicitly set background color based on theme
-    const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
-    const gridColor = currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb';
-    
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-        "autosize": true,
-        "symbol": "GATEIO:HNTUSDT",
-        "interval": "D",
-        "timezone": "Etc/UTC",
-        "theme": currentTheme,
-        "style": "1",
-        "locale": currentLanguage === 'pl' ? 'pl' : 'en',
-        "enable_publishing": false,
-        "backgroundColor": bgColor,
-        "gridColor": gridColor,
-        "hide_top_toolbar": false,
-        "hide_side_toolbar": false,
-        "allow_symbol_change": true,
-        "container_id": "tradingview-widget-container__widget",
-        "studies": [
-            "RSI@tv-basicstudies",
-            "StochasticRSI@tv-basicstudies"
-        ],
-        "studies_overrides": {
-            "RSI.plot.color": "#29abe2",
-            "RSI.hisLevel": 70,
-            "RSI.losLevel": 30,
-            "StochasticRSI.plot.color": "#1a3e72",
-            "StochasticRSI.plot2.color": "#29abe2"
-        },
-        "overrides": {
-            "paneProperties.background": bgColor,
-            "paneProperties.backgroundType": "solid",
-            "paneProperties.gridProperties.color": gridColor,
-            "mainSeriesProperties.candleStyle.upColor": "#29abe2",
-            "mainSeriesProperties.candleStyle.downColor": "#ff4d4f",
-            "mainSeriesProperties.candleStyle.borderUpColor": "#29abe2",
-            "mainSeriesProperties.candleStyle.borderDownColor": "#ff4d4f"
-        },
-        "hide_volume": true,
-        "withdateranges": true,
-        "range": "12M",
-        "details": true,
-        "hotlist": true,
-        "calendar": true
-    });
-    
-    const widgetContainer = document.querySelector('.tradingview-widget-container__widget');
-    widgetContainer.innerHTML = '';
-    widgetContainer.appendChild(script);
-    chartLoaded = true;
-    updateLastUpdatedText();
-}
-
-function updateJupiterSwapTheme() {
-    if (!jupiterSwap) return;
-    
-    const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
-    const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333';
-    const moduleColor = currentTheme === 'dark' ? '#1e293b' : '#fff';
-    
-    jupiterSwap.setAttribute('background-color', bgColor);
-    jupiterSwap.setAttribute('primary-text-color', textColor);
-    jupiterSwap.setAttribute('module-color', moduleColor);
-}
-
-async function fetchHNTPrice() {
-    try {
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd&include_market_cap=true');
-        const data = await response.json();
-        
-        if (data.helium) {
-            const price = data.helium.usd;
-            const marketCap = data.helium.usd_market_cap;
-            
-            document.getElementById('current-price').textContent = `$${price.toFixed(4)}`;
-            document.getElementById('market-cap').textContent = `$${(marketCap / 1000000).toFixed(2)}M`;
-            
-            // Remove loading animation
-            document.getElementById('current-price').classList.remove('price-loading');
-            document.getElementById('market-cap').classList.remove('price-loading');
+        // Initialize dashboard
+        function initDashboard() {
+            loadSettings();
+            setupEventListeners();
+            loadTradingViewWidget();
+            updateJupiterSwapTheme();
+            fetchHNTPrice();
+            startCountdowns();
         }
-    } catch (error) {
-        console.error('Failed to fetch HNT price:', error);
-        document.getElementById('current-price').textContent = 'Error loading price';
-        document.getElementById('market-cap').textContent = 'Error loading data';
-        
-        // Remove loading animation
-        document.getElementById('current-price').classList.remove('price-loading');
-        document.getElementById('market-cap').classList.remove('price-loading');
-    }
-}
 
-function loadSettings() {
-    // Load theme
-    if (currentTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-    } else {
-        document.body.classList.remove('dark-mode');
-        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-    }
-    
-    // Load language
-    applyTranslations();
-    moment.locale(currentLanguage);
-}
+        function loadTradingViewWidget() {
+            if (chartLoaded) return;
 
-function setupEventListeners() {
-    themeToggle.addEventListener('click', toggleTheme);
-    languageToggle.addEventListener('click', toggleLanguage);
-    soundToggle.addEventListener('click', toggleSound);
-    
-    // Background music
-    if (bgMusic) {
-        bgMusic.volume = 0.3;
-        bgMusic.play().catch(e => console.log("Autoplay prevented:", e));
-    }
-}
+            // Explicitly set background color and related properties based on theme
+            const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
+            const gridColor = currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb';
+            const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333333';
 
-function toggleTheme() {
-    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.body.classList.toggle('dark-mode');
-    themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-    
-    // Reload TradingView widget and update Jupiter Swap with new theme
-    chartLoaded = false;
-    loadTradingViewWidget();
-    updateJupiterSwapTheme();
-}
+            const script = document.createElement('script');
+            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+            script.async = true;
+            script.innerHTML = JSON.stringify({
+                "autosize": true,
+                "symbol": "GATEIO:HNTUSDT",
+                "interval": "D",
+                "timezone": "Etc/UTC",
+                "theme": currentTheme,
+                "style": "1",
+                "locale": currentLanguage === 'pl' ? 'pl' : 'en',
+                "enable_publishing": false,
+                "backgroundColor": bgColor,
+                "gridColor": gridColor,
+                "hide_top_toolbar": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "container_id": "tradingview-widget-container__widget",
+                "studies": [
+                    "RSI@tv-basicstudies",
+                    "StochasticRSI@tv-basicstudies"
+                ],
+                "studies_overrides": {
+                    "RSI.plot.color": "#29abe2",
+                    "RSI.hisLevel": 70,
+                    "RSI.losLevel": 30,
+                    "StochasticRSI.plot.color": "#1a3e72",
+                    "StochasticRSI.plot2.color": "#29abe2"
+                },
+                "overrides": {
+                    "paneProperties.background": bgColor,
+                    "paneProperties.backgroundType": "solid",
+                    "paneProperties.gridProperties.color": gridColor,
+                    "mainSeriesProperties.candleStyle.upColor": "#29abe2",
+                    "mainSeriesProperties.candleStyle.downColor": "#ff4d4f",
+                    "mainSeriesProperties.candleStyle.borderUpColor": "#29abe2",
+                    "mainSeriesProperties.candleStyle.borderDownColor": "#ff4d4f",
+                    "scalesProperties.textColor": textColor,
+                    "paneProperties.legendProperties.textColor": textColor,
+                    "paneProperties.backgroundGradientStartColor": bgColor,
+                    "paneProperties.backgroundGradientEndColor": bgColor
+                },
+                "hide_volume": true,
+                "withdateranges": true,
+                "range": "12M",
+                "details": true,
+                "hotlist": true,
+                "calendar": true
+            });
 
-function toggleLanguage() {
-    currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
-    applyTranslations();
-    moment.locale(currentLanguage);
-    updateLastUpdatedText();
-    
-    // Reload TradingView widget with new language
-    chartLoaded = false;
-    loadTradingViewWidget();
-}
-
-function applyTranslations() {
-    document.querySelectorAll('[data-translate]').forEach(element => {
-        const key = element.getAttribute('data-translate');
-        if (translations[key]) {
-            element.textContent = translations[key][currentLanguage];
+            const widgetContainer = document.querySelector('.tradingview-widget-container__widget');
+            widgetContainer.innerHTML = '';
+            widgetContainer.appendChild(script);
+            chartLoaded = true;
+            updateLastUpdatedText();
         }
-    });
-    languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
-}
 
-function toggleSound() {
-    if (!bgMusic) return;
-    
-    if (bgMusic.paused) {
-        bgMusic.play();
-        soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
-    } else {
-        bgMusic.pause();
-        soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
-    }
-}
+        function updateJupiterSwapTheme() {
+            if (!jupiterSwap) return;
 
-function updateCountdowns() {
-    const lastHalving = moment('2025-08-01');
-    const nextHalving = moment('2027-08-01');
-    const now = moment();
-    
-    const since = moment.duration(now.diff(lastHalving));
-    if (since.asMilliseconds() > 0) {
-        document.getElementById('time-since-halving').textContent = 
-            `${Math.floor(since.asDays())}d ${since.hours()}h ${since.minutes()}m ${since.seconds()}s`;
-    }
-    
-    const to = moment.duration(nextHalving.diff(now));
-    if (to.asMilliseconds() > 0) {
-        document.getElementById('time-to-halving').textContent = 
-            `${Math.floor(to.asDays())}d ${to.hours()}h ${to.minutes()}m ${to.seconds()}s`;
-    }
-}
+            const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
+            const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333';
+            const moduleColor = currentTheme === 'dark' ? '#1e293b' : '#fff';
 
-function updateLastUpdatedText() {
-    if (lastUpdatedEl) {
-        lastUpdatedEl.textContent = moment(pageLoadTime).format('LLLL');
-    }
-}
+            jupiterSwap.setAttribute('background-color', bgColor);
+            jupiterSwap.setAttribute('primary-text-color', textColor);
+            jupiterSwap.setAttribute('module-color', moduleColor);
+        }
 
-function startCountdowns() {
-    // Update countdowns every second
-    setInterval(updateCountdowns, 1000);
-    // Initial call
-    updateCountdowns();
-}
+        async function fetchHNTPrice() {
+            try {
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd&include_market_cap=true');
+                const data = await response.json();
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initDashboard);
+                if (data.helium) {
+                    const price = data.helium.usd;
+                    const marketCap = data.helium.usd_market_cap;
+
+                    document.getElementById('current-price').textContent = `$${price.toFixed(4)}`;
+                    document.getElementById('market-cap').textContent = `$${(marketCap / 1000000).toFixed(2)}M`;
+
+                    // Remove loading animation
+                    document.getElementById('current-price').classList.remove('price-loading');
+                    document.getElementById('market-cap').classList.remove('price-loading');
+                }
+            } catch (error) {
+                console.error('Failed to fetch HNT price:', error);
+                document.getElementById('current-price').textContent = 'Error loading price';
+                document.getElementById('market-cap').textContent = 'Error loading data';
+
+                // Remove loading animation
+                document.getElementById('current-price').classList.remove('price-loading');
+                document.getElementById('market-cap').classList.remove('price-loading');
+            }
+        }
+
+        function loadSettings() {
+            // Load theme
+            if (currentTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
+
+            // Load language
+            applyTranslations();
+            moment.locale(currentLanguage);
+
+            // Update Jupiter Swap theme
+            updateJupiterSwapTheme();
+        }
+
+        function setupEventListeners() {
+            themeToggle.addEventListener('click', toggleTheme);
+            languageToggle.addEventListener('click', toggleLanguage);
+            soundToggle.addEventListener('click', toggleSound);
+
+            // Background music
+            if (bgMusic) {
+                bgMusic.volume = 0.3;
+                bgMusic.play().catch(e => console.log("Autoplay prevented:", e));
+            }
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.classList.toggle('dark-mode');
+            themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+
+            // Reload TradingView widget and update Jupiter Swap with new theme
+            chartLoaded = false;
+            loadTradingViewWidget();
+            updateJupiterSwapTheme();
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
+            applyTranslations();
+            moment.locale(currentLanguage);
+            updateLastUpdatedText();
+
+            // Reload TradingView widget with new language
+            chartLoaded = false;
+            loadTradingViewWidget();
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[key]) {
+                    element.textContent = translations[key][currentLanguage];
+                }
+            });
+            languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
+        }
+
+        function toggleSound() {
+            if (!bgMusic) return;
+
+            if (bgMusic.paused) {
+                bgMusic.play();
+                soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+            } else {
+                bgMusic.pause();
+                soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            }
+        }
+
+        function updateCountdowns() {
+            const lastHalving = moment('2025-08-01');
+            const nextHalving = moment('2027-08-01');
+            const now = moment();
+
+            const since = moment.duration(now.diff(lastHalving));
+            if (since.asMilliseconds() > 0) {
+                document.getElementById('time-since-halving').textContent =
+                    `${Math.floor(since.asDays())}d ${since.hours()}h ${since.minutes()}m ${since.seconds()}s`;
+            }
+
+            const to = moment.duration(nextHalving.diff(now));
+            if (to.asMilliseconds() > 0) {
+                document.getElementById('time-to-halving').textContent =
+                    `${Math.floor(to.asDays())}d ${to.hours()}h ${to.minutes()}m ${to.seconds()}s`;
+            }
+        }
+
+        function updateLastUpdatedText() {
+            if (lastUpdatedEl) {
+                lastUpdatedEl.textContent = moment(pageLoadTime).format('LLLL');
+            }
+        }
+
+        function startCountdowns() {
+            // Update countdowns every second
+            setInterval(updateCountdowns, 1000);
+            // Initial call
+            updateCountdowns();
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initDashboard);
     </script>
 </body>
 </html>
