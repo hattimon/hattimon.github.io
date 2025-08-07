@@ -431,41 +431,14 @@ jup-button:hover {
 
         <section class="chart-section">
             <h2 data-translate="price-chart">HNT Price Chart</h2>
-<div class="tradingview-widget-container">
-  <div id="tradingview_widget"></div>
-  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-  <script type="text/javascript">
-    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    new TradingView.widget({
-      autosize: true,
-      symbol: "GATEIO:HNTUSDT",
-      interval: "D",
-      timezone: "Etc/UTC",
-      theme: isDark ? "dark" : "light",
-      style: "1",
-      locale: "en",
-      enable_publishing: false,
-      allow_symbol_change: true,
-      container_id: "tradingview_widget",
-      overrides: isDark ? {
-        "mainBackgroundColor": "#4fbce8",
-        "paneProperties.background": "#4fbce8",
-        "paneProperties.vertGridProperties.color": "#81d5f0",
-        "paneProperties.horzGridProperties.color": "#81d5f0",
-        "scalesProperties.textColor": "#ffffff",
-        "symbolWatermarkProperties.transparency": 90
-      } : {
-        "mainBackgroundColor": "#ffffff",
-        "paneProperties.background": "#ffffff",
-        "paneProperties.vertGridProperties.color": "#e0e0e0",
-        "paneProperties.horzGridProperties.color": "#e0e0e0",
-        "scalesProperties.textColor": "#000000",
-        "symbolWatermarkProperties.transparency": 90
-      }
-    });
-  </script>
-</div>
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget"></div>
+                <div class="tradingview-widget-copyright">
+                    <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+                        <span class="blue-text">Track all markets on TradingView</span>
+                    </a>
+                </div>
+            </div>
         </section>
 
         <section class="swap-section">
