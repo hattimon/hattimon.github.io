@@ -504,8 +504,8 @@ function initDashboard() {
 function loadTradingViewWidget() {
     if (chartLoaded) return;
     
-    // Get the background color from CSS variable
-    const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--background-color').trim();
+    // Set background color based on current theme
+    const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
     
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
