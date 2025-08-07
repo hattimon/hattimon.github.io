@@ -6,7 +6,7 @@ const translations = {
     },
     "price-chart": {
         "en": "HNT Price Chart",
-        "pl": "Wykres cen HNT"
+        "pl": "Wykres ceny HNT"
     },
     "halving-info": {
         "en": "Halving Information",
@@ -61,25 +61,52 @@ const translations = {
         "pl": "Ostatnia aktualizacja:"
     },
     "update-tooltip": {
-        "en": "Live market data",
-        "pl": "Dane rynkowe na żywo"
+        "en": "Data updates every minute",
+        "pl": "Dane aktualizowane co minutę"
     }
 };
 
 // Current settings
 let currentLanguage = localStorage.getItem('hnt-lang') || 'en';
 let currentTheme = localStorage.getItem('hnt-theme') || 'light';
-let chart = null;
-let priceSeries = null;
-const CMC_API_URL = 'https://api.coinmarketcap.com/data-api/v3/cryptocurrency/detail/chart?id=5665&range=MAX';
+
+// DOM elements
+const themeToggle = document.getElementById('theme-toggle');
+const languageToggle = document.getElementById('language-toggle');
+const soundToggle = document.getElementById('sound-toggle');
+const bgMusic = document.getElementById('bg-music');
+const lastUpdatedEl = document.getElementById('last-updated');
 
 // Initialize dashboard
 function initDashboard() {
     loadSettings();
     setupEventListeners();
-    initChart();
-    loadLiveData();
+    loadTradingViewWidget();
     startBackgroundTasks();
+}
+
+function loadTradingViewWidget() {
+    const script = document.createElement('script');
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+        "autosize": true,
+        "symbol": "GATEIO:HNTUSDT",
+        "interval": "D",
+        "timezone": "Etc/UTC",
+        "theme": currentTheme,
+        "style": "1",
+        "locale": currentLanguage === 'pl' ? 'pl' : 'en',
+        "enable_publishing": false,
+        "backgroundColor": "transparent",
+        "hide_top_toolbar": false,
+        "hide_side_toolbar": false,
+        "allow_symbol_change": true,
+        "container_id": "tradingview-widget-container__widget"
+    });
+    
+    document.querySelector('.tradingview-widget-container__widget').appendChild(script);
+    updateLastUpdatedText();
 }
 
 function loadSettings() {
@@ -94,115 +121,6 @@ function loadSettings() {
     
     // Load language
     applyTranslations();
-}
-
-function initChart() {
-    const container = document.getElementById('cmc-chart-container');
-    container.innerHTML = '';
-    
-    chart = LightweightCharts.createChart(container, {
-        width: Math.max(container.parentElement.clientWidth, 1200),
-        height: 500,
-        layout: {
-            backgroundColor: 'transparent',
-            textColor: getComputedStyle(document.body).getPropertyValue('--text-color'),
-        },
-        timeScale: {
-            rightOffset: 12,
-            barSpacing: 3,
-            fixLeftEdge: true,
-            fixRightEdge: true,
-            borderVisible: false,
-            timeVisible: true,
-            secondsVisible: false,
-            tickMarkFormatter: (time) => {
-                return moment.unix(time).format('MMM YYYY');
-            },
-        },
-        rightPriceScale: {
-            borderColor: 'rgba(197, 203, 206, 0.3)',
-        },
-        grid: {
-            vertLines: {
-                color: 'rgba(197, 203, 206, 0.1)',
-            },
-            horzLines: {
-                color: 'rgba(197, 203, 206, 0.1)',
-            },
-        },
-    });
-
-    priceSeries = chart.addAreaSeries({
-        topColor: 'rgba(41, 171, 226, 0.4)',
-        bottomColor: 'rgba(41, 171, 226, 0.0)',
-        lineColor: 'rgba(41, 171, 226, 1)',
-        lineWidth: 2,
-    });
-}
-
-async function loadLiveData() {
-    try {
-        const response = await fetch(CMC_API_URL);
-        const data = await response.json();
-        
-        if (!data.data || !data.data.points) {
-            throw new Error('Invalid data format');
-        }
-        
-        const points = data.data.points;
-        const chartData = Object.keys(points).map(timestamp => ({
-            time: parseInt(timestamp),
-            value: points[timestamp].v[0]
-        })).sort((a, b) => a.time - b.time);
-
-        priceSeries.setData(chartData);
-        
-        // Set visible range to show full history
-        if (chartData.length > 0) {
-            chart.timeScale().setVisibleRange({
-                from: chartData[0].time,
-                to: Math.floor(Date.now() / 1000)
-            });
-            
-            updatePriceInfo(chartData[chartData.length - 1].value);
-        }
-        
-    } catch (error) {
-        console.error('Error loading live data:', error);
-        // Fallback to API v2 if v3 fails
-        loadFallbackData();
-    }
-}
-
-async function loadFallbackData() {
-    try {
-        const response = await fetch('https://api.coinmarketcap.com/data-api/v2/cryptocurrency/historical?id=5665&convertId=2781&timeStart=1561939200&timeEnd=' + Math.floor(Date.now() / 1000));
-        const data = await response.json();
-        
-        if (data.data && data.data.quotes) {
-            const chartData = data.data.quotes.map(item => ({
-                time: Math.floor(new Date(item.timeOpen).getTime() / 1000),
-                value: item.quote.USD.close
-            }));
-            
-            priceSeries.setData(chartData);
-            updatePriceInfo(chartData[chartData.length - 1].value);
-        }
-    } catch (error) {
-        console.error('Error loading fallback data:', error);
-    }
-}
-
-function updatePriceInfo(price) {
-    document.getElementById('current-price').textContent = `${price.toFixed(4)} USD`;
-    
-    const marketCap = (186011619 * price).toLocaleString('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0
-    });
-    document.getElementById('market-cap').textContent = marketCap;
-    updateLastUpdatedText();
 }
 
 function setupEventListeners() {
@@ -221,9 +139,9 @@ function toggleTheme() {
     themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     localStorage.setItem('hnt-theme', currentTheme);
     
-    // Recreate chart with new theme
-    initChart();
-    loadLiveData();
+    // Reload TradingView widget with new theme
+    document.querySelector('.tradingview-widget-container__widget').innerHTML = '';
+    loadTradingViewWidget();
 }
 
 function toggleLanguage() {
@@ -232,6 +150,10 @@ function toggleLanguage() {
     applyTranslations();
     moment.locale(currentLanguage);
     updateLastUpdatedText();
+    
+    // Reload TradingView widget with new language
+    document.querySelector('.tradingview-widget-container__widget').innerHTML = '';
+    loadTradingViewWidget();
 }
 
 function applyTranslations() {
@@ -268,14 +190,17 @@ function updateCountdowns() {
         `${to.days()}d ${to.hours()}h ${to.minutes()}m ${to.seconds()}s`;
 }
 
-function updateLastUpdatedText() {
-    lastUpdatedEl.textContent = moment().format('LLLL');
+function updateLastUpdatedText(date = new Date()) {
+    lastUpdatedEl.textContent = moment(date).format('LLLL');
 }
 
 function startBackgroundTasks() {
-    // Update chart every minute
-    setInterval(loadLiveData, 60000);
     setInterval(updateCountdowns, 1000);
+    setInterval(() => {
+        document.querySelector('.tradingview-widget-container__widget').innerHTML = '';
+        loadTradingViewWidget();
+        updateLastUpdatedText();
+    }, 60000); // Refresh every minute
 }
 
 // Initialize
