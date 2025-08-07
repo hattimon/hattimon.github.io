@@ -294,7 +294,7 @@ li:hover {
     box-shadow: var(--shadow);
     transition: var(--transition);
     margin-top: 20px;
-
+    background-color: var(--card-bg);
 }
 
 .swap-frame.active {
@@ -735,7 +735,7 @@ jup-button:hover {
                 },
                 "overrides": {
                     "paneProperties.background": bgColor,
-                    "paneProperties.backgroundType": "solid",
+                    "paneProperties.backgroundType": "#4fbce8",
                     "paneProperties.gridProperties.color": gridColor,
                     "mainSeriesProperties.candleStyle.upColor": "#29abe2",
                     "mainSeriesProperties.candleStyle.downColor": "#ff4d4f",
@@ -764,12 +764,12 @@ jup-button:hover {
         function updateJupiterSwapTheme() {
             if (!jupiterSwap) return;
 
-
+            const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
             const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333';
             const moduleColor = currentTheme === 'dark' ? '#1e293b' : '#fff';
             const interactiveColor = currentTheme === 'dark' ? '#4fbce8' : '#29abe2';
 
-
+            jupiterSwap.setAttribute('background-color', bgColor);
             jupiterSwap.setAttribute('primary-text-color', textColor);
             jupiterSwap.setAttribute('module-color', moduleColor);
             jupiterSwap.setAttribute('interactive-color', interactiveColor);
