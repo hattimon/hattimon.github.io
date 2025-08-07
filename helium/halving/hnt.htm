@@ -3,50 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Helium (HNT) Dashboard</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <title>TradingView Transparent Demo</title>
   <style>
     :root {
-      --primary-color: #29abe2;
-      --primary-hover: #4fbce8;
-      --secondary-color: #1a3e72;
-      --text-color: #333;
-      --text-inverse: #f0f0f0;
-      --background-color: #f5f7fa;
-      --card-bg: #fff;
-      --card-bg-dark: #1e293b;
-      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.2);
-      --transition: all 0.3s ease;
-    }
-
-    .dark-mode {
-      --text-color: #f0f0f0;
-      --background-color: #0f172a;
-      --card-bg: #1e293b;
-      --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      --background-light: #f5f7fa;
+      --background-dark: #0f172a;
+      --text-light: #333;
+      --text-dark: #f0f0f0;
+      --border: rgba(41, 171, 226, 0.2);
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--background-color);
-      color: var(--text-color);
       margin: 0;
-      padding: 0;
-      line-height: 1.6;
-      transition: var(--transition);
+      font-family: Arial, sans-serif;
+      background-color: var(--background-light);
+      color: var(--text-light);
+      transition: all 0.3s ease;
+    }
+
+    body.dark-mode {
+      background-color: var(--background-dark);
+      color: var(--text-dark);
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+
+    .theme-toggle {
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      font-weight: bold;
+      cursor: pointer;
     }
 
     .tradingview-widget-container {
       height: 500px;
       width: 100%;
-      border-radius: 20px;
+      border-radius: 15px;
       overflow: hidden;
-      margin-bottom: 20px;
-      background: transparent;
       position: relative;
-      border: 1px solid rgba(41, 171, 226, 0.2);
-      box-shadow: var(--shadow);
+      background: transparent;
+      border: 1px solid var(--border);
       backdrop-filter: blur(15px);
       -webkit-backdrop-filter: blur(15px);
     }
@@ -59,50 +59,40 @@
     .tradingview-widget-copyright {
       font-size: 0.7rem;
       text-align: right;
-      padding-right: 10px;
-      color: var(--text-color);
-      opacity: 0.7;
-      transition: var(--transition);
+      padding: 5px 10px;
+      opacity: 0.6;
     }
-
-    .tradingview-widget-copyright:hover {
-      opacity: 1;
-    }
-
-    /* Reszta Twoich stylów pozostaje bez zmian */
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- ... header + dashboard ... -->
+    <button class="theme-toggle" onclick="toggleTheme()">Przełącz motyw</button>
 
-    <section class="chart-section">
-      <h2 data-translate="price-chart">HNT Price Chart</h2>
-      <div class="tradingview-widget-container">
-        <div class="tradingview-widget-container__widget"></div>
-        <div class="tradingview-widget-copyright">
-          <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
-            <span class="blue-text">Track all markets on TradingView</span>
-          </a>
-        </div>
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget" id="tradingview-widget"></div>
+      <div class="tradingview-widget-copyright">
+        <a href="https://www.tradingview.com/" target="_blank" rel="noopener nofollow">Track all markets on TradingView</a>
       </div>
-    </section>
-
-    <!-- ... inne sekcje np. halving ... -->
+    </div>
   </div>
 
-  <audio id="bg-music" loop>
-    <source src="bg.mp3" type="audio/mpeg" />
-  </audio>
-
   <script>
-    // Skondensowany kod (tylko część z loadTradingViewWidget zmieniona)
+    let currentTheme = 'light';
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark-mode');
+      currentTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+      loadTradingViewWidget();
+    }
+
     function loadTradingViewWidget() {
-      if (chartLoaded) return;
+      const container = document.getElementById('tradingview-widget');
+      container.innerHTML = ''; // clear previous widget
 
       const script = document.createElement('script');
       script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
       script.async = true;
+
       script.innerHTML = JSON.stringify({
         autosize: true,
         symbol: "GATEIO:HNTUSDT",
@@ -110,22 +100,19 @@
         timezone: "Etc/UTC",
         theme: currentTheme,
         style: "1",
-        locale: currentLanguage === 'pl' ? 'pl' : 'en',
+        locale: "en",
         enable_publishing: false,
         hide_top_toolbar: false,
         hide_side_toolbar: false,
         allow_symbol_change: true,
-        container_id: "tradingview-widget-container__widget",
+        container_id: "tradingview-widget",
         studies: [
           "RSI@tv-basicstudies",
           "StochasticRSI@tv-basicstudies"
         ],
         studies_overrides: {
           "RSI.plot.color": "#29abe2",
-          "RSI.hisLevel": 70,
-          "RSI.losLevel": 30,
-          "StochasticRSI.plot.color": "#1a3e72",
-          "StochasticRSI.plot2.color": "#29abe2"
+          "StochasticRSI.plot.color": "#1a3e72"
         },
         hide_volume: true,
         withdateranges: true,
@@ -135,14 +122,11 @@
         calendar: true
       });
 
-      const widgetContainer = document.querySelector('.tradingview-widget-container__widget');
-      widgetContainer.innerHTML = '';
-      widgetContainer.appendChild(script);
-      chartLoaded = true;
-      updateLastUpdatedText();
+      container.appendChild(script);
     }
-  </script>
 
-  <!-- ... reszta skryptów z toggleTheme, initDashboard itd ... -->
+    // Initial load
+    loadTradingViewWidget();
+  </script>
 </body>
 </html>
