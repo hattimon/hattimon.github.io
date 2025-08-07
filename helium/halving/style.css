@@ -256,3 +256,31 @@ li:hover {
         font-size: 0.8rem;
     }
 }
+
+/* Dodaj te style do istniejącego CSS */
+
+.history-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.history-panel {
+    flex: 1;
+    background-color: rgba(26, 62, 114, 0.1);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid var(--secondary-color);
+    transition: var(--transition);
+}
+
+.history-panel:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+}
+
+@media (max-width: 768px) {
+    .history-container {
+        flex-direction: column;
+    }
+}
