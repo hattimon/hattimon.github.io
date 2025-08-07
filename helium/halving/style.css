@@ -1,10 +1,25 @@
 :root {
     --primary-color: #29abe2;
+    --primary-hover: #4fbce8;
     --secondary-color: #1a3e72;
-    --background-color: #f5f7fa;
+    --text-color: #f0f0f0;
+    --text-inverse: #333;
+    --background-color: #0f172a;
+    --card-bg: #1e293b;
+    --card-bg-dark: #0f172a;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.4);
+    --transition: all 0.3s ease;
+}
+
+.light-mode {
     --text-color: #333;
+    --text-inverse: #f0f0f0;
+    --background-color: #f5f7fa;
     --card-bg: #fff;
+    --card-bg-dark: #1e293b;
     --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.2);
 }
 
 body {
@@ -14,6 +29,7 @@ body {
     margin: 0;
     padding: 0;
     line-height: 1.6;
+    transition: var(--transition);
 }
 
 .container {
@@ -32,12 +48,14 @@ header {
 }
 
 h1, h2, h3 {
-    color: var(--secondary-color);
+    color: var(--primary-color);
+    margin-top: 0;
 }
 
 .controls {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 .btn {
@@ -48,12 +66,27 @@ h1, h2, h3 {
     border-radius: 5px;
     cursor: pointer;
     font-weight: bold;
-    transition: all 0.3s ease;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .btn:hover {
-    background-color: var(--secondary-color);
+    background-color: var(--primary-hover);
     transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-outline:hover {
+    background-color: var(--primary-color);
+    color: white;
 }
 
 .chart-section, .halving-section {
@@ -62,6 +95,12 @@ h1, h2, h3 {
     padding: 20px;
     margin-bottom: 30px;
     box-shadow: var(--shadow);
+    transition: var(--transition);
+}
+
+.chart-section:hover, .halving-section:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
 }
 
 .chart-container {
@@ -79,14 +118,29 @@ h1, h2, h3 {
 
 .halving-stats {
     background-color: rgba(41, 171, 226, 0.1);
-    padding: 15px;
+    padding: 20px;
     border-radius: 8px;
+    transition: var(--transition);
+    border-left: 4px solid var(--primary-color);
+}
+
+.halving-stats:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
 }
 
 .stat {
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     display: flex;
     justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(41, 171, 226, 0.3);
+    transition: var(--transition);
+}
+
+.stat:hover {
+    background-color: rgba(41, 171, 226, 0.05);
+    padding-left: 5px;
 }
 
 .stat .value {
@@ -96,9 +150,16 @@ h1, h2, h3 {
 
 .halving-history, .reward-history {
     background-color: rgba(26, 62, 114, 0.1);
-    padding: 15px;
+    padding: 20px;
     border-radius: 8px;
     margin-bottom: 15px;
+    transition: var(--transition);
+    border-left: 4px solid var(--secondary-color);
+}
+
+.halving-history:hover, .reward-history:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
 }
 
 ul {
@@ -106,7 +167,73 @@ ul {
 }
 
 li {
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    padding: 5px 0;
+    transition: var(--transition);
+}
+
+li:hover {
+    color: var(--primary-color);
+    padding-left: 5px;
+}
+
+.theme-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: var(--transition);
+}
+
+.theme-toggle:hover {
+    color: var(--primary-color);
+    transform: rotate(30deg);
+}
+
+.loader {
+    display: none;
+    border: 4px solid rgba(41, 171, 226, 0.2);
+    border-radius: 50%;
+    border-top: 4px solid var(--primary-color);
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: var(--card-bg-dark);
+    color: var(--text-inverse);
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    box-shadow: var(--shadow);
+    font-size: 0.9rem;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
 }
 
 @media (max-width: 768px) {
@@ -116,5 +243,11 @@ li {
     
     .chart-container {
         height: 300px;
+    }
+    
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
     }
 }
