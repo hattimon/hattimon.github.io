@@ -94,7 +94,7 @@ h1, h2, h3 {
     color: white;
 }
 
-.chart-section, .halving-section {
+.chart-section, .halving-section, .swap-section {
     background-color: var(--card-bg);
     border-radius: 10px;
     padding: 20px;
@@ -103,7 +103,7 @@ h1, h2, h3 {
     transition: var(--transition);
 }
 
-.chart-section:hover, .halving-section:hover {
+.chart-section:hover, .halving-section:hover, .swap-section:hover {
     transform: translateY(-5px);
     box-shadow: var(--shadow-hover);
 }
@@ -301,6 +301,15 @@ li:hover {
         flex-direction: column;
     }
 }
+
+jup-swap {
+    width: 100%;
+    height: 600px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(41, 171, 226, 0.2);
+    box-shadow: var(--shadow);
+}
     </style>
 </head>
 <body>
@@ -337,6 +346,25 @@ li:hover {
                     </a>
                 </div>
             </div>
+        </section>
+
+        <section class="swap-section">
+            <h2 data-translate="swap-title">Jupiter Ultra Swap</h2>
+            <jup-swap
+                input-mint="So11111111111111111111111111111111111111112"
+                output-mint="HNTMbLG7rH76M9fA7v47gQYL3c1H3gR6jD1nXzD3rZg"
+                fixed-mint="output"
+                amount="1000000000"
+                logo-uri="https://plugin.jup.ag/jupiter-logo-long.png"
+                name="Jupiter Swap"
+                primary-color="#29abe2"
+                background-color="#f5f7fa"
+                primary-text-color="#333"
+                warning-color="#ff4d4f"
+                interactive-color="#4fbce8"
+                module-color="#1e293b"
+                id="jupiter-swap"
+            ></jup-swap>
         </section>
 
         <section class="halving-section">
@@ -414,6 +442,7 @@ li:hover {
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/pl.min.js"></script>
+    <script src="https://plugin.jup.ag/swap.js"></script>
     <script>
 // Translation dictionary
 const translations = {
@@ -424,6 +453,10 @@ const translations = {
     "price-chart": {
         "en": "HNT Price Chart",
         "pl": "Wykres ceny HNT"
+    },
+    "swap-title": {
+        "en": "Jupiter Ultra Swap",
+        "pl": "Jupiter Ultra Swap"
     },
     "halving-info": {
         "en": "Halving Information",
@@ -491,12 +524,14 @@ const languageToggle = document.getElementById('language-toggle');
 const soundToggle = document.getElementById('sound-toggle');
 const bgMusic = document.getElementById('bg-music');
 const lastUpdatedEl = document.getElementById('last-updated');
+const jupiterSwap = document.getElementById('jupiter-swap');
 
 // Initialize dashboard
 function initDashboard() {
     loadSettings();
     setupEventListeners();
     loadTradingViewWidget();
+    updateJupiterSwapTheme();
     fetchHNTPrice();
     startCountdowns();
 }
@@ -506,6 +541,7 @@ function loadTradingViewWidget() {
     
     // Explicitly set background color based on theme
     const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
+    const gridColor = currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb';
     
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
@@ -520,7 +556,7 @@ function loadTradingViewWidget() {
         "locale": currentLanguage === 'pl' ? 'pl' : 'en',
         "enable_publishing": false,
         "backgroundColor": bgColor,
-        "gridColor": currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb',
+        "gridColor": gridColor,
         "hide_top_toolbar": false,
         "hide_side_toolbar": false,
         "allow_symbol_change": true,
@@ -539,7 +575,11 @@ function loadTradingViewWidget() {
         "overrides": {
             "paneProperties.background": bgColor,
             "paneProperties.backgroundType": "solid",
-            "paneProperties.gridProperties.color": currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb'
+            "paneProperties.gridProperties.color": gridColor,
+            "mainSeriesProperties.candleStyle.upColor": "#29abe2",
+            "mainSeriesProperties.candleStyle.downColor": "#ff4d4f",
+            "mainSeriesProperties.candleStyle.borderUpColor": "#29abe2",
+            "mainSeriesProperties.candleStyle.borderDownColor": "#ff4d4f"
         },
         "hide_volume": true,
         "withdateranges": true,
@@ -554,6 +594,18 @@ function loadTradingViewWidget() {
     widgetContainer.appendChild(script);
     chartLoaded = true;
     updateLastUpdatedText();
+}
+
+function updateJupiterSwapTheme() {
+    if (!jupiterSwap) return;
+    
+    const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
+    const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333';
+    const moduleColor = currentTheme === 'dark' ? '#1e293b' : '#fff';
+    
+    jupiterSwap.setAttribute('background-color', bgColor);
+    jupiterSwap.setAttribute('primary-text-color', textColor);
+    jupiterSwap.setAttribute('module-color', moduleColor);
 }
 
 async function fetchHNTPrice() {
@@ -615,9 +667,10 @@ function toggleTheme() {
     document.body.classList.toggle('dark-mode');
     themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     
-    // Reload TradingView widget with new theme
+    // Reload TradingView widget and update Jupiter Swap with new theme
     chartLoaded = false;
     loadTradingViewWidget();
+    updateJupiterSwapTheme();
 }
 
 function toggleLanguage() {
