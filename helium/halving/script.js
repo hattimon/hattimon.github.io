@@ -6,7 +6,7 @@ const translations = {
     },
     "price-chart": {
         "en": "HNT Price Chart",
-        "pl": "Wykres cen HNT"
+        "pl": "Wykres ceny HNT"
     },
     "halving-info": {
         "en": "Halving Information",
