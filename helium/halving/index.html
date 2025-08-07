@@ -6,7 +6,6 @@
     <title>Helium (HNT) Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
     <div class="container">
@@ -14,8 +13,8 @@
             <div class="header-left">
                 <h1 data-translate="title">Helium (HNT) Dashboard</h1>
                 <div class="tooltip">
-                    <small data-translate="last-updated">Last updated: <span id="last-updated">Just now</span></small>
-                    <span class="tooltiptext" data-translate="update-tooltip">Live market data</span>
+                    <small data-translate="last-updated">Last updated: <span id="last-updated">Loading...</span></small>
+                    <span class="tooltiptext" data-translate="update-tooltip">Data updates every minute</span>
                 </div>
             </div>
             <div class="controls">
@@ -34,11 +33,13 @@
 
         <section class="chart-section">
             <h2 data-translate="price-chart">HNT Price Chart</h2>
-            <div class="chart-wrapper">
-                <div class="chart-container" id="cmc-chart-container"></div>
-            </div>
-            <div class="chart-source">
-                <small>Live data from CoinMarketCap | HNT/USD</small>
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget"></div>
+                <div class="tradingview-widget-copyright">
+                    <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+                        <span class="blue-text">Track all markets on TradingView</span>
+                    </a>
+                </div>
             </div>
         </section>
 
@@ -115,6 +116,7 @@
         <source src="bg.mp3" type="audio/mpeg">
     </audio>
 
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
     <script src="script.js"></script>
 </body>
-</html>
+</html> 
