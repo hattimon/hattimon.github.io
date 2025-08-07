@@ -6,6 +6,7 @@
     <title>Helium (HNT) Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
 <body>
     <div class="container">
@@ -33,14 +34,11 @@
 
         <section class="chart-section">
             <h2 data-translate="price-chart">HNT Price Chart</h2>
-            <div class="chart-container">
-                <canvas id="priceChart"></canvas>
+            <div class="chart-container" id="cmc-chart-container">
+                <div class="loader" id="chart-loader"></div>
             </div>
-            <div class="chart-controls">
-                <button id="chart-1m" class="btn btn-outline">1M</button>
-                <button id="chart-3m" class="btn btn-outline">3M</button>
-                <button id="chart-1y" class="btn btn-outline">1Y</button>
-                <button id="chart-all" class="btn">All</button>
+            <div class="chart-source">
+                <small>Data provided by CoinMarketCap</small>
             </div>
         </section>
 
@@ -88,39 +86,35 @@
                 </div>
             </div>
 
-    <div class="history-container">
-        <div class="history-panel">
-            <h3 data-translate="halving-history">Halving History</h3>
-            <ul>
-                <li>2019: 60M HNT</li>
-                <li>2021-08-01: 60M HNT</li>
-                <li>2023-08-01: 30M HNT</li>
-                <li>2025-08-01: 15M HNT</li>
-                <li>2027-08-01: 7.5M HNT</li>
-            </ul>
-        </div>
+            <div class="history-container">
+                <div class="history-panel">
+                    <h3 data-translate="halving-history">Halving History</h3>
+                    <ul>
+                        <li>2019: 60M HNT</li>
+                        <li>2021-08-01: 60M HNT</li>
+                        <li>2023-08-01: 30M HNT</li>
+                        <li>2025-08-01: 15M HNT</li>
+                        <li>2027-08-01: 7.5M HNT</li>
+                    </ul>
+                </div>
 
-        <div class="history-panel">
-            <h3 data-translate="reward-history">Block Reward History</h3>
-            <ul>
-                <li>Pre-2021: 5M HNT/month</li>
-                <li>Post-2021: 2.5M HNT/month</li>
-                <li>Post-2023: 1.25M HNT/month</li>
-                <li>Post-2025: 625k HNT/month (current)</li>
-            </ul>
-        </div>
-    </div>
-</section>
-        
+                <div class="history-panel">
+                    <h3 data-translate="reward-history">Block Reward History</h3>
+                    <ul>
+                        <li>Pre-2021: 5M HNT/month</li>
+                        <li>Post-2021: 2.5M HNT/month</li>
+                        <li>Post-2023: 1.25M HNT/month</li>
+                        <li>Post-2025: 625k HNT/month (current)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
     </div>
 
     <audio id="bg-music" loop>
         <source src="bg.mp3" type="audio/mpeg">
     </audio>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/pl.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
