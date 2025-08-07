@@ -66,10 +66,17 @@ const translations = {
     }
 };
 
-// Initialize with dark mode by default
-let currentLanguage = localStorage.getItem('hnt-lang') || 'en';
-let currentTheme = localStorage.getItem('hnt-theme') || 'dark';
-let currentChartRange = localStorage.getItem('hnt-chart-range') || 'all';
+// Current settings
+let currentLanguage = 'en';
+let currentTheme = 'light';
+let currentChartRange = 'all';
+let priceChart;
+let chartData = {
+    all: null,
+    '1y': null,
+    '3m': null,
+    '1m': null
+};
 
 // DOM elements
 const themeToggle = document.getElementById('theme-toggle');
@@ -83,96 +90,38 @@ const chart3mBtn = document.getElementById('chart-3m');
 const chart1yBtn = document.getElementById('chart-1y');
 const chartAllBtn = document.getElementById('chart-all');
 
-// Chart data
-let priceChart;
-let chartData = {
-    all: null,
-    '1y': null,
-    '3m': null,
-    '1m': null
-};
-
 // Initialize dashboard
 function initDashboard() {
-    // Apply saved settings
-    applyTheme();
-    applyTranslations();
-    
-    // Set up event listeners
-    themeToggle.addEventListener('click', toggleTheme);
-    languageToggle.addEventListener('click', toggleLanguage);
-    soundToggle.addEventListener('click', toggleSound);
-    
-    // Chart controls
-    chart1mBtn.addEventListener('click', () => updateChartRange('1m'));
-    chart3mBtn.addEventListener('click', () => updateChartRange('3m'));
-    chart1yBtn.addEventListener('click', () => updateChartRange('1y'));
-    chartAllBtn.addEventListener('click', () => updateChartRange('all'));
-    
-    // Background music
-    bgMusic.volume = 0.3;
-    bgMusic.play().catch(e => console.log("Autoplay prevented:", e));
-    
-    // Initialize chart
+    loadSettings();
     initChart();
-    
-    // Load data
+    setupEventListeners();
     loadData();
+    startBackgroundTasks();
+}
+
+function loadSettings() {
+    // Load theme
+    const savedTheme = localStorage.getItem('hnt-theme');
+    if (savedTheme) {
+        currentTheme = savedTheme;
+        document.body.classList.toggle('dark-mode', currentTheme === 'dark');
+        updateThemeIcon();
+    }
     
-    // Update countdowns
-    updateCountdowns();
-    setInterval(updateCountdowns, 1000);
-}
-
-// Theme management
-function applyTheme() {
-    if (currentTheme === 'dark') {
-        document.body.classList.add('dark-mode');
-        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-    } else {
-        document.body.classList.remove('dark-mode');
-        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+    // Load language
+    const savedLang = localStorage.getItem('hnt-lang');
+    if (savedLang) {
+        currentLanguage = savedLang;
+        applyTranslations();
+    }
+    
+    // Load chart range
+    const savedRange = localStorage.getItem('hnt-chart-range');
+    if (savedRange) {
+        currentChartRange = savedRange;
     }
 }
 
-function toggleTheme() {
-    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('hnt-theme', currentTheme);
-    applyTheme();
-    updateChartColors();
-}
-
-// Language management
-function applyTranslations() {
-    document.querySelectorAll('[data-translate]').forEach(element => {
-        const key = element.getAttribute('data-translate');
-        if (translations[key]) {
-            element.textContent = translations[key][currentLanguage];
-        }
-    });
-    languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
-}
-
-function toggleLanguage() {
-    currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
-    localStorage.setItem('hnt-lang', currentLanguage);
-    applyTranslations();
-    moment.locale(currentLanguage);
-    updateLastUpdatedText();
-}
-
-// Sound management
-function toggleSound() {
-    if (bgMusic.paused) {
-        bgMusic.play();
-        soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
-    } else {
-        bgMusic.pause();
-        soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
-    }
-}
-
-// Chart initialization
 function initChart() {
     priceChart = new Chart(priceChartCtx, {
         type: 'line',
@@ -243,83 +192,53 @@ function initChart() {
     });
 }
 
-function updateChartColors() {
-    if (priceChart) {
-        priceChart.update();
-    }
+function setupEventListeners() {
+    themeToggle.addEventListener('click', toggleTheme);
+    languageToggle.addEventListener('click', toggleLanguage);
+    soundToggle.addEventListener('click', toggleSound);
+    
+    chart1mBtn.addEventListener('click', () => updateChartRange('1m'));
+    chart3mBtn.addEventListener('click', () => updateChartRange('3m'));
+    chart1yBtn.addEventListener('click', () => updateChartRange('1y'));
+    chartAllBtn.addEventListener('click', () => updateChartRange('all'));
 }
 
-// Data loading
 function loadData() {
-    // Try to load from cache first
+    // Try cache first
     const cachedData = localStorage.getItem('hnt-cached-data');
-    const cachedTime = localStorage.getItem('hnt-cached-time');
-    
-    if (cachedData && cachedTime) {
-        const data = JSON.parse(cachedData);
-        processData(data);
-        updateLastUpdatedText(new Date(parseInt(cachedTime)));
-    } else {
-        // Load fallback if no cache
-        loadFallbackData();
+    if (cachedData) {
+        processData(JSON.parse(cachedData));
+        return;
     }
     
-    // Fetch fresh data in background
-    fetchFreshData();
-}
-
-function fetchFreshData() {
-    fetch('https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=max')
-        .then(response => response.json())
-        .then(data => {
-            localStorage.setItem('hnt-cached-data', JSON.stringify(data));
-            localStorage.setItem('hnt-cached-time', Date.now().toString());
-            processData(data);
-            updateLastUpdatedText();
-        })
-        .catch(error => {
-            console.error('Error fetching fresh data:', error);
-        });
-}
-
-function loadFallbackData() {
+    // Then fallback
     fetch('hnt_fallback_data.json')
         .then(response => response.json())
-        .then(data => {
-            processData(data);
-            updateLastUpdatedText(new Date(0)); // Very old data
-        })
+        .then(data => processData(data))
         .catch(error => {
-            console.error('Error loading fallback data:', error);
-            // Generate basic mock data as last resort
+            console.error("Error loading fallback data:", error);
             processData(generateMockData());
-            updateLastUpdatedText(new Date(0));
         });
 }
 
 function processData(data) {
     if (!data?.prices) return;
     
+    // Update last point to current date
     const now = Date.now();
-    chartData = {
-        all: data,
-        '1y': filterData(data, now - 365 * 86400000),
-        '3m': filterData(data, now - 90 * 86400000),
-        '1m': filterData(data, now - 30 * 86400000)
-    };
+    if (data.prices.length > 0) {
+        data.prices[data.prices.length - 1][0] = now;
+    }
+    
+    // Process ranges
+    chartData.all = data;
+    chartData['1y'] = filterData(data, now - 365 * 86400000);
+    chartData['3m'] = filterData(data, now - 90 * 86400000);
+    chartData['1m'] = filterData(data, now - 30 * 86400000);
     
     updateChartRange(currentChartRange);
-    
-    // Update price displays
-    const currentPrice = data.prices[data.prices.length - 1][1];
-    document.getElementById('current-price').textContent = `${currentPrice.toFixed(2)} USD`;
-    
-    const marketCap = (186011619 * currentPrice).toLocaleString('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0
-    });
-    document.getElementById('market-cap').textContent = marketCap;
+    updatePriceDisplays(data.prices[data.prices.length - 1][1]);
+    updateLastUpdatedText();
 }
 
 function filterData(data, minTime) {
@@ -329,7 +248,7 @@ function filterData(data, minTime) {
 }
 
 function updateChartRange(range) {
-    if (!chartData[range]?.prices?.length) return;
+    if (!chartData[range]) return;
     
     currentChartRange = range;
     localStorage.setItem('hnt-chart-range', range);
@@ -342,7 +261,7 @@ function updateChartRange(range) {
     document.getElementById(`chart-${range}`).classList.remove('btn-outline');
     document.getElementById(`chart-${range}`).classList.add('btn');
     
-    // Format labels based on range
+    // Format labels
     let dateFormat;
     if (range === '1m' || range === '3m') dateFormat = 'MMM D';
     else dateFormat = 'MMM YYYY';
@@ -352,6 +271,30 @@ function updateChartRange(range) {
     );
     priceChart.data.datasets[0].data = chartData[range].prices.map(entry => entry[1]);
     priceChart.update();
+}
+
+function updatePriceDisplays(price) {
+    document.getElementById('current-price').textContent = `${price.toFixed(2)} USD`;
+    
+    const marketCap = (186011619 * price).toLocaleString('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0
+    });
+    document.getElementById('market-cap').textContent = marketCap;
+}
+
+function fetchFreshData() {
+    fetch('https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=max')
+        .then(response => response.json())
+        .then(data => {
+            localStorage.setItem('hnt-cached-data', JSON.stringify(data));
+            localStorage.setItem('hnt-cached-time', Date.now().toString());
+            processData(data);
+        })
+        .catch(error => {
+            console.error('Error fetching fresh data:', error);
+        });
 }
 
 function generateMockData() {
@@ -374,6 +317,47 @@ function generateMockData() {
     return { prices };
 }
 
+function toggleTheme() {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.body.classList.toggle('dark-mode');
+    updateThemeIcon();
+    localStorage.setItem('hnt-theme', currentTheme);
+    priceChart.update();
+}
+
+function updateThemeIcon() {
+    themeToggle.innerHTML = currentTheme === 'dark' ? 
+        '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+}
+
+function toggleLanguage() {
+    currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
+    localStorage.setItem('hnt-lang', currentLanguage);
+    applyTranslations();
+    moment.locale(currentLanguage);
+    updateLastUpdatedText();
+}
+
+function applyTranslations() {
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        if (translations[key]) {
+            element.textContent = translations[key][currentLanguage];
+        }
+    });
+    languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
+}
+
+function toggleSound() {
+    if (bgMusic.paused) {
+        bgMusic.play();
+        soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+    } else {
+        bgMusic.pause();
+        soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+    }
+}
+
 function updateCountdowns() {
     const lastHalving = moment('2025-08-01');
     const nextHalving = moment('2027-08-01');
@@ -390,6 +374,11 @@ function updateCountdowns() {
 
 function updateLastUpdatedText(date = new Date()) {
     lastUpdatedEl.textContent = moment(date).format('LLLL');
+}
+
+function startBackgroundTasks() {
+    setInterval(fetchFreshData, 60000);
+    setInterval(updateCountdowns, 1000);
 }
 
 // Initialize
