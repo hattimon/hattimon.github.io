@@ -291,6 +291,14 @@ jup-swap {
     box-shadow: var(--shadow);
 }
 
+.swap-fallback {
+    display: none;
+    color: var(--text-color);
+    text-align: center;
+    padding: 20px;
+    font-size: 1rem;
+}
+
 @media (max-width: 768px) {
     .tradingview-widget-container {
         height: 300px;
@@ -369,6 +377,9 @@ jup-swap {
                 module-color="#1e293b"
                 id="jupiter-swap"
             ></jup-swap>
+            <div class="swap-fallback" id="jupiter-swap-fallback">
+                Unable to load Jupiter Swap. Please ensure you are connected to the internet and try refreshing the page. For support, visit <a href="https://discord.gg/jup" target="_blank">Jupiter's Discord</a>.
+            </div>
         </section>
 
         <section class="halving-section">
@@ -439,10 +450,6 @@ jup-swap {
             </div>
         </section>
     </div>
-
-    <audio id="bg-music" loop>
-        <source src="bg.mp3" type="audio/mpeg">
-    </audio>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/pl.min.js"></script>
@@ -526,9 +533,9 @@ jup-swap {
         const themeToggle = document.getElementById('theme-toggle');
         const languageToggle = document.getElementById('language-toggle');
         const soundToggle = document.getElementById('sound-toggle');
-        const bgMusic = document.getElementById('bg-music');
         const lastUpdatedEl = document.getElementById('last-updated');
         const jupiterSwap = document.getElementById('jupiter-swap');
+        const jupiterSwapFallback = document.getElementById('jupiter-swap-fallback');
 
         // Initialize dashboard
         function initDashboard() {
@@ -536,6 +543,7 @@ jup-swap {
             setupEventListeners();
             loadTradingViewWidget();
             updateJupiterSwapTheme();
+            checkJupiterSwapLoaded();
             fetchHNTPrice();
             startCountdowns();
         }
@@ -617,6 +625,20 @@ jup-swap {
             jupiterSwap.setAttribute('module-color', moduleColor);
         }
 
+        function checkJupiterSwapLoaded() {
+            if (!jupiterSwap || !window.customElements.get('jup-swap')) {
+                console.error('Jupiter Swap failed to load. Ensure the script from https://plugin.jup.ag/swap.js is accessible.');
+                if (jupiterSwapFallback) {
+                    jupiterSwapFallback.style.display = 'block';
+                }
+            } else {
+                console.log('Jupiter Swap loaded successfully.');
+                if (jupiterSwapFallback) {
+                    jupiterSwapFallback.style.display = 'none';
+                }
+            }
+        }
+
         async function fetchHNTPrice() {
             try {
                 const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd&include_market_cap=true');
@@ -666,12 +688,6 @@ jup-swap {
             themeToggle.addEventListener('click', toggleTheme);
             languageToggle.addEventListener('click', toggleLanguage);
             soundToggle.addEventListener('click', toggleSound);
-
-            // Background music
-            if (bgMusic) {
-                bgMusic.volume = 0.3;
-                bgMusic.play().catch(e => console.log("Autoplay prevented:", e));
-            }
         }
 
         function toggleTheme() {
@@ -683,6 +699,7 @@ jup-swap {
             chartLoaded = false;
             loadTradingViewWidget();
             updateJupiterSwapTheme();
+            checkJupiterSwapLoaded();
         }
 
         function toggleLanguage() {
@@ -707,15 +724,9 @@ jup-swap {
         }
 
         function toggleSound() {
-            if (!bgMusic) return;
-
-            if (bgMusic.paused) {
-                bgMusic.play();
-                soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
-            } else {
-                bgMusic.pause();
-                soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
-            }
+            // Audio disabled for GitHub Pages compatibility
+            console.log('Audio toggle not supported in this environment.');
+            soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
         }
 
         function updateCountdowns() {
