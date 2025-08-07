@@ -67,8 +67,9 @@ const translations = {
 };
 
 // Initialize with dark mode by default
-let currentLanguage = 'en';
-let currentTheme = 'dark';
+let currentLanguage = localStorage.getItem('hnt-lang') || 'en';
+let currentTheme = localStorage.getItem('hnt-theme') || 'dark';
+let currentChartRange = localStorage.getItem('hnt-chart-range') || 'all';
 
 // DOM elements
 const themeToggle = document.getElementById('theme-toggle');
@@ -76,7 +77,6 @@ const languageToggle = document.getElementById('language-toggle');
 const soundToggle = document.getElementById('sound-toggle');
 const bgMusic = document.getElementById('bg-music');
 const priceChartCtx = document.getElementById('priceChart').getContext('2d');
-const chartLoader = document.getElementById('chart-loader');
 const lastUpdatedEl = document.getElementById('last-updated');
 const chart1mBtn = document.getElementById('chart-1m');
 const chart3mBtn = document.getElementById('chart-3m');
@@ -91,17 +91,12 @@ let chartData = {
     '3m': null,
     '1m': null
 };
-let currentChartRange = 'all';
 
-// Initialize dashboard with dark mode
+// Initialize dashboard
 function initDashboard() {
-    // Force dark mode on first load
-    document.body.classList.add('dark-mode');
-    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-    localStorage.setItem('hnt-theme', 'dark');
-
-    // Load cached data immediately
-    loadCachedData();
+    // Apply saved settings
+    applyTheme();
+    applyTranslations();
     
     // Set up event listeners
     themeToggle.addEventListener('click', toggleTheme);
@@ -121,72 +116,33 @@ function initDashboard() {
     // Initialize chart
     initChart();
     
-    // Start data updates
-    updateData();
-    setInterval(updateData, 60000); // Update every minute
+    // Load data
+    loadData();
     
     // Update countdowns
     updateCountdowns();
     setInterval(updateCountdowns, 1000);
 }
 
-// Load cached data
-function loadCachedData() {
-    const cachedData = localStorage.getItem('hnt-cached-data');
-    const cachedTimestamp = localStorage.getItem('hnt-cached-timestamp');
-    
-    if (cachedData && cachedTimestamp) {
-        const data = JSON.parse(cachedData);
-        const timestamp = parseInt(cachedTimestamp);
-        updateChart(data, currentChartRange, false);
-        updateLastUpdatedText(new Date(timestamp));
-        return true;
-    }
-    return false;
-}
-
-// Save data to cache
-function saveDataToCache(data) {
-    localStorage.setItem('hnt-cached-data', JSON.stringify(data));
-    localStorage.setItem('hnt-cached-timestamp', Date.now().toString());
-}
-
-// Toggle dark/light mode
-function toggleTheme() {
-    if (currentTheme === 'light') {
-        enableDarkMode();
+// Theme management
+function applyTheme() {
+    if (currentTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
     } else {
-        disableDarkMode();
+        document.body.classList.remove('dark-mode');
+        themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
     }
 }
 
-function enableDarkMode() {
-    document.body.classList.add('dark-mode');
-    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-    currentTheme = 'dark';
-    localStorage.setItem('hnt-theme', 'dark');
+function toggleTheme() {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('hnt-theme', currentTheme);
+    applyTheme();
     updateChartColors();
 }
 
-function disableDarkMode() {
-    document.body.classList.remove('dark-mode');
-    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-    currentTheme = 'light';
-    localStorage.setItem('hnt-theme', 'light');
-    updateChartColors();
-}
-
-// Toggle language
-function toggleLanguage() {
-    currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
-    languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
-    applyTranslations();
-    localStorage.setItem('hnt-lang', currentLanguage);
-    moment.locale(currentLanguage);
-    updateLastUpdatedText();
-}
-
-// Apply translations
+// Language management
 function applyTranslations() {
     document.querySelectorAll('[data-translate]').forEach(element => {
         const key = element.getAttribute('data-translate');
@@ -194,9 +150,18 @@ function applyTranslations() {
             element.textContent = translations[key][currentLanguage];
         }
     });
+    languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
 }
 
-// Toggle sound
+function toggleLanguage() {
+    currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
+    localStorage.setItem('hnt-lang', currentLanguage);
+    applyTranslations();
+    moment.locale(currentLanguage);
+    updateLastUpdatedText();
+}
+
+// Sound management
 function toggleSound() {
     if (bgMusic.paused) {
         bgMusic.play();
@@ -207,7 +172,7 @@ function toggleSound() {
     }
 }
 
-// Initialize chart
+// Chart initialization
 function initChart() {
     priceChart = new Chart(priceChartCtx, {
         type: 'line',
@@ -278,40 +243,72 @@ function initChart() {
     });
 }
 
-// Update chart colors based on theme
 function updateChartColors() {
     if (priceChart) {
-        priceChart.options.scales.x.ticks.color = getComputedStyle(document.body).getPropertyValue('--text-color');
-        priceChart.options.scales.y.ticks.color = getComputedStyle(document.body).getPropertyValue('--text-color');
-        priceChart.options.scales.x.title.color = getComputedStyle(document.body).getPropertyValue('--text-color');
-        priceChart.options.scales.y.title.color = getComputedStyle(document.body).getPropertyValue('--text-color');
-        priceChart.options.scales.x.grid.color = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-        priceChart.options.scales.y.grid.color = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-        priceChart.options.plugins.legend.labels.color = getComputedStyle(document.body).getPropertyValue('--text-color');
-        priceChart.options.plugins.tooltip.backgroundColor = currentTheme === 'dark' ? '#1e293b' : '#fff';
-        priceChart.options.plugins.tooltip.titleColor = currentTheme === 'dark' ? '#29abe2' : '#1a3e72';
-        priceChart.options.plugins.tooltip.bodyColor = getComputedStyle(document.body).getPropertyValue('--text-color');
-        priceChart.options.plugins.tooltip.borderColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
         priceChart.update();
     }
 }
 
-// Update chart data
-function updateChart(data, range = 'all', saveCache = true) {
+// Data loading
+function loadData() {
+    // Try to load from cache first
+    const cachedData = localStorage.getItem('hnt-cached-data');
+    const cachedTime = localStorage.getItem('hnt-cached-time');
+    
+    if (cachedData && cachedTime) {
+        const data = JSON.parse(cachedData);
+        processData(data);
+        updateLastUpdatedText(new Date(parseInt(cachedTime)));
+    } else {
+        // Load fallback if no cache
+        loadFallbackData();
+    }
+    
+    // Fetch fresh data in background
+    fetchFreshData();
+}
+
+function fetchFreshData() {
+    fetch('https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=max')
+        .then(response => response.json())
+        .then(data => {
+            localStorage.setItem('hnt-cached-data', JSON.stringify(data));
+            localStorage.setItem('hnt-cached-time', Date.now().toString());
+            processData(data);
+            updateLastUpdatedText();
+        })
+        .catch(error => {
+            console.error('Error fetching fresh data:', error);
+        });
+}
+
+function loadFallbackData() {
+    fetch('hnt_fallback_data.json')
+        .then(response => response.json())
+        .then(data => {
+            processData(data);
+            updateLastUpdatedText(new Date(0)); // Very old data
+        })
+        .catch(error => {
+            console.error('Error loading fallback data:', error);
+            // Generate basic mock data as last resort
+            processData(generateMockData());
+            updateLastUpdatedText(new Date(0));
+        });
+}
+
+function processData(data) {
     if (!data?.prices) return;
     
-    if (saveCache) saveDataToCache(data);
-    
-    // Store filtered data
     const now = Date.now();
     chartData = {
         all: data,
-        '1y': { prices: data.prices.filter(entry => entry[0] >= now - 365 * 86400000) },
-        '3m': { prices: data.prices.filter(entry => entry[0] >= now - 90 * 86400000) },
-        '1m': { prices: data.prices.filter(entry => entry[0] >= now - 30 * 86400000) }
+        '1y': filterData(data, now - 365 * 86400000),
+        '3m': filterData(data, now - 90 * 86400000),
+        '1m': filterData(data, now - 30 * 86400000)
     };
     
-    updateChartRange(range);
+    updateChartRange(currentChartRange);
     
     // Update price displays
     const currentPrice = data.prices[data.prices.length - 1][1];
@@ -323,71 +320,40 @@ function updateChart(data, range = 'all', saveCache = true) {
         maximumFractionDigits: 0
     });
     document.getElementById('market-cap').textContent = marketCap;
-    
-    updateLastUpdatedText();
 }
 
-// Update chart range
+function filterData(data, minTime) {
+    return {
+        prices: data.prices.filter(entry => entry[0] >= minTime)
+    };
+}
+
 function updateChartRange(range) {
-    if (!chartData[range]) return;
+    if (!chartData[range]?.prices?.length) return;
     
     currentChartRange = range;
+    localStorage.setItem('hnt-chart-range', range);
     
     // Update active button
     [chart1mBtn, chart3mBtn, chart1yBtn, chartAllBtn].forEach(btn => {
         btn.classList.remove('btn');
         btn.classList.add('btn-outline');
     });
-    document.getElementById(`chart-${range}`).classList.add('btn');
     document.getElementById(`chart-${range}`).classList.remove('btn-outline');
+    document.getElementById(`chart-${range}`).classList.add('btn');
     
-    // Format data
-    const data = chartData[range];
-    const labels = data.prices.map(entry => moment(entry[0]).format(
-        range === 'all' ? 'MMM YYYY' : 'MMM D'
-    ));
+    // Format labels based on range
+    let dateFormat;
+    if (range === '1m' || range === '3m') dateFormat = 'MMM D';
+    else dateFormat = 'MMM YYYY';
     
-    priceChart.data.labels = labels;
-    priceChart.data.datasets[0].data = data.prices.map(entry => entry[1]);
+    priceChart.data.labels = chartData[range].prices.map(entry => 
+        moment(entry[0]).format(dateFormat)
+    );
+    priceChart.data.datasets[0].data = chartData[range].prices.map(entry => entry[1]);
     priceChart.update();
 }
 
-// Fetch data from API
-async function updateData() {
-    try {
-        if (!loadCachedData()) {
-            chartLoader.style.display = 'block';
-        }
-        
-        const response = await fetch('https://api.coingecko.com/api/v3/coins/helium/market_chart?vs_currency=usd&days=max');
-        const data = await response.json();
-        
-        if (!localStorage.getItem('hnt-cached-data') || JSON.stringify(data) !== localStorage.getItem('hnt-cached-data')) {
-            updateChart(data, currentChartRange);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        if (!loadCachedData()) {
-            const mockData = await fetchFallbackData();
-            updateChart(mockData, currentChartRange);
-        }
-    } finally {
-        chartLoader.style.display = 'none';
-    }
-}
-
-// Fallback data
-async function fetchFallbackData() {
-    try {
-        const response = await fetch('hnt_fallback_data.json');
-        return await response.json();
-    } catch (error) {
-        console.error('Fallback failed:', error);
-        return generateMockData();
-    }
-}
-
-// Generate mock data
 function generateMockData() {
     const prices = [];
     const now = Date.now();
@@ -408,7 +374,6 @@ function generateMockData() {
     return { prices };
 }
 
-// Update countdowns
 function updateCountdowns() {
     const lastHalving = moment('2025-08-01');
     const nextHalving = moment('2027-08-01');
@@ -423,7 +388,6 @@ function updateCountdowns() {
         `${to.days()}d ${to.hours()}h ${to.minutes()}m ${to.seconds()}s`;
 }
 
-// Update timestamp
 function updateLastUpdatedText(date = new Date()) {
     lastUpdatedEl.textContent = moment(date).format('LLLL');
 }
