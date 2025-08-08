@@ -3,91 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TradingView Dark Mode Auto</title>
+    <title>TradingView Dark Mode</title>
     <style>
         body {
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #121212;
+            color: #fff;
+            transition: background 0.3s, color 0.3s;
+        }
+        body.light-mode {
+            background-color: #f5f5f5;
+            color: #000;
+        }
+        header {
+            padding: 10px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            background: #444;
+            border: none;
             color: white;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        body.light {
-            background-color: white;
-            color: black;
-        }
-        #themeToggle {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: 1px solid currentColor;
-            padding: 5px 10px;
             cursor: pointer;
             border-radius: 5px;
         }
-        #chart-container {
-            height: 100vh;
+        body.light-mode button {
+            background: #ddd;
+            color: black;
+        }
+        #tradingview {
+            height: 500px;
+            width: 100%;
         }
     </style>
 </head>
 <body>
-    <button id="themeToggle">🌙</button>
-    <div id="chart-container"></div>
+    <header>
+        <h1>TradingView - Tryb Ciemny Domyślny</h1>
+        <button onclick="toggleTheme()">Przełącz Tryb</button>
+    </header>
+    <div id="tradingview"></div>
 
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
-        let currentTheme = "dark"; // domyślnie ciemny
+        let isDark = true; // domyślny tryb ciemny
 
-        function createTradingViewChart(theme) {
-            document.getElementById("chart-container").innerHTML = ""; // czyścimy poprzedni wykres
+        function loadTradingView() {
+            document.getElementById("tradingview").innerHTML = ""; // wyczyść stary wykres
             new TradingView.widget({
-                "container_id": "chart-container",
+                "container_id": "tradingview",
                 "autosize": true,
-                "symbol": "BTCUSDT",
-                "interval": "D",
+                "symbol": "BINANCE:BTCUSDT",
+                "interval": "60",
                 "timezone": "Etc/UTC",
-                "theme": theme,
+                "theme": isDark ? "dark" : "light",
                 "style": "1",
                 "locale": "pl",
-                "toolbar_bg": theme === "dark" ? "#131722" : "#f1f3f6",
                 "enable_publishing": false,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true
+                "hide_top_toolbar": false,
+                "hide_legend": false
             });
         }
 
-        // Funkcja zmiany motywu
         function toggleTheme() {
-            if (currentTheme === "dark") {
-                currentTheme = "light";
-                document.body.classList.add("light");
-            } else {
-                currentTheme = "dark";
-                document.body.classList.remove("light");
-            }
-            createTradingViewChart(currentTheme);
-            localStorage.setItem("theme", currentTheme);
+            isDark = !isDark;
+            document.body.classList.toggle("light-mode", !isDark);
+            loadTradingView();
         }
 
-        document.getElementById("themeToggle").addEventListener("click", toggleTheme);
-
-        // Wykrywanie ustawień przeglądarki
-        const savedTheme = localStorage.getItem("theme");
-        if (savedTheme) {
-            currentTheme = savedTheme;
-            if (savedTheme === "light") {
-                document.body.classList.add("light");
-            }
-        } else {
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-                currentTheme = "light";
-                document.body.classList.add("light");
-            }
-        }
-
-        // Start z aktualnym motywem
-        createTradingViewChart(currentTheme);
+        // Załaduj wykres przy starcie w trybie ciemnym
+        window.onload = loadTradingView;
     </script>
 </body>
 </html>
