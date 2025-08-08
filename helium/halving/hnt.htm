@@ -1,899 +1,949 @@
-<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Helium (HNT) Dashboard</title> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet"> <script src="https://terminal.jup.ag/main-v4.js" data-preload></script> <style> :root { --primary-color: #29abe2; --primary-hover: #4fbce8; --secondary-color: #1a3e72; --text-color: #333; --text-inverse: #f0f0f0; --background-color: #f5f7fa; --card-bg: #fff; --card-bg-dark: #1e293b; --shadow: 0 4px 6px rgba(0, 0, 0, 0.1); --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.2); --transition: all 0.3s ease; }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helium (HNT) Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://terminal.jup.ag/main-v4.js" data-preload></script>
+    <style>
+:root {
+    --primary-color: #29abe2;
+    --primary-hover: #4fbce8;
+    --secondary-color: #1a3e72;
+    --text-color: #333;
+    --text-inverse: #f0f0f0;
+    --background-color: #f5f7fa;
+    --card-bg: #fff;
+    --card-bg-dark: #1e293b;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.2);
+    --transition: all 0.3s ease;
+}
+
 .dark-mode {
---text-color: #f0f0f0;
---background-color: #0f172a;
---card-bg: #1e293b;
---shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --text-color: #f0f0f0;
+    --background-color: #0f172a;
+    --card-bg: #1e293b;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 body {
-font-family: 'Orbitron', sans-serif;
-background-color: var(--background-color);
-color: var(--text-color);
-margin: 0;
-padding: 0;
-line-height: 1.6;
-transition: var(--transition);
+    font-family: 'Orbitron', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    transition: var(--transition);
 }
 
 .container {
-max-width: 1200px;
-margin: 0 auto;
-padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
 header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-margin-bottom: 30px;
-padding-bottom: 15px;
-border-bottom: 2px solid var(--primary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--primary-color);
 }
 
 h1, h2, h3 {
-color: var(--primary-color);
-margin-top: 0;
+    color: var(--primary-color);
+    margin-top: 0;
 }
 
 .controls {
-display: flex;
-gap: 10px;
-align-items: center;
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 
 .btn {
-background-color: var(--primary-color);
-color: white;
-border: none;
-padding: 8px 15px;
-border-radius: 5px;
-cursor: pointer;
-font-weight: bold;
-transition: var(--transition);
-display: flex;
-align-items: center;
-gap: 5px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .btn:hover {
-background-color: var(--primary-hover);
-transform: translateY(-2px);
-box-shadow: var(--shadow-hover);
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
 }
 
 .btn-outline {
-background-color: transparent;
-border: 2px solid var(--primary-color);
-color: var(--primary-color);
+    background-color: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
 }
 
 .btn-outline:hover {
-background-color: var(--primary-color);
-color: white;
+    background-color: var(--primary-color);
+    color: white;
 }
 
 .chart-section, .halving-section, .swap-section, .helium-info {
-background-color: var(--card-bg);
-border-radius: 10px;
-padding: 20px;
-margin-bottom: 30px;
-box-shadow: var(--shadow);
-transition: var(--transition);
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
 }
 
 .chart-section:hover, .halving-section:hover, .swap-section:hover, .helium-info:hover {
-transform: translateY(-5px);
-box-shadow: var(--shadow-hover);
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
 }
 
 .tradingview-widget-container {
-height: 500px;
-width: 100%;
-border-radius: 20px;
-overflow: hidden;
-margin-bottom: 20px;
-background: transparent;
-position: relative;
-border: 1px solid rgba(41, 171, 226, 0.2);
-box-shadow: var(--shadow);
+    height: 500px;
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    background: transparent;
+    position: relative;
+    border: 1px solid rgba(41, 171, 226, 0.2);
+    box-shadow: var(--shadow);
 }
 
 .tradingview-widget-container::before {
-content: '';
-position: absolute;
-top: -10px;
-left: -10px;
-right: -10px;
-bottom: -10px;
-background: inherit;
-z-index: -1;
-filter: blur(10px);
-opacity: 0.7;
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background: inherit;
+    z-index: -1;
+    filter: blur(10px);
+    opacity: 0.7;
 }
 
 .tradingview-widget-container__widget {
-height: 100%;
-width: 100%;
+    height: 100%;
+    width: 100%;
 }
 
 .tradingview-widget-copyright {
-font-size: 0.7rem;
-text-align: right;
-padding-right: 10px;
-color: var(--text-color);
-opacity: 0.7;
-transition: var(--transition);
+    font-size: 0.7rem;
+    text-align: right;
+    padding-right: 10px;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: var(--transition);
 }
 
 .tradingview-widget-copyright:hover {
-opacity: 1;
+    opacity: 1;
 }
 
 .blue-text {
-color: var(--primary-color);
+    color: var(--primary-color);
 }
 
 .halving-container {
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-gap: 20px;
-margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
 }
 
 .halving-stats {
-background-color: rgba(41, 171, 226, 0.1);
-padding: 20px;
-border-radius: 8px;
-transition: var(--transition);
-border-left: 4px solid var(--primary-color);
+    background-color: rgba(41, 171, 226, 0.1);
+    padding: 20px;
+    border-radius: 8px;
+    transition: var(--transition);
+    border-left: 4px solid var(--primary-color);
 }
 
 .halving-stats:hover {
-transform: translateY(-3px);
-box-shadow: var(--shadow-hover);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
 }
 
 .stat {
-margin-bottom: 15px;
-display: flex;
-justify-content: space-between;
-padding: 8px 0;
-border-bottom: 1px dashed rgba(41, 171, 226, 0.3);
-transition: var(--transition);
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(41, 171, 226, 0.3);
+    transition: var(--transition);
 }
 
 .stat:hover {
-background-color: rgba(41, 171, 226, 0.05);
-padding-left: 5px;
+    background-color: rgba(41, 171, 226, 0.05);
+    padding-left: 5px;
 }
 
 .stat .value {
-font-weight: bold;
-color: var(--primary-color);
+    font-weight: bold;
+    color: var(--primary-color);
 }
 
 .history-container {
-display: flex;
-gap: 20px;
-margin-top: 20px;
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
 }
 
 .history-panel {
-flex: 1;
-background-color: rgba(26, 62, 114, 0.1);
-padding: 20px;
-border-radius: 8px;
-border-left: 4px solid var(--secondary-color);
-transition: var(--transition);
+    flex: 1;
+    background-color: rgba(26, 62, 114, 0.1);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid var(--secondary-color);
+    transition: var(--transition);
 }
 
 .history-panel:hover {
-transform: translateY(-3px);
-box-shadow: var(--shadow-hover);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
 }
 
 ul {
-padding-left: 20px;
+    padding-left: 20px;
 }
 
 li {
-margin-bottom: 8px;
-padding: 5px 0;
-transition: var(--transition);
+    margin-bottom: 8px;
+    padding: 5px 0;
+    transition: var(--transition);
 }
 
 li:hover {
-color: var(--primary-color);
-padding-left: 5px;
+    color: var(--primary-color);
+    padding-left: 5px;
 }
 
 .theme-toggle {
-background: none;
-border: none;
-font-size: 1.5rem;
-cursor: pointer;
-color: var(--text-color);
-transition: var(--transition);
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: var(--transition);
 }
 
 .theme-toggle:hover {
-color: var(--primary-color);
-transform: rotate(30deg);
+    color: var(--primary-color);
+    transform: rotate(30deg);
 }
 
 .tooltip {
-position: relative;
-display: inline-block;
+    position: relative;
+    display: inline-block;
 }
 
 .tooltip .tooltiptext {
-visibility: hidden;
-width: 200px;
-background-color: var(--card-bg-dark);
-color: var(--text-inverse);
-text-align: center;
-border-radius: 6px;
-padding: 5px;
-position: absolute;
-z-index: 1;
-bottom: 125%;
-left: 50%;
-transform: translateX(-50%);
-opacity: 0;
-transition: opacity 0.3s;
-box-shadow: var(--shadow);
-font-size: 0.9rem;
+    visibility: hidden;
+    width: 200px;
+    background-color: var(--card-bg-dark);
+    color: var(--text-inverse);
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    box-shadow: var(--shadow);
+    font-size: 0.9rem;
 }
 
 .tooltip:hover .tooltiptext {
-visibility: visible;
-opacity: 1;
+    visibility: visible;
+    opacity: 1;
 }
 
 .price-loading {
-color: var(--primary-color);
-animation: pulse 1.5s infinite;
+    color: var(--primary-color);
+    animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-0%, 100% { opacity: 1; }
-50% { opacity: 0.5; }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 .swap-frame {
-display: none;
-width: 260px;
-height: 360px;
-border-radius: 10px;
-overflow: hidden;
-border: 2px solid var(--primary-color);
-box-shadow: var(--shadow);
-transition: var(--transition);
-margin-top: 20px;
-background-color: var(--card-bg);
+    display: none;
+    width: 260px;
+    height: 360px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--primary-color);
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    margin-top: 20px;
+    background-color: var(--card-bg);
 }
 
 .swap-frame.active {
-display: block;
-animation: slideDown 0.3s ease-in-out;
+    display: block;
+    animation: slideDown 0.3s ease-in-out;
 }
 
 @keyframes slideDown {
-from { transform: translateY(-20px); opacity: 0; }
-to { transform: translateY(0); opacity: 1; }
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 jup-swap {
-width: 100%;
-height: 100%;
+    width: 100%;
+    height: 100%;
 }
 
 jup-button {
-display: inline-block;
-width: 50px;
-height: 50px;
-border-radius: 50%;
-background-color: var(--primary-color);
-color: white;
-cursor: pointer;
-transition: var(--transition);
-box-shadow: var(--shadow);
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 1.5rem;
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
 }
 
 jup-button:hover {
-background-color: var(--primary-hover);
-transform: scale(1.1);
-box-shadow: var(--shadow-hover);
+    background-color: var(--primary-hover);
+    transform: scale(1.1);
+    box-shadow: var(--shadow-hover);
 }
 
 .swap-container {
-display: flex;
-gap: 20px;
+    display: flex;
+    gap: 20px;
 }
 
 .helium-info {
-flex: 1;
+    flex: 1;
 }
 
 .contract-address {
-font-family: monospace;
-font-size: 0.9rem;
-word-break: break-all;
-cursor: pointer;
-color: var(--primary-color);
-transition: var(--transition);
+    font-family: monospace;
+    font-size: 0.9rem;
+    word-break: break-all;
+    cursor: pointer;
+    color: var(--primary-color);
+    transition: var(--transition);
 }
 
 .contract-address:hover {
-color: var(--primary-hover);
-text-decoration: underline;
+    color: var(--primary-hover);
+    text-decoration: underline;
 }
 
 .solana-explorer-link {
-color: var(--primary-color);
-font-weight: bold;
-text-decoration: none;
-transition: var(--transition);
+    color: var(--primary-color);
+    font-weight: bold;
+    text-decoration: none;
+    transition: var(--transition);
 }
 
 .solana-explorer-link:hover {
-color: var(--primary-hover);
-text-decoration: underline;
+    color: var(--primary-hover);
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {
-.tradingview-widget-container {
-height: 300px;
-}
-
-
-.swap-frame {
-    width: 100%;
-    height: 360px;
-}
-
-.halving-container {
-    grid-template-columns: 1fr;
-}
-
-.swap-container {
-    flex-direction: column;
-}
-
-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-}
-
-.history-container {
-    flex-direction: column;
-}
-
-jup-button {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-}
-}
-</style>
-
-</head> <body> <div class="container"> <header> <div class="header-left"> <h1 data-translate="title">Helium (HNT) Dashboard</h1> <div class="tooltip"> <small data-translate="last-updated">Last updated: <span id="last-updated">Loading...</span></small> <span class="tooltiptext" data-translate="update-tooltip">Data refreshed on page load</span> </div> </div> <div class="controls"> <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode"> <i class="fas fa-moon"></i> </button> <button id="language-toggle" class="btn btn-outline"> <i class="fas fa-language"></i> <span>PL</span> </button> <button id="sound-toggle" class="btn btn-outline"> <i class="fas fa-volume-up"></i> </button> </div> </header>
-
-    <section class="chart-section">
-        <h2 data-translate="price-chart">HNT Price Chart</h2>
-        <div class="tradingview-widget-container">
-            <div id="tradingview-widget-container__widget" class="tradingview-widget-container__widget"></div>
-            <div class="tradingview-widget-copyright">
-                <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
-                    <span class="blue-text">Track all markets on TradingView</span>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <section class="swap-section">
-        <h2 data-translate="swap-title">Jupiter Ultra Swap</h2>
-        <div class="swap-container">
-            <div>
-                <jup-button id="jupiter-button" title="Toggle Jupiter Swap">
-                    <i class="fas fa-exchange-alt"></i>
-                </jup-button>
-                <div class="swap-frame" id="swap-frame">
-                    <jup-swap
-                        input-mint="So11111111111111111111111111111111111111112"
-                        output-mint="hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux"
-                        fixed-mint="output"
-                        logo-uri="https://plugin.jup.ag/jupiter-logo-long.png"
-                        name="Jupiter Swap"
-                        primary-color="#29abe2"
-                        background-color="#f5f7fa"
-                        primary-text-color="#333"
-                        warning-color="#ff4d4f"
-                        interactive-color="#4fbce8"
-                        module-color="#1e293b"
-                        id="jupiter-swap"
-                        display-mode="integrated"
-                    ></jup-swap>
-                </div>
-            </div>
-            <div class="helium-info">
-                <h3 data-translate="helium-project">About Helium Project</h3>
-                <p data-translate="helium-desc">
-                    Helium is a decentralized wireless network that enables devices to connect to the internet using the LoRaWAN protocol. It incentivizes network coverage through cryptocurrency mining, rewarding participants with HNT tokens for providing connectivity.
-                </p>
-                <h4 data-translate="verified-contracts">Verified Token Contracts</h4>
-                <p data-translate="verified-note">Verified token contracts are marked with a green checkmark in Jupiter Swap.</p>
-                <div class="stat">
-                    <span>HNT:</span>
-                    <span class="contract-address" onclick="copyToClipboard('hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux')">hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux</span>
-                </div>
-                <div class="stat">
-                    <span>IoT:</span>
-                    <span class="contract-address" onclick="copyToClipboard('iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns')">iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns</span>
-                </div>
-                <div class="stat">
-                    <span>Mobile:</span>
-                    <span class="contract-address" onclick="copyToClipboard('mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6')">mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6</span>
-                </div>
-                <p><a href="https://explorer.solana.com" target="_blank" class="solana-explorer-link" data-translate="solana-explorer">Solana Blockchain Explorer</a></p>
-            </div>
-        </div>
-    </section>
-
-    <section class="halving-section">
-        <h2 data-translate="halving-info">Halving Information</h2>
-        <div class="halving-container">
-            <div class="halving-stats">
-                <div class="stat">
-                    <span data-translate="current-stage">Current emission stage:</span>
-                    <span class="value">Post-2025 (625k HNT/month)</span>
-                </div>
-                <div class="stat">
-                    <span data-translate="last-halving">Last halving:</span>
-                    <span class="value" id="last-halving-date">2025-08-01</span>
-                    <span class="value" id="time-since-halving">6d 00h 00m 00s</span>
-                </div>
-                <div class="stat">
-                    <span data-translate="next-halving">Next halving:</span>
-                    <span class="value" id="next-halving-date">2027-08-01</span>
-                    <span class="value" id="time-to-halving">723d 23h 59m 59s</span>
-                </div>
-                <div class="stat">
-                    <span data-translate="current-price">Current price:</span>
-                    <span class="value price-loading" id="current-price">Loading...</span>
-                </div>
-            </div>
-
-            <div class="halving-stats">
-                <div class="stat">
-                    <span data-translate="market-cap">Market cap:</span>
-                    <span class="value price-loading" id="market-cap">Loading...</span>
-                </div>
-                <div class="stat">
-                    <span data-translate="circulating">Circulating supply:</span>
-                    <span class="value" id="circulating-supply">186,011,619 HNT</span>
-                </div>
-                <div class="stat">
-                    <span data-translate="max-supply">Max supply:</span>
-                    <span class="value">223,000,000 HNT</span>
-                </div>
-                <div class="stat">
-                    <span data-translate="consensus">Consensus:</span>
-                    <span class="value">PoC – HoneyBadger BFT</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="history-container">
-            <div class="history-panel">
-                <h3 data-translate="halving-history">Halving History</h3>
-                <ul>
-                    <li>2019: 60M HNT</li>
-                    <li>2021-08-01: 60M HNT</li>
-                    <li>2023-08-01: 30M HNT</li>
-                    <li>2025-08-01: 15M HNT</li>
-                    <li>2027-08-01: 7.5M HNT</li>
-                </ul>
-            </div>
-
-            <div class="history-panel">
-                <h3 data-translate="reward-history">Block Reward History</h3>
-                <ul>
-                    <li>Pre-2021: 5M HNT/month</li>
-                    <li>Post-2021: 2.5M HNT/month</li>
-                    <li>Post-2023: 1.25M HNT/month</li>
-                    <li>Post-2025: 625k HNT/month (current)</li>
-                </ul>
-            </div>
-        </div>
-    </section>
-</div>
-
-<audio id="background-music" loop>
-    <source src="bg.mp3" type="audio/mpeg">
-</audio>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/pl.min.js"></script>
-<script>
-    // Translation dictionary
-    const translations = {
-        "title": {
-            "en": "Helium (HNT) Dashboard",
-            "pl": "Panel Helium (HNT)"
-        },
-        "price-chart": {
-            "en": "HNT Price Chart",
-            "pl": "Wykres ceny HNT"
-        },
-        "swap-title": {
-            "en": "Jupiter Ultra Swap",
-            "pl": "Jupiter Ultra Swap"
-        },
-        "halving-info": {
-            "en": "Halving Information",
-            "pl": "Informacje o halvingu"
-        },
-        "current-stage": {
-            "en": "Current emission stage:",
-            "pl": "Aktualny etap emisji:"
-        },
-        "last-halving": {
-            "en": "Last halving:",
-            "pl": "Ostatni halving:"
-        },
-        "next-halving": {
-            "en": "Next halving:",
-            "pl": "Następny halving:"
-        },
-        "current-price": {
-            "en": "Current price:",
-            "pl": "Aktualna cena:"
-        },
-        "market-cap": {
-            "en": "Market cap:",
-            "pl": "Kapitalizacja:"
-        },
-        "circulating": {
-            "en": "Circulating supply:",
-            "pl": "Podaż w obiegu:"
-        },
-        "max-supply": {
-            "en": "Max supply:",
-            "pl": "Maksymalna podaż:"
-        },
-        "consensus": {
-            "en": "Consensus:",
-            "pl": "Konsensus:"
-        },
-        "halving-history": {
-            "en": "Halving History",
-            "pl": "Historia halvingów"
-        },
-        "reward-history": {
-            "en": "Block Reward History",
-            "pl": "Historia nagród blokowych"
-        },
-        "last-updated": {
-            "en": "Last updated:",
-            "pl": "Ostatnia aktualizacja:"
-        },
-        "update-tooltip": {
-            "en": "Data refreshed on page load",
-            "pl": "Dane odświeżane przy wczytaniu strony"
-        },
-        "helium-project": {
-            "en": "About Helium Project",
-            "pl": "O projekcie Helium"
-        },
-        "helium-desc": {
-            "en": "Helium is a decentralized wireless network that enables devices to connect to the internet using the LoRaWAN protocol. It incentivizes network coverage through cryptocurrency mining, rewarding participants with HNT tokens for providing connectivity.",
-            "pl": "Helium to zdecentralizowana sieć bezprzewodowa umożliwiająca urządzeniom łączenie się z internetem za pomocą protokołu LoRaWAN. Zachęca do zapewniania pokrycia sieciowego poprzez wydobywanie kryptowalut, nagradzając uczestników tokenami HNT za zapewnienie łączności."
-        },
-        "verified-contracts": {
-            "en": "Verified Token Contracts",
-            "pl": "Zweryfikowane kontrakty tokenów"
-        },
-        "verified-note": {
-            "en": "Verified token contracts are marked with a green checkmark in Jupiter Swap.",
-            "pl": "Zweryfikowane kontrakty tokenów są oznaczone zielonym znaczkiem w Jupiter Swap."
-        },
-        "solana-explorer": {
-            "en": "Solana Blockchain Explorer",
-            "pl": "Eksplorator blockchain Solana"
-        },
-        "copy-success": {
-            "en": "Address copied to clipboard!",
-            "pl": "Adres skopiowany do schowka!"
-        }
-    };
-
-    // Current settings
-    let currentLanguage = 'en';
-    let currentTheme = 'light';
-    let chartLoaded = false;
-    let isMusicPlaying = true;
-    const pageLoadTime = new Date();
-    const audio = document.getElementById('background-music');
-
-    // DOM elements
-    const themeToggle = document.getElementById('theme-toggle');
-    const languageToggle = document.getElementById('language-toggle');
-    const soundToggle = document.getElementById('sound-toggle');
-    const lastUpdatedEl = document.getElementById('last-updated');
-    const jupiterButton = document.getElementById('jupiter-button');
-    const swapFrame = document.getElementById('swap-frame');
-    const jupiterSwap = document.getElementById('jupiter-swap');
-
-    // Initialize dashboard
-    function initDashboard() {
-        loadSettings();
-        setupEventListeners();
-        loadTradingViewWidget();
-        updateJupiterSwapTheme();
-        checkJupiterSwapLoaded();
-        fetchHNTPrice();
-        startCountdowns();
-        playBackgroundMusic();
+    .tradingview-widget-container {
+        height: 300px;
     }
-
-    function playBackgroundMusic() {
-        if (audio) {
-            audio.play().catch(error => {
-                console.error('Failed to play background music:', error);
-            });
-            soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
-        }
+    
+    .swap-frame {
+        width: 100%;
+        height: 360px;
     }
+    
+    .halving-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .swap-container {
+        flex-direction: column;
+    }
+    
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .history-container {
+        flex-direction: column;
+    }
+    
+    jup-button {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1 data-translate="title">Helium (HNT) Dashboard</h1>
+                <div class="tooltip">
+                    <small data-translate="last-updated">Last updated: <span id="last-updated">Loading...</span></small>
+                    <span class="tooltiptext" data-translate="update-tooltip">Data refreshed on page load</span>
+                </div>
+            </div>
+            <div class="controls">
+                <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="language-toggle" class="btn btn-outline">
+                    <i class="fas fa-language"></i>
+                    <span>PL</span>
+                </button>
+                <button id="sound-toggle" class="btn btn-outline">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
+        </header>
 
-    // UPDATED: uses the new container id and updated light background
-    function loadTradingViewWidget() {
-        if (chartLoaded) return;
+        <section class="chart-section">
+            <h2 data-translate="price-chart">HNT Price Chart</h2>
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget"></div>
+                <div class="tradingview-widget-copyright">
+                    <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+                        <span class="blue-text">Track all markets on TradingView</span>
+                    </a>
+                </div>
+            </div>
+        </section>
 
-        const bgColor = currentTheme === 'dark' ? '#4fbce8' : '#ffffff';
-        const gridColor = currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb';
-        const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333333';
+        <section class="swap-section">
+            <h2 data-translate="swap-title">Jupiter Ultra Swap</h2>
+            <div class="swap-container">
+                <div>
+                    <jup-button id="jupiter-button" title="Toggle Jupiter Swap">
+                        <i class="fas fa-exchange-alt"></i>
+                    </jup-button>
+                    <div class="swap-frame" id="swap-frame">
+                        <jup-swap
+                            input-mint="So11111111111111111111111111111111111111112"
+                            output-mint="hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux"
+                            fixed-mint="output"
+                            
+                            logo-uri="https://plugin.jup.ag/jupiter-logo-long.png"
+                            name="Jupiter Swap"
+                            primary-color="#29abe2"
+                            background-color="#f5f7fa"
+                            primary-text-color="#333"
+                            warning-color="#ff4d4f"
+                            interactive-color="#4fbce8"
+                            module-color="#1e293b"
+                            id="jupiter-swap"
+                            display-mode="integrated"
+                        ></jup-swap>
+                    </div>
+                </div>
+                <div class="helium-info">
+                    <h3 data-translate="helium-project">About Helium Project</h3>
+                    <p data-translate="helium-desc">
+                        Helium is a decentralized wireless network that enables devices to connect to the internet using the LoRaWAN protocol. It incentivizes network coverage through cryptocurrency mining, rewarding participants with HNT tokens for providing connectivity.
+                    </p>
+                    <h4 data-translate="verified-contracts">Verified Token Contracts</h4>
+                    <p data-translate="verified-note">Verified token contracts are marked with a green checkmark in Jupiter Swap.</p>
+                    <div class="stat">
+                        <span>HNT:</span>
+                        <span class="contract-address" onclick="copyToClipboard('hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux')">hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux</span>
+                    </div>
+                    <div class="stat">
+                        <span>IoT:</span>
+                        <span class="contract-address" onclick="copyToClipboard('iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns')">iotEVVZLEywoTn1QdwNPddxPWszn3zFhEot3MfL9fns</span>
+                    </div>
+                    <div class="stat">
+                        <span>Mobile:</span>
+                        <span class="contract-address" onclick="copyToClipboard('mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6')">mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6</span>
+                    </div>
+                    <p><a href="https://explorer.solana.com" target="_blank" class="solana-explorer-link" data-translate="solana-explorer">Solana Blockchain Explorer</a></p>
+                </div>
+            </div>
+        </section>
 
-        const script = document.createElement('script');
-        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-        script.async = true;
-        script.innerHTML = JSON.stringify({
-            autosize: true,
-            symbol: 'GATEIO:HNTUSDT',
-            interval: 'D',
-            timezone: 'Etc/UTC',
-            style: '1',
-            locale: currentLanguage === 'pl' ? 'pl' : 'en',
-            enable_publishing: false,
-            backgroundColor: bgColor,
-            gridColor: gridColor,
-            hide_top_toolbar: false,
-            hide_side_toolbar: false,
-            allow_symbol_change: true,
-            container_id: 'tradingview-widget-container__widget',
-            studies: [
-                'RSI@tv-basicstudies',
-                'StochasticRSI@tv-basicstudies'
-            ],
-            studies_overrides: {
-                'RSI.plot.color': '#29abe2',
-                'RSI.hisLevel': 70,
-                'RSI.losLevel': 30,
-                'StochasticRSI.plot.color': '#1a3e72',
-                'StochasticRSI.plot2.color': '#29abe2'
+        <section class="halving-section">
+            <h2 data-translate="halving-info">Halving Information</h2>
+            <div class="halving-container">
+                <div class="halving-stats">
+                    <div class="stat">
+                        <span data-translate="current-stage">Current emission stage:</span>
+                        <span class="value">Post-2025 (625k HNT/month)</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="last-halving">Last halving:</span>
+                        <span class="value" id="last-halving-date">2025-08-01</span>
+                        <span class="value" id="time-since-halving">6d 00h 00m 00s</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="next-halving">Next halving:</span>
+                        <span class="value" id="next-halving-date">2027-08-01</span>
+                        <span class="value" id="time-to-halving">723d 23h 59m 59s</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="current-price">Current price:</span>
+                        <span class="value price-loading" id="current-price">Loading...</span>
+                    </div>
+                </div>
+
+                <div class="halving-stats">
+                    <div class="stat">
+                        <span data-translate="market-cap">Market cap:</span>
+                        <span class="value price-loading" id="market-cap">Loading...</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="circulating">Circulating supply:</span>
+                        <span class="value" id="circulating-supply">186,011,619 HNT</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="max-supply">Max supply:</span>
+                        <span class="value">223,000,000 HNT</span>
+                    </div>
+                    <div class="stat">
+                        <span data-translate="consensus">Consensus:</span>
+                        <span class="value">PoC – HoneyBadger BFT</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="history-container">
+                <div class="history-panel">
+                    <h3 data-translate="halving-history">Halving History</h3>
+                    <ul>
+                        <li>2019: 60M HNT</li>
+                        <li>2021-08-01: 60M HNT</li>
+                        <li>2023-08-01: 30M HNT</li>
+                        <li>2025-08-01: 15M HNT</li>
+                        <li>2027-08-01: 7.5M HNT</li>
+                    </ul>
+                </div>
+
+                <div class="history-panel">
+                    <h3 data-translate="reward-history">Block Reward History</h3>
+                    <ul>
+                        <li>Pre-2021: 5M HNT/month</li>
+                        <li>Post-2021: 2.5M HNT/month</li>
+                        <li>Post-2023: 1.25M HNT/month</li>
+                        <li>Post-2025: 625k HNT/month (current)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <audio id="background-music" loop>
+        <source src="bg.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/pl.min.js"></script>
+    <script>
+        // Translation dictionary
+        const translations = {
+            "title": {
+                "en": "Helium (HNT) Dashboard",
+                "pl": "Panel Helium (HNT)"
             },
-            overrides: {
-                'paneProperties.background': bgColor,
-                'paneProperties.backgroundGradientStartColor': bgColor,
-                'paneProperties.backgroundGradientEndColor': bgColor,
-                'paneProperties.gridProperties.color': gridColor,
-                'mainSeriesProperties.candleStyle.upColor': '#29abe2',
-                'mainSeriesProperties.candleStyle.downColor': '#ff4d4f',
-                'mainSeriesProperties.candleStyle.borderUpColor': '#29abe2',
-                'mainSeriesProperties.candleStyle.borderDownColor': '#ff4d4f',
-                'scalesProperties.textColor': textColor,
-                'paneProperties.legendProperties.textColor': textColor
+            "price-chart": {
+                "en": "HNT Price Chart",
+                "pl": "Wykres ceny HNT"
+            },
+            "swap-title": {
+                "en": "Jupiter Ultra Swap",
+                "pl": "Jupiter Ultra Swap"
+            },
+            "halving-info": {
+                "en": "Halving Information",
+                "pl": "Informacje o halvingu"
+            },
+            "current-stage": {
+                "en": "Current emission stage:",
+                "pl": "Aktualny etap emisji:"
+            },
+            "last-halving": {
+                "en": "Last halving:",
+                "pl": "Ostatni halving:"
+            },
+            "next-halving": {
+                "en": "Next halving:",
+                "pl": "Następny halving:"
+            },
+            "current-price": {
+                "en": "Current price:",
+                "pl": "Aktualna cena:"
+            },
+            "market-cap": {
+                "en": "Market cap:",
+                "pl": "Kapitalizacja:"
+            },
+            "circulating": {
+                "en": "Circulating supply:",
+                "pl": "Podaż w obiegu:"
+            },
+            "max-supply": {
+                "en": "Max supply:",
+                "pl": "Maksymalna podaż:"
+            },
+            "consensus": {
+                "en": "Consensus:",
+                "pl": "Konsensus:"
+            },
+            "halving-history": {
+                "en": "Halving History",
+                "pl": "Historia halvingów"
+            },
+            "reward-history": {
+                "en": "Block Reward History",
+                "pl": "Historia nagród blokowych"
+            },
+            "last-updated": {
+                "en": "Last updated:",
+                "pl": "Ostatnia aktualizacja:"
+            },
+            "update-tooltip": {
+                "en": "Data refreshed on page load",
+                "pl": "Dane odświeżane przy wczytaniu strony"
+            },
+            "helium-project": {
+                "en": "About Helium Project",
+                "pl": "O projekcie Helium"
+            },
+            "helium-desc": {
+                "en": "Helium is a decentralized wireless network that enables devices to connect to the internet using the LoRaWAN protocol. It incentivizes network coverage through cryptocurrency mining, rewarding participants with HNT tokens for providing connectivity.",
+                "pl": "Helium to zdecentralizowana sieć bezprzewodowa umożliwiająca urządzeniom łączenie się z internetem za pomocą protokołu LoRaWAN. Zachęca do zapewniania pokrycia sieciowego poprzez wydobywanie kryptowalut, nagradzając uczestników tokenami HNT za zapewnienie łączności."
+            },
+            "verified-contracts": {
+                "en": "Verified Token Contracts",
+                "pl": "Zweryfikowane kontrakty tokenów"
+            },
+            "verified-note": {
+                "en": "Verified token contracts are marked with a green checkmark in Jupiter Swap.",
+                "pl": "Zweryfikowane kontrakty tokenów są oznaczone zielonym znaczkiem w Jupiter Swap."
+            },
+            "solana-explorer": {
+                "en": "Solana Blockchain Explorer",
+                "pl": "Eksplorator blockchain Solana"
+            },
+            "copy-success": {
+                "en": "Address copied to clipboard!",
+                "pl": "Adres skopiowany do schowka!"
             }
-        });
+        };
 
-        const container = document.getElementById('tradingview-widget-container__widget');
-        if (container) {
-            container.innerHTML = '';
-            container.appendChild(script);
+        // Current settings
+        let currentLanguage = 'en';
+        let currentTheme = 'light';
+        let chartLoaded = false;
+        let isMusicPlaying = true;
+        const pageLoadTime = new Date();
+        const audio = document.getElementById('background-music');
+
+        // DOM elements
+        const themeToggle = document.getElementById('theme-toggle');
+        const languageToggle = document.getElementById('language-toggle');
+        const soundToggle = document.getElementById('sound-toggle');
+        const lastUpdatedEl = document.getElementById('last-updated');
+        const jupiterButton = document.getElementById('jupiter-button');
+        const swapFrame = document.getElementById('swap-frame');
+        const jupiterSwap = document.getElementById('jupiter-swap');
+
+        // Initialize dashboard
+        function initDashboard() {
+            loadSettings();
+            setupEventListeners();
+            loadTradingViewWidget();
+            updateJupiterSwapTheme();
+            checkJupiterSwapLoaded();
+            fetchHNTPrice();
+            startCountdowns();
+            playBackgroundMusic();
+        }
+
+        function playBackgroundMusic() {
+            if (audio) {
+                audio.play().catch(error => {
+                    console.error('Failed to play background music:', error);
+                });
+                soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
+        }
+
+        function loadTradingViewWidget() {
+            if (chartLoaded) return;
+
+            const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
+            const gridColor = currentTheme === 'dark' ? '#2a2e39' : '#e0e3eb';
+            const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333333';
+
+            const script = document.createElement('script');
+            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+            script.async = true;
+            script.innerHTML = JSON.stringify({
+                "autosize": true,
+                "symbol": "GATEIO:HNTUSDT",
+                "interval": "D",
+                "timezone": "Etc/UTC",
+                "theme": currentTheme,
+                "style": "1",
+                "locale": currentLanguage === 'pl' ? 'pl' : 'en',
+                "enable_publishing": false,
+                "backgroundColor": bgColor,
+                "gridColor": gridColor,
+                "hide_top_toolbar": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "container_id": "tradingview-widget-container__widget",
+                "studies": [
+                    "RSI@tv-basicstudies",
+                    "StochasticRSI@tv-basicstudies"
+                ],
+                "studies_overrides": {
+                    "RSI.plot.color": "#29abe2",
+                    "RSI.hisLevel": 70,
+                    "RSI.losLevel": 30,
+                    "StochasticRSI.plot.color": "#1a3e72",
+                    "StochasticRSI.plot2.color": "#29abe2"
+                },
+                "overrides": {
+                    "paneProperties.background": bgColor,
+                    "paneProperties.backgroundGradientStartColor": bgColor,
+                    "paneProperties.backgroundGradientEndColor": bgColor,
+                    "paneProperties.gridProperties.color": gridColor,
+                    "mainSeriesProperties.candleStyle.upColor": "#29abe2",
+                    "mainSeriesProperties.candleStyle.downColor": "#ff4d4f",
+                    "mainSeriesProperties.candleStyle.borderUpColor": "#29abe2",
+                    "mainSeriesProperties.candleStyle.borderDownColor": "#ff4d4f",
+                    "scalesProperties.textColor": textColor,
+                    "paneProperties.legendProperties.textColor": textColor
+                },
+                "hide_volume": true,
+                "withdateranges": true,
+                "range": "12M",
+                "details": true,
+                "hotlist": true,
+                "calendar": true
+            });
+
+            const widgetContainer = document.querySelector('.tradingview-widget-container__widget');
+            widgetContainer.innerHTML = '';
+            widgetContainer.appendChild(script);
             chartLoaded = true;
             updateLastUpdatedText();
         }
-    }
 
-    function updateJupiterSwapTheme() {
-        if (!jupiterSwap) return;
+        function updateJupiterSwapTheme() {
+            if (!jupiterSwap) return;
 
-        const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
-        const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333';
-        const moduleColor = currentTheme === 'dark' ? '#1e293b' : '#fff';
-        const interactiveColor = currentTheme === 'dark' ? '#4fbce8' : '#29abe2';
+            const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
+            const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333';
+            const moduleColor = currentTheme === 'dark' ? '#1e293b' : '#fff';
+            const interactiveColor = currentTheme === 'dark' ? '#4fbce8' : '#29abe2';
 
-        jupiterSwap.setAttribute('background-color', bgColor);
-        jupiterSwap.setAttribute('primary-text-color', textColor);
-        jupiterSwap.setAttribute('module-color', moduleColor);
-        jupiterSwap.setAttribute('interactive-color', interactiveColor);
-        jupiterSwap.setAttribute('primary-color', interactiveColor);
+            jupiterSwap.setAttribute('background-color', bgColor);
+            jupiterSwap.setAttribute('primary-text-color', textColor);
+            jupiterSwap.setAttribute('module-color', moduleColor);
+            jupiterSwap.setAttribute('interactive-color', interactiveColor);
+            jupiterSwap.setAttribute('primary-color', interactiveColor);
 
-        if (swapFrame) {
-            swapFrame.style.backgroundColor = moduleColor;
+            if (swapFrame) {
+                swapFrame.style.backgroundColor = moduleColor;
+            }
+
+            if (jupiterButton) {
+                jupiterButton.style.backgroundColor = interactiveColor;
+            }
         }
 
-        if (jupiterButton) {
-            jupiterButton.style.backgroundColor = interactiveColor;
+        function checkJupiterSwapLoaded() {
+            if (!jupiterSwap || !window.customElements.get('jup-swap') || !window.customElements.get('jup-button')) {
+                console.error('Jupiter Swap or Button failed to load. Ensure the script from https://terminal.jup.ag/main-v4.js is accessible.');
+            } else {
+                console.log('Jupiter Swap and Button loaded successfully.');
+            }
         }
-    }
 
-    function checkJupiterSwapLoaded() {
-        if (!jupiterSwap || !window.customElements.get('jup-swap') || !window.customElements.get('jup-button')) {
-            console.error('Jupiter Swap or Button failed to load. Ensure the script from https://terminal.jup.ag/main-v4.js is accessible.');
-        } else {
-            console.log('Jupiter Swap and Button loaded successfully.');
-        }
-    }
+        async function fetchHNTPrice() {
+            try {
+                const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd&include_market_cap=true');
+                const data = await response.json();
 
-    async function fetchHNTPrice() {
-        try {
-            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=helium&vs_currencies=usd&include_market_cap=true');
-            const data = await response.json();
+                if (data.helium) {
+                    const price = data.helium.usd;
+                    const marketCap = data.helium.usd_market_cap;
 
-            if (data.helium) {
-                const price = data.helium.usd;
-                const marketCap = data.helium.usd_market_cap;
+                    document.getElementById('current-price').textContent = `$${price.toFixed(4)}`;
+                    document.getElementById('market-cap').textContent = `$${(marketCap / 1000000).toFixed(2)}M`;
 
-                document.getElementById('current-price').textContent = `$${price.toFixed(4)}`;
-                document.getElementById('market-cap').textContent = `$${(marketCap / 1_000_000).toFixed(2)}M`;
+                    document.getElementById('current-price').classList.remove('price-loading');
+                    document.getElementById('market-cap').classList.remove('price-loading');
+                }
+            } catch (error) {
+                console.error('Failed to fetch HNT price:', error);
+                document.getElementById('current-price').textContent = 'Error loading price';
+                document.getElementById('market-cap').textContent = 'Error loading data';
 
                 document.getElementById('current-price').classList.remove('price-loading');
                 document.getElementById('market-cap').classList.remove('price-loading');
             }
-        } catch (error) {
-            console.error('Failed to fetch HNT price:', error);
-            document.getElementById('current-price').textContent = 'Error loading price';
-            document.getElementById('market-cap').textContent = 'Error loading data';
-
-            document.getElementById('current-price').classList.remove('price-loading');
-            document.getElementById('market-cap').classList.remove('price-loading');
-        }
-    }
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            alert(translations['copy-success'][currentLanguage]);
-        }).catch(err => {
-            console.error('Failed to copy:', err);
-        });
-    }
-
-    function loadSettings() {
-        if (currentTheme === 'dark') {
-            document.body.classList.add('dark-mode');
-            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-        } else {
-            document.body.classList.remove('dark-mode');
-            themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
         }
 
-        applyTranslations();
-        moment.locale(currentLanguage);
-        updateJupiterSwapTheme();
-    }
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(translations['copy-success'][currentLanguage]);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
 
-    function setupEventListeners() {
-        themeToggle.addEventListener('click', toggleTheme);
-        languageToggle.addEventListener('click', toggleLanguage);
-        soundToggle.addEventListener('click', toggleSound);
-        jupiterButton.addEventListener('click', toggleSwapFrame);
+        function loadSettings() {
+            if (currentTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            }
 
-        if (window.Jupiter) {
-            window.Jupiter.init({
-                displayMode: 'integrated',
-                integratedTargetId: 'jupiter-swap',
-                slippage: 0.1,
-                onSwapError: ({ error }) => {
-                    console.error('Jupiter Swap Error:', error);
-                    alert('Swap failed: Check console for details.');
-                },
-                onSuccess: ({ txid }) => {
-                    console.log('Jupiter Swap Success:', txid);
-                    alert('Swap successful! Transaction ID: ' + txid);
-                },
-                onLoad: () => {
-                    console.log('Jupiter Swap loaded, network fee will reflect Solana network rates.');
+            applyTranslations();
+            moment.locale(currentLanguage);
+            updateJupiterSwapTheme();
+        }
+
+        function setupEventListeners() {
+            themeToggle.addEventListener('click', toggleTheme);
+            languageToggle.addEventListener('click', toggleLanguage);
+            soundToggle.addEventListener('click', toggleSound);
+            jupiterButton.addEventListener('click', toggleSwapFrame);
+
+            if (window.Jupiter) {
+                window.Jupiter.init({
+                    displayMode: 'integrated',
+                    integratedTargetId: 'jupiter-swap',
+                    slippage: 0.1, // Default low slippage of 0.1%
+                    onSwapError: ({ error, quoteResponseMeta }) => {
+                        console.error('Jupiter Swap Error:', error);
+                        alert('Swap failed: Check console for details.');
+                    },
+                    onSuccess: ({ txid, swapResult, quoteResponseMeta }) => {
+                        console.log('Jupiter Swap Success:', txid);
+                        alert('Swap successful! Transaction ID: ' + txid);
+                    },
+                    onLoad: () => {
+                        console.log('Jupiter Swap loaded, network fee will reflect Solana network rates.');
+                    }
+                });
+            }
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.body.classList.toggle('dark-mode');
+            themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+
+            chartLoaded = false;
+            loadTradingViewWidget();
+            updateJupiterSwapTheme();
+            checkJupiterSwapLoaded();
+        }
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
+            applyTranslations();
+            moment.locale(currentLanguage);
+            updateLastUpdatedText();
+
+            chartLoaded = false;
+            loadTradingViewWidget();
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[key]) {
+                    element.textContent = translations[key][currentLanguage];
                 }
             });
+            languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
         }
-    }
 
-    function toggleTheme() {
-        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.body.classList.toggle('dark-mode');
-        themeToggle.innerHTML = currentTheme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-
-        chartLoaded = false;
-        loadTradingViewWidget();
-        updateJupiterSwapTheme();
-        checkJupiterSwapLoaded();
-    }
-
-    function toggleLanguage() {
-        currentLanguage = currentLanguage === 'en' ? 'pl' : 'en';
-        applyTranslations();
-        moment.locale(currentLanguage);
-        updateLastUpdatedText();
-
-        chartLoaded = false;
-        loadTradingViewWidget();
-    }
-
-    function applyTranslations() {
-        document.querySelectorAll('[data-translate]').forEach(element => {
-            const key = element.getAttribute('data-translate');
-            if (translations[key]) {
-                element.textContent = translations[key][currentLanguage];
+        function toggleSound() {
+            if (isMusicPlaying) {
+                audio.pause();
+                soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            } else {
+                audio.play().catch(error => {
+                    console.error('Failed to play background music:', error);
+                });
+                soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
             }
-        });
-        languageToggle.querySelector('span').textContent = currentLanguage === 'en' ? 'PL' : 'EN';
-    }
-
-    function toggleSound() {
-        if (isMusicPlaying) {
-            audio.pause();
-            soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
-        } else {
-            audio.play().catch(error => {
-                console.error('Failed to play background music:', error);
-            });
-            soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
-        }
-        isMusicPlaying = !isMusicPlaying;
-    }
-
-    function toggleSwapFrame() {
-        if (swapFrame) {
-            swapFrame.classList.toggle('active');
-        }
-    }
-
-    function updateCountdowns() {
-        const lastHalving = moment('2025-08-01');
-        const nextHalving = moment('2027-08-01');
-        const now = moment();
-
-        const since = moment.duration(now.diff(lastHalving));
-        if (since.asMilliseconds() > 0) {
-            document.getElementById('time-since-halving').textContent =
-                `${Math.floor(since.asDays())}d ${since.hours()}h ${since.minutes()}m ${since.seconds()}s`;
+            isMusicPlaying = !isMusicPlaying;
         }
 
-        const to = moment.duration(nextHalving.diff(now));
-        if (to.asMilliseconds() > 0) {
-            document.getElementById('time-to-halving').textContent =
-                `${Math.floor(to.asDays())}d ${to.hours()}h ${to.minutes()}m ${to.seconds()}s`;
+        function toggleSwapFrame() {
+            if (swapFrame) {
+                swapFrame.classList.toggle('active');
+            }
         }
-    }
 
-    function updateLastUpdatedText() {
-        if (lastUpdatedEl) {
-            lastUpdatedEl.textContent = moment(pageLoadTime).format('LLLL');
+        function updateCountdowns() {
+            const lastHalving = moment('2025-08-01');
+            const nextHalving = moment('2027-08-01');
+            const now = moment();
+
+            const since = moment.duration(now.diff(lastHalving));
+            if (since.asMilliseconds() > 0) {
+                document.getElementById('time-since-halving').textContent =
+                    `${Math.floor(since.asDays())}d ${since.hours()}h ${since.minutes()}m ${since.seconds()}s`;
+            }
+
+            const to = moment.duration(nextHalving.diff(now));
+            if (to.asMilliseconds() > 0) {
+                document.getElementById('time-to-halving').textContent =
+                    `${Math.floor(to.asDays())}d ${to.hours()}h ${to.minutes()}m ${since.seconds()}s`;
+            }
         }
-    }
 
-    function startCountdowns() {
-        setInterval(updateCountdowns, 1000);
-        updateCountdowns();
-    }
+        function updateLastUpdatedText() {
+            if (lastUpdatedEl) {
+                lastUpdatedEl.textContent = moment(pageLoadTime).format('LLLL');
+            }
+        }
 
-    document.addEventListener('DOMContentLoaded', initDashboard);
-</script>
-</body> </html>
+        function startCountdowns() {
+            setInterval(updateCountdowns, 1000);
+            updateCountdowns();
+        }
+
+        document.addEventListener('DOMContentLoaded', initDashboard);
+    </script>
+</body>
+</html>
