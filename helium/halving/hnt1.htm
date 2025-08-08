@@ -1,79 +1,175 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="pl" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TradingView Dark Mode</title>
+    <title>HNT Dashboard</title>
+    <link rel="stylesheet" href="style.css">
     <style>
         body {
-            margin: 0;
             font-family: Arial, sans-serif;
-            background-color: #121212;
-            color: #fff;
+            margin: 0;
+            background: var(--bg-color);
+            color: var(--text-color);
             transition: background 0.3s, color 0.3s;
         }
-        body.light-mode {
-            background-color: #f5f5f5;
-            color: #000;
+        [data-theme="light"] {
+            --bg-color: #f5f7fa;
+            --text-color: #333;
         }
-        header {
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --text-color: #f0f0f0;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
             padding: 10px;
-            text-align: center;
+            background: var(--bg-color);
         }
-        button {
-            padding: 10px 20px;
-            background: #444;
-            border: none;
-            color: white;
-            cursor: pointer;
-            border-radius: 5px;
+        .navbar button {
+            margin: 0 5px;
         }
-        body.light-mode button {
-            background: #ddd;
-            color: black;
+        .section {
+            padding: 20px;
         }
-        #tradingview {
-            height: 500px;
+        iframe {
             width: 100%;
+            border: none;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>TradingView - Tryb Ciemny Domyślny</h1>
-        <button onclick="toggleTheme()">Przełącz Tryb</button>
-    </header>
-    <div id="tradingview"></div>
+    <!-- Pasek nawigacyjny -->
+    <div class="navbar">
+        <div>
+            <button onclick="changeLanguage('pl')">PL</button>
+            <button onclick="changeLanguage('en')">EN</button>
+        </div>
+        <div>
+            <button id="themeToggle">🌙</button>
+        </div>
+    </div>
 
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <!-- Wykres HNT -->
+    <div class="section">
+        <h2 id="chartTitle">Wykres HNT</h2>
+        <div class="tradingview-widget-container">
+            <div id="tradingview-widget-container__widget" class="tradingview-widget-container__widget"></div>
+        </div>
+        <div id="lastUpdated"></div>
+    </div>
+
+    <!-- Halving Helium -->
+    <div class="section">
+        <h2 id="halvingTitle">Halving Helium</h2>
+        <div id="halvingCountdown" style="font-size: 1.5em;"></div>
+    </div>
+
+    <!-- Jupiter Swap -->
+    <div class="section">
+        <h2 id="swapTitle">Jupiter Swap</h2>
+        <iframe 
+            id="jupiterSwap"
+            src="https://jup.ag/swap/USDC-HNT" 
+            height="600"
+            allow="clipboard-read; clipboard-write; fullscreen">
+        </iframe>
+    </div>
+
     <script>
-        let isDark = true; // domyślny tryb ciemny
+    let currentTheme = 'light';
+    let currentLanguage = 'pl';
+    let chartLoaded = false;
 
-        function loadTradingView() {
-            document.getElementById("tradingview").innerHTML = ""; // wyczyść stary wykres
-            new TradingView.widget({
-                "container_id": "tradingview",
-                "autosize": true,
-                "symbol": "BINANCE:BTCUSDT",
-                "interval": "60",
-                "timezone": "Etc/UTC",
-                "theme": isDark ? "dark" : "light",
-                "style": "1",
-                "locale": "pl",
-                "enable_publishing": false,
-                "hide_top_toolbar": false,
-                "hide_legend": false
-            });
+    // Aktualizacja daty ostatniego odświeżenia
+    function updateLastUpdatedText() {
+        const el = document.getElementById("lastUpdated");
+        const now = new Date();
+        el.textContent = (currentLanguage === 'pl')
+            ? `Ostatnia aktualizacja: ${now.toLocaleString()}`
+            : `Last updated: ${now.toLocaleString()}`;
+    }
+
+    // Zmiana języka
+    function changeLanguage(lang) {
+        currentLanguage = lang;
+        document.getElementById("chartTitle").textContent = lang === 'pl' ? "Wykres HNT" : "HNT Chart";
+        document.getElementById("halvingTitle").textContent = lang === 'pl' ? "Halving Helium" : "Helium Halving";
+        document.getElementById("swapTitle").textContent = lang === 'pl' ? "Jupiter Swap" : "Jupiter Swap";
+        chartLoaded = false;
+        loadTradingViewWidget();
+    }
+
+    // Przełączanie motywu
+    document.getElementById("themeToggle").addEventListener("click", () => {
+        currentTheme = (currentTheme === "light") ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", currentTheme);
+        chartLoaded = false;
+        loadTradingViewWidget();
+    });
+
+    // Załadowanie widżetu TradingView
+    function loadTradingViewWidget() {
+        if (chartLoaded) return;
+
+        const bgColor = currentTheme === 'dark' ? '#0f172a' : '#f5f7fa';
+        const gridColor = currentTheme === 'dark' ? '#1e293b' : '#e0e3eb';
+        const textColor = currentTheme === 'dark' ? '#f0f0f0' : '#333333';
+
+        const script = document.createElement('script');
+        script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+        script.async = true;
+        script.innerHTML = JSON.stringify({
+            "autosize": true,
+            "symbol": "GATEIO:HNTUSDT",
+            "interval": "D",
+            "timezone": "Etc/UTC",
+            "theme": currentTheme,
+            "style": "1",
+            "locale": currentLanguage,
+            "enable_publishing": false,
+            "backgroundColor": bgColor,
+            "gridColor": gridColor,
+            "scalesProperties.textColor": textColor,
+            "paneProperties.legendProperties.textColor": textColor,
+            "container_id": "tradingview-widget-container__widget"
+        });
+
+        const widgetContainer = document.querySelector('.tradingview-widget-container__widget');
+        widgetContainer.innerHTML = '';
+        widgetContainer.appendChild(script);
+        chartLoaded = true;
+        updateLastUpdatedText();
+    }
+
+    // Odliczanie do halvingu Helium (przykład z datą)
+    function updateHalvingCountdown() {
+        const halvingDate = new Date("2025-08-01T00:00:00Z");
+        const now = new Date();
+        const diff = halvingDate - now;
+
+        if (diff <= 0) {
+            document.getElementById("halvingCountdown").textContent =
+                currentLanguage === 'pl' ? "Halving już nastąpił!" : "Halving has occurred!";
+            return;
         }
 
-        function toggleTheme() {
-            isDark = !isDark;
-            document.body.classList.toggle("light-mode", !isDark);
-            loadTradingView();
-        }
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / (1000 * 60)) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
 
-        // Załaduj wykres przy starcie w trybie ciemnym
-        window.onload = loadTradingView;
+        document.getElementById("halvingCountdown").textContent =
+            `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    setInterval(updateHalvingCountdown, 1000);
+
+    // Start
+    loadTradingViewWidget();
+    updateHalvingCountdown();
     </script>
 </body>
 </html>
