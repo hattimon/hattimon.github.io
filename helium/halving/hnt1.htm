@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://terminal.jup.ag/main-v4.js" data-preload></script>
+    <script src="https://unpkg.com/@solana/web3.js@1.95.2/lib/index.browser.js"></script>
+    <script src="https://unpkg.com/@solana/wallet-adapter-base@0.15.36/dist/index.js"></script>
+    <script src="https://unpkg.com/@solana/wallet-adapter-wallets@0.15.36/dist/index.js"></script>
+    <script src="https://unpkg.com/@solana/wallet-adapter-mobile@0.15.36/dist/index.js"></script>
     <style>
 :root {
     --primary-color: #29abe2;
@@ -677,6 +681,26 @@ jup-button:hover {
         const swapFrame = document.getElementById('swap-frame');
         const jupiterSwap = document.getElementById('jupiter-swap');
 
+        // Wallet adapter setup
+        const { Connection } = window.SolanaWeb3;
+        const { WalletProvider, useWallet } = window.SolanaWalletAdapterBase;
+        const { PhantomWalletAdapter, SolflareWalletAdapter, SolanaMobileWalletAdapter } = window.SolanaWalletAdapterWallets;
+        const { SolanaMobileWalletAdapterWalletName } = window.SolanaWalletAdapterMobile;
+
+        const connection = new Connection('https://api.mainnet-beta.solana.com');
+        const wallets = [
+            new PhantomWalletAdapter(),
+            new SolflareWalletAdapter(),
+            new SolanaMobileWalletAdapter({
+                cluster: 'mainnet-beta',
+                identity: {
+                    uri: 'https://yourdapp.com',
+                    icon: '/favicon.ico',
+                    name: 'Helium Dashboard'
+                }
+            })
+        ];
+
         // Initialize dashboard
         function initDashboard() {
             loadSettings();
@@ -817,24 +841,92 @@ jup-button:hover {
             updateJupiterSwapTheme();
         }
 
-        function setupEventListeners() {
+        async function setupEventListeners() {
             themeToggle.addEventListener('click', toggleTheme);
             languageToggle.addEventListener('click', toggleLanguage);
             soundToggle.addEventListener('click', toggleSound);
             jupiterButton.addEventListener('click', toggleSwapFrame);
 
+            // Wallet adapter setup
+            const walletProvider = new WalletProvider({ connection, wallets });
+            let selectedWallet = null;
+
+            async function handleWalletConnect() {
+                try {
+                    if (selectedWallet?.adapter.name === SolanaMobileWalletAdapterWalletName) {
+                        await selectedWallet.connect();
+                        console.log('Connected to Mobile Wallet Adapter:', selectedWallet.adapter.name);
+                    } else if (selectedWallet) {
+                        await selectedWallet.connect();
+                        console.log('Connected to wallet:', selectedWallet.adapter.name);
+                    }
+                } catch (error) {
+                    console.error('Wallet connection error:', error);
+                    selectedWallet = null; // Reset on error
+                    alert(translations['copy-success'][currentLanguage] === 'pl' ? 'Błąd połączenia z portfelem. Spróbuj ponownie.' : 'Wallet connection error. Please try again.');
+                }
+            }
+
             if (window.Jupiter) {
                 window.Jupiter.init({
                     displayMode: 'integrated',
                     integratedTargetId: 'jupiter-swap',
-                    slippage: 0.1, // Default low slippage of 0.1%
+                    slippageBps: 100, // 1% slippage
+                    onRequestConnectWallet: async () => {
+                        if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+                            // Mobile device detected
+                            selectedWallet = wallets.find(w => w.adapter.name === SolanaMobileWalletAdapterWalletName);
+                            if (selectedWallet) {
+                                await handleWalletConnect();
+                            } else {
+                                console.error('Mobile Wallet Adapter not available.');
+                            }
+                        } else {
+                            // Desktop: show wallet selection modal
+                            const modal = document.createElement('div');
+                            modal.style.position = 'fixed';
+                            modal.style.top = '0';
+                            modal.style.left = '0';
+                            modal.style.width = '100%';
+                            modal.style.height = '100%';
+                            modal.style.background = 'rgba(0,0,0,0.5)';
+                            modal.style.display = 'flex';
+                            modal.style.alignItems = 'center';
+                            modal.style.justifyContent = 'center';
+                            modal.style.zIndex = '1000';
+
+                            const modalContent = document.createElement('div');
+                            modalContent.style.background = 'var(--card-bg)';
+                            modalContent.style.padding = '20px';
+                            modalContent.style.borderRadius = '10px';
+                            modalContent.style.boxShadow = 'var(--shadow)';
+                            modalContent.innerHTML = '<h3>Select Wallet</h3>';
+
+                            wallets.forEach(wallet => {
+                                if (wallet.adapter.name !== SolanaMobileWalletAdapterWalletName) {
+                                    const button = document.createElement('button');
+                                    button.className = 'btn';
+                                    button.textContent = wallet.adapter.name;
+                                    button.onclick = async () => {
+                                        selectedWallet = wallet;
+                                        await handleWalletConnect();
+                                        document.body.removeChild(modal);
+                                    };
+                                    modalContent.appendChild(button);
+                                }
+                            });
+
+                            modal.appendChild(modalContent);
+                            document.body.appendChild(modal);
+                        }
+                    },
                     onSwapError: ({ error, quoteResponseMeta }) => {
                         console.error('Jupiter Swap Error:', error);
-                        alert('Swap failed: Check console for details.');
+                        alert(translations['copy-success'][currentLanguage] === 'pl' ? 'Błąd swapu. Sprawdź konsolę.' : 'Swap failed: Check console for details.');
                     },
                     onSuccess: ({ txid, swapResult, quoteResponseMeta }) => {
                         console.log('Jupiter Swap Success:', txid);
-                        alert('Swap successful! Transaction ID: ' + txid);
+                        alert(translations['copy-success'][currentLanguage] === 'pl' ? 'Swap zakończony sukcesem! ID transakcji: ' + txid : 'Swap successful! Transaction ID: ' + txid);
                     },
                     onLoad: () => {
                         console.log('Jupiter Swap loaded, network fee will reflect Solana network rates.');
