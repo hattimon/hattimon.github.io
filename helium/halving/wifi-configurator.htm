@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SenseCap M1 – Generator konfiguracji sieci</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 15px; background: #f5f5f5; }
+  h2 { text-align: center; }
+  label { display: block; margin-top: 15px; font-weight: bold; }
+  input[type=text], input[type=password], select { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; }
+  textarea { width: 100%; height: 350px; margin-top: 15px; font-family: monospace; border: 1px solid #ccc; border-radius: 4px; }
+  button { margin-top: 15px; padding: 10px 15px; font-size: 16px; cursor: pointer; border: none; border-radius: 4px; background: #0078d7; color: white; }
+  button:hover { background: #005fa3; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<h2>SenseCap M1 – Generator konfiguracji sieci</h2>
+
+<form id="configForm">
+  <label for="mode">Tryb pracy:</label>
+  <select id="mode" required>
+    <option value="wifi" selected>WiFi</option>
+    <option value="ethernet">Tylko Ethernet (wyłącz WiFi)</option>
+  </select>
+
+  <div id="wifiFields">
+    <label for="ssid">Nazwa WiFi (SSID):</label>
+    <input type="text" id="ssid">
+
+    <label for="psk">Hasło do WiFi:</label>
+    <input type="password" id="psk">
+
+    <label for="staticIp">Czy ustawić statyczne IP?</label>
+    <select id="staticIp">
+      <option value="nie" selected>Nie</option>
+      <option value="tak">Tak</option>
+    </select>
+
+    <div id="staticIpFields" class="hidden">
+      <label for="ip">Statyczny adres IP (np. 192.168.0.245/24):</label>
+      <input type="text" id="ip">
+
+      <label for="gateway">Bramka sieciowa (np. 192.168.0.1):</label>
+      <input type="text" id="gateway">
+
+      <label for="dns">DNS (np. 8.8.8.8):</label>
+      <input type="text" id="dns">
+    </div>
+  </div>
+
+  <button type="submit">Generuj skrypt</button>
+</form>
+
+<button id="copyBtn" class="hidden">Kopiuj skrypt do schowka</button>
+
+<label for="output">Wygenerowany skrypt (skopiuj i wklej w terminalu SenseCap):</label>
+<textarea id="output" readonly></textarea>
+
+<script>
+  function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  function generateWifiConfig(ssid, psk, staticIp, ip, gateway, dns) {
+    let config = `cat <<EOF > /mnt/boot/system-connections/wifi.nmconnection
+[connection]
+id=wifi
+uuid=${generateUUID()}
+type=wifi
+autoconnect=true
+
+[wifi]
+ssid=${ssid}
+mode=infrastructure
+
+[wifi-security]
+key-mgmt=wpa-psk
+psk=${psk}
+
+[ipv4]
+method=${staticIp ? 'manual' : 'auto'}`;
+    if (staticIp) {
+      config += `
+address1=${ip},${gateway}
+dns=${dns || ''}
+dns-search=`;
+    }
+    config += `
+
+[ipv6]
+method=ignore
+EOF
+
+chmod 600 /mnt/boot/system-connections/wifi.nmconnection
+systemctl restart NetworkManager
+`;
+    return config;
+  }
+
+  function generateEthernetConfig() {
+    return `# Usuń istniejące połączenia WiFi
+rm -f /mnt/boot/system-connections/wifi.nmconnection
+rm -f /etc/NetworkManager/system-connections/*.nmconnection 2>/dev/null
+
+# Wyłącz WiFi
+nmcli radio wifi off
+
+# Restart NetworkManager
+systemctl restart NetworkManager
+`;
+  }
+
+  document.getElementById('staticIp').addEventListener('change', function() {
+    document.getElementById('staticIpFields').classList.toggle('hidden', this.value !== 'tak');
+  });
+
+  document.getElementById('mode').addEventListener('change', function() {
+    document.getElementById('wifiFields').classList.toggle('hidden', this.value === 'ethernet');
+  });
+
+  document.getElementById('configForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    let mode = document.getElementById('mode').value;
+    let script = '';
+
+    if (mode === 'wifi') {
+      const ssid = document.getElementById('ssid').value.trim();
+      const psk = document.getElementById('psk').value.trim();
+      const staticIp = document.getElementById('staticIp').value === 'tak';
+      const ip = document.getElementById('ip').value.trim();
+      const gateway = document.getElementById('gateway').value.trim();
+      const dns = document.getElementById('dns').value.trim();
+
+      if (!ssid || !psk) {
+        alert('Podaj SSID i hasło do WiFi.');
+        return;
+      }
+      if (staticIp && (!ip || !gateway)) {
+        alert('Podaj statyczny adres IP i bramę sieciową.');
+        return;
+      }
+      script = generateWifiConfig(ssid, psk, staticIp, ip, gateway, dns);
+    } else {
+      script = generateEthernetConfig();
+    }
+
+    document.getElementById('output').value = script;
+    document.getElementById('copyBtn').classList.remove('hidden');
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', function() {
+    const output = document.getElementById('output');
+    output.select();
+    output.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    alert('Skrypt został skopiowany do schowka!');
+  });
+</script>
+
+</body>
+</html>
