@@ -3,22 +3,82 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SenseCap M1 - Generator Konfiguracji Sieci</title>
+<title>⚡ SenseCap M1 - Super Hero Code Master Config ⚡</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 650px; margin: 20px auto; padding: 0 15px; background: #f4f4f4; }
-  h2 { text-align: center; }
-  label { display: block; margin-top: 15px; font-weight: bold; }
-  input[type=text], input[type=password], select { width: 100%; padding: 8px; margin-top: 5px; }
-  textarea { width: 100%; height: 320px; margin-top: 15px; font-family: monospace; }
-  button { margin-top: 15px; padding: 10px 15px; font-size: 16px; cursor: pointer; }
-  #musicControl { background: #222; color: white; border: none; border-radius: 5px; }
+  body {
+    font-family: 'Courier New', monospace;
+    background: #0d0d0d;
+    color: #00ff88;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  h2 {
+    text-align: center;
+    color: #00ff88;
+    text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88;
+  }
+  label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+    color: #00ffaa;
+    text-shadow: 0 0 5px #00ffaa;
+  }
+  input[type=text], input[type=password], select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    background: #111;
+    border: 1px solid #00ffaa;
+    color: #00ffaa;
+  }
+  textarea {
+    width: 100%;
+    height: 320px;
+    margin-top: 15px;
+    background: #000;
+    color: #00ff88;
+    border: 1px solid #00ffaa;
+    padding: 10px;
+    box-shadow: 0 0 15px #00ff88;
+  }
+  button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 16px;
+    background: transparent;
+    border: 2px solid #00ff88;
+    color: #00ff88;
+    cursor: pointer;
+    text-shadow: 0 0 5px #00ff88;
+    box-shadow: 0 0 10px #00ff88, inset 0 0 10px #00ff88;
+    transition: all 0.2s ease-in-out;
+  }
+  button:hover {
+    background: #00ff88;
+    color: #000;
+    text-shadow: none;
+    box-shadow: 0 0 25px #00ff88;
+  }
+  #musicControl {
+    display: block;
+    margin: 0 auto 20px auto;
+    font-size: 18px;
+  }
+  #staticIpFields {
+    background: rgba(0,255,136,0.05);
+    padding: 10px;
+    border: 1px dashed #00ff88;
+    margin-top: 10px;
+  }
 </style>
 </head>
 <body>
 
-<h2>SenseCap M1 - Generator Konfiguracji Sieci</h2>
+<h2>⚡ SenseCap M1 - Super Hero Code Master ⚡</h2>
 
-<button id="musicControl">🔊 Włącz/Wyłącz muzykę</button>
+<button id="musicControl">🎵 Muzyka: ON/OFF</button>
 
 <form id="configForm">
   <label for="mode">Tryb konfiguracji:</label>
@@ -52,10 +112,10 @@
     </div>
   </div>
 
-  <button type="submit">Generuj skrypt</button>
+  <button type="submit">⚙️ Generuj skrypt</button>
 </form>
 
-<label for="output">Wygenerowany skrypt bash (kopiuj i wklej w terminalu SenseCap):</label>
+<label for="output">💻 Wygenerowany skrypt bash:</label>
 <textarea id="output" readonly></textarea>
 
 <audio id="bgMusic" loop autoplay>
@@ -73,7 +133,7 @@
   function generateScript(mode, ssid, psk, staticIp, ip, gateway, dns) {
     let script = "#!/bin/bash\n";
     if (mode === "ethernet") {
-      script += "# Usuń wszystkie połączenia WiFi i wyłącz radio WiFi\n";
+      script += "# Wyłączamy WiFi na zawsze (no mercy!)\n";
       script += "rm -f /mnt/boot/system-connections/wifi.nmconnection\n";
       script += "rm -f /etc/NetworkManager/system-connections/*.nmconnection 2>/dev/null\n";
       script += "nmcli radio wifi off\n";
@@ -136,11 +196,11 @@ systemctl restart NetworkManager
     const dns = document.getElementById('dns').value.trim();
 
     if (mode === "wifi" && (!ssid || !psk)) {
-      alert('Podaj SSID i hasło do WiFi.');
+      alert('⚠️ Podaj SSID i hasło do WiFi!');
       return;
     }
     if (mode === "wifi" && staticIp && (!ip || !gateway)) {
-      alert('Podaj IP i bramę dla statycznego adresu.');
+      alert('⚠️ Podaj IP i bramę dla statycznego adresu!');
       return;
     }
 
