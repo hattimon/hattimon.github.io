@@ -1,1 +1,402 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>⚡ SenseCap M1 — Super Hero Code Master Console ⚡</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Fira+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#06060a;
+    --panel:rgba(4,8,12,0.65);
+    --neon:#00ffc6;
+    --accent:#8a2be2;
+    --muted:#9aa3a1;
+    --glass-border:rgba(0,255,198,0.12);
+  }
+  html,body{height:100%;margin:0;background:var(--bg);font-family:'Fira Mono', monospace;color:var(--neon);overflow:hidden}
+  /* Canvas background (matrix rain) */
+  #matrixCanvas{position:fixed;inset:0;z-index:0;mix-blend-mode:screen;opacity:0.15}
+  /* Main layout */
+  .app {
+    position:relative;
+    z-index:2;
+    max-width:1100px;
+    margin:30px auto;
+    padding:28px;
+    display:grid;
+    grid-template-columns: 1fr 420px;
+    gap:24px;
+    align-items:start;
+  }
+  /* Left panel - controls */
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid var(--glass-border);
+    padding:18px;
+    border-radius:12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 0 40px rgba(0,255,198,0.03) inset;
+    backdrop-filter: blur(8px) saturate(130%);
+  }
+  h1{margin:0 0 6px 0;font-family:'Orbitron',sans-serif;font-weight:700;color:var(--neon);text-shadow:0 0 12px rgba(0,255,198,0.12)}
+  .subtitle{color:var(--muted);font-size:13px;margin-bottom:12px}
+  label{display:block;margin-top:12px;color:var(--neon);font-weight:700;font-size:13px}
+  input[type=text], input[type=password], select{
+    width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,255,198,0.08);
+    background:linear-gradient(180deg, rgba(0,0,0,0.45), rgba(255,255,255,0.01));
+    color:var(--neon);outline:none;font-family:inherit;
+    box-shadow: 0 0 12px rgba(0,255,198,0.02) inset;
+  }
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  .row{display:flex;gap:8px;margin-top:12px}
+  .btn {
+    cursor:pointer;padding:10px 14px;border-radius:10px;border:2px solid rgba(0,255,198,0.12);
+    background:linear-gradient(180deg, rgba(0,255,198,0.02), rgba(0,0,0,0.2));
+    color:var(--neon);font-weight:700;letter-spacing:0.6px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.6);
+    transition:all 180ms ease;
+  }
+  .btn:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(0,255,198,0.06)}
+  .primary{border-color:var(--neon);background:linear-gradient(90deg, rgba(0,255,198,0.06), rgba(138,43,226,0.02));}
+  .ghost{background:transparent;border:1px dashed rgba(255,255,255,0.04);color:var(--muted);font-weight:600}
 
+  /* Right panel - output */
+  .terminal {
+    background:#000;
+    border-radius:12px;
+    padding:16px;
+    border:1px solid rgba(138,43,226,0.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    position:relative;
+    min-height:520px;
+    overflow:auto;
+  }
+  .terminal .title {
+    display:flex;align-items:center;gap:8px;margin-bottom:10px;
+  }
+  .led {width:12px;height:12px;border-radius:50%;background:linear-gradient(180deg,#00ffb0,#00a07f);box-shadow:0 0 12px #00ffb0 inset}
+  .term-area{
+    background:linear-gradient(180deg,#020202,#060606);color:var(--neon);
+    border-radius:8px;padding:14px;font-family:'Fira Mono',monospace;font-size:13px;
+    min-height:420px;white-space:pre-wrap;line-height:1.45;border:1px solid rgba(0,255,198,0.06);
+    box-shadow:0 0 30px rgba(138,43,226,0.03) inset;
+  }
+  .term-area::selection{background:rgba(138,43,226,0.35);color:#fff}
+  .controls-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .copyBtn{background:linear-gradient(90deg,#00ffc6,#8a2be2);color:#001;border:none}
+  .downloadBtn{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+
+  /* Equalizer music button */
+  .eq-btn{
+    width:64px;height:64px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);
+    display:inline-grid;place-items:center;background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.6));
+    box-shadow:0 8px 30px rgba(0,0,0,0.6),0 0 20px rgba(138,43,226,0.03) inset;cursor:pointer;
+  }
+  .bars{display:flex;gap:3px;align-items:end;height:26px}
+  .bar{width:6px;background:linear-gradient(180deg,var(--neon),var(--accent));border-radius:2px;animation:beat 1s infinite ease-in-out;transform-origin:bottom}
+  .bar:nth-child(1){animation-delay:0s}
+  .bar:nth-child(2){animation-delay:0.12s}
+  .bar:nth-child(3){animation-delay:0.22s}
+  .bar:nth-child(4){animation-delay:0.08s}
+  .bar:nth-child(5){animation-delay:0.18s}
+  @keyframes beat{
+    0%{height:6px;opacity:0.6}
+    30%{height:22px;opacity:1}
+    60%{height:12px;opacity:0.8}
+    100%{height:6px;opacity:0.6}
+  }
+  .eq-paused .bar{animation-play-state:paused;opacity:0.3}
+
+  /* animated glow around main title */
+  .logo {
+    display:flex;align-items:center;gap:12px;margin-bottom:8px;
+  }
+  .logo .shield{
+    width:46px;height:46px;border-radius:8px;background:linear-gradient(180deg,rgba(138,43,226,0.18),rgba(0,255,198,0.06));
+    display:grid;place-items:center;color:#041;box-shadow:0 0 18px rgba(0,255,198,0.12);
+  }
+  .small{font-size:12px;color:var(--muted)}
+
+  /* footer */
+  .footer{grid-column:1/-1;margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+
+  /* responsive */
+  @media (max-width:980px){
+    .app{grid-template-columns:1fr; padding:18px}
+    .terminal{min-height:380px}
+  }
+</style>
+</head>
+<body>
+<canvas id="matrixCanvas"></canvas>
+
+<div class="app">
+  <div class="panel">
+    <div class="logo">
+      <div class="shield">⚡</div>
+      <div>
+        <h1>Super Hero Code Master</h1>
+        <div class="subtitle small">SenseCap M1 — Network config console (balenaOS)</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="eq-btn" id="musicControl" title="Włącz / Wyłącz muzykę (keygen.mp3)">
+          <div class="bars" id="bars">
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+          </div>
+        </div>
+        <div style="margin-left:8px">
+          <div style="font-weight:700;color:var(--neon)">Audio: keygen.mp3</div>
+          <div class="small">Autoplay może wymagać interakcji z użytkownikiem w przeglądarce</div>
+        </div>
+      </div>
+
+      <div style="text-align:right">
+        <div style="font-size:13px;color:var(--muted)">Mode</div>
+        <select id="modeTop" style="padding:6px;border-radius:8px;background:transparent;color:var(--neon);border:1px solid rgba(255,255,255,0.04)">
+          <option value="wifi" selected>WiFi</option>
+          <option value="ethernet">Ethernet only</option>
+        </select>
+      </div>
+    </div>
+
+    <label for="mode">Tryb konfiguracji</label>
+    <select id="mode" >
+      <option value="wifi" selected>WiFi</option>
+      <option value="ethernet">Tylko Ethernet (usuń WiFi)</option>
+    </select>
+
+    <label for="ssid">SSID (Nazwa sieci)</label>
+    <input id="ssid" type="text" placeholder="TwojaSiec_WiFi" />
+
+    <label for="psk">Hasło (PSK)</label>
+    <input id="psk" type="password" placeholder="SuperSekretneHaslo" />
+
+    <label for="staticIp">Ustaw statyczne IP?</label>
+    <select id="staticIp">
+      <option value="nie" selected>DHCP (automatycznie)</option>
+      <option value="tak">Tak — statyczne</option>
+    </select>
+
+    <div id="staticIpFields" style="display:none;margin-top:8px;padding:10px;border-radius:8px">
+      <label for="ip">Adres IP (z maską) — np. 192.168.0.245/24</label>
+      <input id="ip" type="text" placeholder="192.168.0.245/24" />
+      <label for="gateway">Bramka (gateway)</label>
+      <input id="gateway" type="text" placeholder="192.168.0.1" />
+      <label for="dns">DNS 1 (opcjonalnie)</label>
+      <input id="dns" type="text" placeholder="8.8.8.8" />
+      <label for="dns2">DNS 2 (opcjonalnie)</label>
+      <input id="dns2" type="text" placeholder="8.8.4.4" />
+    </div>
+
+    <div class="row">
+      <button class="btn primary" id="generate">⚙️ Generuj skrypt</button>
+      <button class="btn ghost" id="clear">✖ Wyczyść</button>
+    </div>
+
+<div class="hint">
+  Skrypt będzie zgodny z balenaOS (NetworkManager). Plik wynikowy wkleić jako root na urządzeniu.<br>
+  <b>Nie masz konta root? Oto instrukcja:</b> 
+  <a href="https://github.com/hattimon/miner_watchdog/blob/main/linki.md#jak-dosta%C4%87-si%C4%99-na-root-sensecap-m1-przez-ssh" 
+     target="_blank" 
+     style="color: orange; font-weight: bold; text-decoration: none;">
+    Jak dostać się na root SenseCap M1 przez SSH
+  </a>
+</div>
+
+
+
+  </div>
+
+  <div class="terminal panel">
+    <div class="title">
+      <div class="led" aria-hidden="true"></div>
+      <div style="flex:1">
+        <div style="font-weight:700;color:var(--neon)">Terminal — Wygenerowany skrypt</div>
+        <div class="small">Kliknij Kopiuj lub Pobierz .sh</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn copyBtn" id="copyBtn">Kopiuj</button>
+        <button class="btn downloadBtn" id="downloadBtn">Pobierz .sh</button>
+      </div>
+    </div>
+
+    <div class="term-area" id="output">// Wygenerowany skrypt pojawi się tutaj</div>
+
+<div class="small" style="flex:1; color:#ff0000;">
+  <b>Uwaga:</b> zrestartuj hotspota poleceniem <b>reboot</b> dla zastosowania zmian.<br>
+  Lub uruchom ponownie w inny sposób.
+</div>
+
+  </div>
+
+  <div class="footer">Super Hero Code Master • Designed for SenseCap M1 • balenaOS compatible</div>
+</div>
+
+<!-- audio element (must be in same folder) -->
+<audio id="bgAudio" loop>
+  <source src="keygen.mp3" type="audio/mpeg">
+  Twoja przeglądarka nie obsługuje elementu audio.
+</audio>
+
+<script>
+/* MATRIX RAIN BACKGROUND */
+const canvas = document.getElementById('matrixCanvas');
+const ctx = canvas.getContext('2d');
+let W = canvas.width = innerWidth;
+let H = canvas.height = innerHeight;
+const cols = Math.floor(W / 16) + 1;
+const ypos = Array(cols).fill(0);
+function matrixStep(){
+  ctx.fillStyle = 'rgba(0,0,0,0.05)';
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#00ffb0';
+  ctx.font = '15px monospace';
+  for(let i=0;i<ypos.length;i++){
+    const text = String.fromCharCode(33 + Math.random()*94);
+    ctx.fillText(text, i*16, ypos[i]*16);
+    if(ypos[i]*16 > H && Math.random() > 0.975) ypos[i]=0;
+    ypos[i]++;
+  }
+}
+let matrixInterval = setInterval(matrixStep, 60);
+onresize = () => { W = canvas.width = innerWidth; H = canvas.height = innerHeight; const newCols = Math.floor(W/16)+1; ypos.length = newCols; for(let i=0;i<newCols;i++) if(!ypos[i]) ypos[i]=Math.random()*20; };
+
+/* UI logic and script generation */
+function generateUUID(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){const r=Math.random()*16|0,v=c=='x'?r:(r&0x3|0x8);return v.toString(16);});
+}
+function buildScript(mode, ssid, psk, staticIp, ip, gw, dns, dns2){
+  let out = "#!/bin/bash\nset -e\n\n";
+  if(mode === 'ethernet'){
+    out += "# TRYB: Tylko Ethernet — usuwamy wszystkie profile WiFi i wyłączamy radio\n";
+    out += "rm -f /mnt/boot/system-connections/*.nmconnection || true\n";
+    out += "rm -f /etc/NetworkManager/system-connections/*.nmconnection 2>/dev/null || true\n";
+    out += "nmcli radio wifi off || true\n";
+    out += "systemctl restart NetworkManager || true\n";
+    out += "echo 'Ethernet only mode applied.'\n";
+    return out;
+  }
+  // wifi mode
+  out += "echo 'Tworzenie pliku /mnt/boot/system-connections/wifi.nmconnection'\n";
+  out += "cat <<'EOF' > /mnt/boot/system-connections/wifi.nmconnection\n";
+  out += "[connection]\n";
+  out += "id=wifi\n";
+  out += "uuid="+generateUUID()+"\n";
+  out += "type=wifi\n";
+  out += "autoconnect=true\n\n";
+  out += "[wifi]\n";
+  out += "ssid="+ssid+"\n";
+  out += "mode=infrastructure\n\n";
+  out += "[wifi-security]\n";
+  out += "key-mgmt=wpa-psk\n";
+  out += "psk="+psk+"\n\n";
+  out += "[ipv4]\n";
+  out += "method="+(staticIp?'manual':'auto')+"\n";
+  if(staticIp){
+    out += "address1="+ip+","+gw+"\n";
+    let dnsList = [];
+    if(dns) dnsList.push(dns);
+    if(dns2) dnsList.push(dns2);
+    out += "dns="+(dnsList.length > 0 ? dnsList.join(',') : '8.8.8.8')+"\n";
+    out += "dns-search=\n";
+  }
+  out += "\n[ipv6]\nmethod=ignore\nEOF\n\n";
+  out += "chmod 600 /mnt/boot/system-connections/wifi.nmconnection || true\n";
+  out += "systemctl restart NetworkManager || true\n";
+  out += "echo 'WiFi configuration applied.'\n";
+  return out;
+}
+
+/* DOM */
+const mode = document.getElementById('mode');
+const modeTop = document.getElementById('modeTop');
+const ssid = document.getElementById('ssid');
+const psk = document.getElementById('psk');
+const staticIp = document.getElementById('staticIp');
+const staticIpFields = document.getElementById('staticIpFields');
+const ip = document.getElementById('ip');
+const gateway = document.getElementById('gateway');
+const dns = document.getElementById('dns');
+const dns2 = document.getElementById('dns2');
+const generate = document.getElementById('generate');
+const clearBtn = document.getElementById('clear');
+const output = document.getElementById('output');
+const copyBtn = document.getElementById('copyBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const bgAudio = document.getElementById('bgAudio');
+const musicControl = document.getElementById('musicControl');
+const bars = document.getElementById('bars');
+
+modeTop.addEventListener('change',()=>{mode.value = modeTop.value; mode.dispatchEvent(new Event('change'));});
+mode.addEventListener('change',()=>{
+  modeTop.value = mode.value;
+  if(mode.value === 'wifi'){ staticIpFields.style.display = (staticIp.value==='tak')?'block':'none'; }
+  else { staticIpFields.style.display = 'none'; }
+});
+staticIp.addEventListener('change',()=>{ staticIpFields.style.display = (staticIp.value==='tak')?'block':'none'; });
+
+generate.addEventListener('click',(e)=>{ e.preventDefault();
+  const m = mode.value;
+  if(m==='wifi' && (!ssid.value.trim() || !psk.value.trim())){ alert('Podaj SSID i hasło!'); return; }
+  if(m==='wifi' && staticIp.value==='tak' && (!ip.value.trim() || !gateway.value.trim())){ alert('Podaj IP i bramę dla statycznego trybu.'); return; }
+  const script = buildScript(m, ssid.value.trim(), psk.value.trim(), staticIp.value==='tak', ip.value.trim(), gateway.value.trim(), dns.value.trim(), dns2.value.trim());
+  output.textContent = script;
+  // small visual flash
+  output.style.boxShadow = "0 0 30px rgba(0,255,198,0.12)";
+  setTimeout(()=>{ output.style.boxShadow = ""; },900);
+});
+
+clearBtn.addEventListener('click',(e)=>{ e.preventDefault();
+  ssid.value=''; psk.value=''; staticIp.value='nie'; ip.value=''; gateway.value=''; dns.value=''; dns2.value='';
+  output.textContent='// Wygenerowany skrypt pojawi się tutaj';
+  staticIpFields.style.display='none';
+});
+
+/* copy to clipboard */
+copyBtn.addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(output.textContent);
+    copyBtn.textContent = 'Skopiowano ✓';
+    setTimeout(()=>copyBtn.textContent='Kopiuj',1300);
+  }catch(e){
+    alert('Kopiowanie nie powiodło się. Skopiuj ręcznie.');
+  }
+});
+
+/* download .sh */
+downloadBtn.addEventListener('click',()=>{
+  const blob = new Blob([output.textContent], {type:'text/x-sh'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'sensecap-network-setup.sh'; document.body.appendChild(a);
+  a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+/* music control */
+let audioPlaying = false;
+function updateEqUI(){
+  if(audioPlaying){ bars.parentElement.classList.remove('eq-paused'); }
+  else { bars.parentElement.classList.add('eq-paused'); }
+}
+// try autoplay, but browsers usually require user gesture
+bgAudio.volume = 0.28;
+bgAudio.addEventListener('play',()=>{ audioPlaying=true; updateEqUI(); });
+bgAudio.addEventListener('pause',()=>{ audioPlaying=false; updateEqUI(); });
+// start paused until user clicks (compat)
+bars.parentElement.classList.add('eq-paused');
+musicControl.addEventListener('click',()=>{
+  if(bgAudio.paused){
+    bgAudio.play().catch(()=>{ /* autoplay blocked */ });
+  } else {
+    bgAudio.pause();
+  }
+});
+
+/* initial state */
+output.textContent = "// Wygenerowany skrypt pojawi się tutaj\n";
+</script>
+</body>
+</html>
