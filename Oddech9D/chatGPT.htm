@@ -1,0 +1,479 @@
+<!-- Oddech 9D - Strona z AI Agentem i Harmonogramem
+     Gotowy pojedynczy plik HTML/CSS/JS.
+     Instrukcja: otwórz w przeglądarce (plik lokalny). W kodzie znajdują się komentarze wskazujące, gdzie podłączyć rzeczywiste API modelu językowego i backend do zapisu/kalendarium.
+-->
+
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Oddech 9D — Wspólne sesje</title>
+  <style>
+    /* -------------------- Reset / podstawy -------------------- */
+    :root{
+      --accent-1: #7fb7e6; /* jasny błękit */
+      --accent-2: #a9d6ff;
+      --bg-light: #f7fbff;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --glass: rgba(255,255,255,0.6);
+      --radius: 14px;
+      --shadow: 0 6px 18px rgba(8,24,40,0.08);
+
+      --dark-bg: #0f1724;
+      --dark-surface: #111827;
+      --dark-card: #0b1220;
+      --dark-accent: #3b82f6;
+      --text: #0b1220;
+      --text-inverse: #e6eef9;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background: linear-gradient(180deg,var(--bg-light), #eef8ff 60%);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:24px;
+      transition:background 0.3s, color 0.3s;
+    }
+
+    /* Container */
+    .app{
+      max-width:1200px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: 360px 1fr 360px;
+      gap:20px;
+      align-items:start;
+    }
+
+    header{grid-column:1/4; display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px}
+    .brand{display:flex; gap:12px; align-items:center}
+    .logo{width:56px; height:56px; border-radius:12px; background:linear-gradient(135deg,var(--accent-2),var(--accent-1)); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; box-shadow:var(--shadow)}
+    h1{margin:0; font-size:1.25rem}
+    p.lead{margin:0; color:var(--muted); font-size:0.95rem}
+
+    /* Card */
+    .card{background:var(--card); padding:16px; border-radius:var(--radius); box-shadow:var(--shadow)}
+    .muted{color:var(--muted)}
+
+    /* Left column (harmonogram, sesje) */
+    .left .section+ .section{margin-top:16px}
+    .session-item{display:flex; align-items:center; justify-content:space-between; padding:10px; border-radius:10px; margin-bottom:8px}
+    .session-item .name{font-weight:600}
+    .session-list{margin-top:8px}
+    .btn{display:inline-flex; align-items:center; gap:8px; background:var(--accent-1); color:white; border:none; padding:10px 14px; border-radius:10px; cursor:pointer}
+    .btn.secondary{background:transparent; color:var(--accent-1); border:1px solid rgba(127,183,230,0.25)}
+    .small{font-size:0.9rem; padding:8px 10px}
+
+    /* Center column (główny panel: harmonogram, czat) */
+    .center-grid{display:grid; grid-template-rows:auto 1fr; gap:16px}
+    .schedule{display:flex; flex-direction:column; gap:8px}
+    .time-block{display:flex; gap:12px; align-items:flex-start}
+    .time{font-weight:700; width:84px}
+    .desc{flex:1}
+
+    /* Chat */
+    .chat-window{display:flex; flex-direction:column; height:520px}
+    .messages{flex:1; overflow:auto; padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(250,253,255,0.6), rgba(245,250,255,0.6));}
+    .msg{margin-bottom:10px}
+    .from-agent{font-weight:600}
+    .from-user{align-self:flex-end}
+    .chat-controls{display:flex; gap:8px; margin-top:8px}
+    .textarea{flex:1; min-height:44px; padding:8px; border-radius:10px; border:1px solid #e6eef9}
+
+    /* Right column (panel zapisów) */
+    .right .section+ .section{margin-top:16px}
+    .signup-list{max-height:240px; overflow:auto}
+    .user-row{display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px; border-radius:8px}
+
+    /* Footer controls */
+    .controls{display:flex; gap:10px; align-items:center}
+    label.switch{display:inline-flex; align-items:center; gap:8px}
+
+    /* Responsive */
+    @media (max-width:1024px){
+      .app{grid-template-columns:1fr; padding:12px}
+      header{flex-direction:column; align-items:flex-start}
+      .right{order:3}
+      .left{order:2}
+    }
+
+    /* Dark theme */
+    .dark{
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(30,41,59,0.6), rgba(6,9,15,0.9));
+      color:var(--text-inverse);
+    }
+    .dark .card{background:linear-gradient(180deg,var(--dark-card), rgba(6,9,15,0.6)); box-shadow:none}
+    .dark .logo{background:linear-gradient(135deg,var(--dark-accent), #1e293b)}
+    .dark .messages{background:linear-gradient(180deg, rgba(8,12,20,0.6), rgba(10,15,25,0.6));}
+    .dark .textarea{background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--text-inverse)}
+    .dark .btn{background:var(--dark-accent)}
+
+    /* Subtle animations */
+    .fade-in{animation:fadeIn 450ms ease both}
+    @keyframes fadeIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+
+  </style>
+</head>
+<body>
+
+  <div class="app" id="app">
+
+    <header>
+      <div class="brand">
+        <div class="logo">9D</div>
+        <div>
+          <h1>Oddech 9D — Wspólne sesje</h1>
+          <p class="lead">Harmonogram i zapisy — styl Techniki Uwalniania (David R. Hawkins). Neutralnie. Empatycznie.</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label class="switch">
+          <input id="themeToggle" type="checkbox" aria-label="Przełącz motyw" />
+          <span class="muted">Tryb ciemny</span>
+        </label>
+        <button class="btn secondary small" id="exportCsv">Eksportuj listę CSV</button>
+      </div>
+    </header>
+
+    <!-- LEWA KOLUMNA -->
+    <aside class="left">
+      <div class="card section fade-in">
+        <h3>Harmonogram standardowy</h3>
+        <div class="schedule">
+          <div class="time-block"><div class="time">18:30</div><div class="desc"><strong>Czas dla Was</strong><div class="muted">Dzielenie się doświadczeniami i pytania (czat z agentem)</div></div></div>
+          <div class="time-block"><div class="time">19:00</div><div class="desc"><strong>Rozpoczęcie</strong><div class="muted">Przygotowanie do sesji</div></div></div>
+          <div class="time-block"><div class="time">~19:45</div><div class="desc"><strong>Start sesji oddechowej</strong><div class="muted">Uczestnicy słuchają nagrań na słuchawkach</div></div></div>
+          <div class="time-block"><div class="time">~21:00</div><div class="desc"><strong>Zakończenie</strong><div class="muted">Dzielenie się wrażeniami, zadanie domowe</div></div></div>
+        </div>
+      </div>
+
+      <div class="card section fade-in">
+        <h3>Dostępne sesje (wybierz przy zapisie)</h3>
+        <div class="session-list" id="sessionList">
+          <!-- dynamicznie wypełniane -->
+        </div>
+        <small class="muted">Sesje odbywają się co tydzień. Możesz także zaproponować inny dzień/godzinę.</small>
+      </div>
+
+      <div class="card section fade-in">
+        <h3>Zasady grupy</h3>
+        <p class="muted">Neutralność i słuchanie. Nie oceniamy. Szanujemy poufność. Sesje nie zastępują pomocy medycznej ani psychologicznej.</p>
+      </div>
+    </aside>
+
+    <!-- ŚRODEK -->
+    <main class="center">
+      <div class="center-grid">
+
+        <div class="card fade-in">
+          <h3>Aktualna sesja</h3>
+          <div style="display:flex; gap:12px; align-items:center; margin-top:8px">
+            <div style="flex:1">
+              <div id="currentSessionTitle" style="font-weight:700">Brak zaplanowanej sesji</div>
+              <div class="muted" id="currentSessionInfo">Wybierz sesję i zapisz się, aby dołączyć.</div>
+            </div>
+            <div style="display:flex; gap:8px">
+              <button class="btn small" id="joinBtn">Dołącz</button>
+              <button class="btn secondary small" id="proposeBtn">Zaproponuj inny termin</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card chat-window fade-in" aria-live="polite">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+            <div>
+              <strong>Grupowy czat</strong>
+              <div class="muted">Dostępny 30 minut przed i 30 minut po sesji. Agent opcjonalny.</div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center">
+              <label style="display:flex; align-items:center; gap:8px"><input type="checkbox" id="agentToggle" checked/> Agent</label>
+              <button class="btn small secondary" id="pauseAgent">Pauza agenta</button>
+            </div>
+          </div>
+
+          <div class="messages" id="messages">
+            <!-- wiadomości -->
+          </div>
+
+          <div class="chat-controls">
+            <textarea id="messageInput" class="textarea" placeholder="Napisz wiadomość..." aria-label="Wiadomość"></textarea>
+            <button class="btn" id="sendBtn">Wyślij</button>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- PRAWA KOLUMNA -->
+    <aside class="right">
+      <div class="card section fade-in">
+        <h3>Zapisy na sesję</h3>
+        <form id="signupForm">
+          <label class="muted">Wybierz sesję</label>
+          <select id="sessionSelect" required style="width:100%; padding:8px; margin-top:6px; margin-bottom:10px; border-radius:8px; border:1px solid rgba(0,0,0,0.06)">
+          </select>
+
+          <label class="muted">Imię (nick)</label>
+          <input id="nameInput" type="text" placeholder="Twoje imię" required style="width:100%; padding:8px; margin-top:6px; border-radius:8px; border:1px solid rgba(0,0,0,0.06)" />
+
+          <label class="muted" style="margin-top:8px">Proponowany inny termin (opcjonalnie)</label>
+          <input id="proposedTime" placeholder="np. Wtorek 19:00" style="width:100%; padding:8px; margin-top:6px; border-radius:8px; border:1px solid rgba(0,0,0,0.06)" />
+
+          <div style="display:flex; gap:8px; margin-top:10px">
+            <button class="btn" type="submit">Zapisz się</button>
+            <button class="btn secondary" type="button" id="clearBtn">Wyczyść</button>
+          </div>
+        </form>
+
+        <div style="margin-top:12px">
+          <strong>Lista zapisanych</strong>
+          <div class="signup-list" id="signupList"></div>
+        </div>
+      </div>
+
+      <div class="card section fade-in">
+        <h3>Panel moderatora (opcjonalny)</h3>
+        <p class="muted">Zatwierdzaj propozycje terminów i zarządzaj harmonogramem.</p>
+        <div id="proposals"></div>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <script>
+    /*************************************************************************
+     * Dane startowe i ustawienia (można rozbudować aby pobierać z backendu)
+     *************************************************************************/
+    const SESSIONS = [
+      'Obfitość', 'Stres i niepokój', 'Przebudzenie', 'Przekraczanie strachu',
+      'Ponowne połączenie ze swoim wewnętrznym dzieckiem', 'Podążaj za ciałem',
+      'Połączenie ze źródłem', 'Regeneracja i relaks', 'Odpuszczenie i ruszenie dalej',
+      'Uzdrowienie 5 Podstawowych Śladów Traumy', 'Traumy międzypokoleniowe', 'Pełny Reset'
+    ];
+
+    // Przechowywanie w localStorage (symulacja backendu)
+    const STORAGE_KEY = 'oddech9d_signups_v1';
+
+    // Elementy DOM
+    const sessionListEl = document.getElementById('sessionList');
+    const sessionSelect = document.getElementById('sessionSelect');
+    const signupListEl = document.getElementById('signupList');
+    const signupForm = document.getElementById('signupForm');
+    const nameInput = document.getElementById('nameInput');
+    const proposedTime = document.getElementById('proposedTime');
+    const messagesEl = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const agentToggle = document.getElementById('agentToggle');
+    const pauseAgentBtn = document.getElementById('pauseAgent');
+    const joinBtn = document.getElementById('joinBtn');
+    const proposeBtn = document.getElementById('proposeBtn');
+    const currentSessionTitle = document.getElementById('currentSessionTitle');
+    const currentSessionInfo = document.getElementById('currentSessionInfo');
+    const themeToggle = document.getElementById('themeToggle');
+    const exportCsv = document.getElementById('exportCsv');
+    const proposalsEl = document.getElementById('proposals');
+
+    // Stan
+    let signups = loadSignups();
+    let agentPaused = false;
+    let currentSession = null; // {sessionName, startISO, attendees: []}
+
+    // Inicjalizacja listy sesji
+    function initSessions(){
+      sessionListEl.innerHTML = '';
+      sessionSelect.innerHTML = '';
+      SESSIONS.forEach((s,i)=>{
+        const div = document.createElement('div'); div.className='session-item';
+        div.innerHTML = `<div><div class="name">${i+1}. ${s}</div><div class="muted">Tematyczna sesja oddechowa</div></div>`;
+        sessionListEl.appendChild(div);
+
+        const opt = document.createElement('option'); opt.value = s; opt.textContent = `${i+1}. ${s}`;
+        sessionSelect.appendChild(opt);
+      });
+    }
+
+    // Ładowanie i zapis
+    function loadSignups(){
+      try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [] }catch(e){return []}
+    }
+    function saveSignups(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(signups)); }
+
+    // Render listy zapisanych
+    function renderSignups(){
+      signupListEl.innerHTML = '';
+      if(!signups.length) { signupListEl.innerHTML = '<div class="muted">Brak zapisanych</div>'; return }
+      signups.forEach((s,idx)=>{
+        const row = document.createElement('div'); row.className='user-row';
+        row.innerHTML = `<div><strong>${s.name}</strong><div class="muted" style="font-size:0.9rem">${s.session} ${s.proposed?('• proponowany: '+s.proposed):''}</div></div><div><button data-idx="${idx}" class="btn secondary small removeBtn">Usuń</button></div>`;
+        signupListEl.appendChild(row);
+      });
+      // attach remove handlers
+      [...document.querySelectorAll('.removeBtn')].forEach(b=>b.addEventListener('click', e=>{
+        const idx = +e.target.dataset.idx; signups.splice(idx,1); saveSignups(); renderSignups(); renderProposals();
+      }))
+    }
+
+    // Propozycje terminów (moderator)
+    function renderProposals(){
+      proposalsEl.innerHTML = '';
+      const props = signups.filter(s=>s.proposed);
+      if(!props.length) { proposalsEl.innerHTML = '<div class="muted">Brak propozycji</div>'; return }
+      props.forEach((p, i)=>{
+        const el = document.createElement('div'); el.className='muted';
+        el.style.padding='8px'; el.style.border='1px dashed rgba(0,0,0,0.06)'; el.style.marginBottom='8px';
+        el.innerHTML = `<div><strong>${p.name}</strong> proponuje <em>${p.proposed}</em> dla sesji <strong>${p.session}</strong></div><div style='margin-top:6px'><button class='btn small' data-i='${i}'>Zatwierdź</button> <button class='btn secondary small' data-i='${i}' data-action='reject'>Odrzuć</button></div>`;
+        proposalsEl.appendChild(el);
+      });
+      proposalsEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', e=>{
+        const idx = +e.target.dataset.i; const action = e.target.dataset.action || 'accept';
+        const p = signups.filter(s=>s.proposed)[idx];
+        if(action==='accept'){
+          // moderator zatwierdza — w realnym wdrożeniu stworzyć event w backendzie
+          // tutaj ustawimy tą propozycję jako aktualną sesję
+          currentSession = {sessionName: p.session, startISO: new Date().toISOString(), attendees: signups.filter(s=>s.session===p.session).map(x=>x.name)};
+          updateCurrentSessionDisplay();
+          alert('Propozycja zatwierdzona i ustawiona jako aktualna sesja.');
+        } else {
+          // usuń propozycję
+          p.proposed = null; saveSignups(); renderSignups(); renderProposals();
+        }
+      }))
+    }
+
+    // Current session UI
+    function updateCurrentSessionDisplay(){
+      if(currentSession){
+        currentSessionTitle.textContent = currentSession.sessionName;
+        currentSessionInfo.textContent = `Uczestnicy: ${currentSession.attendees?.length || 0} • Start: ${new Date(currentSession.startISO).toLocaleString()}`;
+      } else {
+        currentSessionTitle.textContent = 'Brak zaplanowanej sesji';
+        currentSessionInfo.textContent = 'Wybierz sesję i zapisz się, aby dołączyć.';
+      }
+    }
+
+    // Chat — symulacja prostego bota/agenta
+    function appendMessage({who='user', name='Ja', text, small=false}){
+      const div = document.createElement('div'); div.className='msg';
+      div.innerHTML = `<div><div style='font-size:0.85rem; color:var(--muted)'>${who==='agent'? 'Agent': name}</div><div style='margin-top:6px; padding:10px; border-radius:10px; background:rgba(255,255,255,0.6)'>${text}</div></div>`;
+      if(who==='agent') div.querySelector('div').style.fontWeight='600';
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // Przykładowe zachowania agenta (zastąpić wywołaniem do modelu LLM)
+    async function agentReply(context){
+      if(!agentToggle.checked) return;
+      if(agentPaused) return;
+
+      // -----------------------------------------
+      // TU: podłączyć rzeczywiste API modelu językowego
+      // Przykład (pseudokod):
+      // fetch('/api/agent', {method:'POST', body: JSON.stringify({context})}) -> odpowiedź
+      // -----------------------------------------
+
+      // Prosty heurystyczny dobór komunikatu inspirowany Technika Uwalniania (Hawkins)
+      const prompts = [
+        'Co chciałbyś dziś podzielić się z grupą?',
+        'Jakie odczucia pojawiają się w ciele teraz? Możesz je opisać bez oceniania.',
+        'Jeśli pojawia się coś trudnego, spróbuj to nazwać krótko i oddychać z ciekawością.',
+        'Dziękuję, że dzielisz się swoim doświadczeniem. Chcesz dodać coś jeszcze?'
+      ];
+      // wybierz losowo
+      const reply = prompts[Math.floor(Math.random()*prompts.length)];
+      // wolniejsze opóźnienie, by brzmieć naturalniej
+      await new Promise(r=>setTimeout(r, 700 + Math.random()*900));
+      appendMessage({who:'agent', text: reply});
+    }
+
+    // Eventy czatu
+    sendBtn.addEventListener('click', ()=>{
+      const txt = messageInput.value.trim(); if(!txt) return;
+      appendMessage({who:'user', name: nameInput.value || 'Uczestnik', text: txt});
+      messageInput.value='';
+      // wywołaj agenta po małym opóźnieniu
+      setTimeout(()=>agentReply({lastMessage:txt}), 600);
+    });
+    messageInput.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendBtn.click(); } });
+
+    // Pauza agenta
+    pauseAgentBtn.addEventListener('click', ()=>{
+      agentPaused = !agentPaused; pauseAgentBtn.textContent = agentPaused? 'Wznów agenta' : 'Pauza agenta';
+    });
+
+    // Zapis na sesję
+    signupForm.addEventListener('submit', e=>{
+      e.preventDefault();
+      const name = nameInput.value.trim();
+      const session = sessionSelect.value;
+      const proposed = proposedTime.value.trim() || null;
+      if(!name || !session) return alert('Uzupełnij imię i wybierz sesję');
+      signups.push({name, session, proposed}); saveSignups(); renderSignups(); renderProposals();
+      nameInput.value = '';
+      proposedTime.value = '';
+    });
+    document.getElementById('clearBtn').addEventListener('click', ()=>{ nameInput.value=''; proposedTime.value=''; });
+
+    // Dołącz — symulacja dołączenia do aktualnej sesji
+    joinBtn.addEventListener('click', ()=>{
+      if(!currentSession){ alert('Brak aktywnej sesji do dołączenia. Zapisz się lub poczekaj na zatwierdzenie terminu.'); return }
+      alert('Dołączasz do sesji: '+currentSession.sessionName+' • Link do nagrania dostępny w Twoich materiałach.');
+    });
+    proposeBtn.addEventListener('click', ()=>{ document.getElementById('proposedTime').focus(); });
+
+    // Eksport CSV
+    exportCsv.addEventListener('click', ()=>{
+      if(!signups.length) return alert('Brak zapisanych — nic do eksportu');
+      const csv = ['Imie;Sesja;ProponowanyTermin'];
+      signups.forEach(s=> csv.push(`${s.name};${s.session};${s.proposed || ''}`));
+      const blob = new Blob([csv.join('\n')], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'oddech9d_zapisy.csv'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // Theme
+    themeToggle.addEventListener('change', e=>{
+      document.body.classList.toggle('dark', e.target.checked);
+    });
+
+    // Initial render
+    initSessions(); renderSignups(); renderProposals(); updateCurrentSessionDisplay();
+
+    // Demo: dodaj powitalną wiadomość agenta
+    setTimeout(()=>appendMessage({who:'agent', text: 'Witaj. Jeśli chcesz, podziel się, co dziś odczuwasz — ja tu jestem, aby wysłuchać bez ocen.'}), 800);
+
+    /*************************************************************************
+     * UWAGA — instrukcja integracji backend/LLM
+     *
+     * 1) ZASTĄP FUNKCJĘ agentReply realnym wywołaniem do serwera, który
+     *    komunikuje się z modelem językowym (np. OpenAI, Anthropic).
+     *    - Wyślij kontekst (ostatnie wiadomości, meta uczestnika, ton neutralny).
+     *    - Model powinien mieć wytyczne: neutralność, empatia, pytania otwarte,
+     *      brak diagnoz, brak porad medycznych.
+     *
+     * 2) Backend powinien przechowywać listę zapisów (DB), obsługiwać
+     *    zatwierdzanie propozycji i wysyłkę przypomnień (e-mail/SMS/push).
+     *
+     * 3) Jeśli chcesz realnego "czatu" w czasie rzeczywistym, użyj WebSocketów
+     *    lub rozwiązania Pub/Sub (Firebase, Supabase Realtime, Pusher).
+     *
+     * 4) Przykładowe polecenie dla modelu (system prompt):
+     *    "Jesteś neutralnym i empatycznym moderatorem inspirowanym Davidem R. Hawkins'em
+     *     i Techniką Uwalniania. Słuchaj, nie oceniaj, zadawaj krótkie pytania otwarte,
+     *     zachęcaj do obserwacji odczuć cielesnych. Nie dawaj porad medycznych."
+     *
+     *************************************************************************/
+
+  </script>
+</body>
+</html>
