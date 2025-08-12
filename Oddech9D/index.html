@@ -1,380 +1,306 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oddech 9D - Wspólne Sesje</title>
-    <style>
-        /* CSS: Podstawowe style, motywy jasny i ciemny */
-        :root {
-            --bg-color: #f0f8ff; /* Jasny: miękka biel z nutą błękitu */
-            --text-color: #333333;
-            --accent-color: #add8e6; /* Łagodny błękit */
-            --secondary-bg: #ffffff;
-            --border-color: #d3d3d3;
-            --button-bg: #add8e6;
-            --button-text: #ffffff;
-            --gradient: linear-gradient(135deg, #add8e6, #ffffff);
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Oddech 9D — Wspólne sesje</title>
+  <style>
+    /* -------------------- Reset / podstawy -------------------- */
+    :root{
+      --accent-1: #7fb7e6; /* jasny błękit */
+      --accent-2: #a9d6ff;
+      --bg-light: #f7fbff;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --glass: rgba(255,255,255,0.6);
+      --radius: 14px;
+      --shadow: 0 6px 18px rgba(8,24,40,0.08);
 
-        body.dark {
-            --bg-color: #1e1e2f; /* Ciemny: głęboki granatowo-grafitowy */
-            --text-color: #e0e0e0;
-            --accent-color: #4682b4; /* Akcent błękitu */
-            --secondary-bg: #2a2a3d;
-            --border-color: #444455;
-            --button-bg: #4682b4;
-            --button-text: #ffffff;
-            --gradient: linear-gradient(135deg, #4682b4, #2a2a3d);
-        }
+      --dark-bg: #0f1724;
+      --dark-surface: #111827;
+      --dark-card: #0b1220;
+      --dark-accent: #3b82f6;
+      --text: #0b1220;
+      --text-inverse: #e6eef9;
+    }
 
-        body {
-            font-family: 'Arial', sans-serif; /* Humanistyczna czcionka - można zastąpić np. 'Roboto' */
-            background: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-            transition: background 0.3s, color 0.3s;
-        }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background: linear-gradient(180deg,var(--bg-light), #eef8ff 60%);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:24px;
+      transition:background 0.3s, color 0.3s;
+    }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background: var(--secondary-bg);
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
+    /* Container */
+    .app{
+      max-width:1200px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: 360px 1fr 360px;
+      gap:20px;
+      align-items:start;
+    }
 
-        h1, h2, h3 {
-            color: var(--accent-color);
-        }
+    header{grid-column:1/4; display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px}
+    .brand{display:flex; gap:12px; align-items:center}
+    .logo{width:56px; height:56px; border-radius:12px; background:linear-gradient(135deg,var(--accent-2),var(--accent-1)); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; box-shadow:var(--shadow)}
+    h1{margin:0; font-size:1.25rem}
+    p.lead{margin:0; color:var(--muted); font-size:0.95rem}
 
-        button {
-            background: var(--button-bg);
-            color: var(--button-text);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-        }
+    /* Card */
+    .card{background:var(--card); padding:16px; border-radius:var(--radius); box-shadow:var(--shadow)}
+    .muted{color:var(--muted)}
 
-        button:hover {
-            background: darken(var(--button-bg), 10%);
-        }
+    /* Left column (harmonogram, sesje) */
+    .left .section+ .section{margin-top:16px}
+    .session-item{display:flex; align-items:center; justify-content:space-between; padding:10px; border-radius:10px; margin-bottom:8px}
+    .session-item .name{font-weight:600}
+    .session-list{margin-top:8px}
+    .btn{display:inline-flex; align-items:center; gap:8px; background:var(--accent-1); color:white; border:none; padding:10px 14px; border-radius:10px; cursor:pointer}
+    .btn.secondary{background:transparent; color:var(--accent-1); border:1px solid rgba(127,183,230,0.25)}
+    .small{font-size:0.9rem; padding:8px 10px}
 
-        .theme-switcher {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
+    /* Center column (główny panel: harmonogram, czat) */
+    .center-grid{display:grid; grid-template-rows:auto 1fr; gap:16px}
+    .schedule{display:flex; flex-direction:column; gap:8px}
+    .time-block{display:flex; gap:12px; align-items:flex-start}
+    .time{font-weight:700; width:84px}
+    .desc{flex:1}
 
-        /* Animacje: Delikatne fade-in i oddechowe gradienty */
-        @keyframes breathe {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+    /* Chat */
+    .chat-window{display:flex; flex-direction:column; height:520px}
+    .messages{flex:1; overflow:auto; padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(250,253,255,0.6), rgba(245,250,255,0.6));}
+    .msg{margin-bottom:10px}
+    .from-agent{font-weight:600}
+    .from-user{align-self:flex-end}
+    .chat-controls{display:flex; gap:8px; margin-top:8px}
+    .textarea{flex:1; min-height:44px; padding:8px; border-radius:10px; border:1px solid #e6eef9}
 
-        .animated-bg {
-            background: var(--gradient);
-            background-size: 200% 200%;
-            animation: breathe 10s ease infinite;
-        }
+    /* Right column (panel zapisów) */
+    .right .section+ .section{margin-top:16px}
+    .signup-list{max-height:240px; overflow:auto}
+    .user-row{display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px; border-radius:8px}
 
-        /* Czat style */
-        #chat-window {
-            height: 300px;
-            overflow-y: scroll;
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 10px;
-            background: var(--bg-color);
-        }
+    /* Footer controls */
+    .controls{display:flex; gap:10px; align-items:center}
+    label.switch{display:inline-flex; align-items:center; gap:8px}
 
-        .message {
-            margin-bottom: 10px;
-            padding: 8px;
-            border-radius: 10px;
-        }
+    /* Responsive */
+    @media (max-width:1024px){
+      .app{grid-template-columns:1fr; padding:12px}
+      header{flex-direction:column; align-items:flex-start}
+      .right{order:3}
+      .left{order:2}
+    }
 
-        .user-message {
-            background: var(--accent-color);
-            color: #fff;
-            text-align: right;
-        }
+    /* Dark theme */
+    .dark{
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(30,41,59,0.6), rgba(6,9,15,0.9));
+      color:var(--text-inverse);
+    }
+    .dark .card{background:linear-gradient(180deg,var(--dark-card), rgba(6,9,15,0.6)); box-shadow:none}
+    .dark .logo{background:linear-gradient(135deg,var(--dark-accent), #1e293b)}
+    .dark .messages{background:linear-gradient(180deg, rgba(8,12,20,0.6), rgba(10,15,25,0.6));}
+    .dark .textarea{background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--text-inverse)}
+    .dark .btn{background:var(--dark-accent)}
 
-        .agent-message {
-            background: var(--secondary-bg);
-            color: var(--text-color);
-        }
+    /* Subtle animations */
+    .fade-in{animation:fadeIn 450ms ease both}
+    @keyframes fadeIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
 
-        /* Responsywność */
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            button {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-        }
+    /* Iframe styles for embeds */
+    iframe { width: 100%; border: none; min-height: 300px; }
+    @media (max-width: 600px) { iframe { min-height: 200px; } }
 
-        /* Dostępność: Kontrast i duże teksty */
-        body {
-            font-size: 16px; /* Bazowy rozmiar dla dostępności */
-        }
-
-        a, button {
-            outline: none; /* Dla focus */
-        }
-
-        a:focus, button:focus {
-            outline: 2px solid var(--accent-color);
-        }
-    </style>
+  </style>
 </head>
-<body class="animated-bg">
-    <div class="theme-switcher">
-        <button onclick="toggleTheme()">Przełącz motyw</button>
-    </div>
+<body>
 
-    <div class="container">
-        <h1>Witaj w grupie „Oddech 9D”</h1>
-        <p>To przestrzeń dla Ciebie, po ukończeniu 12-tygodniowego programu. Tutaj możesz znaleźć motywację do wspólnych sesji oddechowych. Pamiętaj, że te sesje nie zastępują profesjonalnej pomocy medycznej lub psychologicznej. Jeśli potrzebujesz wsparcia, skonsultuj się ze specjalistą.</p>
+  <div class="app" id="app">
 
-        <!-- Sekcja: Zasady grupy -->
-        <section id="rules">
-            <h2>Zasady grupy</h2>
-            <ul>
-                <li>Bądź neutralny i szanuj innych – bez oceniania.</li>
-                <li>Zachowaj poufność – to, co dzielisz, zostaje w grupie.</li>
-                <li>Obserwuj swoje uczucia bez osądu, zgodnie z Techniką Uwalniania.</li>
-            </ul>
-        </section>
+    <header>
+      <div class="brand">
+        <div class="logo">9D</div>
+        <div>
+          <h1>Oddech 9D — Wspólne sesje</h1>
+          <p class="lead">Harmonogram i zapisy — styl Techniki Uwalniania (David R. Hawkins). Neutralnie. Empatycznie.</p>
+        </div>
+      </div>
 
-        <!-- Sekcja: Harmonogram standardowy -->
-        <section id="schedule">
-            <h2>Harmonogram spotkania</h2>
-            <ul>
-                <li>18:30 – "Czas dla Was": dzielenie się doświadczeniami, pytania i rozmowa z AI agentem / między uczestnikami.</li>
-                <li>19:00 – Rozpoczęcie i przygotowanie do sesji.</li>
-                <li>~19:45 – Start sesji oddechowej (uczestnicy słuchają nagrań na słuchawkach).</li>
-                <li>~21:00 – Zakończenie, dzielenie się wrażeniami, zadanie domowe.</li>
-            </ul>
-            <p>Sesja trwa około godziny, czasami dłużej (do 1:10–1:20).</p>
-        </section>
+      <div class="controls">
+        <label class="switch">
+          <input id="themeToggle" type="checkbox" aria-label="Przełącz motyw" />
+          <span class="muted">Tryb ciemny</span>
+        </label>
+        <button class="btn secondary small" id="exportCsv">Eksportuj listę CSV</button>
+      </div>
+    </header>
 
-        <!-- Sekcja: Lista sesji do wyboru -->
-        <section id="sessions">
-            <h2>Lista sesji do wyboru</h2>
-            <select id="session-select">
-                <option value="1">1. Obfitość</option>
-                <option value="2">2. Stres i niepokój</option>
-                <option value="3">3. Przebudzenie</option>
-                <option value="4">4. Przekraczanie strachu</option>
-                <option value="5">5. Ponowne połączenie ze swoim wewnętrznym dzieckiem</option>
-                <option value="6">6. Podążaj za ciałem</option>
-                <option value="7">7. Połączenie ze źródłem</option>
-                <option value="8">8. Regeneracja i relaks</option>
-                <option value="9">9. Odpuszczenie i ruszenie dalej</option>
-                <option value="10">10. Uzdrowienie 5 Podstawowych Śladów Traumy</option>
-                <option value="11">11. Traumy międzypokoleniowe</option>
-                <option value="12">12. Pełny Reset</option>
-            </select>
-        </section>
+    <!-- LEWA KOLUMNA -->
+    <aside class="left">
+      <div class="card section fade-in">
+        <h3>Harmonogram sesji</h3>
+        <!-- Embed Google Calendar -->
+        <iframe src="https://calendar.google.com/calendar/embed?src=TWOJ_KALENDARZ_ID%40group.calendar.google.com&ctz=Europe%2FWarsaw" style="border: 0" width="100%" height="400" frameborder="0" scrolling="no"></iframe>
+      </div>
 
-        <!-- Sekcja: Zapisy i kalendarz -->
-        <section id="signup">
-            <h2>Rezerwacja na sesję</h2>
-            <form id="signup-form">
-                <label for="name">Twoje imię:</label>
-                <input type="text" id="name" required>
-                <label for="date">Proponowana data (domyślnie wtorek):</label>
-                <input type="date" id="date">
-                <label for="time">Godzina:</label>
-                <input type="time" id="time">
-                <button type="submit">Zapisz się</button>
-                <button type="button" onclick="suggestAlternative()">Zgłoś inny termin</button>
-            </form>
-            <h3>Lista zapisanych uczestników</h3>
-            <ul id="participants-list"></ul>
-            <button onclick="exportToCSV()">Eksportuj do CSV</button>
-        </section>
+      <div class="card section fade-in">
+        <h3>Dostępne sesje</h3>
+        <div class="session-list" id="sessionList">
+          <!-- dynamicznie wypełniane -->
+        </div>
+        <small class="muted">Sesje odbywają się co tydzień. Możesz także zaproponować inny dzień/godzinę.</small>
+      </div>
 
-        <!-- Sekcja: Czat grupowy -->
-        <section id="chat">
-            <h2>Czat grupowy</h2>
-            <p>Czat dostępny 30 minut przed i po sesji. AI agent może być włączony dla wsparcia.</p>
-            <div id="chat-window"></div>
-            <input type="text" id="chat-input" placeholder="Napisz wiadomość...">
-            <button onclick="sendMessage()">Wyślij</button>
-            <button onclick="toggleAgent()">Włącz/Wyłącz AI Agenta</button>
-            <button onclick="pauseAgent()">Pauza Agenta</button>
-            <p>Przypomnienia: 1 godz. i 15 min. przed startem (symulowane w konsoli).</p>
-        </section>
+      <div class="card section fade-in">
+        <h3>Zasady grupy</h3>
+        <p class="muted">Neutralność i słuchanie. Nie oceniamy. Szanujemy poufność. Sesje nie zastępują pomocy medycznej ani psychologicznej.</p>
+      </div>
+    </aside>
 
-        <!-- Ostrzeżenie -->
-        <footer>
-            <p>Ostrzeżenie: Nie zapisujemy danych medycznych. Sesje to wsparcie grupowe, nie terapia.</p>
-        </footer>
-    </div>
+    <!-- ŚRODEK -->
+    <main class="center">
+      <div class="center-grid">
 
-    <script>
-        // JS: Symulacja funkcjonalności (bez backendu)
+        <div class="card fade-in">
+          <h3>Aktualna sesja</h3>
+          <div style="display:flex; gap:12px; align-items:center; margin-top:8px">
+            <div style="flex:1">
+              <div id="currentSessionTitle" style="font-weight:700">Brak zaplanowanej sesji</div>
+              <div class="muted" id="currentSessionInfo">Wybierz sesję i zapisz się, aby dołączyć.</div>
+            </div>
+            <div style="display:flex; gap:8px">
+              <button class="btn small" id="joinBtn">Dołącz</button>
+              <button class="btn secondary small" id="proposeBtn">Zaproponuj inny termin</button>
+            </div>
+          </div>
+        </div>
 
-        // Przełącznik motywu
-        function toggleTheme() {
-            document.body.classList.toggle('dark');
-        }
+        <div class="card chat-window fade-in" aria-live="polite">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+            <div>
+              <strong>Komentarze i dyskusja</strong>
+              <div class="muted">Dodaj komentarz poniżej. Lista komentarzy poniżej formularza.</div>
+            </div>
+          </div>
 
-        // Symulacja listy uczestników (użyj localStorage)
-        let participants = JSON.parse(localStorage.getItem('participants')) || [];
+          <!-- Embed Google Forms dla komentarzy -->
+          <iframe src="TWOJ_FORM_KOMENTARZE_URL" width="100%" height="300" frameborder="0" marginheight="0" marginwidth="0">Ładowanie…</iframe>
 
-        function updateParticipantsList() {
-            const list = document.getElementById('participants-list');
-            list.innerHTML = '';
-            participants.forEach(p => {
-                const li = document.createElement('li');
-                li.textContent = `${p.name} - Sesja: ${p.session}, Data: ${p.date || 'Wtorek'}, Godzina: ${p.time || '18:30'}`;
-                list.appendChild(li);
-            });
-        }
+          <!-- Embed Google Sheets dla listy komentarzy -->
+          <div class="messages" id="commentsList">
+            <iframe src="TWOJ_SHEETS_KOMENTARZE_URL" width="100%" height="200" frameborder="0"></iframe>
+          </div>
 
-        // Formularz zapisu
-        document.getElementById('signup-form').addEventListener('submit', e => {
-            e.preventDefault();
-            const name = document.getElementById('name').value;
-            const session = document.getElementById('session-select').options[document.getElementById('session-select').selectedIndex].text;
-            const date = document.getElementById('date').value;
-            const time = document.getElementById('time').value;
-            participants.push({ name, session, date, time });
-            localStorage.setItem('participants', JSON.stringify(participants));
-            updateParticipantsList();
-            alert('Zapisano! Lista widoczna dla grupy.');
-        });
+        </div>
 
-        // Propozycja alternatywnego terminu (symulacja)
-        function suggestAlternative() {
-            alert('Propozycja wysłana do moderatora (symulacja).');
-            // Tutaj: Podpięcie backendu - wysłać request do API moderatora
-            // np. fetch('/api/suggest', { method: 'POST', body: JSON.stringify(data) });
-        }
+      </div>
+    </main>
 
-        // Eksport do CSV
-        function exportToCSV() {
-            let csv = 'Imię,Sesja,Data,Godzina\n';
-            participants.forEach(p => {
-                csv += `${p.name},${p.session},${p.date},${p.time}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'uczestnicy.csv';
-            a.click();
-        }
+    <!-- PRAWA KOLUMNA -->
+    <aside class="right">
+      <div class="card section fade-in">
+        <h3>Zapisy na sesję</h3>
+        <!-- Embed Google Forms dla zapisów -->
+        <iframe src="TWOJ_FORM_ZAPISY_URL" width="100%" height="400" frameborder="0" marginheight="0" marginwidth="0">Ładowanie…</iframe>
 
-        // Czat: Symulacja
-        let agentActive = false;
-        let agentPaused = false;
-        let agentInterval;
+        <div style="margin-top:12px">
+          <strong>Lista zapisanych</strong>
+          <!-- Embed Google Sheets dla listy zapisanych -->
+          <div class="signup-list" id="signupList">
+            <iframe src="TWOJ_SHEETS_ZAPISY_URL" width="100%" height="200" frameborder="0"></iframe>
+          </div>
+        </div>
+      </div>
 
-        function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const message = input.value;
-            if (message) {
-                addMessage('user', 'Ty: ' + message);
-                input.value = '';
-                if (agentActive && !agentPaused) {
-                    // Symulacja odpowiedzi agenta (klient-side)
-                    setTimeout(() => {
-                        const responses = [
-                            'Co chciałbyś dziś podzielić się z grupą?',
-                            'Co odczuwasz w ciele teraz?',
-                            'Obserwuj to uczucie bez osądu. Co zauważasz?',
-                            'Dziękuję za podzielenie się. Jak to wpływa na Ciebie?'
-                        ];
-                        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                        addMessage('agent', 'AI Agent: ' + randomResponse);
-                    }, 1000);
-                }
-            }
-        }
+      <div class="card section fade-in">
+        <h3>Panel moderatora (opcjonalny)</h3>
+        <p class="muted">Zatwierdzaj propozycje terminów i zarządzaj harmonogramem w Google Calendar/Sheets.</p>
+        <div id="proposals"></div>
+      </div>
 
-        function addMessage(type, text) {
-            const window = document.getElementById('chat-window');
-            const div = document.createElement('div');
-            div.classList.add('message', type + '-message');
-            div.textContent = text;
-            window.appendChild(div);
-            window.scrollTop = window.scrollHeight;
-        }
+    </aside>
 
-        function toggleAgent() {
-            agentActive = !agentActive;
-            alert(agentActive ? 'AI Agent włączony' : 'AI Agent wyłączony');
-            if (agentActive) {
-                agentInterval = setInterval(() => {
-                    if (!agentPaused) {
-                        addMessage('agent', 'AI Agent: Jestem tutaj, aby słuchać. Co chciałbyś podzielić?');
-                    }
-                }, 30000); // Symulacja aktywności co 30s
+  </div>
+
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script>
+    /*************************************************************************
+     * Dane startowe i ustawienia
+     *************************************************************************/
+    const SESSIONS = [
+      'Obfitość', 'Stres i niepokój', 'Przebudzenie', 'Przekraczanie strachu',
+      'Ponowne połączenie ze swoim wewnętrznym dzieckiem', 'Podążaj za ciałem',
+      'Połączenie ze źródłem', 'Regeneracja i relaks', 'Odpuszczenie i ruszenie dalej',
+      'Uzdrowienie 5 Podstawowych Śladów Traumy', 'Traumy międzypokoleniowe', 'Pełny Reset'
+    ];
+
+    // Elementy DOM
+    const sessionListEl = document.getElementById('sessionList');
+    const currentSessionTitle = document.getElementById('currentSessionTitle');
+    const currentSessionInfo = document.getElementById('currentSessionInfo');
+    const themeToggle = document.getElementById('themeToggle');
+    const joinBtn = document.getElementById('joinBtn');
+    const proposeBtn = document.getElementById('proposeBtn');
+
+    // Inicjalizacja listy sesji
+    function initSessions(){
+      sessionListEl.innerHTML = '';
+      SESSIONS.forEach((s,i)=>{
+        const div = document.createElement('div'); div.className='session-item';
+        div.innerHTML = `<div><div class="name">${i+1}. ${s}</div><div class="muted">Tematyczna sesja oddechowa</div></div>`;
+        sessionListEl.appendChild(div);
+      });
+    }
+
+    // Aktualizacja aktualnej sesji z Google Calendar API (opcjonalne, jeśli używasz API)
+    function updateCurrentSessionDisplay(){
+      gapi.load('client', () => {
+        gapi.client.init({
+          apiKey: 'TWOJ_API_KEY', // Zastąp swoim API Key
+          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']
+        }).then(() => {
+          gapi.client.calendar.events.list({
+            calendarId: 'TWOJ_KALENDARZ_ID@group.calendar.google.com',
+            timeMin: new Date().toISOString(),
+            maxResults: 1,
+            singleEvents: true,
+            orderBy: 'startTime'
+          }).then(response => {
+            const events = response.result.items;
+            if (events.length > 0) {
+              currentSessionTitle.textContent = events[0].summary;
+              currentSessionInfo.textContent = `Start: ${new Date(events[0].start.dateTime).toLocaleString()} • Opis: ${events[0].description || ''}`;
             } else {
-                clearInterval(agentInterval);
+              currentSessionTitle.textContent = 'Brak zaplanowanej sesji';
+              currentSessionInfo.textContent = 'Wybierz sesję i zapisz się, aby dołączyć.';
             }
-        }
+          });
+        });
+      });
+    }
 
-        function pauseAgent() {
-            agentPaused = !agentPaused;
-            alert(agentPaused ? 'AI Agent pauzowany' : 'AI Agent wznowiony');
-        }
+    // Dołącz — symulacja dołączenia do aktualnej sesji
+    joinBtn.addEventListener('click', ()=>{
+      alert('Dołączasz do sesji. Link do nagrania dostępny w Twoich materiałach.');
+    });
+    proposeBtn.addEventListener('click', ()=>{ alert('Zaproponuj termin w formularzu zapisów.'); });
 
-        // Symulacja przypomnień (w konsoli)
-        console.log('Przypomnienie: 1 godz. przed sesją.');
-        console.log('Przypomnienie: 15 min. przed sesją.');
+    // Theme
+    themeToggle.addEventListener('change', e=>{
+      document.body.classList.toggle('dark', e.target.checked);
+    });
 
-        // Inicjalizacja
-        updateParticipantsList();
+    // Initial render
+    initSessions();
+    updateCurrentSessionDisplay();
 
-        // KOMENTARZ: Podłączenie rzeczywistego API modelu językowego (np. OpenAI)
-        // W funkcji sendMessage(), zamiast symulacji, użyj:
-        // fetch('https://api.openai.com/v1/chat/completions', {
-        //   method: 'POST',
-        //   headers: { 'Authorization': 'Bearer YOUR_API_KEY', 'Content-Type': 'application/json' },
-        //   body: JSON.stringify({
-        //     model: 'gpt-4',
-        //     messages: [{ role: 'system', content: 'Jesteś empatycznym agentem opartym na Technice Uwalniania Davida R. Hawkinsa. Bądź neutralny, słuchaj, zadawaj otwarte pytania.' },
-        //                { role: 'user', content: message }]
-        //   })
-        // }).then(response => response.json()).then(data => {
-        //   addMessage('agent', 'AI Agent: ' + data.choices[0].message.content);
-        // });
-        // Dodaj zarządzanie trybem czuwania: Jeśli sesja trwa (np. po 19:45), wyłącz interwencje agenta.
-
-        // KOMENTARZ: Integracja powiadomień (webhook/cron)
-        // Użyj service worker dla push notifications lub cron job na serwerze.
-        // np. navigator.serviceWorker.register('/sw.js').then(reg => {
-        //   reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: 'YOUR_KEY' });
-        // });
-        // Na backendzie: Użyj cron do wysyłania webhooków do klientów (np. via Firebase Cloud Messaging).
-
-        // KOMENTARZ: Panel moderatora (opcjonalny)
-        // Dodaj sekcję ukrytą, np. <section id="mod-panel" style="display:none;">...</section>
-        // Pokazuj po logowaniu (symuluj localStorage 'isMod': true).
-        // W realu: Autentykacja backendowa.
-
-        // KOMENTARZ: Linki do nagrań
-        // Dla każdego użytkownika, dodaj sekcję z placeholderami linków (np. <a href="user-specific-link">Twoje nagranie</a>)
-        // Zarządzaj na backendzie, nie hostuj plików.
-
-        // KOMENTARZ: Tryb czuwania agenta podczas sesji
-        // Użyj timera: Po 19:45, agentPaused = true; Po 21:00, agentPaused = false;
-    </script>
+  </script>
 </body>
 </html>
