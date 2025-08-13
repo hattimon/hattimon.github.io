@@ -6,9 +6,6 @@
     <title>Oddech9D</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -56,7 +53,7 @@
         <!-- Formularz tworzenia nowej sesji -->
         <section id="create-session" class="mb-12">
             <h2 class="text-2xl font-semibold mb-4">Utwórz Nową Sesję</h2>
-            <form id="session-form" class="bg-var(--card-bg) p-6 rounded-lg shadow-md">
+            <form id="session-form" class="p-6 rounded-lg shadow-md" style="background-color: var(--card-bg);">
                 <div class="mb-4">
                     <label for="session-type" class="block text-sm font-medium">Typ Sesji</label>
                     <select id="session-type" class="mt-1 block w-full p-2 border rounded">
@@ -85,9 +82,18 @@
                 <div id="custom-options" class="hidden mb-4">
                     <label for="custom-session" class="block text-sm font-medium">Wybierz Sesję</label>
                     <select id="custom-session" class="mt-1 block w-full p-2 border rounded">
-                        <!-- Opcje takie same jak powyżej -->
                         <option value="1">1 - Obfitość</option>
-                        <!-- ... dodaj resztę -->
+                        <option value="2">2 - Stres i niepokój</option>
+                        <option value="3">3 - Przebudzenie</option>
+                        <option value="4">4 - Przekraczanie strachu</option>
+                        <option value="5">5 - Ponowne połączenie ze swoim wewnętrznym dzieckiem</option>
+                        <option value="6">6 - Podążaj za ciałem</option>
+                        <option value="7">7 - Połączenie ze źródłem</option>
+                        <option value="8">8 - Regeneracja i relaks</option>
+                        <option value="9">9 - Odpuszczenie i ruszenie dalej</option>
+                        <option value="10">10 - Uzdrowienia 5 Podstawowych Śladów Traumy</option>
+                        <option value="11">11 - Traumy międzypokoleniowe</option>
+                        <option value="12">12 - Pełny Reset</option>
                     </select>
                     <label for="custom-date" class="block text-sm font-medium mt-4">Data</label>
                     <input type="date" id="custom-date" class="mt-1 block w-full p-2 border rounded">
@@ -99,18 +105,25 @@
         </section>
     </main>
 
-    <script>
-        // Firebase Config - Zastąp swoimi danymi z Firebase Console
+    <script type="module">
+        // Importy Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+        // Konfiguracja Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyC5n-Cp7R0kLpoUPuaVyTRR1mQ86IDwC7E",
             authDomain: "oddech9d-8981d.firebaseapp.com",
             projectId: "oddech9d-8981d",
             storageBucket: "oddech9d-8981d.firebasestorage.app",
             messagingSenderId: "300140944166",
-            appId: "1:300140944166:web:1121349b87d2edddb3bfe7"
+            appId: "1:300140944166:web:cb9c473a88098defb3bfe7",
+            measurementId: "G-WK12075PH7"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+
+        // Inicjalizacja Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
         const sessions = [
             "Obfitość",
@@ -161,53 +174,64 @@
         const form = document.getElementById('session-form');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (typeSelect.value === 'standard') {
-                const startNum = parseInt(document.getElementById('start-session').value);
-                let currentDate = getNextTuesday();
-                for (let i = 0; i < 12; i++) {
-                    const sessionNum = ((startNum - 1 + i) % 12) + 1;
-                    await db.collection('sessions').add({
+            try {
+                if (typeSelect.value === 'standard') {
+                    const startNum = parseInt(document.getElementById('start-session').value);
+                    let currentDate = getNextTuesday();
+                    for (let i = 0; i < 12; i++) {
+                        const sessionNum = ((startNum - 1 + i) % 12) + 1;
+                        await addDoc(collection(db, 'sessions'), {
+                            title: `${sessionNum} - ${sessions[sessionNum - 1]}`,
+                            date: currentDate.toISOString(),
+                            participants: [],
+                            comments: []
+                        });
+                        currentDate.setDate(currentDate.getDate() + 7);
+                    }
+                } else {
+                    const sessionNum = parseInt(document.getElementById('custom-session').value);
+                    const dateStr = document.getElementById('custom-date').value;
+                    const timeStr = document.getElementById('custom-time').value;
+                    const date = new Date(`${dateStr}T${timeStr}:00`);
+                    await addDoc(collection(db, 'sessions'), {
                         title: `${sessionNum} - ${sessions[sessionNum - 1]}`,
-                        date: currentDate.toISOString(),
+                        date: date.toISOString(),
                         participants: [],
                         comments: []
                     });
-                    currentDate.setDate(currentDate.getDate() + 7);
                 }
-            } else {
-                const sessionNum = parseInt(document.getElementById('custom-session').value);
-                const dateStr = document.getElementById('custom-date').value;
-                const timeStr = document.getElementById('custom-time').value;
-                const date = new Date(`${dateStr}T${timeStr}:00`);
-                await db.collection('sessions').add({
-                    title: `${sessionNum} - ${sessions[sessionNum - 1]}`,
-                    date: date.toISOString(),
-                    participants: [],
-                    comments: []
-                });
+                loadSessions();
+            } catch (error) {
+                console.error('Błąd podczas tworzenia sesji:', error);
+                alert('Wystąpił błąd: ' + error.message);
             }
-            loadSessions();
         });
 
         // Ładowanie sesji
         async function loadSessions() {
             const sessionList = document.getElementById('session-list');
             sessionList.innerHTML = '';
-            const snapshot = await db.collection('sessions').orderBy('date').get();
-            snapshot.forEach(doc => {
-                const data = doc.data();
+            const querySnapshot = await getDocs(collection(db, 'sessions'));
+            const sessionsData = [];
+            querySnapshot.forEach((docSnapshot) => {
+                sessionsData.push({ id: docSnapshot.id, ...docSnapshot.data() });
+            });
+            // Sortuj po dacie
+            sessionsData.sort((a, b) => new Date(a.date) - new Date(b.date));
+            sessionsData.forEach((data) => {
                 const card = document.createElement('div');
-                card.className = 'bg-var(--card-bg) p-4 rounded-lg shadow-md';
+                card.className = 'p-4 rounded-lg shadow-md';
+                card.style.backgroundColor = 'var(--card-bg)';
                 card.innerHTML = `
                     <h3 class="text-xl font-semibold">${data.title}</h3>
                     <p>${new Date(data.date).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}</p>
                     <p>Uczestnicy: ${data.participants.join(', ') || 'Brak'}</p>
-                    <button onclick="joinSession('${doc.id}')" class="bg-green-500 text-white px-2 py-1 rounded mt-2">Dołącz</button>
+                    <button onclick="joinSession('${data.id}')" class="bg-green-500 text-white px-2 py-1 rounded mt-2">Dołącz</button>
                     <div class="mt-4">
                         <h4 class="font-medium">Komentarze:</h4>
                         <ul>${data.comments.map(c => `<li>${c}</li>`).join('')}</ul>
-                        <input type="text" id="comment-${doc.id}" placeholder="Dodaj komentarz" class="mt-2 p-2 border rounded w-full">
-                        <button onclick="addComment('${doc.id}')" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Dodaj</button>
+                        <input type="text" id="comment-${data.id}" placeholder="Dodaj komentarz" class="mt-2 p-2 border rounded w-full">
+                        <button onclick="addComment('${data.id}')" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Dodaj</button>
                     </div>
                 `;
                 sessionList.appendChild(card);
@@ -218,10 +242,16 @@
         window.joinSession = async (id) => {
             const name = prompt('Podaj swoje imię:');
             if (name) {
-                await db.collection('sessions').doc(id).update({
-                    participants: firebase.firestore.FieldValue.arrayUnion(name)
-                });
-                loadSessions();
+                try {
+                    const sessionRef = doc(db, 'sessions', id);
+                    await updateDoc(sessionRef, {
+                        participants: arrayUnion(name)
+                    });
+                    loadSessions();
+                } catch (error) {
+                    console.error('Błąd podczas dołączania:', error);
+                    alert('Wystąpił błąd: ' + error.message);
+                }
             }
         };
 
@@ -229,11 +259,17 @@
         window.addComment = async (id) => {
             const input = document.getElementById(`comment-${id}`);
             if (input.value) {
-                await db.collection('sessions').doc(id).update({
-                    comments: firebase.firestore.FieldValue.arrayUnion(input.value)
-                });
-                input.value = '';
-                loadSessions();
+                try {
+                    const sessionRef = doc(db, 'sessions', id);
+                    await updateDoc(sessionRef, {
+                        comments: arrayUnion(input.value)
+                    });
+                    input.value = '';
+                    loadSessions();
+                } catch (error) {
+                    console.error('Błąd podczas dodawania komentarza:', error);
+                    alert('Wystąpił błąd: ' + error.message);
+                }
             }
         };
 
