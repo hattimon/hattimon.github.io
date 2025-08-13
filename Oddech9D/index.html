@@ -5,55 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oddech9D</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #ffffff;
-            --text-color: #333333;
-            --accent-color: #4f46e5;
-            --card-bg: #f9fafb;
-            --select-bg: #e5e7eb;
+            --bg-color: #1E90FF; /* Błękitne tło */
+            --text-color: #1f2937; /* Ciemny dla kontrastu */
+            --accent-color: #FFFFF0; /* Kość słoniowa dla przycisków i obramowań */
+            --card-bg: #FFFFF0; /* Kość słoniowa dla kart */
+            --select-bg: #FFFFF0; /* Kość słoniowa dla opcji select */
             --select-text: #1f2937;
-            --gradient-bg: linear-gradient(135deg, #f3e8ff, #e0f2fe);
+            --gradient-bg: linear-gradient(135deg, #1E90FF, #FFFFF0);
         }
         [data-theme="dark"] {
-            --bg-color: #1f2937;
-            --text-color: #f3f4f6;
-            --accent-color: #6366f1;
-            --card-bg: #374151;
+            --bg-color: #228B22; /* Przygaszona zieleń */
+            --text-color: #8B0000; /* Przygaszony buraczkowy */
+            --accent-color: #8B0000;
+            --card-bg: #006400; /* Ciemniejsza zieleń dla kart */
             --select-bg: #4b5563;
             --select-text: #e5e7eb;
-            --gradient-bg: linear-gradient(135deg, #4c1d95, #1e3a8a);
+            --gradient-bg: linear-gradient(135deg, #228B22, #8B0000);
         }
         body {
-            background-color: var(--bg-color);
+            background: var(--gradient-bg);
             color: var(--text-color);
-            font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            font-family: 'Lato', sans-serif;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+        h1, h2, h3, h4 {
+            font-family: 'Playfair Display', serif;
         }
         .theme-toggle {
             position: fixed;
             top: 1rem;
             right: 1rem;
+            z-index: 1000;
         }
         .theme-toggle button {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 50%;
+            padding: 0.75rem;
+            background: var(--accent-color);
         }
         .theme-toggle button:hover {
             transform: scale(1.1);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
         .card, .form-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .card:hover, .form-container:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         }
         select, input {
-            background: var(--gradient-bg);
+            background: var(--card-bg);
             color: var(--select-text);
-            border: 1px solid var(--accent-color);
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
             transition: border-color 0.3s ease, transform 0.2s ease;
         }
         select option {
@@ -61,71 +72,87 @@
             color: var(--select-text);
         }
         select:focus, input:focus {
-            border-color: var(--accent-color);
+            border-color: var(--text-color);
             outline: none;
             transform: scale(1.02);
         }
         button {
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            background: var(--gradient-bg);
+            color: var(--select-text);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            transition: transform 0.2s ease, box-shadow 0.3s ease;
         }
         button:hover {
             transform: scale(1.05);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
+        p {
+            text-align: justify;
+        }
+        .chat-section {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-start p-4">
+<body class="min-h-screen flex flex-col items-center justify-center p-4 text-center">
     <div class="theme-toggle">
-        <button id="theme-toggle" class="p-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+        <button id="theme-toggle" class="p-2 rounded-full">
             🌙 / ☀️
         </button>
     </div>
     <header class="text-center my-8">
-        <h1 class="text-4xl font-bold text-indigo-600 dark:text-indigo-400">Oddech9D</h1>
-        <p class="text-lg mt-2">Platforma dla uczestników programu Oddech9D do umawiania wspólnych sesji</p>
+        <h1 class="text-5xl font-bold">Oddech9D</h1>
+        <p class="text-xl mt-2">Platforma dla uczestników programu Oddech9D do umawiania wspólnych sesji</p>
     </header>
 
-    <section id="auth-section" class="w-full max-w-md mb-8">
-        <div id="register-form" class="mb-4 hidden">
-            <h3 class="text-xl font-semibold mb-2">Rejestracja</h3>
-            <input type="text" id="reg-username" placeholder="Nazwa użytkownika" class="mb-2 block w-full p-2 border rounded">
-            <input type="email" id="reg-email" placeholder="Email" class="mb-2 block w-full p-2 border rounded">
-            <input type="password" id="reg-password" placeholder="Hasło" class="mb-2 block w-full p-2 border rounded">
-            <button id="register-btn" class="bg-blue-600 text-white px-4 py-2 rounded">Zarejestruj</button>
+    <section id="auth-section" class="w-full max-w-md mb-8 flex flex-col items-center">
+        <div id="register-form" class="mb-4 hidden w-full form-container p-6 rounded-lg shadow-md">
+            <h3 class="text-2xl font-semibold mb-4">Rejestracja</h3>
+            <input type="text" id="reg-username" placeholder="Nazwa użytkownika" class="mb-3 block w-full p-3 border rounded">
+            <input type="email" id="reg-email" placeholder="Email" class="mb-3 block w-full p-3 border rounded">
+            <input type="password" id="reg-password" placeholder="Hasło" class="mb-3 block w-full p-3 border rounded">
+            <button id="register-btn" class="px-4 py-2 rounded">Zarejestruj</button>
         </div>
-        <div id="login-form" class="mb-4 hidden">
-            <h3 class="text-xl font-semibold mb-2">Logowanie</h3>
-            <input type="email" id="login-email" placeholder="Email" class="mb-2 block w-full p-2 border rounded">
-            <input type="password" id="login-password" placeholder="Hasło" class="mb-2 block w-full p-2 border rounded">
-            <button id="login-btn" class="bg-green-600 text-white px-4 py-2 rounded">Zaloguj</button>
+        <div id="login-form" class="mb-4 hidden w-full form-container p-6 rounded-lg shadow-md">
+            <h3 class="text-2xl font-semibold mb-4">Logowanie</h3>
+            <input type="email" id="login-email" placeholder="Email" class="mb-3 block w-full p-3 border rounded">
+            <input type="password" id="login-password" placeholder="Hasło" class="mb-3 block w-full p-3 border rounded">
+            <button id="login-btn" class="px-4 py-2 rounded">Zaloguj</button>
         </div>
         <div id="user-info" class="hidden">
-            <p id="user-name"></p>
-            <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded">Wyloguj</button>
+            <p id="user-name" class="text-lg mb-2"></p>
+            <button id="logout-btn" class="px-4 py-2 rounded">Wyloguj</button>
         </div>
     </section>
 
-    <main class="w-full max-w-4xl">
+    <main class="w-full max-w-4xl flex flex-col items-center">
         <!-- Sekcja zaplanowanych sesji -->
-        <section id="sessions" class="mb-12">
-            <h2 class="text-2xl font-semibold mb-4">Zaplanowane Sesje</h2>
-            <div id="session-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <section id="sessions" class="mb-12 w-full">
+            <h2 class="text-3xl font-semibold mb-6">Zaplanowane Sesje</h2>
+            <div id="session-list" class="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center"></div>
         </section>
 
         <!-- Formularz tworzenia nowej sesji -->
-        <section id="create-session" class="mb-12 hidden">
-            <h2 class="text-2xl font-semibold mb-4">Utwórz Nową Sesję</h2>
-            <form id="session-form" class="p-6 rounded-lg shadow-md form-container" style="background-color: var(--card-bg);">
+        <section id="create-session" class="mb-12 hidden w-full max-w-md">
+            <h2 class="text-3xl font-semibold mb-6">Utwórz Nową Sesję</h2>
+            <form id="session-form" class="p-6 rounded-lg shadow-md form-container w-full">
                 <div class="mb-4">
                     <label for="session-type" class="block text-sm font-medium">Typ Sesji</label>
-                    <select id="session-type" class="mt-1 block w-full p-2 border rounded">
+                    <select id="session-type" class="mt-1 block w-full p-3 border rounded">
                         <option value="standard">Standardowa (Wtorek, 18:30)</option>
                         <option value="custom">Niestandardowa</option>
                     </select>
                 </div>
                 <div id="standard-options" class="mb-4">
                     <label for="start-session" class="block text-sm font-medium">Rozpocznij od Sesji Nr</label>
-                    <select id="start-session" class="mt-1 block w-full p-2 border rounded">
+                    <select id="start-session" class="mt-1 block w-full p-3 border rounded">
                         <option value="1">1 - Obfitość</option>
                         <option value="2">2 - Stres i niepokój</option>
                         <option value="3">3 - Przebudzenie</option>
@@ -143,7 +170,7 @@
                 </div>
                 <div id="custom-options" class="hidden mb-4">
                     <label for="custom-session" class="block text-sm font-medium">Wybierz Sesję</label>
-                    <select id="custom-session" class="mt-1 block w-full p-2 border rounded">
+                    <select id="custom-session" class="mt-1 block w-full p-3 border rounded">
                         <option value="1">1 - Obfitość</option>
                         <option value="2">2 - Stres i niepokój</option>
                         <option value="3">3 - Przebudzenie</option>
@@ -158,11 +185,11 @@
                         <option value="12">12 - Pełny Reset</option>
                     </select>
                     <label for="custom-date" class="block text-sm font-medium mt-4">Data</label>
-                    <input type="date" id="custom-date" class="mt-1 block w-full p-2 border rounded">
+                    <input type="date" id="custom-date" class="mt-1 block w-full p-3 border rounded">
                     <label for="custom-time" class="block text-sm font-medium mt-4">Godzina Startu</label>
-                    <input type="time" id="custom-time" class="mt-1 block w-full p-2 border rounded">
+                    <input type="time" id="custom-time" class="mt-1 block w-full p-3 border rounded">
                 </div>
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded">Utwórz Sesję</button>
+                <button type="submit" class="px-4 py-2 rounded">Utwórz Sesję</button>
             </form>
         </section>
     </main>
@@ -170,22 +197,25 @@
     <script type="module">
         // Importy Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
         // Konfiguracja Firebase
         const firebaseConfig = {
-            apiKey: "AIzaSyC5n-Cp7R0kLpoUPuaVyTR1mQ86IDwC7E",
+            apiKey: "YOUR_NEW_API_KEY", // Zastąp poprawnym kluczem z konsoli Firebase
             authDomain: "oddech9d-8981d.firebaseapp.com",
             projectId: "oddech9d-8981d",
-            storageBucket: "oddech9d-8981d.appspot.com",
+            storageBucket: "oddech9d-8981d.firebasestorage.app",
             messagingSenderId: "300140944166",
-            appId: "1:300140944166:web:cb9c473a88098defb3bfe7",
-            measurementId: "G-WK12075PH7"
+            appId: "1:300140944166:web:1121349b87d2edddb3bfe7",
+            measurementId: "G-WXZJVMCFZD"
         };
 
         // Inicjalizacja Firebase
         const app = initializeApp(firebaseConfig);
+        console.log('Firebase zainicjalizowany:', app.name); // Debug: powinno zwrócić '[DEFAULT]'
+        const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
@@ -206,13 +236,13 @@
             "12 - Pełny Reset"
         ];
 
-        // Toggle theme
+        // Przełączanie trybu jasny/ciemny
         const toggle = document.getElementById('theme-toggle');
         toggle.addEventListener('click', () => {
             document.body.dataset.theme = document.body.dataset.theme === 'dark' ? '' : 'dark';
         });
 
-        // Auth state change
+        // Zmiana stanu uwierzytelniania
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             updateAuthUI();
@@ -239,7 +269,7 @@
             }
         }
 
-        // Register
+        // Rejestracja
         document.getElementById('register-btn').addEventListener('click', async () => {
             const username = document.getElementById('reg-username').value;
             const email = document.getElementById('reg-email').value;
@@ -247,28 +277,28 @@
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 await updateProfile(userCredential.user, { displayName: username });
-                alert('Zarejestrowano!');
+                alert('Zarejestrowano pomyślnie!');
             } catch (error) {
-                alert('Błąd: ' + error.message);
+                alert('Błąd rejestracji: ' + error.message);
             }
         });
 
-        // Login
+        // Logowanie
         document.getElementById('login-btn').addEventListener('click', async () => {
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                alert('Zalogowano!');
+                alert('Zalogowano pomyślnie!');
             } catch (error) {
-                alert('Błąd: ' + error.message);
+                alert('Błąd logowania: ' + error.message);
             }
         });
 
-        // Logout
+        // Wylogowanie
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await signOut(auth);
-            alert('Wylogowano!');
+            alert('Wylogowano pomyślnie!');
         });
 
         // Pokazuj/ukrywaj opcje formularza
@@ -308,7 +338,7 @@
                 if (sessionType === 'standard') {
                     const startNum = parseInt(document.getElementById('start-session').value);
                     let currentDate = getNextTuesday();
-                    for (let i = 0; i < 52; i++) {  // 1 year of weekly sessions
+                    for (let i = 0; i < 52; i++) { // 1 rok sesji tygodniowych
                         const sessionNum = ((startNum - 1 + i) % 12) + 1;
                         await addDoc(collection(db, 'sessions'), {
                             title: sessions[sessionNum - 1],
@@ -334,10 +364,11 @@
                         creator: currentUser.uid
                     });
                 }
+                alert('Sesja utworzona pomyślnie!');
                 loadSessions();
             } catch (error) {
                 console.error('Błąd podczas tworzenia sesji:', error);
-                alert('Wystąpił błąd: ' + error.message);
+                alert('Błąd tworzenia sesji: ' + error.message);
             }
         });
 
@@ -362,31 +393,51 @@
                 if (currentUser) {
                     const userName = currentUser.displayName;
                     if (data.participants.includes(userName)) {
-                        joinHtml = `<button onclick="leaveSession('${data.id}')" class="bg-red-500 text-white px-2 py-1 rounded mt-2">Rezygnuj</button>`;
+                        joinHtml = `<button onclick="leaveSession('${data.id}')" class="bg-red-500 text-white px-3 py-2 rounded mt-2">Rezygnuj</button>`;
                     } else {
-                        joinHtml = `<button onclick="joinSession('${data.id}')" class="bg-green-500 text-white px-2 py-1 rounded mt-2">Dołącz</button>`;
+                        joinHtml = `<button onclick="joinSession('${data.id}')" class="bg-green-500 text-white px-3 py-2 rounded mt-2">Dołącz</button>`;
                     }
                     if (data.creator === currentUser.uid) {
-                        deleteHtml = `<button onclick="deleteSession('${data.id}')" class="bg-gray-500 text-white px-2 py-1 rounded mt-2 ml-2">Usuń</button>`;
+                        deleteHtml = `<button onclick="deleteSession('${data.id}')" class="bg-gray-500 text-white px-3 py-2 rounded mt-2 ml-2">Usuń</button>`;
                     }
                 }
                 const card = document.createElement('div');
-                card.className = 'p-4 rounded-lg shadow-md card';
-                card.style.backgroundColor = 'var(--card-bg)';
+                card.className = 'p-6 rounded-lg shadow-md card w-full max-w-md';
                 card.innerHTML = `
-                    <h3 class="text-xl font-semibold">${data.title}</h3>
-                    <p>${new Date(data.date).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}</p>
-                    <p>Uczestnicy: ${data.participants.join(', ') || 'Brak'}</p>
+                    <h3 class="text-2xl font-semibold mb-2">${data.title}</h3>
+                    <p class="mb-2">${new Date(data.date).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}</p>
+                    <p class="mb-4">Uczestnicy: ${data.participants.join(', ') || 'Brak'}</p>
                     ${joinHtml}
                     ${deleteHtml}
                     <div class="mt-4">
-                        <h4 class="font-medium">Komentarze:</h4>
-                        <ul>${data.comments.map(c => `<li>${c}</li>`).join('')}</ul>
-                        ${currentUser ? `<input type="text" id="comment-${data.id}" placeholder="Dodaj komentarz" class="mt-2 p-2 border rounded w-full">
-                        <button onclick="addComment('${data.id}')" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Dodaj</button>` : ''}
+                        <h4 class="font-medium mb-2">Komentarze:</h4>
+                        <ul class="mb-2">${data.comments.map(c => `<li class="text-sm">${c}</li>`).join('')}</ul>
+                        ${currentUser ? `<input type="text" id="comment-${data.id}" placeholder="Dodaj komentarz" class="mt-2 p-3 border rounded w-full">
+                        <button onclick="addComment('${data.id}')" class="bg-blue-500 text-white px-3 py-2 rounded mt-2">Dodaj</button>` : ''}
+                    </div>
+                    <div class="mt-4 chat-section" id="chat-section-${data.id}">
+                        <h4 class="font-medium mb-2">Live Chat (dziel się doświadczeniami)</h4>
+                        <ul id="chat-messages-${data.id}" class="mb-2 text-sm"></ul>
+                        ${currentUser ? `<input type="text" id="chat-input-${data.id}" placeholder="Wpisz wiadomość" class="p-3 border rounded w-full">
+                        <button onclick="sendChatMessage('${data.id}')" class="bg-purple-500 text-white px-3 py-2 rounded mt-2">Wyślij</button>` : '<p class="text-sm">Zaloguj się, aby dołączyć do czatu.</p>'}
                     </div>
                 `;
                 sessionList.appendChild(card);
+
+                // Nasłuchiwanie aktualizacji czatu w czasie rzeczywistym
+                if (currentUser) {
+                    const chatQuery = query(collection(db, 'sessions', data.id, 'chat'), orderBy('timestamp', 'asc'));
+                    onSnapshot(chatQuery, (snapshot) => {
+                        const chatList = document.getElementById(`chat-messages-${data.id}`);
+                        chatList.innerHTML = '';
+                        snapshot.forEach((doc) => {
+                            const msg = doc.data();
+                            const li = document.createElement('li');
+                            li.textContent = `${msg.user}: ${msg.message} (${new Date(msg.timestamp.toDate()).toLocaleTimeString('pl-PL')})`;
+                            chatList.appendChild(li);
+                        });
+                    });
+                }
             });
         }
 
@@ -404,7 +455,7 @@
                 loadSessions();
             } catch (error) {
                 console.error('Błąd podczas dołączania:', error);
-                alert('Wystąpił błąd: ' + error.message);
+                alert('Błąd dołączania: ' + error.message);
             }
         };
 
@@ -419,7 +470,7 @@
                 loadSessions();
             } catch (error) {
                 console.error('Błąd podczas rezygnacji:', error);
-                alert('Wystąpił błąd: ' + error.message);
+                alert('Błąd rezygnacji: ' + error.message);
             }
         };
 
@@ -432,7 +483,7 @@
                     loadSessions();
                 } catch (error) {
                     console.error('Błąd podczas usuwania:', error);
-                    alert('Wystąpił błąd: ' + error.message);
+                    alert('Błąd usuwania: ' + error.message);
                 }
             }
         };
@@ -451,7 +502,27 @@
                     loadSessions();
                 } catch (error) {
                     console.error('Błąd podczas dodawania komentarza:', error);
-                    alert('Wystąpił błąd: ' + error.message);
+                    alert('Błąd dodawania komentarza: ' + error.message);
+                }
+            }
+        };
+
+        // Wysyłanie wiadomości na czat
+        window.sendChatMessage = async (id) => {
+            if (!currentUser) return;
+            const input = document.getElementById(`chat-input-${id}`);
+            if (input.value) {
+                try {
+                    const chatRef = collection(db, 'sessions', id, 'chat');
+                    await addDoc(chatRef, {
+                        user: currentUser.displayName,
+                        message: input.value,
+                        timestamp: serverTimestamp()
+                    });
+                    input.value = '';
+                } catch (error) {
+                    console.error('Błąd podczas wysyłania wiadomości:', error);
+                    alert('Błąd wysyłania wiadomości: ' + error.message);
                 }
             }
         };
