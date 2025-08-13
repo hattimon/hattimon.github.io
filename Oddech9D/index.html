@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oddech9D</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --accent-color: #4f46e5;
+            --card-bg: #f9fafb;
+        }
+        [data-theme="dark"] {
+            --bg-color: #1f2937;
+            --text-color: #f3f4f6;
+            --accent-color: #6366f1;
+            --card-bg: #374151;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-4">
+    <div class="theme-toggle">
+        <button id="theme-toggle" class="p-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+            🌙 / ☀️
+        </button>
+    </div>
+    <header class="text-center my-8">
+        <h1 class="text-4xl font-bold text-indigo-600 dark:text-indigo-400">Oddech9D</h1>
+        <p class="text-lg mt-2">Platforma dla uczestników programu Oddech9D do umawiania wspólnych sesji</p>
+    </header>
+
+    <main class="w-full max-w-4xl">
+        <!-- Sekcja zaplanowanych sesji -->
+        <section id="sessions" class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Zaplanowane Sesje</h2>
+            <div id="session-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+
+        <!-- Formularz tworzenia nowej sesji -->
+        <section id="create-session" class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Utwórz Nową Sesję</h2>
+            <form id="session-form" class="bg-var(--card-bg) p-6 rounded-lg shadow-md">
+                <div class="mb-4">
+                    <label for="session-type" class="block text-sm font-medium">Typ Sesji</label>
+                    <select id="session-type" class="mt-1 block w-full p-2 border rounded">
+                        <option value="standard">Standardowa (Wtorek, 18:30)</option>
+                        <option value="custom">Niestandardowa</option>
+                    </select>
+                </div>
+                <div id="standard-options" class="mb-4">
+                    <label for="start-session" class="block text-sm font-medium">Rozpocznij od Sesji Nr</label>
+                    <select id="start-session" class="mt-1 block w-full p-2 border rounded">
+                        <option value="1">1 - Obfitość</option>
+                        <option value="2">2 - Stres i niepokój</option>
+                        <option value="3">3 - Przebudzenie</option>
+                        <option value="4">4 - Przekraczanie strachu</option>
+                        <option value="5">5 - Ponowne połączenie ze swoim wewnętrznym dzieckiem</option>
+                        <option value="6">6 - Podążaj za ciałem</option>
+                        <option value="7">7 - Połączenie ze źródłem</option>
+                        <option value="8">8 - Regeneracja i relaks</option>
+                        <option value="9">9 - Odpuszczenie i ruszenie dalej</option>
+                        <option value="10">10 - Uzdrowienia 5 Podstawowych Śladów Traumy</option>
+                        <option value="11">11 - Traumy międzypokoleniowe</option>
+                        <option value="12">12 - Pełny Reset</option>
+                    </select>
+                    <p class="text-sm mt-2">To ustawi cykl co tydzień we wtorki, zaczynając od wybranej sesji w najbliższy wtorek.</p>
+                </div>
+                <div id="custom-options" class="hidden mb-4">
+                    <label for="custom-session" class="block text-sm font-medium">Wybierz Sesję</label>
+                    <select id="custom-session" class="mt-1 block w-full p-2 border rounded">
+                        <!-- Opcje takie same jak powyżej -->
+                        <option value="1">1 - Obfitość</option>
+                        <!-- ... dodaj resztę -->
+                    </select>
+                    <label for="custom-date" class="block text-sm font-medium mt-4">Data</label>
+                    <input type="date" id="custom-date" class="mt-1 block w-full p-2 border rounded">
+                    <label for="custom-time" class="block text-sm font-medium mt-4">Godzina Startu</label>
+                    <input type="time" id="custom-time" class="mt-1 block w-full p-2 border rounded">
+                </div>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded">Utwórz Sesję</button>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        // Firebase Config - Zastąp swoimi danymi z Firebase Console
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5n-Cp7R0kLpoUPuaVyTRR1mQ86IDwC7E",
+            authDomain: "oddech9d-8981d.firebaseapp.com",
+            projectId: "oddech9d-8981d",
+            storageBucket: "oddech9d-8981d.firebasestorage.app",
+            messagingSenderId: "300140944166",
+            appId: "1:300140944166:web:1121349b87d2edddb3bfe7"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const sessions = [
+            "Obfitość",
+            "Stres i niepokój",
+            "Przebudzenie",
+            "Przekraczanie strachu",
+            "Ponowne połączenie ze swoim wewnętrznym dzieckiem",
+            "Podążaj za ciałem",
+            "Połączenie ze źródłem",
+            "Regeneracja i relaks",
+            "Odpuszczenie i ruszenie dalej",
+            "Uzdrowienia 5 Podstawowych Śladów Traumy",
+            "Traumy międzypokoleniowe",
+            "Pełny Reset"
+        ];
+
+        // Toggle theme
+        const toggle = document.getElementById('theme-toggle');
+        toggle.addEventListener('click', () => {
+            document.body.dataset.theme = document.body.dataset.theme === 'dark' ? '' : 'dark';
+        });
+
+        // Pokazuj/ukrywaj opcje formularza
+        const typeSelect = document.getElementById('session-type');
+        const standardOpts = document.getElementById('standard-options');
+        const customOpts = document.getElementById('custom-options');
+        typeSelect.addEventListener('change', () => {
+            if (typeSelect.value === 'standard') {
+                standardOpts.classList.remove('hidden');
+                customOpts.classList.add('hidden');
+            } else {
+                standardOpts.classList.add('hidden');
+                customOpts.classList.remove('hidden');
+            }
+        });
+
+        // Funkcja do obliczania najbliższego wtorku
+        function getNextTuesday() {
+            const now = new Date();
+            const day = now.getDay();
+            const diff = (day <= 2) ? (2 - day) : (9 - day);
+            now.setDate(now.getDate() + diff);
+            now.setHours(18, 30, 0, 0); // 18:30 CET
+            return now;
+        }
+
+        // Tworzenie sesji
+        const form = document.getElementById('session-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (typeSelect.value === 'standard') {
+                const startNum = parseInt(document.getElementById('start-session').value);
+                let currentDate = getNextTuesday();
+                for (let i = 0; i < 12; i++) {
+                    const sessionNum = ((startNum - 1 + i) % 12) + 1;
+                    await db.collection('sessions').add({
+                        title: `${sessionNum} - ${sessions[sessionNum - 1]}`,
+                        date: currentDate.toISOString(),
+                        participants: [],
+                        comments: []
+                    });
+                    currentDate.setDate(currentDate.getDate() + 7);
+                }
+            } else {
+                const sessionNum = parseInt(document.getElementById('custom-session').value);
+                const dateStr = document.getElementById('custom-date').value;
+                const timeStr = document.getElementById('custom-time').value;
+                const date = new Date(`${dateStr}T${timeStr}:00`);
+                await db.collection('sessions').add({
+                    title: `${sessionNum} - ${sessions[sessionNum - 1]}`,
+                    date: date.toISOString(),
+                    participants: [],
+                    comments: []
+                });
+            }
+            loadSessions();
+        });
+
+        // Ładowanie sesji
+        async function loadSessions() {
+            const sessionList = document.getElementById('session-list');
+            sessionList.innerHTML = '';
+            const snapshot = await db.collection('sessions').orderBy('date').get();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const card = document.createElement('div');
+                card.className = 'bg-var(--card-bg) p-4 rounded-lg shadow-md';
+                card.innerHTML = `
+                    <h3 class="text-xl font-semibold">${data.title}</h3>
+                    <p>${new Date(data.date).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}</p>
+                    <p>Uczestnicy: ${data.participants.join(', ') || 'Brak'}</p>
+                    <button onclick="joinSession('${doc.id}')" class="bg-green-500 text-white px-2 py-1 rounded mt-2">Dołącz</button>
+                    <div class="mt-4">
+                        <h4 class="font-medium">Komentarze:</h4>
+                        <ul>${data.comments.map(c => `<li>${c}</li>`).join('')}</ul>
+                        <input type="text" id="comment-${doc.id}" placeholder="Dodaj komentarz" class="mt-2 p-2 border rounded w-full">
+                        <button onclick="addComment('${doc.id}')" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Dodaj</button>
+                    </div>
+                `;
+                sessionList.appendChild(card);
+            });
+        }
+
+        // Dołączanie do sesji
+        window.joinSession = async (id) => {
+            const name = prompt('Podaj swoje imię:');
+            if (name) {
+                await db.collection('sessions').doc(id).update({
+                    participants: firebase.firestore.FieldValue.arrayUnion(name)
+                });
+                loadSessions();
+            }
+        };
+
+        // Dodawanie komentarza
+        window.addComment = async (id) => {
+            const input = document.getElementById(`comment-${id}`);
+            if (input.value) {
+                await db.collection('sessions').doc(id).update({
+                    comments: firebase.firestore.FieldValue.arrayUnion(input.value)
+                });
+                input.value = '';
+                loadSessions();
+            }
+        };
+
+        loadSessions();
+    </script>
+</body>
+</html>
