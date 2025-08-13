@@ -225,13 +225,13 @@
 
         // Konfiguracja Firebase
         const firebaseConfig = {
-            apiKey: "YOUR_NEW_API_KEY", // Zastąp poprawnym kluczem z konsoli Firebase
-            authDomain: "oddech9d-8981d.firebaseapp.com",
-            projectId: "oddech9d-8981d",
-            storageBucket: "oddech9d-8981d.firebasestorage.app",
-            messagingSenderId: "300140944166",
-            appId: "1:300140944166:web:1121349b87d2edddb3bfe7",
-            measurementId: "G-WXZJVMCFZD"
+          apiKey: "AIzaSyC5n-Cp7R0kLpoUPuaVyTRR1mQ86IDwC7E",
+          authDomain: "oddech9d-8981d.firebaseapp.com",
+          projectId: "oddech9d-8981d",
+          storageBucket: "oddech9d-8981d.firebasestorage.app",
+          messagingSenderId: "300140944166",
+          appId: "1:300140944166:web:753acc715c35c715b3bfe7",
+          measurementId: "G-KFRP3S869V"
         };
 
         // Inicjalizacja Firebase
@@ -301,6 +301,7 @@
                 await updateProfile(userCredential.user, { displayName: username });
                 alert('Zarejestrowano pomyślnie!');
             } catch (error) {
+                console.error('Błąd rejestracji:', error);
                 alert('Błąd rejestracji: ' + error.message);
             }
         });
@@ -313,6 +314,7 @@
                 await signInWithEmailAndPassword(auth, email, password);
                 alert('Zalogowano pomyślnie!');
             } catch (error) {
+                console.error('Błąd logowania:', error);
                 alert('Błąd logowania: ' + error.message);
             }
         });
@@ -532,7 +534,7 @@
         // Wysyłanie wiadomości na czat
         window.sendChatMessage = async (id) => {
             if (!currentUser) return;
-            const input = document.getElementById(`chat-input-${id}`);
+            const input = document.getElementById(`chat-input-${data.id}`);
             if (input.value) {
                 try {
                     const chatRef = collection(db, 'sessions', id, 'chat');
