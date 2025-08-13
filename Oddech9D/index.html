@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oddech9D</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --accent-color: #4f46e5;
+            --card-bg: #f9fafb;
+            --select-bg: #e5e7eb;
+            --select-text: #1f2937;
+            --gradient-bg: linear-gradient(135deg, #f3e8ff, #e0f2fe);
+        }
+        [data-theme="dark"] {
+            --bg-color: #1f2937;
+            --text-color: #f3f4f6;
+            --accent-color: #6366f1;
+            --card-bg: #374151;
+            --select-bg: #4b5563;
+            --select-text: #e5e7eb;
+            --gradient-bg: linear-gradient(135deg, #4c1d95, #1e3a8a);
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+        }
+        .theme-toggle button {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .theme-toggle button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .card, .form-container {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover, .form-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        select, input {
+            background: var(--gradient-bg);
+            color: var(--select-text);
+            border: 1px solid var(--accent-color);
+            transition: border-color 0.3s ease, transform 0.2s ease;
+        }
+        select option {
+            background: var(--select-bg);
+            color: var(--select-text);
+        }
+        select:focus, input:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            transform: scale(1.02);
+        }
+        button {
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        }
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-4">
+    <div class="theme-toggle">
+        <button id="theme-toggle" class="p-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+            🌙 / ☀️
+        </button>
+    </div>
+    <header class="text-center my-8">
+        <h1 class="text-4xl font-bold text-indigo-600 dark:text-indigo-400">Oddech9D</h1>
+        <p class="text-lg mt-2">Platforma dla uczestników programu Oddech9D do umawiania wspólnych sesji</p>
+    </header>
+
+    <section id="auth-section" class="w-full max-w-md mb-8">
+        <div id="register-form" class="mb-4 hidden">
+            <h3 class="text-xl font-semibold mb-2">Rejestracja</h3>
+            <input type="text" id="reg-username" placeholder="Nazwa użytkownika" class="mb-2 block w-full p-2 border rounded">
+            <input type="email" id="reg-email" placeholder="Email" class="mb-2 block w-full p-2 border rounded">
+            <input type="password" id="reg-password" placeholder="Hasło" class="mb-2 block w-full p-2 border rounded">
+            <button id="register-btn" class="bg-blue-600 text-white px-4 py-2 rounded">Zarejestruj</button>
+        </div>
+        <div id="login-form" class="mb-4 hidden">
+            <h3 class="text-xl font-semibold mb-2">Logowanie</h3>
+            <input type="email" id="login-email" placeholder="Email" class="mb-2 block w-full p-2 border rounded">
+            <input type="password" id="login-password" placeholder="Hasło" class="mb-2 block w-full p-2 border rounded">
+            <button id="login-btn" class="bg-green-600 text-white px-4 py-2 rounded">Zaloguj</button>
+        </div>
+        <div id="user-info" class="hidden">
+            <p id="user-name"></p>
+            <button id="logout-btn" class="bg-red-600 text-white px-4 py-2 rounded">Wyloguj</button>
+        </div>
+    </section>
+
+    <main class="w-full max-w-4xl">
+        <!-- Sekcja zaplanowanych sesji -->
+        <section id="sessions" class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Zaplanowane Sesje</h2>
+            <div id="session-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+
+        <!-- Formularz tworzenia nowej sesji -->
+        <section id="create-session" class="mb-12 hidden">
+            <h2 class="text-2xl font-semibold mb-4">Utwórz Nową Sesję</h2>
+            <form id="session-form" class="p-6 rounded-lg shadow-md form-container" style="background-color: var(--card-bg);">
+                <div class="mb-4">
+                    <label for="session-type" class="block text-sm font-medium">Typ Sesji</label>
+                    <select id="session-type" class="mt-1 block w-full p-2 border rounded">
+                        <option value="standard">Standardowa (Wtorek, 18:30)</option>
+                        <option value="custom">Niestandardowa</option>
+                    </select>
+                </div>
+                <div id="standard-options" class="mb-4">
+                    <label for="start-session" class="block text-sm font-medium">Rozpocznij od Sesji Nr</label>
+                    <select id="start-session" class="mt-1 block w-full p-2 border rounded">
+                        <option value="1">1 - Obfitość</option>
+                        <option value="2">2 - Stres i niepokój</option>
+                        <option value="3">3 - Przebudzenie</option>
+                        <option value="4">4 - Przekraczanie strachu</option>
+                        <option value="5">5 - Ponowne połączenie ze swoim wewnętrznym dzieckiem</option>
+                        <option value="6">6 - Podążaj za ciałem</option>
+                        <option value="7">7 - Połączenie ze źródłem</option>
+                        <option value="8">8 - Regeneracja i relaks</option>
+                        <option value="9">9 - Odpuszczenie i ruszenie dalej</option>
+                        <option value="10">10 - Uzdrowienia 5 Podstawowych Śladów Traumy</option>
+                        <option value="11">11 - Traumy międzypokoleniowe</option>
+                        <option value="12">12 - Pełny Reset</option>
+                    </select>
+                    <p class="text-sm mt-2">To ustawi cykl co tydzień we wtorki, zaczynając od wybranej sesji w najbliższy wtorek.</p>
+                </div>
+                <div id="custom-options" class="hidden mb-4">
+                    <label for="custom-session" class="block text-sm font-medium">Wybierz Sesję</label>
+                    <select id="custom-session" class="mt-1 block w-full p-2 border rounded">
+                        <option value="1">1 - Obfitość</option>
+                        <option value="2">2 - Stres i niepokój</option>
+                        <option value="3">3 - Przebudzenie</option>
+                        <option value="4">4 - Przekraczanie strachu</option>
+                        <option value="5">5 - Ponowne połączenie ze swoim wewnętrznym dzieckiem</option>
+                        <option value="6">6 - Podążaj za ciałem</option>
+                        <option value="7">7 - Połączenie ze źródłem</option>
+                        <option value="8">8 - Regeneracja i relaks</option>
+                        <option value="9">9 - Odpuszczenie i ruszenie dalej</option>
+                        <option value="10">10 - Uzdrowienia 5 Podstawowych Śladów Traumy</option>
+                        <option value="11">11 - Traumy międzypokoleniowe</option>
+                        <option value="12">12 - Pełny Reset</option>
+                    </select>
+                    <label for="custom-date" class="block text-sm font-medium mt-4">Data</label>
+                    <input type="date" id="custom-date" class="mt-1 block w-full p-2 border rounded">
+                    <label for="custom-time" class="block text-sm font-medium mt-4">Godzina Startu</label>
+                    <input type="time" id="custom-time" class="mt-1 block w-full p-2 border rounded">
+                </div>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded">Utwórz Sesję</button>
+            </form>
+        </section>
+    </main>
+
+    <script type="module">
+        // Importy Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
+
+        // Konfiguracja Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5n-Cp7R0kLpoUPuaVyTR1mQ86IDwC7E",
+            authDomain: "oddech9d-8981d.firebaseapp.com",
+            projectId: "oddech9d-8981d",
+            storageBucket: "oddech9d-8981d.appspot.com",
+            messagingSenderId: "300140944166",
+            appId: "1:300140944166:web:cb9c473a88098defb3bfe7",
+            measurementId: "G-WK12075PH7"
+        };
+
+        // Inicjalizacja Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+
+        const sessions = [
+            "1 - Obfitość",
+            "2 - Stres i niepokój",
+            "3 - Przebudzenie",
+            "4 - Przekraczanie strachu",
+            "5 - Ponowne połączenie ze swoim wewnętrznym dzieckiem",
+            "6 - Podążaj za ciałem",
+            "7 - Połączenie ze źródłem",
+            "8 - Regeneracja i relaks",
+            "9 - Odpuszczenie i ruszenie dalej",
+            "10 - Uzdrowienia 5 Podstawowych Śladów Traumy",
+            "11 - Traumy międzypokoleniowe",
+            "12 - Pełny Reset"
+        ];
+
+        // Toggle theme
+        const toggle = document.getElementById('theme-toggle');
+        toggle.addEventListener('click', () => {
+            document.body.dataset.theme = document.body.dataset.theme === 'dark' ? '' : 'dark';
+        });
+
+        // Auth state change
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            updateAuthUI();
+            loadSessions();
+        });
+
+        function updateAuthUI() {
+            const registerForm = document.getElementById('register-form');
+            const loginForm = document.getElementById('login-form');
+            const userInfo = document.getElementById('user-info');
+            const createSession = document.getElementById('create-session');
+
+            if (currentUser) {
+                registerForm.classList.add('hidden');
+                loginForm.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                document.getElementById('user-name').textContent = `Witaj, ${currentUser.displayName}`;
+                createSession.classList.remove('hidden');
+            } else {
+                registerForm.classList.remove('hidden');
+                loginForm.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+                createSession.classList.add('hidden');
+            }
+        }
+
+        // Register
+        document.getElementById('register-btn').addEventListener('click', async () => {
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCredential.user, { displayName: username });
+                alert('Zarejestrowano!');
+            } catch (error) {
+                alert('Błąd: ' + error.message);
+            }
+        });
+
+        // Login
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                alert('Zalogowano!');
+            } catch (error) {
+                alert('Błąd: ' + error.message);
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await signOut(auth);
+            alert('Wylogowano!');
+        });
+
+        // Pokazuj/ukrywaj opcje formularza
+        const typeSelect = document.getElementById('session-type');
+        const standardOpts = document.getElementById('standard-options');
+        const customOpts = document.getElementById('custom-options');
+        typeSelect.addEventListener('change', () => {
+            if (typeSelect.value === 'standard') {
+                standardOpts.classList.remove('hidden');
+                customOpts.classList.add('hidden');
+            } else {
+                standardOpts.classList.add('hidden');
+                customOpts.classList.remove('hidden');
+            }
+        });
+
+        // Funkcja do obliczania najbliższego wtorku
+        function getNextTuesday() {
+            const now = new Date();
+            const day = now.getDay();
+            const diff = (day <= 2) ? (2 - day) : (9 - day);
+            now.setDate(now.getDate() + diff);
+            now.setHours(18, 30, 0, 0); // 18:30 CET
+            return now;
+        }
+
+        // Tworzenie sesji
+        const form = document.getElementById('session-form');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                alert('Zaloguj się, aby utworzyć sesję.');
+                return;
+            }
+            try {
+                const sessionType = typeSelect.value;
+                if (sessionType === 'standard') {
+                    const startNum = parseInt(document.getElementById('start-session').value);
+                    let currentDate = getNextTuesday();
+                    for (let i = 0; i < 52; i++) {  // 1 year of weekly sessions
+                        const sessionNum = ((startNum - 1 + i) % 12) + 1;
+                        await addDoc(collection(db, 'sessions'), {
+                            title: sessions[sessionNum - 1],
+                            date: currentDate.toISOString(),
+                            participants: [],
+                            comments: [],
+                            type: 'standard',
+                            creator: currentUser.uid
+                        });
+                        currentDate.setDate(currentDate.getDate() + 7);
+                    }
+                } else {
+                    const sessionNum = parseInt(document.getElementById('custom-session').value);
+                    const dateStr = document.getElementById('custom-date').value;
+                    const timeStr = document.getElementById('custom-time').value;
+                    const date = new Date(`${dateStr}T${timeStr}:00`);
+                    await addDoc(collection(db, 'sessions'), {
+                        title: sessions[sessionNum - 1],
+                        date: date.toISOString(),
+                        participants: [],
+                        comments: [],
+                        type: 'custom',
+                        creator: currentUser.uid
+                    });
+                }
+                loadSessions();
+            } catch (error) {
+                console.error('Błąd podczas tworzenia sesji:', error);
+                alert('Wystąpił błąd: ' + error.message);
+            }
+        });
+
+        // Ładowanie sesji
+        async function loadSessions() {
+            const sessionList = document.getElementById('session-list');
+            sessionList.innerHTML = '';
+            const querySnapshot = await getDocs(collection(db, 'sessions'));
+            const sessionsData = [];
+            querySnapshot.forEach((docSnapshot) => {
+                sessionsData.push({ id: docSnapshot.id, ...docSnapshot.data() });
+            });
+            const now = new Date();
+            const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            const futureSessions = sessionsData.filter(s => new Date(s.date) >= now);
+            const standardThisWeek = futureSessions.filter(s => s.type === 'standard' && new Date(s.date) < nextWeek);
+            const allCustomFuture = futureSessions.filter(s => s.type === 'custom');
+            const displayedSessions = [...standardThisWeek, ...allCustomFuture].sort((a, b) => new Date(a.date) - new Date(b.date));
+            displayedSessions.forEach((data) => {
+                let joinHtml = '';
+                let deleteHtml = '';
+                if (currentUser) {
+                    const userName = currentUser.displayName;
+                    if (data.participants.includes(userName)) {
+                        joinHtml = `<button onclick="leaveSession('${data.id}')" class="bg-red-500 text-white px-2 py-1 rounded mt-2">Rezygnuj</button>`;
+                    } else {
+                        joinHtml = `<button onclick="joinSession('${data.id}')" class="bg-green-500 text-white px-2 py-1 rounded mt-2">Dołącz</button>`;
+                    }
+                    if (data.creator === currentUser.uid) {
+                        deleteHtml = `<button onclick="deleteSession('${data.id}')" class="bg-gray-500 text-white px-2 py-1 rounded mt-2 ml-2">Usuń</button>`;
+                    }
+                }
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-lg shadow-md card';
+                card.style.backgroundColor = 'var(--card-bg)';
+                card.innerHTML = `
+                    <h3 class="text-xl font-semibold">${data.title}</h3>
+                    <p>${new Date(data.date).toLocaleString('pl-PL', { timeZone: 'Europe/Warsaw' })}</p>
+                    <p>Uczestnicy: ${data.participants.join(', ') || 'Brak'}</p>
+                    ${joinHtml}
+                    ${deleteHtml}
+                    <div class="mt-4">
+                        <h4 class="font-medium">Komentarze:</h4>
+                        <ul>${data.comments.map(c => `<li>${c}</li>`).join('')}</ul>
+                        ${currentUser ? `<input type="text" id="comment-${data.id}" placeholder="Dodaj komentarz" class="mt-2 p-2 border rounded w-full">
+                        <button onclick="addComment('${data.id}')" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Dodaj</button>` : ''}
+                    </div>
+                `;
+                sessionList.appendChild(card);
+            });
+        }
+
+        // Dołączanie do sesji
+        window.joinSession = async (id) => {
+            if (!currentUser) {
+                alert('Zaloguj się, aby dołączyć.');
+                return;
+            }
+            try {
+                const sessionRef = doc(db, 'sessions', id);
+                await updateDoc(sessionRef, {
+                    participants: arrayUnion(currentUser.displayName)
+                });
+                loadSessions();
+            } catch (error) {
+                console.error('Błąd podczas dołączania:', error);
+                alert('Wystąpił błąd: ' + error.message);
+            }
+        };
+
+        // Rezygnacja z sesji
+        window.leaveSession = async (id) => {
+            if (!currentUser) return;
+            try {
+                const sessionRef = doc(db, 'sessions', id);
+                await updateDoc(sessionRef, {
+                    participants: arrayRemove(currentUser.displayName)
+                });
+                loadSessions();
+            } catch (error) {
+                console.error('Błąd podczas rezygnacji:', error);
+                alert('Wystąpił błąd: ' + error.message);
+            }
+        };
+
+        // Usuwanie sesji
+        window.deleteSession = async (id) => {
+            if (!currentUser) return;
+            if (confirm('Czy na pewno chcesz usunąć tę sesję?')) {
+                try {
+                    await deleteDoc(doc(db, 'sessions', id));
+                    loadSessions();
+                } catch (error) {
+                    console.error('Błąd podczas usuwania:', error);
+                    alert('Wystąpił błąd: ' + error.message);
+                }
+            }
+        };
+
+        // Dodawanie komentarza
+        window.addComment = async (id) => {
+            if (!currentUser) return;
+            const input = document.getElementById(`comment-${id}`);
+            if (input.value) {
+                try {
+                    const sessionRef = doc(db, 'sessions', id);
+                    await updateDoc(sessionRef, {
+                        comments: arrayUnion(`${currentUser.displayName}: ${input.value}`)
+                    });
+                    input.value = '';
+                    loadSessions();
+                } catch (error) {
+                    console.error('Błąd podczas dodawania komentarza:', error);
+                    alert('Wystąpił błąd: ' + error.message);
+                }
+            }
+        };
+
+        loadSessions();
+    </script>
+</body>
+</html>
