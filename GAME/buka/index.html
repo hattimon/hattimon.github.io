@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <title data-i18n="title">BUKA in Moomin Valley</title>
+    <link rel="preload" as="audio" href="assets/audio/background.mp3">
+    <link rel="preload" as="audio" href="assets/audio/panic.mp3">
+    <link rel="preload" as="audio" href="assets/audio/bobek.mp3">
+    <link rel="preload" as="audio" href="assets/audio/deathmumin.mp3">
+    <link rel="preload" as="audio" href="assets/audio/deathkij.mp3">
+    <link rel="preload" as="audio" href="assets/audio/buka-win.mp3">
+    <link rel="preload" as="audio" href="assets/audio/ammo.mp3">
+    <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="wrap">
+    <div class="ttl-col">
+        <h1 class="pix" data-i18n="title">BUKA in Moomin Valley</h1>
+        <button id="helpBtn" class="btn pix help" data-i18n="help">Guide</button>
+    </div>
+
+    <div class="hud panel8">
+        <div class="row justify">
+            <div class="badge">
+                <span data-i18n="targets">Targets</span>:
+                <span data-i18n="moomins">Moomins</span> <span id="left">0</span> •
+                <span data-i18n="bolts">Bolts</span> 5 •
+                <span data-i18n="clouds">Clouds</span> 5 •
+                <span data-i18n="mushrooms">Mushrooms</span> <span id="mushLeft">?</span>
+            </div>
+            <div class="badge">
+                <span data-i18n="theme">Theme</span>:
+                <span id="themeName">Forest</span> •
+                <span data-i18n="weather">Weather</span>:
+                <span id="weatherName">Day</span>
+            </div>
+        </div>
+        <div class="row justify">
+            <div class="badge"><span data-i18n="score">Score</span>: <span id="score">0</span></div>
+            <div class="badge"><span data-i18n="progress">Progress</span>: <span id="progress">0%</span></div>
+        </div>
+        <div class="row justify">
+            <div class="badge"><span data-i18n="level">Level</span>: <span id="level">1</span>/30</div>
+            <div class="badge"><span data-i18n="hunterFreeze">Snufkin freeze</span>: <span id="freezeT">0s</span></div>
+            <div class="badge"><span data-i18n="globalFreeze">Global Freeze</span>: <span id="globalFreezeT">—</span></div>
+            <div class="badge"><span data-i18n="levelCode">Level code</span>: <span id="levelCode">—</span></div>
+        </div>
+        <div class="row g2">
+            <div class="meter hp" title="HP"><div id="hpFill" class="fill"></div></div>
+            <div class="meter cloudStock" title="Cloud stock (to 20)"><div id="cloudStockFill" class="fill"></div></div>
+            <div class="meter ammoAltBar" title="Bolt ammo (to 100)"><div id="ammoAltFill" class="fill"></div></div>
+        </div>
+        <div class="row justify">
+            <button id="langBtn" class="btn pix">Polski</button>
+            <button id="musicBtn" class="btn pix" data-i18n="musicOn">Music: ON</button>
+        </div>
+    </div>
+
+    <div class="grid crt">
+        <canvas id="game" width="800" height="576"></canvas>
+
+        <div id="overlay" class="overlay">
+            <div class="card panel8">
+                <div class="ttl pix" data-i18n="startTitle">Buka awakens the frost…</div>
+                <div class="desc" data-i18n="controls">
+                    Controls: Shift – cloud (hold 3s: strong; ≥6s: global), Ctrl – bolt, WASD/Arrows – move, P – pause, R – restart.
+                </div>
+                <div class="desc">
+                    <span data-i18n="codeLabel">Level code (7 chars)</span>:
+                    <input id="codeInput" class="code pix" maxlength="7" placeholder="—">
+                    <button id="applyCodeBtn" class="btn pix" data-i18n="applyCode">Codes</button>
+                    <div id="codeStatus" class="code-status pix"></div>
+                </div>
+                <button id="startBtn" class="btn pix" data-i18n="start">Start</button>
+            </div>
+        </div>
+
+        <div id="pause" class="overlay" hidden>
+            <div class="card panel8">
+                <div class="ttl pix" data-i18n="pause">Pause</div>
+                <div class="desc" data-i18n="controlsShort">Shift – cloud (3s/6s), Ctrl – bolt, WASD/Arrows – move, P – resume, R – restart.</div>
+                <button id="resumeBtn" class="btn pix" data-i18n="resume">Resume</button>
+            </div>
+        </div>
+
+        <div id="panicDim" class="panic-dim" hidden></div>
+        <div id="globalFog" class="global-fog" hidden></div>
+    </div>
+    <div id="touchControls">
+        <div class="joystick" id="joystick">
+            <div class="thumb"></div>
+        </div>
+        <button class="touch-btn bolt" id="boltBtn">⚡</button>
+        <button class="touch-btn cloud" id="cloudBtn">☁</button>
+        <button class="touch-btn pause" id="pauseBtn">⏸</button>
+        <button class="touch-btn reset" id="resetBtn">🔄</button>
+        <button class="touch-btn lock" id="lockBtn">🔒</button>
+    </div>
+</div>
+
+<!-- Help modal -->
+<div id="helpModal" class="modal" hidden>
+    <div class="modal-card panel8">
+        <div class="modal-head">
+            <div class="modal-title pix" data-i18n="guideTitle">Game guide</div>
+            <button id="helpClose" class="btn pix modal-close" data-i18n="close">Close</button>
+        </div>
+        <div class="modal-body scroll">
+            <div class="help-content">
+                <h2 data-i18n="welcomeH">Welcome to Moomin Valley</h2>
+                <p data-i18n="welcomeP">You are Buka – a frigid force. Eliminate all Moomins while dealing with Snufkin and Hattifatteners.</p>
+
+                <h3 data-i18n="controlsH">Controls</h3>
+                <ul>
+                    <li data-i18n="ctrlMove">Move: WASD or Arrows.</li>
+                    <li data-i18n="ctrlBolt">Bolt (ice shot): Ctrl – consumes bolt ammo, freezes the target.</li>
+                    <li data-i18n="ctrlCloud">Frost cloud: hold Shift to charge:
+                        <ul>
+                            <li data-i18n="ctrlCloudS">Tap: small cloud (7s), freezes nearby.</li>
+                            <li data-i18n="ctrlCloudM">≥3s: strong cloud (bigger radius, 30s freeze), costs 10 clouds.</li>
+                            <li data-i18n="ctrlCloudG">≥6s: global freeze of the whole board for 60s, costs 100 clouds.</li>
+                        </ul>
+                    </li>
+                    <li data-i18n="ctrlPause">P – pause/resume.</li>
+                    <li data-i18n="ctrlRestart">R – restart level.</li>
+                </ul>
+
+                <h3 data-i18n="goalH">Goal</h3>
+                <p data-i18n="goalP">Eliminate all Moomins on each level. The Progress bar shows completion. There are 30 levels with rising difficulty and themes.</p>
+
+                <h3 data-i18n="hudH">Resources & HUD</h3>
+                <ul>
+                    <li data-i18n="hudHp">HP: green bar – avoid Snufkin’s flames and contact with Hattifatteners.</li>
+                    <li data-i18n="hudClouds">Clouds: blue bar – used for clouds and global freeze.</li>
+                    <li data-i18n="hudBolts">Bolts: light blue bar – each shot costs 1.</li>
+                    <li data-i18n="hudGf">Global Freeze: time remaining if active.</li>
+                    <li data-i18n="hudCode">Level code: 7 chars – can be used on start screen to jump to a level.</li>
+                </ul>
+
+                <h3 data-i18n="objectsH">Objects</h3>
+                <ul>
+                    <li data-i18n="objMoomins">Moomins: white beings – when they see you, they run to the house. Outside the house you can extinguish them by proximity.</li>
+                    <li data-i18n="objHunter">Snufkin (Hunter): greenish – shoots flames (damage over time). Freeze with bolts/clouds. Periodically calls Hattifatteners; after many freezes, he disappears.</li>
+                    <li data-i18n="objHatti">Hattifatteners: yellowish sparks – chase Buka; contact deals heavy damage, then they flee. Bolt hits can make them grow.</li>
+                    <li data-i18n="objBobek">Bobek: helper – call him in the cave (stand in the center and release Shift). Builds webs (traps); Snufkin can burn them.</li>
+                    <li data-i18n="objTraps">Traps (webs): immobilize Moomins; burn away over time.</li>
+                    <li data-i18n="objBoltPick">Bolt pickup: blue spark – +10 bolt ammo.</li>
+                    <li data-i18n="objCloudPick">Cloud pickup: pale cloud – +5 clouds.</li>
+                    <li data-i18n="objShrooms">Mushrooms: red caps – “growth” for 15s (3x speed, bigger reach), then fades.</li>
+                    <li data-i18n="objHouse">House: 3×3 passable – Moomins hide there; can’t be eliminated inside.</li>
+                    <li data-i18n="objCave">Cave: corner of the map – Bobek call point.</li>
+                </ul>
+
+                <h3 data-i18n="tacticsH">Tactics</h3>
+                <ul>
+                    <li data-i18n="tac1">Combine clouds and bolts – clouds limit movement, bolts freeze threats.</li>
+                    <li data-i18n="tac2">Place webs on house–corridor routes to catch fleeing Moomins.</li>
+                    <li data-i18n="tac3">Watch Snufkin’s aim and freeze him opportunistically.</li>
+                    <li data-i18n="tac4">Save Global Freeze for crises – it’s expensive.</li>
+                    <li data-i18n="tac5">Use mushrooms to sweep tough sections.</li>
+                </ul>
+
+                <h3 data-i18n="codesH">Level codes</h3>
+                <p data-i18n="codesP">Every level has a deterministic 7-char code. Enter it on the start screen and press “Codes” to start at that level (mechanics unchanged).</p>
+
+                <h3 data-i18n="musicH">Music</h3>
+                <p data-i18n="musicP">“Music ON/OFF” toggles the background. During panic (Hattifatteners) a different track plays.</p>
+
+                <h3 data-i18n="glhfH">Good luck!</h3>
+                <p data-i18n="glhfP">Experiment with map, weather and themes. Each level is harder and more interesting. Good luck, Buka!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<audio id="musicBg" loop preload="auto" src="assets/audio/background.mp3"></audio>
+<audio id="musicPanic" preload="auto" src="assets/audio/panic.mp3"></audio>
+<audio id="sfxBobek" preload="auto" src="assets/audio/bobek.mp3"></audio>
+<audio id="sfxDeathMumin" preload="auto" src="assets/audio/deathmumin.mp3"></audio>
+<audio id="sfxDeathKij" preload="auto" src="assets/audio/deathkij.mp3"></audio>
+<audio id="sfxAmmo" preload="auto" src="assets/audio/ammo.mp3"></audio>
+<audio id="sfxWin" preload="auto" src="assets/audio/buka-win.mp3"></audio>
+
+<script src="js/main.js"></script>
+</body>
+</html>
