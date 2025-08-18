@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Funds Recovery Service</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #2b2d31;
+      color: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+    }
+    .lang-switcher {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 50;
+    }
+    .content-frame {
+      background-color: #313338;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      padding: 24px;
+    }
+    .logo-container {
+      position: relative;
+      max-width: 896px; /* Matches max-w-4xl (1024px - 2*64px padding) */
+      margin: 0 auto;
+      padding: 8px;
+    }
+    .logo {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(88, 101, 242, 0.3); /* Subtle glow */
+      opacity: 0;
+      transform: scale(0.98);
+      animation: fadeInLogo 1s ease-out forwards;
+    }
+    .logo-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 12px;
+      background: linear-gradient(to bottom, rgba(43, 45, 49, 0.2), rgba(43, 45, 49, 0.8));
+      z-index: -1;
+      transition: opacity 0.5s ease;
+    }
+    .mobile-menu {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      .mobile-menu {
+        display: block;
+      }
+      .desktop-menu {
+        display: none;
+      }
+      .content-frame {
+        padding: 16px;
+      }
+      .logo-container {
+        max-width: 100%;
+        padding: 0;
+      }
+      .logo {
+        border-radius: 0; /* Full-width logo on mobile, no rounded corners */
+      }
+      .logo-container::before {
+        border-radius: 0;
+      }
+    }
+    .form-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .form-container input, .form-container textarea {
+      background-color: #2b2d31;
+      color: #ffffff;
+      border: 1px solid #40444b;
+      transition: border-color 0.3s ease, transform 0.3s ease;
+    }
+    .form-container input:focus, .form-container textarea:focus {
+      outline: none;
+      border-color: #5865f2;
+      transform: scale(1.02);
+    }
+    .animate-section {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: slideIn 0.6s ease-out forwards;
+    }
+    .animate-button {
+      transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+    .animate-button:hover {
+      transform: translateY(-2px);
+    }
+    @keyframes slideIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes fadeInLogo {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    .mobile-menu a {
+      transition: color 0.3s ease;
+    }
+    .mobile-menu a:hover {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Language Switcher -->
+  <div class="lang-switcher">
+    <select id="language" onchange="changeLanguage()" class="bg-[#313338] text-white border border-[#40444b] rounded px-2 py-1 transition-all duration-300 hover:bg-[#40444b]">
+      <option value="en">English</option>
+      <option value="pl">Polski</option>
+    </select>
+  </div>
+
+  <!-- Header -->
+  <header class="text-center py-8">
+    <div class="logo-container">
+      <img src="RecoverFunds.png" alt="Recover Funds" class="logo">
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 content-frame">
+    <section id="intro" class="mb-8 animate-section">
+      <h1 class="text-3xl md:text-4xl font-bold mb-4">🔒 Have Funds Locked in LP, Swap, Lending, or Other Smart Contracts?</h1>
+      <p class="text-lg">
+        Has the DApp vanished or its interface stopped working, yet liquidity remains?<br>
+        I assist in safely recovering tokens, LPs, or NFTs — when feasible — step-by-step, with no risk or upfront costs.<br>
+        💰 <strong>You only pay for successful results!</strong>
+      </p>
+    </section>
+
+    <hr class="border-t border-[#40444b] my-8">
+
+    <section id="offer" class="mb-8 animate-section">
+      <h2 class="text-2xl md:text-3xl font-bold mb-4">🔒 Offer: Recover Funds from Locked LP, Swap, DApp, or Lending & Borrowing Contracts</h2>
+
+      <h3 class="text-xl font-semibold mb-2">💡 Who Is This For?</h3>
+      <p>
+        Are your funds stuck in a decentralized liquidity pool (LP), swap, DEX, lending/borrowing platform, or another smart contract, but the project’s frontend (GUI) is gone or the website is down?<br>
+        Uncertain how to retrieve your tokens, LPs, or NFTs, even though the funds are still in the contract?<br>
+        I help you recover your assets safely — if possible — step-by-step, minimizing errors.
+      </p>
+
+      <h3 class="text-xl font-semibold mb-2 mt-6">🔑 How It Works</h3>
+      <p>
+        ✅ <strong>Step 1:</strong> You provide initial details:<br>
+        - Public wallet address<br>
+        - Network (e.g., Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, etc.)<br>
+        - Details of locked funds: LP token, NFT, lending/borrowing position, staking, etc.<br>
+        - Deposit time and/or transaction hash<br>
+        - Name of the DApp or contract holding the funds<br>
+        The more information you share, the quicker and more effectively I can assist!
+      </p>
+      <p class="mt-4">
+        ✅ <strong>Step 2:</strong> I conduct a preliminary analysis, examining the smart contract of the liquidity pool, swap, or lending protocol, along with related addresses required for recovery.<br>
+        I support Ethereum and EVM L2 networks, including Arbitrum, Optimism, Polygon, Base, BSC, and other compatible networks.
+      </p>
+      <p class="mt-4">
+        ✅ <strong>Step 3:</strong> I provide clear instructions:<br>
+        - Adding the LP or NFT contract to MetaMask<br>
+        - Checking the balance in the smart contract<br>
+        - Preparing LP/NFT tokens for transfer<br>
+        You send your LP/NFT and minimal GAS Fee (if required) to my operational wallet address.
+      </p>
+      <p class="mt-4">
+        ✅ <strong>Step 4:</strong> Upon successful recovery:<br>
+        I transfer the funds to your wallet (the one used or another you specify).<br>
+        I retain an agreed commission — payment is only for results.
+      </p>
+      <p class="mt-4">
+        ✅ <strong>Bonus:</strong> Leave a short review after successful recovery, and I’ll cover the GAS Fee!
+      </p>
+
+      <h3 class="text-xl font-semibold mb-2 mt-6">💰 Pricing</h3>
+      <table class="w-full border-collapse bg-[#2b2d31] text-white">
+        <thead>
+          <tr class="bg-[#313338]">
+            <th class="p-3 border border-[#40444b] text-left">Value of Funds to Recover</th>
+            <th class="p-3 border border-[#40444b] text-left">Commission</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="p-3 border border-[#40444b]">Up to $100</td>
+            <td class="p-3 border border-[#40444b]">50%</td>
+          </tr>
+          <tr class="bg-[#313338]">
+            <td class="p-3 border border-[#40444b]">$100 – $500</td>
+            <td class="p-3 border border-[#40444b]">40%</td>
+          </tr>
+          <tr>
+            <td class="p-3 border border-[#40444b]">$500 – $5,000</td>
+            <td class="p-3 border border-[#40444b]">25%</td>
+          </tr>
+          <tr class="bg-[#313338]">
+            <td class="p-3 border border-[#40444b]">Above $5,000</td>
+            <td class="p-3 border border-[#40444b]">15%</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="mt-4">💡 Larger amounts incur lower commission rates. For significant sums, individual negotiations are available.</p>
+
+      <h3 class="text-xl font-semibold mb-2 mt-6">✔️ Why Choose Me?</h3>
+      <p>
+        ✅ Payment only upon successful recovery — no upfront fees<br>
+        ✅ Free preliminary analysis<br>
+        ✅ Full transparency — all transactions are verifiable on the blockchain<br>
+        ✅ Clear terms with no hidden costs<br>
+        ✅ Expertise in navigating and managing smart contracts, even without a functional frontend
+      </p>
+
+      <h3 class="text-xl font-semibold mb-2 mt-6">⚠️ Important!</h3>
+      <p>
+        I do not handle recovery for projects that have executed a rug pull and removed liquidity.<br>
+        If no funds remain in the smart contract, there’s no charge.
+      </p>
+    </section>
+
+    <hr class="border-t border-[#40444b] my-8">
+
+    <section id="contact" class="mb-8 animate-section">
+      <h2 class="text-2xl md:text-3xl font-bold mb-4">📬 Contact Me</h2>
+      <p>
+        Reach out directly via private message on my <a href="https://debank.com/profile/0xfec58763fcd5df39dd78a454a8304f41209fd1b8/stream" target="_blank" class="text-[#5865f2] hover:underline">DeBank Profile</a>.<br>
+        Alternatively, use the form below to report an issue, which will be sent to my email.
+      </p>
+      <div class="form-container mt-6">
+        <form id="contact-form" action="https://formsubmit.co/hattimon@gmail.com" method="POST">
+          <input type="hidden" name="_subject" value="Funds Recovery Service">
+          <input type="text" name="name" placeholder="Your Name" class="w-full p-3 mb-4 rounded" required>
+          <input type="email" name="email" placeholder="Your Email" class="w-full p-3 mb-4 rounded" required>
+          <textarea name="message" placeholder="Describe your issue" class="w-full p-3 mb-4 rounded h-32" required></textarea>
+          <button type="submit" class="animate-button bg-[#5865f2] text-white px-6 py-2 rounded hover:bg-[#4752c4]">Send</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu fixed bottom-0 left-0 right-0 bg-[#313338] p-4 md:hidden shadow-lg">
+    <nav class="flex justify-around">
+      <a href="#intro" class="text-[#5865f2] hover:underline">Intro</a>
+      <a href="#offer" class="text-[#5865f2] hover:underline">Offer</a>
+      <a href="#contact" class="text-[#5865f2] hover:underline">Contact</a>
+    </nav>
+  </div>
+
+  <script>
+    const translations = {
+      en: {
+        title: "Funds Recovery Service",
+        intro: {
+          title: "🔒 Have Funds Locked in LP, Swap, Lending, or Other Smart Contracts?",
+          text: "Has the DApp vanished or its interface stopped working, yet liquidity remains?<br>I assist in safely recovering tokens, LPs, or NFTs — when feasible — step-by-step, with no risk or upfront costs.<br>💰 <strong>You only pay for successful results!</strong>"
+        },
+        offer: {
+          title: "🔒 Offer: Recover Funds from Locked LP, Swap, DApp, or Lending & Borrowing Contracts",
+          forWho: {
+            title: "💡 Who Is This For?",
+            text: "Are your funds stuck in a decentralized liquidity pool (LP), swap, DEX, lending/borrowing platform, or another smart contract, but the project’s frontend (GUI) is gone or the website is down?<br>Uncertain how to retrieve your tokens, LPs, or NFTs, even though the funds are still in the contract?<br>I help you recover your assets safely — if possible — step-by-step, minimizing errors."
+          },
+          howItWorks: {
+            title: "🔑 How It Works",
+            step1: "✅ <strong>Step 1:</strong> You provide initial details:<br>- Public wallet address<br>- Network (e.g., Ethereum, Arbitrum, Optimism, Base, Polygon, BSC, etc.)<br>- Details of locked funds: LP token, NFT, lending/borrowing position, staking, etc.<br>- Deposit time and/or transaction hash<br>- Name of the DApp or contract holding the funds<br>The more information you share, the quicker and more effectively I can assist!",
+            step2: "✅ <strong>Step 2:</strong> I conduct a preliminary analysis, examining the smart contract of the liquidity pool, swap, or lending protocol, along with related addresses required for recovery.<br>I support Ethereum and EVM L2 networks, including Arbitrum, Optimism, Polygon, Base, BSC, and other compatible networks.",
+            step3: "✅ <strong>Step 3:</strong> I provide clear instructions:<br>- Adding the LP or NFT contract to MetaMask<br>- Checking the balance in the smart contract<br>- Preparing LP/NFT tokens for transfer<br>You send your LP/NFT and minimal GAS Fee (if required) to my operational wallet address.",
+            step4: "✅ <strong>Step 4:</strong> Upon successful recovery:<br>I transfer the funds to your wallet (the one used or another you specify).<br>I retain an agreed commission — payment is only for results.",
+            bonus: "✅ <strong>Bonus:</strong> Leave a short review after successful recovery, and I’ll cover the GAS Fee!"
+          },
+          pricing: {
+            title: "💰 Pricing",
+            text: "💡 Larger amounts incur lower commission rates. For significant sums, individual negotiations are available."
+          },
+          whyChoose: {
+            title: "✔️ Why Choose Me?",
+            text: "✅ Payment only upon successful recovery — no upfront fees<br>✅ Free preliminary analysis<br>✅ Full transparency — all transactions are verifiable on the blockchain<br>✅ Clear terms with no hidden costs<br>✅ Expertise in navigating and managing smart contracts, even without a functional frontend"
+          },
+          important: {
+            title: "⚠️ Important!",
+            text: "I do not handle recovery for projects that have executed a rug pull and removed liquidity.<br>If no funds remain in the smart contract, there’s no charge."
+          }
+        },
+        contact: {
+          title: "📬 Contact Me",
+          text: 'Reach out directly via private message on my <a href="https://debank.com/profile/0xfec58763fcd5df39dd78a454a8304f41209fd1b8/stream" target="_blank" class="text-[#5865f2] hover:underline">DeBank Profile</a>.<br>Alternatively, use the form below to report an issue, which will be sent to my email.'
+        },
+        form: {
+          name: "Your Name",
+          email: "Your Email",
+          message: "Describe your issue",
+          button: "Send"
+        }
+      },
+      pl: {
+        title: "Odzyskiwanie środków z LP, Swap, Lending",
+        intro: {
+          title: "🔒 Masz zablokowane środki w LP, swapie, lendingu albo innym smart kontrakcie?",
+          text: "DApp zniknął, GUI nie działa, a płynność nadal istnieje?<br>Pomagam bezpiecznie odzyskać tokeny, LP lub NFT — jeśli to możliwe — krok po kroku, bez ryzyka i opłat z góry.<br>💰 <strong>Płacisz tylko za efekt!</strong>"
+        },
+        offer: {
+          title: "🔒 Oferta: Odzyskiwanie środków z zablokowanych kontraktów LP / Swap / DApp / Lending & Borrowing",
+          forWho: {
+            title: "💡 Dla kogo?",
+            text: "Masz środki zablokowane w zdecentralizowanej puli płynności (LP), swapie, DEXie, platformie lending/borrowing lub innym smart kontrakcie, ale projekt stracił frontend (GUI) albo zamknął stronę?<br>Nie wiesz, jak odzyskać swoje tokeny, LP lub NFT, mimo że środki technicznie nadal są w kontrakcie?<br>Pomagam bezpiecznie odzyskać Twoje środki — jeśli to możliwe — krok po kroku, bez ryzyka błędów."
+          },
+          howItWorks: {
+            title: "🔑 Jak to działa?",
+            step1: "✅ <strong>Krok 1:</strong> Otrzymuję od Ciebie wstępne informacje:<br>- Adres publiczny Twojego portfela<br>- Sieć (np. Ethereum, Arbitrum, Optimism, Base, Polygon, BSC itd.)<br>- Szczegóły zablokowanych środków: LP token, NFT, pozycja w lending/borrowing, staking itp.<br>- Czas dokonania lokaty i/lub hash transakcji<br>- Nazwa DApp lub kontraktu, w którym środki są zablokowane<br>Im więcej informacji o projekcie i Twojej sytuacji, tym lepiej i szybciej mogę pomóc!",
+            step2: "✅ <strong>Krok 2:</strong> Wykonuję wstępną analizę — sprawdzam smart kontrakt danej puli płynności, swapu czy protokołu lendingowego, a także wszelkie powiązane adresy potrzebne do odzyskania środków.<br>Aktualnie pomagam na sieci Ethereum oraz EVM L2: Arbitrum, Optimism, Polygon, Base, BSC i inne kompatybilne sieci.",
+            step3: "✅ <strong>Krok 3:</strong> Podaję Ci jasne instrukcje:<br>- Jak dodać kontrakt LP lub NFT do MetaMask<br>- Jak sprawdzić saldo w smart kontrakcie<br>- Jak przygotować tokeny LP/NFT do transferu<br>Otrzymujesz adres mojego portfela operacyjnego, na który wysyłasz swoje LP/NFT i minimalne środki na pokrycie GAS Fee (jeśli potrzebne).",
+            step4: "✅ <strong>Krok 4:</strong> Po skutecznym odzyskaniu środków:<br>Wysyłam je na Twój portfel (ten, z którego wysłałeś środki) lub inny wskazany przez Ciebie.<br>Zatrzymuję uzgodnioną prowizję — płacisz tylko za efekt.",
+            bonus: "✅ <strong>Bonus:</strong> Jeśli zgadzasz się wystawić krótką opinię po udanym odzyskaniu — pokrywam GAS Fee z własnej kieszeni!"
+          },
+          pricing: {
+            title: "💰 Proponowany cennik",
+            text: "💡 Im większa kwota, tym mniejszy udział. Dla większych sum możliwość indywidualnych negocjacji."
+          },
+          whyChoose: {
+            title: "✔️ Dlaczego warto?",
+            text: "✅ Płacisz tylko za skuteczne odzyskanie środków — brak opłat z góry<br>✅ Wstępna analiza zawsze darmowa<br>✅ Pełna transparentność — każdą transakcję możesz sam sprawdzić na blockchainie<br>✅ Jasne warunki, bez ukrytych kosztów<br>✅ Doświadczenie w czytaniu i obsłudze smart kontraktów, nawet bez działającego frontendu"
+          },
+          important: {
+            title: "⚠️ Ważne!",
+            text: "Nie podejmuję się odzyskiwania środków z projektów, które zrobiły rug pull i faktycznie zlikwidowały płynność.<br>Jeśli w smart kontrakcie nie ma technicznie środków, nic nie płacisz."
+          }
+        },
+        contact: {
+          title: "📬 Kontakt",
+          text: 'Skontaktuj się ze mną bezpośrednio przez wiadomość prywatną na <a href="https://debank.com/profile/0xfec58763fcd5df39dd78a454a8304f41209fd1b8/stream" target="_blank" class="text-[#5865f2] hover:underline">DeBank Profile</a>.<br>Alternatywnie, użyj poniższego formularza, aby zgłosić problem, a zostanie on wysłany na mój adres e-mail.'
+        },
+        form: {
+          name: "Twoje imię",
+          email: "Twój email",
+          message: "Opisz swój problem",
+          button: "Wyślij"
+        }
+      }
+    };
+
+    function changeLanguage() {
+      const lang = document.getElementById('language').value;
+      document.documentElement.lang = lang;
+      document.title = translations[lang].title;
+      document.getElementById('intro').innerHTML = `
+        <h1 class="text-3xl md:text-4xl font-bold mb-4">${translations[lang].intro.title}</h1>
+        <p class="text-lg">${translations[lang].intro.text}</p>
+      `;
+      document.getElementById('offer').innerHTML = `
+        <h2 class="text-2xl md:text-3xl font-bold mb-4">${translations[lang].offer.title}</h2>
+        <h3 class="text-xl font-semibold mb-2">${translations[lang].offer.forWho.title}</h3>
+        <p>${translations[lang].offer.forWho.text}</p>
+        <h3 class="text-xl font-semibold mb-2 mt-6">${translations[lang].offer.howItWorks.title}</h3>
+        <p>${translations[lang].offer.howItWorks.step1}</p>
+        <p class="mt-4">${translations[lang].offer.howItWorks.step2}</p>
+        <p class="mt-4">${translations[lang].offer.howItWorks.step3}</p>
+        <p class="mt-4">${translations[lang].offer.howItWorks.step4}</p>
+        <p class="mt-4">${translations[lang].offer.howItWorks.bonus}</p>
+        <h3 class="text-xl font-semibold mb-2 mt-6">${translations[lang].offer.pricing.title}</h3>
+        <table class="w-full border-collapse bg-[#2b2d31] text-white">
+          <thead>
+            <tr class="bg-[#313338]">
+              <th class="p-3 border border-[#40444b] text-left">${lang === 'en' ? 'Value of Funds to Recover' : 'Wartość środków do odzyskania'}</th>
+              <th class="p-3 border border-[#40444b] text-left">${lang === 'en' ? 'Commission' : 'Prowizja'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="p-3 border border-[#40444b]">${lang === 'en' ? 'Up to $100' : 'do 100 USD'}</td>
+              <td class="p-3 border border-[#40444b]">50%</td>
+            </tr>
+            <tr class="bg-[#313338]">
+              <td class="p-3 border border-[#40444b]">${lang === 'en' ? '$100 – $500' : '100 – 500 USD'}</td>
+              <td class="p-3 border border-[#40444b]">40%</td>
+            </tr>
+            <tr>
+              <td class="p-3 border border-[#40444b]">${lang === 'en' ? '$500 – $5,000' : '500 – 5 000 USD'}</td>
+              <td class="p-3 border border-[#40444b]">25%</td>
+            </tr>
+            <tr class="bg-[#313338]">
+              <td class="p-3 border border-[#40444b]">${lang === 'en' ? 'Above $5,000' : 'powyżej 5 000 USD'}</td>
+              <td class="p-3 border border-[#40444b]">15%</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="mt-4">${translations[lang].offer.pricing.text}</p>
+        <h3 class="text-xl font-semibold mb-2 mt-6">${translations[lang].offer.whyChoose.title}</h3>
+        <p>${translations[lang].offer.whyChoose.text}</p>
+        <h3 class="text-xl font-semibold mb-2 mt-6">${translations[lang].offer.important.title}</h3>
+        <p>${translations[lang].offer.important.text}</p>
+      `;
+      document.getElementById('contact').innerHTML = `
+        <h2 class="text-2xl md:text-3xl font-bold mb-4">${translations[lang].contact.title}</h2>
+        <p>${translations[lang].contact.text}</p>
+        <div class="form-container mt-6">
+          <form id="contact-form" action="https://formsubmit.co/hattimon@gmail.com" method="POST">
+            <input type="hidden" name="_subject" value="Funds Recovery Service">
+            <input type="text" name="name" placeholder="${translations[lang].form.name}" class="w-full p-3 mb-4 rounded" required>
+            <input type="email" name="email" placeholder="${translations[lang].form.email}" class="w-full p-3 mb-4 rounded" required>
+            <textarea name="message" placeholder="${translations[lang].form.message}" class="w-full p-3 mb-4 rounded h-32" required></textarea>
+            <button type="submit" class="animate-button bg-[#5865f2] text-white px-6 py-2 rounded hover:bg-[#4752c4]">${translations[lang].form.button}</button>
+          </form>
+        </div>
+      `;
+    }
+
+    // Set default language to English
+    window.onload = () => {
+      document.getElementById('language').value = 'en';
+      changeLanguage();
+    };
+  </script>
+</body>
+</html>
