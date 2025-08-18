@@ -1,0 +1,499 @@
+:root {
+    --cell: 32px;
+    --cols: 25;
+    --rows: 18;
+    --bg: #0b1c10;
+    --path: #0f2a18;
+    --wall: #23402a;
+    --accent: #2d5b33;
+    --buka: #7ad1ff;
+    --text: #e6ffe6;
+}
+* {
+    box-sizing: border-box;
+}
+html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, sans-serif;
+}
+.wrap {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+}
+.ttl-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+h1 {
+    margin: 6px 0 2px;
+    font-size: 22px;
+    text-align: center;
+}
+.pix {
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.panel8 {
+    image-rendering: pixelated;
+    background: #0f1e14;
+    border: 3px solid #3cff9e;
+    box-shadow: 0 0 0 2px #0b4022 inset, 0 6px #003b1d inset, 0 0 18px rgba(0,255,170,0.25);
+    border-radius: 10px;
+    padding: 8px;
+}
+.hud {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    align-items: stretch;
+    min-width: 820px;
+    max-width: 1000px;
+    justify-items: stretch;
+}
+.row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.row.justify {
+    justify-content: space-between;
+}
+.row.g2 {
+    gap: 12px;
+}
+.badge {
+    background: #102618;
+    border: 2px solid #39ff88;
+    padding: 8px 12px;
+    border-radius: 6px;
+    box-shadow: 0 0 0 2px #083c20 inset;
+    flex: 1;
+    min-width: 260px;
+}
+.meter {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+    height: 18px;
+    background: #112d1d;
+    border: 2px solid #39ff88;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 0 0 2px #0a3b22 inset;
+}
+.meter > .fill {
+    position: absolute;
+    inset: 0;
+    width: 0%;
+}
+.hp .fill {
+    background: linear-gradient(90deg, #36d17c, #8fffd0);
+}
+.cloudStock .fill {
+    background: linear-gradient(90deg, #203848, #3b5c70);
+}
+.ammoAltBar .fill {
+    background: linear-gradient(90deg, #85c6ff, #4190ff);
+}
+.btn {
+    background: #1a3f2a;
+    color: #d6ffe6;
+    border: 2px solid #39ff88;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 0 0 2px #0a3b22 inset;
+}
+.btn:hover {
+    filter: brightness(1.15);
+}
+.btn.help {
+    padding: 8px 16px;
+}
+.grid {
+    position: relative;
+    width: calc(var(--cell) * var(--cols));
+    height: calc(var(--cell) * var(--rows));
+    background: var(--path);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 0 3px #163c25 inset, 0 10px 30px rgba(0,0,0,.35);
+}
+canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+}
+.overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(0,0,0,.55);
+    color: white;
+    text-align: center;
+    padding: 24px;
+    backdrop-filter: blur(2px);
+    z-index: 10;
+}
+.overlay[hidden] {
+    display: none !important;
+    pointer-events: none;
+}
+.overlay .card {
+    max-width: 680px;
+}
+.code {
+    border: 2px solid #39ff88;
+    background: #0b1f14;
+    color: #d6ffe6;
+    padding: 6px 8px;
+    border-radius: 6px;
+    width: 220px;
+}
+.code-status {
+    margin-top: 6px;
+    min-height: 18px;
+    color: #9ef7c6;
+}
+.panic-dim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    pointer-events: none;
+}
+.global-fog {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(180,220,255,0.9) 0%, rgba(140,180,220,0.6) 35%, rgba(80,120,180,0.45) 60%, rgba(40,60,100,0.25) 80%, rgba(0,0,0,0.0) 100%);
+    opacity: 0;
+    transition: opacity .8s;
+    pointer-events: none;
+}
+.crt:before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(0,0,0,.07) 50%, rgba(0,0,0,0) 50%);
+    background-size: 100% 4px;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+/* Modal: guide */
+.modal {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    z-index: 20;
+    background: rgba(0,0,0,.55);
+    backdrop-filter: blur(2px);
+}
+.modal[hidden] {
+    display: none !important;
+}
+.modal-card {
+    width: min(920px, calc(100vw - 40px));
+    max-height: min(80vh, 800px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #ffe4e1;
+    border: 2px solid #ff0000;
+    border-radius: 12px;
+}
+.modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #ff0000;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+.modal-title {
+    font-size: 18px;
+    color: #8b0000;
+}
+.modal-close {
+    background: #8b0000;
+    color: #ffe4e1;
+    padding: 6px 10px;
+}
+.modal-close:hover {
+    filter: brightness(1.12);
+}
+.modal-body {
+    background: #ffe4e1;
+    border: none;
+    border-radius: 0 0 10px 10px;
+    padding: 12px;
+}
+.scroll {
+    overflow-y: auto;
+    max-height: calc(min(80vh, 800px) - 60px);
+}
+.help-content {
+    line-height: 1.6;
+    color: #8b0000;
+    font-size: 14px;
+}
+.help-content h2 {
+    font-size: 20px;
+    margin: 0.8em 0 0.4em;
+    border-bottom: 1px solid #ff4040;
+    padding-bottom: 4px;
+}
+.help-content h3 {
+    font-size: 16px;
+    margin: 0.6em 0 0.3em;
+}
+.help-content p {
+    margin: 0.4em 0;
+}
+.help-content ul {
+    margin: 0.3em 0 0.8em 1.2em;
+    padding-left: 10px;
+}
+.help-content li {
+    margin: 0.2em 0;
+}
+
+/* Touch controls and mobile adjustments */
+#touchControls {
+    display: none;
+    position: relative;
+    height: 160px;
+    pointer-events: none;
+}
+.joystick {
+    position: absolute;
+    bottom: 40px;
+    left: 40px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    touch-action: none;
+    pointer-events: auto;
+}
+.thumb {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    border: 2px solid rgba(255,255,255,0.6);
+    transform: translate(-50%, -50%);
+}
+.touch-btn {
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    color: white;
+    font-size: 28px;
+    border: 2px solid rgba(255,255,255,0.4);
+    pointer-events: auto;
+    touch-action: manipulation;
+}
+.touch-btn:disabled {
+    opacity: 0.5;
+}
+.bolt {
+    bottom: 40px;
+    right: 40px;
+}
+.cloud {
+    bottom: 130px;
+    right: 40px;
+}
+.pause {
+    top: 20px;
+    right: 40px;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+}
+.reset {
+    top: 20px;
+    right: 100px;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+}
+.lock {
+    top: 20px;
+    right: 160px;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+}
+
+/* General mobile styles */
+@media (max-width: 900px), (pointer: coarse) {
+    #touchControls {
+        display: block;
+    }
+    .wrap {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        padding: 8px;
+        gap: 8px;
+    }
+    .hud {
+        min-width: auto;
+        max-width: 100%;
+        font-size: 14px;
+        padding: 6px;
+        gap: 6px;
+    }
+    .badge {
+        min-width: unset;
+        padding: 4px 8px;
+        font-size: 12px;
+        flex: 1 1 auto;
+    }
+    .meter {
+        min-width: unset;
+        height: 14px;
+    }
+    .btn {
+        padding: 6px 10px;
+        font-size: 14px;
+    }
+    .row {
+        gap: 4px;
+        justify-content: space-around;
+    }
+    .row.justify {
+        justify-content: space-around;
+    }
+    h1 {
+        font-size: 18px;
+    }
+    .grid {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 25 / 18;
+    }
+    canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+    :root {
+        --cell: calc(100vw / 25);
+    }
+}
+
+/* Portrait mode */
+@media (pointer: coarse) and (orientation: portrait) {
+    .wrap {
+        flex-direction: column;
+        padding: 4px;
+        gap: 4px;
+        height: auto;
+    }
+    .hud {
+        font-size: 12px;
+        gap: 2px;
+        padding: 4px;
+    }
+    .badge {
+        padding: 2px 4px;
+        font-size: 11px;
+    }
+    .meter {
+        height: 12px;
+    }
+    .grid {
+        width: 100vw;
+        height: auto;
+        aspect-ratio: 25/18;
+    }
+    #touchControls {
+        height: 160px;
+        padding: 0 20px;
+    }
+}
+
+/* Landscape mode */
+@media (pointer: coarse) and (orientation: landscape) {
+    .wrap {
+        flex-direction: column;
+        padding: 0;
+        gap: 0;
+        height: 100vh;
+        overflow: hidden;
+    }
+    .ttl-col {
+        display: none;
+    }
+    .hud {
+        flex: 0 0 auto;
+        background: linear-gradient(to bottom, var(--wall), var(--path));
+        border-bottom: 3px solid var(--accent);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        padding: 2px 4px;
+        gap: 2px;
+        min-width: 100%;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        align-items: center;
+    }
+    .hud .row {
+        display: contents;
+    }
+    .badge {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 2px 4px;
+        flex: 0 0 auto;
+        min-width: unset;
+        font-size: 12px;
+    }
+    .meter {
+        background: rgba(17,45,29,0.8);
+        height: 10px;
+        min-width: 60px;
+        flex: 0 0 60px;
+    }
+    .grid {
+        flex: 1;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 25/18;
+        max-height: calc(100vh - 40px); /* approximate hud height */
+        margin: auto;
+    }
+    #touchControls {
+        height: auto;
+        padding: 0;
+        opacity: 0.8;
+    }
+    .touch-btn {
+        opacity: 0.8;
+    }
+    .joystick {
+        opacity: 0.8;
+    }
+}
