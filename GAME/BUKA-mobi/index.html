@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0, user-scalable=no"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
     <title data-i18n="title">BUKA in Moomin Valley</title>
     <link rel="preload" as="audio" href="assets/audio/background.mp3">
     <link rel="preload" as="audio" href="assets/audio/panic.mp3">
@@ -60,15 +60,15 @@
     <div class="grid crt">
         <canvas id="game" width="800" height="576"></canvas>
 
-        <div class="touch-controls" hidden>
-            <div id="joystick-base" class="joystick">
-                <div id="joystick-knob"></div>
+        <div id="touchControls">
+            <div class="joystick" id="joystick">
+                <div class="thumb"></div>
             </div>
-            <div id="cloud-btn" class="action-btn">Cloud</div>
-            <div id="bolt-btn" class="action-btn">Bolt</div>
-            <div id="pause-btn" class="small-btn">Pause</div>
-            <div id="reset-btn" class="small-btn">Reset</div>
-            <div id="lock-btn" class="small-btn">Unlock</div>
+            <button class="touch-btn bolt" id="boltBtn">⚡</button>
+            <button class="touch-btn cloud" id="cloudBtn">☁</button>
+            <button class="touch-btn pause" id="pauseBtn">⏸</button>
+            <button class="touch-btn reset" id="resetBtn">🔄</button>
+            <button class="touch-btn lock" id="lockBtn">🔒</button>
         </div>
 
         <div id="overlay" class="overlay">
