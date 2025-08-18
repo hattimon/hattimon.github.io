@@ -271,8 +271,9 @@ canvas {
     margin: 0.2em 0;
 }
 
-/* Touch controls styles */
-.touch-controls {
+/* Touch controls and mobile adjustments */
+#touchControls {
+    display: none;
     position: absolute;
     inset: 0;
     pointer-events: none;
@@ -280,63 +281,124 @@ canvas {
 }
 .joystick {
     position: absolute;
-    bottom: 20px;
-    left: 20px;
-    width: 120px;
-    height: 120px;
+    bottom: 40px;
+    left: 40px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    touch-action: none;
     pointer-events: auto;
 }
-#joystick-knob {
+.thumb {
     position: absolute;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.5);
     top: 50%;
     left: 50%;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    border: 2px solid rgba(255,255,255,0.6);
     transform: translate(-50%, -50%);
 }
-.action-btn {
+.touch-btn {
     position: absolute;
-    bottom: 20px;
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
-    background: rgba(0,255,0,0.3);
+    background: rgba(255,255,255,0.25);
     color: white;
-    font-size: 12px;
-    display: grid;
-    place-items: center;
+    font-size: 28px;
+    border: 2px solid rgba(255,255,255,0.4);
     pointer-events: auto;
-    user-select: none;
+    touch-action: manipulation;
 }
-#cloud-btn {
-    right: 120px;
+.touch-btn:disabled {
+    opacity: 0.5;
 }
-#bolt-btn {
-    right: 20px;
+.bolt {
+    bottom: 40px;
+    right: 40px;
 }
-.small-btn {
-    position: absolute;
+.cloud {
+    bottom: 130px;
+    right: 40px;
+}
+.pause {
     top: 20px;
+    right: 40px;
     width: 50px;
     height: 50px;
-    background: rgba(255,0,0,0.3);
-    color: white;
-    display: grid;
-    place-items: center;
-    font-size: 10px;
-    pointer-events: auto;
-    user-select: none;
+    font-size: 20px;
 }
-#pause-btn {
-    right: 20px;
+.reset {
+    top: 20px;
+    right: 100px;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
 }
-#reset-btn {
-    right: 80px;
+.lock {
+    top: 20px;
+    right: 160px;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
 }
-#lock-btn {
-    right: 140px;
+
+/* Mobile responsive adjustments */
+@media (max-width: 900px), (pointer: coarse) {
+    #touchControls {
+        display: block;
+    }
+    .wrap {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        padding: 8px;
+        gap: 8px;
+    }
+    .hud {
+        min-width: auto;
+        max-width: 100%;
+        font-size: 14px;
+        padding: 6px;
+        gap: 6px;
+    }
+    .badge {
+        min-width: unset;
+        padding: 4px 8px;
+        font-size: 12px;
+        flex: 1 1 auto;
+    }
+    .meter {
+        min-width: unset;
+        height: 14px;
+    }
+    .btn {
+        padding: 6px 10px;
+        font-size: 14px;
+    }
+    .row {
+        gap: 4px;
+        justify-content: space-around;
+    }
+    .row.justify {
+        justify-content: space-around;
+    }
+    h1 {
+        font-size: 18px;
+    }
+    .grid {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 25 / 18;
+    }
+    canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+    :root {
+        --cell: calc(100vw / 25);
+    }
 }
