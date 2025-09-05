@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linea Airdrop</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/js-confetti@0.11.0/dist/js-confetti.browser.js"></script>
+  <style>
+    body {
+      background: url('stargate.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      margin: 0;
+      font-family: 'Orbitron', 'Arial', sans-serif;
+    }
+    @font-face {
+      font-family: 'Orbitron';
+      src: url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap') format('woff2');
+    }
+    .stargate {
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      position: relative;
+      background: radial-gradient(circle at center, rgba(0, 0, 255, 0.1) 0%, rgba(0, 0, 0, 0.8) 70%);
+      box-shadow: 0 0 20px rgba(0, 191, 255, 0.7), 0 0 40px rgba(0, 191, 255, 0.4), inset 0 0 50px rgba(0, 191, 255, 0.3);
+      animation: glowPulse 6s infinite alternate;
+    }
+    @keyframes glowPulse {
+      0% { box-shadow: 0 0 20px rgba(0, 191, 255, 0.7), 0 0 40px rgba(0, 191, 255, 0.4), inset 0 0 30px rgba(0, 191, 255, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(0, 191, 255, 0.9), 0 0 60px rgba(0, 191, 255, 0.6), inset 0 0 70px rgba(0, 191, 255, 0.5); }
+      100% { box-shadow: 0 0 20px rgba(0, 191, 255, 0.7), 0 0 40px rgba(0, 191, 255, 0.4), inset 0 0 30px rgba(0, 191, 255, 0.3); }
+    }
+    .stargate::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, rgba(0, 191, 255, 0.3) 0%, transparent 70%);
+      opacity: 0.6;
+      animation: ripple 3s infinite;
+      z-index: 1;
+    }
+    @keyframes ripple {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.3; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+    }
+    .stargate::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+      opacity: 0.4;
+      animation: innerGlow 4s infinite alternate;
+      z-index: 2;
+    }
+    @keyframes innerGlow {
+      0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); }
+      100% { box-shadow: 0 0 30px rgba(0, 191, 255, 0.5); }
+    }
+    .fire-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(45deg, #ff4500, #ff8c00, #ffd700);
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      text-shadow: 0 0 5px #fff, 0 0 10px #fff;
+      box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, inset 0 0 10px #ffd700;
+      animation: fireAnimation 0.5s infinite alternate;
+    }
+    @keyframes fireAnimation {
+      0% {
+        background: linear-gradient(45deg, #ff4500, #ff8c00, #ffd700);
+        box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, inset 0 0 10px #ffd700;
+      }
+      100% {
+        background: linear-gradient(45deg, #ff2200, #ff6a00, #ffca00);
+        box-shadow: 0 0 15px #ff2200, 0 0 30px #ff6a00, inset 0 0 15px #ffca00;
+      }
+    }
+    .fire-button:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+    .fire-button:active {
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+    .notification {
+      background: linear-gradient(135deg, #1f2937, #111827);
+      border: 1px solid #4b5563;
+      border-radius: 8px;
+      padding: 16px;
+      max-width: 400px;
+      margin: 8px auto;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      color: #d1d5db;
+      animation: slideIn 0.5s ease-out;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+      opacity: 0.9;
+      position: relative;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 1.1rem;
+    }
+    .notification.success {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #065f46, #064e3b);
+    }
+    .notification.error {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, #7f1d1d, #991b1b);
+    }
+    .notification-header {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #facc15;
+      text-shadow: 0 0 5px #facc15;
+    }
+    .notification-message {
+      font-size: 1rem;
+      line-height: 1.5;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+      text-shadow: 0 0 2px #fff;
+    }
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.2rem;
+      text-shadow: 0 0 5px #fff;
+    }
+    @keyframes slideIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .notification::-webkit-scrollbar {
+      width: 6px;
+    }
+    .notification::-webkit-scrollbar-track {
+      background: #4b5563;
+      border-radius: 3px;
+    }
+    .notification::-webkit-scrollbar-thumb {
+      background: #facc15;
+      border-radius: 3px;
+    }
+    h1, p, button {
+      text-shadow: 0 0 5px #00f, 0 0 10px #0ff, 0 0 15px #f0f;
+      color: #fff;
+    }
+    .token-balance {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body class="font-mono">
+  <div id="root"></div>
+  <audio id="bgMusic" loop autoplay>
+    <source src="https://ia600501.us.archive.org/22/items/tvtunes_1120/Stargate%20Atlantis.mp3" type="audio/mpeg">
+  </audio>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const CONTRACT_ADDRESS = '0x87baa1694381ae3ecae2660d97fe60404080eb64';
+    const LINEA_CHAIN_ID = '0xe708';
+    const LINEA_RPC = 'https://rpc.linea.build';
+    const LINEA_EXPLORER = 'https://lineascan.build';
+    const TOKEN_ADDRESSES = {
+      LXP: '0xd83af4fbd77f3ab65c3b1dc4b38d7e67aecf599a',
+      LXPL: '0xBC8f4663470229Fd4CA3686A24792d93Dd800216',
+      LAM: '0xE158CaCCe6f5713f5739A7d7AF0dB60116187687'
+    };
+    const ABI = [{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"}];
+
+    function App() {
+      const [web3, setWeb3] = useState(null);
+      const [account, setAccount] = useState(null);
+      const [contract, setContract] = useState(null);
+      const [amount, setAmount] = useState('0');
+      const [hasClaimed, setHasClaimed] = useState(false);
+      const [error, setError] = useState('');
+      const [musicPlaying, setMusicPlaying] = useState(true);
+      const [currentChainId, setCurrentChainId] = useState(null);
+      const [notifications, setNotifications] = useState([]);
+      const [tokenBalances, setTokenBalances] = useState({});
+      const jsConfetti = new JSConfetti();
+
+      useEffect(() => {
+        if (window.ethereum) {
+          const web3Instance = new Web3(window.ethereum);
+          setWeb3(web3Instance);
+          window.ethereum.request({ method: 'eth_chainId' }).then(setCurrentChainId);
+          window.ethereum.on('chainChanged', setCurrentChainId);
+          window.ethereum.on('accountsChanged', (accounts) => {
+            setAccount(accounts[0]);
+            fetchData(web3Instance, accounts[0]);
+          });
+        } else {
+          setError('MetaMask or Rabby is not installed.');
+        }
+      }, []);
+
+      useEffect(() => {
+        if (web3 && account) {
+          loadContracts();
+          fetchTokenBalances();
+        }
+      }, [web3, account]);
+
+      useEffect(() => {
+        const audio = document.getElementById('bgMusic');
+        if (musicPlaying) {
+          audio.play().catch(() => {});
+        } else {
+          audio.pause();
+        }
+      }, [musicPlaying]);
+
+      useEffect(() => {
+        const timers = notifications.map(notification =>
+          setTimeout(() => {
+            setNotifications(prev => prev.filter(n => n.id !== notification.id));
+          }, 7000)
+        );
+        return () => timers.forEach(clearTimeout);
+      }, [notifications]);
+
+      const loadContracts = () => {
+        try {
+          const contractInstance = new web3.eth.Contract(ABI, CONTRACT_ADDRESS);
+          setContract(contractInstance);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: 'Failed to load contract: ' + err.message, type: 'error' }]);
+        }
+      };
+
+      const connectWallet = async () => {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          setAccount(accounts[0]);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: 'Wallet connection failed: ' + err.message, type: 'error' }]);
+        }
+      };
+
+      const disconnectWallet = () => {
+        setAccount(null);
+        setAmount('0');
+        setHasClaimed(false);
+        setTokenBalances({});
+      };
+
+      const switchToLinea = async () => {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: LINEA_CHAIN_ID }],
+          });
+        } catch (switchError) {
+          if (switchError.code === 4902) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: LINEA_CHAIN_ID,
+                  chainName: 'Linea',
+                  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                  rpcUrls: [LINEA_RPC],
+                  blockExplorerUrls: [LINEA_EXPLORER],
+                }],
+              });
+            } catch (addError) {
+              setNotifications([...notifications, { id: Date.now(), message: 'Failed to add Linea network: ' + addError.message, type: 'error' }]);
+            }
+          } else {
+            setNotifications([...notifications, { id: Date.now(), message: 'Failed to switch to Linea: ' + switchError.message, type: 'error' }]);
+          }
+        }
+      };
+
+      const fetchData = async () => {
+        if (!contract || !account) return;
+        try {
+          const alloc = await contract.methods.calculateAllocation(account).call();
+          setAmount(web3.utils.fromWei(alloc, 'ether'));
+          const claimed = await contract.methods.hasClaimed(account).call();
+          setHasClaimed(claimed);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: 'Failed to fetch data: ' + err.message, type: 'error' }]);
+        }
+      };
+
+      const fetchTokenBalances = async () => {
+        if (!web3 || !account) return;
+        const balances = {};
+        for (const [token, address] of Object.entries(TOKEN_ADDRESSES)) {
+          try {
+            const tokenContract = new web3.eth.Contract(ABI, address);
+            const balance = await tokenContract.methods.balanceOf(account).call();
+            balances[token] = web3.utils.fromWei(balance, 'ether');
+          } catch (err) {
+            balances[token] = '0';
+            setNotifications([...notifications, { id: Date.now(), message: `Failed to fetch ${token} balance: ${err.message}`, type: 'error' }]);
+          }
+        }
+        setTokenBalances(balances);
+      };
+
+      const handleClaim = async () => {
+        if (!contract || !account) return;
+        try {
+          const tx = await contract.methods.claim().send({ from: account });
+          setHasClaimed(true);
+          jsConfetti.addConfetti({
+            emojis: ['🎉', '✨', '💥', '🌟', '🎊'],
+            confettiNumber: 200,
+            confettiRadius: 6,
+          });
+          setNotifications([...notifications, { id: Date.now(), message: 'Transaction successful! Tokens claimed.', type: 'success' }]);
+          fetchData();
+          fetchTokenBalances();
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: `Transaction failed: ${err.message}`, type: 'error' }]);
+        }
+      };
+
+      if (currentChainId !== LINEA_CHAIN_ID) {
+        return (
+          <div className="flex flex-col items-center justify-center h-screen">
+            <h1 className="text-4xl font-bold mb-4">Linea Airdrop</h1>
+            <button
+              className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-500"
+              onClick={switchToLinea}
+            >
+              Switch to Linea Network
+            </button>
+            {notifications.map(notification => (
+              <div key={notification.id} className={`notification ${notification.type}`}>
+                <div className="notification-header">{notification.type === 'success' ? 'Transaction Successful!' : 'Transaction Failed!'}</div>
+                <div className="notification-message">{notification.message}</div>
+                <button className="close-btn" onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}>X</button>
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      return (
+        <div className="relative min-h-screen">
+          <div className="absolute top-4 right-4 flex space-x-4">
+            {!account ? (
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded flex items-center"
+                onClick={connectWallet}
+              >
+                <i className="fas fa-wallet mr-2"></i> Connect Wallet
+              </button>
+            ) : (
+              <button
+                className="bg-red-600 text-white px-4 py-2 rounded flex items-center"
+                onClick={disconnectWallet}
+              >
+                <i className="fas fa-sign-out-alt mr-2"></i> Disconnect
+              </button>
+            )}
+            <button
+              className="bg-gray-600 text-white px-4 py-2 rounded flex items-center"
+              onClick={() => setMusicPlaying(!musicPlaying)}
+            >
+              <i className={`fas ${musicPlaying ? 'fa-volume-up' : 'fa-volume-mute'} mr-2`}></i>
+              {musicPlaying ? 'Mute' : 'Play'} Music
+            </button>
+          </div>
+          <div className="flex flex-col items-center justify-center h-screen">
+            <h1 className="text-5xl font-bold mb-2 text-blue-300">Linea Airdrop</h1>
+            <p className="text-lg mb-8">
+              Token Contract: 
+              <a 
+                href="https://lineascan.build/token/0x1789e0043623282d5dcc7f213d703c6d8bafbb04#balances" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-blue-400 hover:underline ml-2"
+              >
+                0x1789e0043623282d5dcc7f213d703c6d8bafbb04
+              </a>
+            </p>
+            {account ? (
+              <>
+                <p className="text-2xl mb-4">Tokens to Claim: {amount}</p>
+                {hasClaimed ? (
+                  <p className="text-xl text-yellow-400">Already Claimed</p>
+                ) : parseFloat(amount) > 0 ? (
+                  <div className="stargate">
+                    <button
+                      className="fire-button"
+                      onClick={handleClaim}
+                    >
+                      CLAIM
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xl text-red-400">Not Eligible</p>
+                )}
+                <div className="token-balance">
+                  <p>LXP: {tokenBalances.LXP || '0'} ETH</p>
+                  <p>LXP-L: {tokenBalances.LXPL || '0'} ETH</p>
+                  <p>LAM: {tokenBalances.LAM || '0'} ETH</p>
+                </div>
+              </>
+            ) : (
+              <p className="text-xl">Connect your wallet to check eligibility</p>
+            )}
+            {notifications.map(notification => (
+              <div key={notification.id} className={`notification ${notification.type}`}>
+                <div className="notification-header">{notification.type === 'success' ? 'Transaction Successful!' : 'Transaction Failed!'}</div>
+                <div className="notification-message">{notification.message}</div>
+                <button className="close-btn" onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}>X</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
