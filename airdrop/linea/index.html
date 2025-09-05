@@ -13,13 +13,15 @@
   <script src="https://cdn.jsdelivr.net/npm/js-confetti@0.11.0/dist/js-confetti.browser.js"></script>
   <style>
     body {
-      background-color: #000;
-      background-image: url('space.jpg');
+      background: url('stargate.jpg') no-repeat center center fixed;
       background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
       color: #fff;
-      font-family: 'Arial', sans-serif;
+      margin: 0;
+      font-family: 'Orbitron', 'Arial', sans-serif;
+    }
+    @font-face {
+      font-family: 'Orbitron';
+      src: url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap') format('woff2');
     }
     .stargate {
       width: 400px;
@@ -72,6 +74,39 @@
       0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); }
       100% { box-shadow: 0 0 30px rgba(0, 191, 255, 0.5); }
     }
+    .fire-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(45deg, #ff4500, #ff8c00, #ffd700);
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      text-shadow: 0 0 5px #fff, 0 0 10px #fff;
+      box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, inset 0 0 10px #ffd700;
+      animation: fireAnimation 0.5s infinite alternate;
+    }
+    @keyframes fireAnimation {
+      0% {
+        background: linear-gradient(45deg, #ff4500, #ff8c00, #ffd700);
+        box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, inset 0 0 10px #ffd700;
+      }
+      100% {
+        background: linear-gradient(45deg, #ff2200, #ff6a00, #ffca00);
+        box-shadow: 0 0 15px #ff2200, 0 0 30px #ff6a00, inset 0 0 15px #ffca00;
+      }
+    }
+    .fire-button:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+    .fire-button:active {
+      transform: translate(-50%, -50%) scale(0.95);
+    }
     .notification {
       background: linear-gradient(135deg, #1f2937, #111827);
       border: 1px solid #4b5563;
@@ -85,6 +120,11 @@
       word-wrap: break-word;
       overflow-wrap: break-word;
       hyphens: auto;
+      opacity: 0.9;
+      position: relative;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 1.1rem;
     }
     .notification.success {
       border-color: #10b981;
@@ -95,87 +135,66 @@
       background: linear-gradient(135deg, #7f1d1d, #991b1b);
     }
     .notification-header {
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       font-weight: bold;
       margin-bottom: 8px;
       color: #facc15;
+      text-shadow: 0 0 5px #facc15;
     }
     .notification-message {
-      font-size: 0.9rem;
+      font-size: 1rem;
       line-height: 1.5;
       word-wrap: break-word;
       overflow-wrap: break-word;
       hyphens: auto;
+      text-shadow: 0 0 2px #fff;
+    }
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.2rem;
+      text-shadow: 0 0 5px #fff;
     }
     @keyframes slideIn {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
-    .claim-button {
-      padding: 12px 24px;
-      font-size: 1.2rem;
-      font-weight: bold;
+    .notification::-webkit-scrollbar {
+      width: 6px;
+    }
+    .notification::-webkit-scrollbar-track {
+      background: #4b5563;
+      border-radius: 3px;
+    }
+    .notification::-webkit-scrollbar-thumb {
+      background: #facc15;
+      border-radius: 3px;
+    }
+    h1, p, button {
+      text-shadow: 0 0 5px #00f, 0 0 10px #0ff, 0 0 15px #f0f;
       color: #fff;
-      background: linear-gradient(90deg, #ff4500, #ff8c00, #ffd700);
-      border: none;
-      border-radius: 25px;
-      cursor: pointer;
-      text-shadow: 0 0 5px #fff;
-      box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .claim-button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 15px #ff4500, 0 0 30px #ff8c00;
-    }
-    .claim-button:active {
-      transform: scale(0.95);
-    }
-    .token-balance, .tokens-to-claim {
-      margin: 10px 0;
-      font-size: 1.2rem;
-      color: linear-gradient(90deg, #ff4500, #ff8c00, #ffd700);
-      -webkit-text-fill-color: transparent;
-      -webkit-background-clip: text;
-      background-clip: text;
-    }
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 20px;
-      color: linear-gradient(90deg, #ff4500, #ff8c00, #ffd700);
-      -webkit-text-fill-color: transparent;
-      -webkit-background-clip: text;
-      background-clip: text;
-    }
-    p {
-      font-size: 1.1rem;
-      color: linear-gradient(90deg, #ff4500, #ff8c00, #ffd700);
-      -webkit-text-fill-color: transparent;
-      -webkit-background-clip: text;
-      background-clip: text;
-    }
-    .disclaimer {
-      font-size: 0.8rem;
-      color: #d1d5db;
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 10px;
-      background: rgba(31, 41, 55, 0.8);
-      border-radius: 8px;
-    }
-    .spin-section {
+    .token-balance {
       margin-top: 20px;
       text-align: center;
+      font-size: 1.2rem;
     }
-    .spin-table {
-      width: 100%;
-      max-width: 400px;
-      margin: 10px auto;
-      border-collapse: collapse;
-    }
-    .spin-table td {
-      padding: 8px;
-      border: 1px solid #4b5563;
+    .tokens-to-claim {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -191,8 +210,15 @@
     const LINEA_CHAIN_ID = '0xe708';
     const LINEA_RPC = 'https://rpc.linea.build';
     const LINEA_EXPLORER = 'https://lineascan.build';
-    const TOKEN_ADDRESS = '0x1789e0043623282d5dcc7f213d703c6d8bafbb04';
-    const ABI = [{"inputs":[{"internalType":"address","name":"_token","type":"address"},{"internalType":"address","name":"_ownerAddress","type":"address"},{"internalType":"uint256","name":"_claimEnd","type":"uint256"},{"internalType":"address","name":"_primaryFactorAddress","type":"address"},{"internalType":"address","name":"_primaryConditionalMultiplierAddress","type":"address"},{"internalType":"address","name":"_secondaryFactorAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"AllCalculationFactorsZero","type":"error"},{"inputs":[],"name":"AlreadyClaimed","type":"error"},{"inputs":[],"name":"ClaimAmountIsZero","type":"error"},{"inputs":[],"name":"ClaimEndTooShort","type":"error"},{"inputs":[],"name":"ClaimFinished","type":"error"},{"inputs":[],"name":"ClaimNotFinished","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"inputs":[],"name":"RenouncingOwnershipDisabled","type":"error"},{"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"SafeERC20FailedOperation","type":"error"},{"inputs":[],"name":"ZeroAddressNotAllowed","type":"error"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"token","type":"address"},{"indexed":false,"internalType":"address","name":"primaryFactor","type":"address"},{"indexed":false,"internalType":"address","name":"primaryMultiplier","type":"address"},{"indexed":false,"internalType":"address","name":"secondaryFactor","type":"address"},{"indexed":false,"internalType":"uint256","name":"claimEndTimestamp","type":"uint256"}],"name":"AirdropConfigured","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Claimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferStarted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"TokenBalanceWithdrawn","type":"event"},{"inputs":[],"name":"CLAIM_END","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"DENOMINATOR","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PRIMARY_CONDITIONAL_MULTIPLIER_ADDRESS","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PRIMARY_FACTOR_ADDRESS","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"SECONDARY_FACTOR_ADDRESS","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"TOKEN","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"acceptOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_account","type":"address"}],"name":"calculateAllocation","outputs":[{"internalType":"uint256","name":"tokenAllocation","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"hasClaimed","outputs":[{"internalType":"bool","name":"claimed","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"pendingOwner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+    const TOKEN_ADDRESSES = {
+      LXP: '0xd83af4fbd77f3ab65c3b1dc4b38d7e67aecf599a',
+      LXPL: '0xBC8f4663470229Fd4CA3686A24792d93Dd800216',
+      LAM: '0xE158CaCCe6f5713f5739A7d7AF0dB60116187687'
+    };
+    const ABI = [
+      {"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"},
+      {"inputs":[{"internalType":"address","name":"_account","type":"address"}],"name":"calculateAllocation","outputs":[{"internalType":"uint256","name":"tokenAllocation","type":"uint256"}],"stateMutability":"view","type":"function"}
+    ];
 
     function App() {
       const [web3, setWeb3] = useState(null);
@@ -204,7 +230,7 @@
       const [musicPlaying, setMusicPlaying] = useState(true);
       const [currentChainId, setCurrentChainId] = useState(null);
       const [notifications, setNotifications] = useState([]);
-      const [spins, setSpins] = useState(0);
+      const [tokenBalances, setTokenBalances] = useState({});
       const jsConfetti = new JSConfetti();
 
       useEffect(() => {
@@ -223,16 +249,11 @@
       }, []);
 
       useEffect(() => {
-        if (web3) {
-          loadContract();
+        if (web3 && account) {
+          loadContracts();
+          fetchTokenBalances();
         }
-      }, [web3]);
-
-      useEffect(() => {
-        if (account && contract) {
-          fetchData();
-        }
-      }, [account, contract]);
+      }, [web3, account]);
 
       useEffect(() => {
         const audio = document.getElementById('bgMusic');
@@ -252,7 +273,7 @@
         return () => timers.forEach(clearTimeout);
       }, [notifications]);
 
-      const loadContract = () => {
+      const loadContracts = () => {
         try {
           const contractInstance = new web3.eth.Contract(ABI, CONTRACT_ADDRESS);
           setContract(contractInstance);
@@ -274,6 +295,7 @@
         setAccount(null);
         setAmount('0');
         setHasClaimed(false);
+        setTokenBalances({});
       };
 
       const switchToLinea = async () => {
@@ -317,6 +339,22 @@
         }
       };
 
+      const fetchTokenBalances = async () => {
+        if (!web3 || !account) return;
+        const balances = {};
+        for (const [token, address] of Object.entries(TOKEN_ADDRESSES)) {
+          try {
+            const tokenContract = new web3.eth.Contract(ABI, address);
+            const balance = await tokenContract.methods.balanceOf(account).call();
+            balances[token] = web3.utils.fromWei(balance, 'ether');
+          } catch (err) {
+            balances[token] = '0';
+            setNotifications([...notifications, { id: Date.now(), message: `Failed to fetch ${token} balance: ${err.message}`, type: 'error' }]);
+          }
+        }
+        setTokenBalances(balances);
+      };
+
       const handleClaim = async () => {
         if (!contract || !account) return;
         try {
@@ -329,6 +367,7 @@
           });
           setNotifications([...notifications, { id: Date.now(), message: 'Transaction successful! Tokens claimed.', type: 'success' }]);
           fetchData();
+          fetchTokenBalances();
         } catch (err) {
           setNotifications([...notifications, { id: Date.now(), message: `Transaction failed: ${err.message}`, type: 'error' }]);
         }
@@ -337,7 +376,7 @@
       if (currentChainId !== LINEA_CHAIN_ID) {
         return (
           <div className="flex flex-col items-center justify-center h-screen">
-            <h1>Airdrop</h1>
+            <h1 className="text-4xl font-bold mb-4">Linea Airdrop</h1>
             <button
               className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-500"
               onClick={switchToLinea}
@@ -348,6 +387,7 @@
               <div key={notification.id} className={`notification ${notification.type}`}>
                 <div className="notification-header">{notification.type === 'success' ? 'Transaction Successful!' : 'Transaction Failed!'}</div>
                 <div className="notification-message">{notification.message}</div>
+                <button className="close-btn" onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}>X</button>
               </div>
             ))}
           </div>
@@ -381,20 +421,27 @@
             </button>
           </div>
           <div className="flex flex-col items-center justify-center h-screen">
-            <h1>Check Your Airdrop Eligibility</h1>
-            <p className="text-center mb-4">Need help?</p>
-            <div className="disclaimer">
-              This interface is provided by the Linea Association ("Provider") solely to allow users to check whether a submitted crypto wallet address may be eligible to claim tokens related to the Linea TGE. This service is informational only and does not constitute financial, investment, or legal advice. Results shown by the interface are preliminary and provided "as is." Eligibility indicated by the service does not guarantee allocation, receipt, or transfer of any tokens. Final eligibility and distribution may be different. Users are responsible for ensuring that they submit the correct wallet address. The service does not request or require private keys—never share private keys. Users remain solely responsible for securing their wallet and funds. The Provider assumes no responsibility for losses, errors, or damages of any kind arising from use of this interface, including reliance on eligibility information. Users must ensure that accessing this service and claiming any tokens complies with the laws and regulations of their jurisdiction, including any restrictions on digital assets. The Provider reserves the right to modify, suspend, or discontinue the service at any time without notice. By using this interface, you acknowledge and agree to these Terms & Conditions. If you do not agree, you must not use the service.
-            </div>
+            <h1 className="text-5xl font-bold mb-2 text-blue-300">Linea Airdrop</h1>
+            <p className="text-lg mb-8">
+              Token Contract: 
+              <a 
+                href="https://lineascan.build/token/0x1789e0043623282d5dcc7f213d703c6d8bafbb04#balances" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-blue-400 hover:underline ml-2"
+              >
+                0x1789e0043623282d5dcc7f213d703c6d8bafbb04
+              </a>
+            </p>
             {account ? (
               <>
-                <div className="tokens-to-claim mt-4">Tokens to Claim: {amount}</div>
+                <div className="tokens-to-claim">Tokens to Claim: {amount}</div>
                 {hasClaimed ? (
                   <p className="text-xl text-yellow-400 mt-4">Already Claimed</p>
                 ) : parseFloat(amount) > 0 ? (
                   <div className="stargate mt-4">
                     <button
-                      className="claim-button mt-4"
+                      className="fire-button"
                       onClick={handleClaim}
                     >
                       CLAIM
@@ -403,17 +450,10 @@
                 ) : (
                   <p className="text-xl text-red-400 mt-4">Not Eligible</p>
                 )}
-                <div className="spin-section">
-                  <p>wheel icon</p>
-                  <p>{spins} Spins</p>
-                  <table className="spin-table">
-                    <tbody>
-                      <tr>
-                        <td>Review spin history</td>
-                        <td>Begin playing to discover the actions that granted you extra spins.</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="token-balance mt-4">
+                  <p>LXP: {tokenBalances.LXP || '0'}</p>
+                  <p>LXP-L: {tokenBalances.LXPL || '0'}</p>
+                  <p>LAM: {tokenBalances.LAM || '0'}</p>
                 </div>
               </>
             ) : (
@@ -423,6 +463,7 @@
               <div key={notification.id} className={`notification ${notification.type}`}>
                 <div className="notification-header">{notification.type === 'success' ? 'Transaction Successful!' : 'Transaction Failed!'}</div>
                 <div className="notification-message">{notification.message}</div>
+                <button className="close-btn" onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}>X</button>
               </div>
             ))}
           </div>
