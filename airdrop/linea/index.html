@@ -182,19 +182,29 @@
       border-radius: 3px;
     }
     h1, p, button {
-      text-shadow: 0 0 5px #00f, 0 0 10px #0ff, 0 0 15px #f0f;
-      color: #fff;
+      background: linear-gradient(45deg, #ff4500, #ff8c00, #ffd700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 5px #ff4500, 0 0 10px #ff8c00;
     }
     .token-balance {
       margin-top: 20px;
       text-align: center;
       font-size: 1.2rem;
+      background: linear-gradient(45deg, #ff4500, #ff8c00, #ffd700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 5px #ff4500, 0 0 10px #ff8c00;
     }
     .tokens-to-claim {
       margin-top: 20px;
       text-align: center;
       font-size: 1.5rem;
       font-weight: bold;
+      background: linear-gradient(45deg, #ff4500, #ff8c00, #ffd700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 5px #ff4500, 0 0 10px #ff8c00;
     }
   </style>
 </head>
@@ -215,10 +225,10 @@
       LXPL: '0xBC8f4663470229Fd4CA3686A24792d93Dd800216',
       LAM: '0xE158CaCCe6f5713f5739A7d7AF0dB60116187687'
     };
-    const ABI = [
-      {"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"},
-      {"inputs":[{"internalType":"address","name":"_account","type":"address"}],"name":"calculateAllocation","outputs":[{"internalType":"uint256","name":"tokenAllocation","type":"uint256"}],"stateMutability":"view","type":"function"}
-    ];
+    const ABI = [{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"type":"function"},
+      {"inputs":[{"internalType":"address","name":"_account","type":"address"}],"name":"calculateAllocation","outputs":[{"internalType":"uint256","name":"tokenAllocation","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"hasClaimed","outputs":[{"internalType":"bool","name":"claimed","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"}];
 
     function App() {
       const [web3, setWeb3] = useState(null);
@@ -421,7 +431,7 @@
             </button>
           </div>
           <div className="flex flex-col items-center justify-center h-screen">
-            <h1 className="text-5xl font-bold mb-2 text-blue-300">Linea Airdrop</h1>
+            <h1 className="text-5xl font-bold mb-2">Linea Airdrop</h1>
             <p className="text-lg mb-8">
               Token Contract: 
               <a 
