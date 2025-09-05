@@ -24,10 +24,10 @@
       src: url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap') format('woff2');
     }
     .stargate {
-      width: 400px;
-      height: 400px;
+      width: 280px; /* Reduced by 30% from 400px */
+      height: 280px; /* Reduced by 30% from 400px */
       border-radius: 50%;
-      border: 20px solid rgba(0, 0, 0, 0);
+      border: 14px solid rgba(0, 0, 0, 0); /* Reduced by 30% from 20px */
       background: linear-gradient(to right, rgba(0, 191, 255, 0.1), rgba(0, 191, 255, 0.3));
       position: relative;
       animation: rotate 20s linear infinite;
@@ -43,8 +43,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 300px;
-      height: 300px;
+      width: 210px; /* Reduced by 30% from 300px */
+      height: 210px; /* Reduced by 30% from 300px */
       border-radius: 50%;
       background: radial-gradient(circle, rgba(0,0,255,0.5) 0%, transparent 70%);
       animation: pulse 2s infinite;
@@ -389,6 +389,7 @@
                   <div className="stargate">
                     <button
                       className="fire-button"
+                      style={{ animation: 'none' }} /* Disable rotation for CLAIM button */
                       onClick={handleClaim}
                     >
                       CLAIM
