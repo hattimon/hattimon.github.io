@@ -370,7 +370,7 @@
 </head>
 <body class="font-mono">
   <div id="root"></div>
-  <audio id="bgMusic" loop autoplay>
+  <audio id="bgMusic" loop>
     <source src="StargateAtlantis.mp3" type="audio/mpeg">
   </audio>
   <script type="text/babel">
@@ -390,7 +390,7 @@
       const [amount, setAmount] = useState('0');
       const [hasClaimed, setHasClaimed] = useState(false);
       const [error, setError] = useState('');
-      const [musicPlaying, setMusicPlaying] = useState(true);
+      const [musicPlaying, setMusicPlaying] = useState(false);
       const [currentChainId, setCurrentChainId] = useState(null);
       const [notifications, setNotifications] = useState([]);
       const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -537,6 +537,7 @@
           audio.play().catch(() => {});
         } else {
           audio.pause();
+          audio.currentTime = 0;
         }
       }, [musicPlaying]);
 
@@ -794,7 +795,8 @@
       );
     }
 
-    ReactDOM.render(<App />, document.getElementById('root'));
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
