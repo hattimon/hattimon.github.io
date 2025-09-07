@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linea Airdrop</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/js-confetti@0.11.0/dist/js-confetti.browser.js"></script>
+  <style>
+    body {
+      background: url('bg1.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      margin: 0;
+      font-family: 'Orbitron', 'Arial', sans-serif;
+    }
+    @font-face {
+      font-family: 'Orbitron';
+      src: url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap') format('woff2');
+    }
+    .stargate {
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      border: 14px solid rgba(0, 0, 0, 0);
+      background: linear-gradient(to right, rgba(0, 191, 255, 0.1), rgba(0, 191, 255, 0.3));
+      position: relative;
+      animation: rotate 20s linear infinite;
+      box-shadow: 0 0 50px rgba(0, 191, 255, 0.5);
+    }
+    @keyframes rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .stargate::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 210px;
+      height: 210px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,0,255,0.5) 0%, transparent 70%);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+    .fire-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(45deg, #ff4500, #ff8c00, #ffd700);
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      text-shadow: 0 0 5px #fff, 0 0 10px #fff;
+      box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, inset 0 0 10px #ffd700;
+      animation: fireAnimation 0.5s infinite alternate;
+    }
+    @keyframes fireAnimation {
+      0% {
+        background: linear-gradient(45deg, #ff4500, #ff8c00, #ffd700);
+        box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00, inset 0 0 10px #ffd700;
+      }
+      100% {
+        background: linear-gradient(45deg, #ff2200, #ff6a00, #ffca00);
+        box-shadow: 0 0 15px #ff2200, 0 0 30px #ff6a00, inset 0 0 15px #ffca00;
+      }
+    }
+    .fire-button:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+    .fire-button:active {
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+    .fire-button:disabled {
+      background: linear-gradient(45deg, #666, #999);
+      cursor: not-allowed;
+      box-shadow: none;
+      animation: none;
+    }
+    .notification {
+      background: linear-gradient(135deg, #1f2937, #111827);
+      border: 1px solid #4b5563;
+      border-radius: 8px;
+      padding: 16px;
+      max-width: 400px;
+      margin: 8px auto;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      color: #d1d5db;
+      animation: slideIn 0.5s ease-out;
+      word-wrap: normal;
+      overflow-wrap: normal;
+      opacity: 0.9;
+      position: relative;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 1.1rem;
+    }
+    .notification.success {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #065f46, #064e3b);
+    }
+    .notification.error {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, #7f1d1d, #991b1b);
+    }
+    .notification-header {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #facc15;
+      text-shadow: 0 0 5px #facc15;
+    }
+    .notification-message {
+      font-size: 1rem;
+      line-height: 1.5;
+      word-wrap: normal;
+      overflow-wrap: normal;
+      text-shadow: 0 0 2px #fff;
+    }
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.2rem;
+      text-shadow: 0 0 5px #fff;
+    }
+    @keyframes slideIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    .notification::-webkit-scrollbar {
+      width: 6px;
+    }
+    .notification::-webkit-scrollbar-track {
+      background: #4b5563;
+      border-radius: 3px;
+    }
+    .notification::-webkit-scrollbar-thumb {
+      background: #facc15;
+      border-radius: 3px;
+    }
+    h1, p, button {
+      text-shadow: 0 0 5px #00f, 0 0 10px #0ff, 0 0 15px #f0f;
+      color: #fff;
+    }
+    @media (max-width: 768px) {
+      .stargate {
+        width: 200px;
+        height: 200px;
+      }
+      .stargate::before {
+        width: 150px;
+        height: 150px;
+      }
+      .fire-button {
+        padding: 8px 16px;
+        font-size: 1rem;
+      }
+      h1 {
+        font-size: 2rem !important;
+        text-align: center;
+      }
+      p {
+        font-size: 0.9rem !important;
+        text-align: center;
+        word-wrap: normal;
+        overflow-wrap: normal;
+        padding: 0 8px;
+      }
+      .notification {
+        max-width: 95vw;
+        font-size: 0.9rem;
+        padding: 10px;
+      }
+      .notification-header {
+        font-size: 1rem;
+      }
+      .countdown-section {
+        text-align: center;
+        padding: 8px;
+        margin: 8px 0;
+      }
+      .countdown-item {
+        display: inline-block;
+        margin: 4px;
+        padding: 8px;
+        background: rgba(0, 191, 255, 0.2);
+        border-radius: 6px;
+        min-width: 50px;
+      }
+      .gui-note {
+        font-size: 0.8rem !important;
+        margin-bottom: 8px;
+      }
+      .top-buttons {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px;
+      }
+    }
+    .address-text {
+      word-wrap: normal;
+      overflow-wrap: normal;
+      text-align: center;
+    }
+    .contract-address {
+      display: block;
+      word-break: break-all;
+      overflow-wrap: break-word;
+    }
+    .countdown-section {
+      background: linear-gradient(135deg, rgba(0, 191, 255, 0.2), rgba(0, 0, 255, 0.1));
+      border-radius: 12px;
+      padding: 20px;
+      margin: 10px 0;
+      box-shadow: 0 0 20px rgba(0, 191, 255, 0.3);
+      text-align: center;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .countdown-item {
+      display: inline-block;
+      margin: 5px 10px;
+      padding: 15px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      min-width: 80px;
+      font-weight: bold;
+      text-shadow: 0 0 5px #fff;
+    }
+    .countdown-label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    .official-link {
+      display: block;
+      margin: 10px auto;
+      text-align: center;
+      padding: 10px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+      border-radius: 8px;
+      border: 1px solid #10b981;
+      color: #fff;
+      text-decoration: none;
+      font-weight: bold;
+      max-width: 400px;
+      word-wrap: normal;
+      overflow-wrap: normal;
+    }
+    .official-link:hover {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.2));
+      text-decoration: underline;
+    }
+    .language-toggle {
+      background: linear-gradient(45deg, #1e90ff, #00b7eb);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-shadow: 0 0 5px #000;
+      transition: transform 0.2s;
+    }
+    .language-toggle:hover {
+      transform: scale(1.05);
+    }
+    .gui-note {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-top: -8px;
+      margin-bottom: 16px;
+    }
+    .top-buttons {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body class="font-mono">
+  <div id="root"></div>
+  <audio id="bgMusic" loop autoplay>
+    <source src="StargateAtlantis.mp3" type="audio/mpeg">
+  </audio>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const CONTRACT_ADDRESS = '0x87baa1694381ae3ecae2660d97fe60404080eb64';
+    const LINEA_CHAIN_ID = '0xe708';
+    const LINEA_RPC = 'https://rpc.linea.build';
+    const LINEA_EXPLORER = 'https://lineascan.build';
+    const TOKEN_ADDRESS = '0x1789e0043623282d5dcc7f213d703c6d8bafbb04';
+    const ABI = [{"inputs":[{"internalType":"address","name":"_token","type":"address"},{"internalType":"address","name":"_ownerAddress","type":"address"},{"internalType":"uint256","name":"_claimEnd","type":"uint256"},{"internalType":"address","name":"_primaryFactorAddress","type":"address"},{"internalType":"address","name":"_primaryConditionalMultiplierAddress","type":"address"},{"internalType":"address","name":"_secondaryFactorAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"AllCalculationFactorsZero","type":"error"},{"inputs":[],"name":"AlreadyClaimed","type":"error"},{"inputs":[],"name":"ClaimAmountIsZero","type":"error"},{"inputs":[],"name":"ClaimEndTooShort","type":"error"},{"inputs":[],"name":"ClaimFinished","type":"error"},{"inputs":[],"name":"ClaimNotFinished","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"inputs":[],"name":"RenouncingOwnershipDisabled","type":"error"},{"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"SafeERC20FailedOperation","type":"error"},{"inputs":[],"name":"ZeroAddressNotAllowed","type":"error"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"token","type":"address"},{"indexed":false,"internalType":"address","name":"primaryFactor","type":"address"},{"indexed":false,"internalType":"address","name":"primaryMultiplier","type":"address"},{"indexed":false,"internalType":"address","name":"secondaryFactor","type":"address"},{"indexed":false,"internalType":"uint256","name":"claimEndTimestamp","type":"uint256"}],"name":"AirdropConfigured","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Claimed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferStarted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"TokenBalanceWithdrawn","type":"event"},{"inputs":[],"name":"CLAIM_END","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"DENOMINATOR","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PRIMARY_CONDITIONAL_MULTIPLIER_ADDRESS","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PRIMARY_FACTOR_ADDRESS","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"SECONDARY_FACTOR_ADDRESS","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"TOKEN","outputs":[{"internalType":"contract IERC20","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"acceptOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_account","type":"address"}],"name":"calculateAllocation","outputs":[{"internalType":"uint256","name":"tokenAllocation","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"claim","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"hasClaimed","outputs":[{"internalType":"bool","name":"claimed","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"pendingOwner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+
+    function App() {
+      const [web3, setWeb3] = useState(null);
+      const [account, setAccount] = useState(null);
+      const [contract, setContract] = useState(null);
+      const [amount, setAmount] = useState('0');
+      const [hasClaimed, setHasClaimed] = useState(false);
+      const [error, setError] = useState('');
+      const [musicPlaying, setMusicPlaying] = useState(true);
+      const [currentChainId, setCurrentChainId] = useState(null);
+      const [notifications, setNotifications] = useState([]);
+      const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      const [claimOpen, setClaimOpen] = useState(false);
+      const [language, setLanguage] = useState('en');
+
+      const jsConfetti = new JSConfetti();
+      const CLAIM_OPEN_DATE = new Date('2025-09-10T15:00:00Z');
+
+      const translations = {
+        en: {
+          title: 'Linea Airdrop',
+          guiNote: '(Alternative GUI for claiming the Airdrop)',
+          switchNetwork: 'Switch to Linea Network',
+          connectWallet: 'Connect Wallet',
+          disconnect: 'Disconnect',
+          mute: 'Mute',
+          play: 'Play',
+          claimOpensIn: 'Claim opens in',
+          claimIsOpen: 'Claim is Open!',
+          officialLink: 'Original page for claiming the Airdrop',
+          tokenContract: 'Linea Token Contract:',
+          tokensToClaim: 'Tokens to Claim:',
+          alreadyClaimed: 'Already Claimed',
+          notEligible: 'Not Eligible',
+          claimNotOpen: 'Claim not yet open',
+          connectPrompt: 'Connect your wallet to check eligibility',
+          successHeader: 'Transaction Successful!',
+          errorHeader: 'Transaction Failed!',
+          successMessage: 'Transaction successful! Tokens claimed.',
+          errorMessages: {
+            noWallet: 'MetaMask or Rabby is not installed.',
+            contractFailed: 'Failed to load contract:',
+            walletFailed: 'Wallet connection failed:',
+            networkFailed: 'Failed to switch to Linea:',
+            addNetworkFailed: 'Failed to add Linea network:',
+            fetchFailed: 'Failed to fetch data:',
+            claimFailed: 'Transaction failed:',
+          },
+          countdown: {
+            days: 'Days',
+            hours: 'Hours',
+            minutes: 'Minutes',
+            seconds: 'Seconds',
+          },
+          languageToggle: 'Polski',
+        },
+        pl: {
+          title: 'Airdrop Linea',
+          guiNote: '(Alternatywny interfejs do odbioru Airdropa)',
+          switchNetwork: 'Przełącz na sieć Linea',
+          connectWallet: 'Połącz portfel',
+          disconnect: 'Rozłącz',
+          mute: 'Wycisz',
+          play: 'Odtwarzaj',
+          claimOpensIn: 'Odbiór jeszcze nie otwarty',
+          claimIsOpen: 'Odbiór jest otwarty!',
+          officialLink: 'Oryginalna strona do odbioru Airdropa',
+          tokenContract: 'Kontrakt tokena Linea:',
+          tokensToClaim: 'Tokeny do odbioru:',
+          alreadyClaimed: 'Już odebrano',
+          notEligible: 'Nie kwalifikujesz się',
+          claimNotOpen: 'Odbiór jeszcze nie otwarty',
+          connectPrompt: 'Połącz portfel, aby sprawdzić kwalifikowalność',
+          successHeader: 'Transakcja udana!',
+          errorHeader: 'Transakcja nieudana!',
+          successMessage: 'Transakcja zakończona sukcesem! Tokeny odebrane.',
+          errorMessages: {
+            noWallet: 'MetaMask lub Rabby nie jest zainstalowany.',
+            contractFailed: 'Nie udało się załadować kontraktu:',
+            walletFailed: 'Nie udało się połączyć z portfelem:',
+            networkFailed: 'Nie udało się przełączyć na sieć Linea:',
+            addNetworkFailed: 'Nie udało się dodać sieci Linea:',
+            fetchFailed: 'Nie udało się pobrać danych:',
+            claimFailed: 'Transakcja nieudana:',
+          },
+          countdown: {
+            days: 'Dni',
+            hours: 'Godziny',
+            minutes: 'Minuty',
+            seconds: 'Sekundy',
+          },
+          languageToggle: 'English',
+        },
+      };
+
+      useEffect(() => {
+        if (window.ethereum) {
+          const web3Instance = new Web3(window.ethereum);
+          setWeb3(web3Instance);
+          window.ethereum.request({ method: 'eth_chainId' }).then(setCurrentChainId);
+          window.ethereum.on('chainChanged', setCurrentChainId);
+          window.ethereum.on('accountsChanged', (accounts) => {
+            setAccount(accounts[0]);
+            fetchData(web3Instance, accounts[0]);
+          });
+        } else {
+          setError(translations[language].errorMessages.noWallet);
+        }
+      }, [language]);
+
+      useEffect(() => {
+        if (web3) {
+          loadContract();
+        }
+      }, [web3]);
+
+      useEffect(() => {
+        if (account && contract) {
+          fetchData();
+        }
+      }, [account, contract]);
+
+      useEffect(() => {
+        const updateCountdown = () => {
+          const now = new Date().getTime();
+          const distance = CLAIM_OPEN_DATE.getTime() - now;
+
+          if (distance < 0) {
+            setClaimOpen(true);
+            setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+            return;
+          }
+
+          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+          setCountdown({ days, hours, minutes, seconds });
+        };
+
+        updateCountdown();
+        const interval = setInterval(updateCountdown, 1000);
+        return () => clearInterval(interval);
+      }, []);
+
+      useEffect(() => {
+        const audio = document.getElementById('bgMusic');
+        if (musicPlaying) {
+          audio.play().catch(() => {});
+        } else {
+          audio.pause();
+        }
+      }, [musicPlaying]);
+
+      useEffect(() => {
+        const timers = notifications.map(notification =>
+          setTimeout(() => {
+            setNotifications(prev => prev.filter(n => n.id !== notification.id));
+          }, 7000)
+        );
+        return () => timers.forEach(clearTimeout);
+      }, [notifications]);
+
+      const loadContract = () => {
+        try {
+          const contractInstance = new web3.eth.Contract(ABI, CONTRACT_ADDRESS);
+          setContract(contractInstance);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.contractFailed} ${err.message}`, type: 'error' }]);
+        }
+      };
+
+      const connectWallet = async () => {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          setAccount(accounts[0]);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.walletFailed} ${err.message}`, type: 'error' }]);
+        }
+      };
+
+      const disconnectWallet = () => {
+        setAccount(null);
+        setAmount('0');
+        setHasClaimed(false);
+      };
+
+      const switchToLinea = async () => {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: LINEA_CHAIN_ID }],
+          });
+        } catch (switchError) {
+          if (switchError.code === 4902) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: LINEA_CHAIN_ID,
+                  chainName: 'Linea',
+                  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                  rpcUrls: [LINEA_RPC],
+                  blockExplorerUrls: [LINEA_EXPLORER],
+                }],
+              });
+            } catch (addError) {
+              setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.addNetworkFailed} ${addError.message}`, type: 'error' }]);
+            }
+          } else {
+            setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.networkFailed} ${switchError.message}`, type: 'error' }]);
+          }
+        }
+      };
+
+      const fetchData = async () => {
+        if (!contract || !account) return;
+        try {
+          const alloc = await contract.methods.calculateAllocation(account).call();
+          setAmount(web3.utils.fromWei(alloc, 'ether'));
+          const claimed = await contract.methods.hasClaimed(account).call();
+          setHasClaimed(claimed);
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.fetchFailed} ${err.message}`, type: 'error' }]);
+        }
+      };
+
+      const handleClaim = async () => {
+        if (!contract || !account) return;
+        try {
+          const tx = await contract.methods.claim().send({ from: account });
+          setHasClaimed(true);
+          jsConfetti.addConfetti({
+            emojis: ['🎉', '✨', '💥', '🌟', '🎊'],
+            confettiNumber: 200,
+            confettiRadius: 6,
+          });
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].successMessage, type: 'success' }]);
+          fetchData();
+        } catch (err) {
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.claimFailed} ${err.message}`, type: 'error' }]);
+        }
+      };
+
+      const toggleLanguage = () => {
+        setLanguage(language === 'en' ? 'pl' : 'en');
+      };
+
+      if (currentChainId !== LINEA_CHAIN_ID) {
+        return (
+          <div className="flex flex-col items-center justify-center h-screen text-center px-4">
+            <h1 className="text-4xl font-bold mb-4">{translations[language].title}</h1>
+            <button
+              className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-500"
+              onClick={switchToLinea}
+            >
+              {translations[language].switchNetwork}
+            </button>
+            <button
+              className="language-toggle mt-4"
+              onClick={toggleLanguage}
+            >
+              {translations[language].languageToggle}
+            </button>
+            {notifications.map(notification => (
+              <div key={notification.id} className={`notification ${notification.type} mt-4 w-full max-w-md`}>
+                <div className="notification-header">{notification.type === 'success' ? translations[language].successHeader : translations[language].errorHeader}</div>
+                <div className="notification-message">{notification.message}</div>
+                <button className="close-btn" onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}>X</button>
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      return (
+        <div className="relative min-h-screen px-4">
+          <div className="top-buttons">
+            {!account ? (
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded flex items-center"
+                onClick={connectWallet}
+              >
+                <i className="fas fa-wallet mr-2"></i> {translations[language].connectWallet}
+              </button>
+            ) : (
+              <button
+                className="bg-red-600 text-white px-4 py-2 rounded flex items-center"
+                onClick={disconnectWallet}
+              >
+                <i className="fas fa-sign-out-alt mr-2"></i> {translations[language].disconnect}
+              </button>
+            )}
+            <button
+              className="bg-gray-600 text-white px-4 py-2 rounded flex items-center"
+              onClick={() => setMusicPlaying(!musicPlaying)}
+            >
+              <i className={`fas ${musicPlaying ? 'fa-volume-up' : 'fa-volume-mute'} mr-2`}></i>
+              {musicPlaying ? translations[language].mute : translations[language].play} Music
+            </button>
+            <button
+              className="language-toggle"
+              onClick={toggleLanguage}
+            >
+              {translations[language].languageToggle}
+            </button>
+          </div>
+          <div className="flex flex-col items-center justify-center h-screen text-center">
+            <h1 className="text-5xl font-bold mb-2 text-blue-300">{translations[language].title}</h1>
+            <p className="gui-note">{translations[language].guiNote}</p>
+            <div className="countdown-section">
+              <p className="text-xl mb-4 font-bold text-yellow-300">
+                {claimOpen ? translations[language].claimIsOpen : translations[language].claimOpensIn}
+              </p>
+              {!claimOpen && (
+                <div className="flex justify-center flex-wrap">
+                  <div className="countdown-item">
+                    <div className="text-2xl">{countdown.days}</div>
+                    <div className="countdown-label">{translations[language].countdown.days}</div>
+                  </div>
+                  <div className="countdown-item">
+                    <div className="text-2xl">{countdown.hours}</div>
+                    <div className="countdown-label">{translations[language].countdown.hours}</div>
+                  </div>
+                  <div className="countdown-item">
+                    <div className="text-2xl">{countdown.minutes}</div>
+                    <div className="countdown-label">{translations[language].countdown.minutes}</div>
+                  </div>
+                  <div className="countdown-item">
+                    <div className="text-2xl">{countdown.seconds}</div>
+                    <div className="countdown-label">{translations[language].countdown.seconds}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <a 
+              href="https://linea.build/hub/airdrop" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="official-link"
+            >
+              {translations[language].officialLink}
+            </a>
+            <p className="text-lg mb-1 address-text">{translations[language].tokenContract}</p>
+            <p className="text-lg mb-8 contract-address">
+              <a 
+                href="https://lineascan.build/token/0x1789e0043623282d5dcc7f213d703c6d8bafbb04#balances" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-blue-400 hover:underline"
+              >
+                0x1789e0043623282d5dcc7f213d703c6d8bafbb04
+              </a>
+            </p>
+            {account ? (
+              <>
+                <p className="text-2xl mb-4">{translations[language].tokensToClaim} {amount}</p>
+                {hasClaimed ? (
+                  <p className="text-xl text-yellow-400">{translations[language].alreadyClaimed}</p>
+                ) : parseFloat(amount) > 0 ? (
+                  <>
+                    {!claimOpen && (
+                      <p className="text-xl text-yellow-400 mb-4">{translations[language].claimNotOpen}</p>
+                    )}
+                    <div className="stargate">
+                      <button
+                        className="fire-button"
+                        style={{ animation: claimOpen ? 'none' : '' }}
+                        onClick={handleClaim}
+                        disabled={!claimOpen}
+                      >
+                        {language === 'en' ? 'CLAIM' : 'ODBIERZ'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xl text-red-400">{translations[language].notEligible}</p>
+                )}
+              </>
+            ) : (
+              <p className="text-xl">{translations[language].connectPrompt}</p>
+            )}
+            {notifications.map(notification => (
+              <div key={notification.id} className={`notification ${notification.type} mt-4 w-full max-w-md`}>
+                <div className="notification-header">{notification.type === 'success' ? translations[language].successHeader : translations[language].errorHeader}</div>
+                <div className="notification-message">{notification.message}</div>
+                <button className="close-btn" onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}>X</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
