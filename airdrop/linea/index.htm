@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/js-confetti@0.11.0/dist/js-confetti.browser.js"></script>
   <style>
     body {
-      background: url('bg.jpg') no-repeat center center fixed;
+      background: url('bg1.jpg') no-repeat center center fixed;
       background-size: cover;
       color: #fff;
       margin: 0;
@@ -24,35 +24,11 @@
       src: url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap') format('woff2');
     }
     .stargate {
-      width: 280px; /* Reduced by 30% from 400px */
-      height: 280px; /* Reduced by 30% from 400px */
+      width: 280px;
+      height: 280px;
       border-radius: 50%;
-      border: 14px solid rgba(0, 0, 0, 0); /* Reduced by 30% from 20px */
-      background: linear-gradient(to right, rgba(0, 191, 255, 0.1), rgba(0, 191, 255, 0.3));
       position: relative;
-      animation: rotate 20s linear infinite;
       box-shadow: 0 0 50px rgba(0, 191, 255, 0.5);
-    }
-    @keyframes rotate {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    .stargate::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 210px; /* Reduced by 30% from 300px */
-      height: 210px; /* Reduced by 30% from 300px */
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(0,0,255,0.5) 0%, transparent 70%);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0% { opacity: 0.5; }
-      50% { opacity: 1; }
-      100% { opacity: 0.5; }
     }
     .fire-button {
       position: absolute;
@@ -87,6 +63,30 @@
     .fire-button:active {
       transform: translate(-50%, -50%) scale(0.95);
     }
+    .fire-button:disabled {
+      background: linear-gradient(45deg, #666, #999);
+      cursor: not-allowed;
+      box-shadow: none;
+      animation: none;
+    }
+    .emergency-button {
+      margin-top: 10px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #fff;
+      background: linear-gradient(45deg, #ff0000, #cc0000);
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      text-shadow: 0 0 3px #fff;
+      box-shadow: 0 0 8px #ff0000;
+      transition: all 0.3s;
+    }
+    .emergency-button:hover {
+      background: linear-gradient(45deg, #cc0000, #ff0000);
+      transform: scale(1.05);
+    }
     .notification {
       background: linear-gradient(135deg, #1f2937, #111827);
       border: 1px solid #4b5563;
@@ -97,9 +97,8 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
       color: #d1d5db;
       animation: slideIn 0.5s ease-out;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      hyphens: auto;
+      word-wrap: normal;
+      overflow-wrap: normal;
       opacity: 0.9;
       position: relative;
       max-height: 200px;
@@ -124,9 +123,8 @@
     .notification-message {
       font-size: 1rem;
       line-height: 1.5;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      hyphens: auto;
+      word-wrap: normal;
+      overflow-wrap: normal;
       text-shadow: 0 0 2px #fff;
     }
     .close-btn {
@@ -165,11 +163,214 @@
       text-shadow: 0 0 5px #00f, 0 0 10px #0ff, 0 0 15px #f0f;
       color: #fff;
     }
+    @media (max-width: 768px) {
+      .stargate {
+        width: 200px;
+        height: 200px;
+      }
+      .fire-button {
+        padding: 8px 16px;
+        font-size: 1rem;
+      }
+      h1 {
+        font-size: 2rem !important;
+        text-align: center;
+      }
+      p {
+        font-size: 0.9rem !important;
+        text-align: center;
+        word-wrap: normal;
+        overflow-wrap: normal;
+        padding: 0 8px;
+      }
+      .notification {
+        max-width: 95vw;
+        font-size: 0.9rem;
+        padding: 10px;
+      }
+      .notification-header {
+        font-size: 1rem;
+      }
+      .countdown-section {
+        text-align: center;
+        padding: 8px;
+        margin: 8px 0;
+        margin-top: 20px;
+      }
+      .countdown-item {
+        display: inline-block;
+        margin: 2px;
+        padding: 6px 4px;
+        background: rgba(0, 191, 255, 0.2);
+        border-radius: 4px;
+        min-width: 40px;
+        font-size: 0.9rem;
+      }
+      .countdown-label {
+        font-size: 0.7rem;
+      }
+      .gui-note {
+        font-size: 0.8rem !important;
+        margin-bottom: 8px;
+      }
+      .top-buttons {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px;
+        top: 5px;
+      }
+      .emergency-button {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+      }
+    }
+    .address-text {
+      word-wrap: normal;
+      overflow-wrap: normal;
+      text-align: center;
+    }
+    .contract-address {
+      display: block;
+      word-break: break-all;
+      overflow-wrap: break-word;
+    }
+    .countdown-section {
+      background: linear-gradient(135deg, rgba(0, 191, 255, 0.2), rgba(0, 0, 255, 0.1));
+      border-radius: 12px;
+      padding: 20px;
+      margin: 10px 0;
+      box-shadow: 0 0 20px rgba(0, 191, 255, 0.3);
+      text-align: center;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .countdown-item {
+      display: inline-block;
+      margin: 5px 10px;
+      padding: 15px 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      min-width: 80px;
+      font-weight: bold;
+      text-shadow: 0 0 5px #fff;
+    }
+    .countdown-label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    .official-link {
+      display: block;
+      margin: 10px auto;
+      text-align: center;
+      padding: 10px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));
+      border-radius: 8px;
+      border: 1px solid #10b981;
+      color: #fff;
+      text-decoration: none;
+      font-weight: bold;
+      max-width: 400px;
+      word-wrap: normal;
+      overflow-wrap: normal;
+    }
+    .official-link:hover {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.2));
+      text-decoration: underline;
+    }
+    .language-toggle {
+      background: linear-gradient(45deg, #1e90ff, #00b7eb);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-shadow: 0 0 5px #000;
+      transition: transform 0.2s;
+    }
+    .language-toggle:hover {
+      transform: scale(1.05);
+    }
+    .gui-note {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin-top: -8px;
+      margin-bottom: 16px;
+    }
+    .top-buttons {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    .stargate-activation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, rgba(0, 191, 255, 0.8) 0%, rgba(0, 0, 0, 0.9) 70%);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: stargateOpen 3s ease-in-out;
+    }
+    @keyframes stargateOpen {
+      0% { opacity: 0; transform: scale(0.5); }
+      20% { opacity: 1; transform: scale(1); }
+      80% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.5); }
+    }
+    .stargate-ring {
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      border: 20px solid #00bfff;
+      position: relative;
+      animation: ringSpin 2s linear infinite, chevronLock 3s ease-in-out;
+      box-shadow: 0 0 100px #00bfff;
+    }
+    @keyframes ringSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes chevronLock {
+      0%, 100% { box-shadow: 0 0 50px #00bfff; }
+      50% { box-shadow: 0 0 200px #ffffff, inset 0 0 100px #00bfff; }
+    }
+    .stargate-inner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #00ff00 0%, transparent 70%);
+      animation: wormholePulse 1.5s ease-in-out 1s infinite;
+    }
+    @keyframes wormholePulse {
+      0% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+      100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+    }
+    @media (max-width: 768px) {
+      .stargate-ring {
+        width: 300px;
+        height: 300px;
+        border-width: 15px;
+      }
+      .stargate-inner {
+        width: 225px;
+        height: 225px;
+      }
+    }
   </style>
 </head>
 <body class="font-mono">
   <div id="root"></div>
-  <audio id="bgMusic" loop autoplay>
+  <audio id="bgMusic" loop>
     <source src="StargateAtlantis.mp3" type="audio/mpeg">
   </audio>
   <script type="text/babel">
@@ -192,7 +393,92 @@
       const [musicPlaying, setMusicPlaying] = useState(true);
       const [currentChainId, setCurrentChainId] = useState(null);
       const [notifications, setNotifications] = useState([]);
+      const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      const [claimOpen, setClaimOpen] = useState(false);
+      const [language, setLanguage] = useState('en');
+      const [showStargateActivation, setShowStargateActivation] = useState(false);
+
       const jsConfetti = new JSConfetti();
+      const CLAIM_OPEN_DATE = new Date('2025-09-10T15:00:00Z');
+
+      const translations = {
+        en: {
+          title: 'Linea Airdrop',
+          guiNote: '(Alternative GUI for claiming the Airdrop)',
+          switchNetwork: 'Switch to Linea Network',
+          connectWallet: 'Connect Wallet',
+          disconnect: 'Disconnect',
+          mute: 'Mute',
+          play: 'Play',
+          claimOpensIn: 'Claim opens in',
+          claimIsOpen: 'Claim is Open!',
+          officialLink: 'Original page for claiming the Airdrop',
+          tokenContract: 'Linea Token Contract:',
+          tokensToClaim: 'Tokens to Claim:',
+          alreadyClaimed: 'Already Claimed',
+          notEligible: 'Not Eligible',
+          claimNotOpen: 'Claim not yet open',
+          connectPrompt: 'Connect your wallet to check eligibility',
+          successHeader: 'Transaction Successful!',
+          errorHeader: 'Transaction Failed!',
+          successMessage: 'Transaction successful! Tokens claimed.',
+          errorMessages: {
+            noWallet: 'MetaMask or Rabby is not installed.',
+            contractFailed: 'Failed to load contract:',
+            walletFailed: 'Wallet connection failed:',
+            networkFailed: 'Failed to switch to Linea:',
+            addNetworkFailed: 'Failed to add Linea network:',
+            fetchFailed: 'Failed to fetch data:',
+            claimFailed: 'Transaction failed:',
+          },
+          countdown: {
+            days: 'Days',
+            hours: 'Hours',
+            minutes: 'Minutes',
+            seconds: 'Seconds',
+          },
+          languageToggle: 'Polski',
+          emergencyClaim: 'Emergency Claim',
+        },
+        pl: {
+          title: 'Airdrop Linea',
+          guiNote: '(Alternatywny interfejs do odbioru Airdropa)',
+          switchNetwork: 'Przełącz na sieć Linea',
+          connectWallet: 'Połącz portfel',
+          disconnect: 'Rozłącz',
+          mute: 'Wycisz',
+          play: 'Odtwarzaj',
+          claimOpensIn: 'Odbiór jeszcze nie otwarty',
+          claimIsOpen: 'Odbiór jest otwarty!',
+          officialLink: 'Oryginalna strona do odbioru Airdropa',
+          tokenContract: 'Kontrakt tokena Linea:',
+          tokensToClaim: 'Tokeny do odbioru:',
+          alreadyClaimed: 'Już odebrano',
+          notEligible: 'Nie kwalifikujesz się',
+          claimNotOpen: 'Odbiór jeszcze nie otwarty',
+          connectPrompt: 'Połącz portfel, aby sprawdzić kwalifikowalność',
+          successHeader: 'Transakcja udana!',
+          errorHeader: 'Transakcja nieudana!',
+          successMessage: 'Transakcja zakończona sukcesem! Tokeny odebrane.',
+          errorMessages: {
+            noWallet: 'MetaMask lub Rabby nie jest zainstalowany.',
+            contractFailed: 'Nie udało się załadować kontraktu:',
+            walletFailed: 'Nie udało się połączyć z portfelem:',
+            networkFailed: 'Nie udało się przełączyć na sieć Linea:',
+            addNetworkFailed: 'Nie udało się dodać sieci Linea:',
+            fetchFailed: 'Nie udało się pobrać danych:',
+            claimFailed: 'Transakcja nieudana:',
+          },
+          countdown: {
+            days: 'Dni',
+            hours: 'Godziny',
+            minutes: 'Minuty',
+            seconds: 'Sekundy',
+          },
+          languageToggle: 'English',
+          emergencyClaim: 'Awaryjny Odbiór',
+        },
+      };
 
       useEffect(() => {
         if (window.ethereum) {
@@ -205,9 +491,9 @@
             fetchData(web3Instance, accounts[0]);
           });
         } else {
-          setError('MetaMask or Rabby is not installed.');
+          setError(translations[language].errorMessages.noWallet);
         }
-      }, []);
+      }, [language]);
 
       useEffect(() => {
         if (web3) {
@@ -220,6 +506,30 @@
           fetchData();
         }
       }, [account, contract]);
+
+      useEffect(() => {
+        const updateCountdown = () => {
+          const now = new Date().getTime();
+          const distance = CLAIM_OPEN_DATE.getTime() - now;
+
+          if (distance < 0) {
+            setClaimOpen(true);
+            setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+            return;
+          }
+
+          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+          setCountdown({ days, hours, minutes, seconds });
+        };
+
+        updateCountdown();
+        const interval = setInterval(updateCountdown, 1000);
+        return () => clearInterval(interval);
+      }, []);
 
       useEffect(() => {
         const audio = document.getElementById('bgMusic');
@@ -244,7 +554,7 @@
           const contractInstance = new web3.eth.Contract(ABI, CONTRACT_ADDRESS);
           setContract(contractInstance);
         } catch (err) {
-          setNotifications([...notifications, { id: Date.now(), message: 'Failed to load contract: ' + err.message, type: 'error' }]);
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.contractFailed} ${err.message}`, type: 'error' }]);
         }
       };
 
@@ -253,7 +563,7 @@
           const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
           setAccount(accounts[0]);
         } catch (err) {
-          setNotifications([...notifications, { id: Date.now(), message: 'Wallet connection failed: ' + err.message, type: 'error' }]);
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.walletFailed} ${err.message}`, type: 'error' }]);
         }
       };
 
@@ -283,10 +593,10 @@
                 }],
               });
             } catch (addError) {
-              setNotifications([...notifications, { id: Date.now(), message: 'Failed to add Linea network: ' + addError.message, type: 'error' }]);
+              setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.addNetworkFailed} ${addError.message}`, type: 'error' }]);
             }
           } else {
-            setNotifications([...notifications, { id: Date.now(), message: 'Failed to switch to Linea: ' + switchError.message, type: 'error' }]);
+            setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.networkFailed} ${switchError.message}`, type: 'error' }]);
           }
         }
       };
@@ -299,7 +609,7 @@
           const claimed = await contract.methods.hasClaimed(account).call();
           setHasClaimed(claimed);
         } catch (err) {
-          setNotifications([...notifications, { id: Date.now(), message: 'Failed to fetch data: ' + err.message, type: 'error' }]);
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.fetchFailed} ${err.message}`, type: 'error' }]);
         }
       };
 
@@ -313,26 +623,38 @@
             confettiNumber: 200,
             confettiRadius: 6,
           });
-          setNotifications([...notifications, { id: Date.now(), message: 'Transaction successful! Tokens claimed.', type: 'success' }]);
+          setShowStargateActivation(true);
+          setTimeout(() => setShowStargateActivation(false), 4000);
+          setNotifications([...notifications, { id: Date.now(), message: translations[language].successMessage, type: 'success' }]);
           fetchData();
         } catch (err) {
-          setNotifications([...notifications, { id: Date.now(), message: `Transaction failed: ${err.message}`, type: 'error' }]);
+          setNotifications([...notifications, { id: Date.now(), message: `${translations[language].errorMessages.claimFailed} ${err.message}`, type: 'error' }]);
         }
+      };
+
+      const toggleLanguage = () => {
+        setLanguage(language === 'en' ? 'pl' : 'en');
       };
 
       if (currentChainId !== LINEA_CHAIN_ID) {
         return (
-          <div className="flex flex-col items-center justify-center h-screen">
-            <h1 className="text-4xl font-bold mb-4">Linea Airdrop</h1>
+          <div className="flex flex-col items-center justify-center h-screen text-center px-4">
+            <h1 className="text-4xl font-bold mb-4">{translations[language].title}</h1>
             <button
               className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-500"
               onClick={switchToLinea}
             >
-              Switch to Linea Network
+              {translations[language].switchNetwork}
+            </button>
+            <button
+              className="language-toggle mt-4"
+              onClick={toggleLanguage}
+            >
+              {translations[language].languageToggle}
             </button>
             {notifications.map(notification => (
-              <div key={notification.id} className={`notification ${notification.type}`}>
-                <div className="notification-header">{notification.type === 'success' ? 'Transaction Successful!' : 'Transaction Failed!'}</div>
+              <div key={notification.id} className={`notification ${notification.type} mt-4 w-full max-w-md`}>
+                <div className="notification-header">{notification.type === 'success' ? translations[language].successHeader : translations[language].errorHeader}</div>
                 <div className="notification-message">{notification.message}</div>
                 <button className="close-btn" onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}>X</button>
               </div>
@@ -342,21 +664,28 @@
       }
 
       return (
-        <div className="relative min-h-screen">
-          <div className="absolute top-4 right-4 flex space-x-4">
+        <div className="relative min-h-screen px-4">
+          {showStargateActivation && (
+            <div className="stargate-activation">
+              <div className="stargate-ring">
+                <div className="stargate-inner"></div>
+              </div>
+            </div>
+          )}
+          <div className="top-buttons">
             {!account ? (
               <button
                 className="bg-green-600 text-white px-4 py-2 rounded flex items-center"
                 onClick={connectWallet}
               >
-                <i className="fas fa-wallet mr-2"></i> Connect Wallet
+                <i className="fas fa-wallet mr-2"></i> {translations[language].connectWallet}
               </button>
             ) : (
               <button
                 className="bg-red-600 text-white px-4 py-2 rounded flex items-center"
                 onClick={disconnectWallet}
               >
-                <i className="fas fa-sign-out-alt mr-2"></i> Disconnect
+                <i className="fas fa-sign-out-alt mr-2"></i> {translations[language].disconnect}
               </button>
             )}
             <button
@@ -364,47 +693,98 @@
               onClick={() => setMusicPlaying(!musicPlaying)}
             >
               <i className={`fas ${musicPlaying ? 'fa-volume-up' : 'fa-volume-mute'} mr-2`}></i>
-              {musicPlaying ? 'Mute' : 'Play'} Music
+              {musicPlaying ? translations[language].mute : translations[language].play} Music
+            </button>
+            <button
+              className="language-toggle"
+              onClick={toggleLanguage}
+            >
+              {translations[language].languageToggle}
             </button>
           </div>
-          <div className="flex flex-col items-center justify-center h-screen">
-            <h1 className="text-5xl font-bold mb-2 text-blue-300">Linea Airdrop</h1>
-            <p className="text-lg mb-8">
-              Token Contract: 
+          <div className="flex flex-col items-center justify-center h-screen text-center">
+            <h1 className="text-5xl font-bold mb-2 text-blue-300">{translations[language].title}</h1>
+            <p className="gui-note">{translations[language].guiNote}</p>
+            <div className="countdown-section">
+              <p className="text-xl mb-4 font-bold text-yellow-300">
+                {claimOpen ? translations[language].claimIsOpen : translations[language].claimOpensIn}
+              </p>
+              {!claimOpen && (
+                <div className="flex justify-center flex-wrap">
+                  <div className="countdown-item">
+                    <div className="text-2xl">{countdown.days}</div>
+                    <div className="countdown-label">{translations[language].countdown.days}</div>
+                  </div>
+                  <div className="countdown-item">
+                    <div className="text-2xl">{countdown.hours}</div>
+                    <div className="countdown-label">{translations[language].countdown.hours}</div>
+                  </div>
+                  <div className="countdown-item">
+                    <div className="text-2xl">{countdown.minutes}</div>
+                    <div className="countdown-label">{translations[language].countdown.minutes}</div>
+                  </div>
+                  <div className="countdown-item">
+                    <div className="text-2xl">{countdown.seconds}</div>
+                    <div className="countdown-label">{translations[language].countdown.seconds}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <a 
+              href="https://linea.build/hub/airdrop" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="official-link"
+            >
+              {translations[language].officialLink}
+            </a>
+            <p className="text-lg mb-1 address-text">{translations[language].tokenContract}</p>
+            <p className="text-lg mb-8 contract-address">
               <a 
                 href="https://lineascan.build/token/0x1789e0043623282d5dcc7f213d703c6d8bafbb04#balances" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-blue-400 hover:underline ml-2"
+                className="text-blue-400 hover:underline"
               >
                 0x1789e0043623282d5dcc7f213d703c6d8bafbb04
               </a>
             </p>
             {account ? (
               <>
-                <p className="text-2xl mb-4">Tokens to Claim: {amount}</p>
+                <p className="text-2xl mb-4">{translations[language].tokensToClaim} {amount}</p>
                 {hasClaimed ? (
-                  <p className="text-xl text-yellow-400">Already Claimed</p>
+                  <p className="text-xl text-yellow-400">{translations[language].alreadyClaimed}</p>
                 ) : parseFloat(amount) > 0 ? (
-                  <div className="stargate">
+                  <>
+                    {!claimOpen && (
+                      <p className="text-xl text-yellow-400 mb-4">{translations[language].claimNotOpen}</p>
+                    )}
+                    <div className="stargate">
+                      <button
+                        className="fire-button"
+                        onClick={handleClaim}
+                        disabled={!claimOpen}
+                      >
+                        {language === 'en' ? 'CLAIM' : 'ODBIERZ'}
+                      </button>
+                    </div>
                     <button
-                      className="fire-button"
-                      style={{ animation: 'none' }} /* Disable rotation for CLAIM button */
+                      className="emergency-button"
                       onClick={handleClaim}
                     >
-                      CLAIM
+                      {translations[language].emergencyClaim}
                     </button>
-                  </div>
+                  </>
                 ) : (
-                  <p className="text-xl text-red-400">Not Eligible</p>
+                  <p className="text-xl text-red-400">{translations[language].notEligible}</p>
                 )}
               </>
             ) : (
-              <p className="text-xl">Connect your wallet to check eligibility</p>
+              <p className="text-xl">{translations[language].connectPrompt}</p>
             )}
             {notifications.map(notification => (
-              <div key={notification.id} className={`notification ${notification.type}`}>
-                <div className="notification-header">{notification.type === 'success' ? 'Transaction Successful!' : 'Transaction Failed!'}</div>
+              <div key={notification.id} className={`notification ${notification.type} mt-4 w-full max-w-md`}>
+                <div className="notification-header">{notification.type === 'success' ? translations[language].successHeader : translations[language].errorHeader}</div>
                 <div className="notification-message">{notification.message}</div>
                 <button className="close-btn" onClick={() => setNotifications(notifications.filter(n => n.id !== notification.id))}>X</button>
               </div>
