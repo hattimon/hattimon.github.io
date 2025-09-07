@@ -24,10 +24,10 @@
       src: url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap') format('woff2');
     }
     .stargate {
-      width: 280px; /* Reduced by 30% from 400px */
-      height: 280px; /* Reduced by 30% from 400px */
+      width: 280px;
+      height: 280px;
       border-radius: 50%;
-      border: 14px solid rgba(0, 0, 0, 0); /* Reduced by 30% from 20px */
+      border: 14px solid rgba(0, 0, 0, 0);
       background: linear-gradient(to right, rgba(0, 191, 255, 0.1), rgba(0, 191, 255, 0.3));
       position: relative;
       animation: rotate 20s linear infinite;
@@ -43,8 +43,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 210px; /* Reduced by 30% from 300px */
-      height: 210px; /* Reduced by 30% from 300px */
+      width: 210px;
+      height: 210px;
       border-radius: 50%;
       background: radial-gradient(circle, rgba(0,0,255,0.5) 0%, transparent 70%);
       animation: pulse 2s infinite;
@@ -292,12 +292,15 @@
       const [notifications, setNotifications] = useState([]);
       const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       const [claimOpen, setClaimOpen] = useState(false);
+
       const jsConfetti = new JSConfetti();
 
-      // Define claim open date based on Linea official info (assuming from site research; adjust if needed)
-      // From research, Linea airdrop claims are discussed but not precisely dated; using a placeholder future date post Sep 7, 2025 for demo.
-      // In real scenario, fetch dynamically or hardcode from official announcement.
-      const CLAIM_OPEN_DATE = new Date('2025-10-01T00:00:00Z'); // Example: October 1, 2025 UTC
+      // Set claim open date to 2025-09-10T15:00:00Z
+      const CLAIM_OPEN_DATE = new Date('2025-09-10T15:00:00Z');
+
+      // Get user's timezone offset and adjust display
+      const userTimezoneOffset = new Date().getTimezoneOffset();
+      const adjustedClaimOpenDate = new Date(CLAIM_OPEN_DATE.getTime() - userTimezoneOffset * 60 * 1000);
 
       useEffect(() => {
         if (window.ethereum) {
@@ -326,7 +329,7 @@
         }
       }, [account, contract]);
 
-      // Countdown effect
+      // Countdown effect adjusted for local timezone
       useEffect(() => {
         const updateCountdown = () => {
           const now = new Date().getTime();
@@ -503,7 +506,7 @@
             {/* Countdown Section */}
             <div className="countdown-section">
               <p className="text-xl mb-4 font-bold text-yellow-300">
-                {claimOpen ? 'Claim is Open!' : 'Claim opens in:'}
+                {claimOpen ? 'Claim is Open!' : `Claim opens in (Local time: ${adjustedClaimOpenDate.toLocaleString()})`}
               </p>
               {!claimOpen && (
                 <div className="flex justify-center flex-wrap">
@@ -534,7 +537,7 @@
               rel="noopener noreferrer" 
               className="official-link"
             >
-              Oryginalna strona do odbioru Airdropa (otwiera się w nowym oknie)
+              Oryginalna strona do odbioru Airdropa
             </a>
 
             <p className="text-lg mb-8 address-text">
@@ -553,16 +556,18 @@
                 <p className="text-2xl mb-4">Tokens to Claim: {amount}</p>
                 {hasClaimed ? (
                   <p className="text-xl text-yellow-400">Already Claimed</p>
-                ) : parseFloat(amount) > 0 ? (
+                ) : parseFloat(amount) > 0 && claimOpen ? (
                   <div className="stargate">
                     <button
                       className="fire-button"
-                      style={{ animation: 'none' }} /* Disable rotation for CLAIM button */
+                      style={{ animation: 'none' }}
                       onClick={handleClaim}
                     >
                       CLAIM
                     </button>
                   </div>
+                ) : !claimOpen ? (
+                  <p className="text-xl text-yellow-400">Claim not yet open</p>
                 ) : (
                   <p className="text-xl text-red-400">Not Eligible</p>
                 )}
