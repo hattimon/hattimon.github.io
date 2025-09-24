@@ -105,7 +105,7 @@ const nodes = {
 
   past: {
     icon: "fa-solid fa-clock-rotate-left",
-    question: "Czy często wracasz myślami do przeszłości, traumy, trudnych doświadczeń?\nSpróbuj złapać DYSTANS mentalny.",
+    question: "Czy często wracasz myślami do przeszłości, traumy, trudnych doświadczeń?\nSpróbuj złapać dystans mentalny.",
     choices: [
       { icon: "fa-solid fa-face-sad-tear", text: "Tak, to częste", next: "past_accept" },
       { icon: "fa-solid fa-face-smile", text: "Nie, raczej skupiam się na teraźniejszości", next: "acceptance" }
@@ -114,7 +114,7 @@ const nodes = {
 
   past_accept: {
     icon: "fa-solid fa-unlock",
-    question: "Zaakceptuj przeszłość:\nNapisz mentalnie co chciałbyś uwolnić, zaakceptować.\nJesteś kimś więcej niż swoja przeszłość.",
+    question: "Zaakceptuj przeszłość:\nNapisz mentalnie co chciałbyś uwolnić, zaakceptować.\nJesteś kimś więcej niż swoją przeszłością.",
     choices: [
       { icon: "fa-solid fa-forward", text: "Przechodzę dalej", next: "inspiration" },
       { icon: "fa-solid fa-hands-praying", text: "Potrzebuję wdzięczności", next: "gratitude" }
@@ -179,7 +179,6 @@ const nodes = {
 const questionEl = document.getElementById("question");
 const choicesEl = document.querySelector(".choices");
 const summaryEl = document.getElementById("summary");
-const reportForm = document.getElementById("reportform");
 const downloadBtn = document.getElementById("download-btn");
 const restartBtn = document.getElementById("restart-btn");
 const modeToggle = document.getElementById("modeToggle");
@@ -191,18 +190,16 @@ let userNotes = [];
 
 function renderNode(key) {
   const node = nodes[key];
-  // Ikonka pytania i formatowanie
   let iconHTML = node.icon ? `<span class="questionIcon"><i class="${node.icon}"></i></span>` : '';
   questionEl.innerHTML = iconHTML + node.question.replace(/\n/g, '<br>');
   choicesEl.innerHTML = "";
   summaryEl.hidden = true;
   downloadBtn.hidden = true;
   restartBtn.hidden = true;
-  reportForm.hidden = true;
   rolesEdu.hidden = !node.showRolesEdu;
 
   if (key !== "summary") {
-    node.choices.forEach((choice, idx) => {
+    node.choices.forEach(choice => {
       const btn = document.createElement("button");
       btn.classList.add("choice-btn");
       btn.innerHTML = `<i class="choiceIcon ${choice.icon}"></i>${choice.text}`;
@@ -222,15 +219,14 @@ function renderNode(key) {
   }
 
   if (key === "summary") {
-    // Generowanie raportu HTML
     summaryEl.hidden = false;
-    let summary =
+    let summaryHtml =
       `<b><i class="fa-solid fa-user-pen"></i> Twój Raport Rozwoju:</b><br><br>` +
       userPath.map((p, i) =>
         `<div style="margin:0.3em 0;"><b>Krok ${i + 1}:</b> <span>${p.step.split('\n')[0]}</span><br><span style="color:#4266bb;">Twój wybór:</span> <b>${p.choice}</b></div>`
       ).join("") +
       (userNotes.length
-        ? ` <br><b>Uwagi i Twoje przemyślenia:</b><br>` +
+        ? `<br><b>Uwagi i Twoje przemyślenia:</b><br>` +
           userNotes.map(
             n =>
               `<div style="margin-bottom:0.5em;"><span style="color:#42519e;"><b>${n.step.split('\n')[0]}:</b></span> <i>${n.note}</i></div>`
@@ -246,7 +242,7 @@ function renderNode(key) {
         <li><i class="fa-solid fa-star"></i> Twórz wizję inspirującej przyszłości, z obfitością i świadomymi wyborami</li>
       </ul>
       <br><b>Twoja zmiana zachodzi poprzez codzienne wybory i praktyki!</b>`;
-    summaryEl.innerHTML = summary;
+    summaryEl.innerHTML = summaryHtml;
     downloadBtn.hidden = false;
     restartBtn.hidden = false;
     questionEl.hidden = true;
@@ -266,15 +262,19 @@ restartBtn.addEventListener("click", restartGame);
 
 downloadBtn.onclick = function() {
   const element = document.getElementById("summary");
-  // Wersja ciemna/jasna jest renderowana zachowując style CSS!
+  element.style.display = "block"; // upewniamy się, że jest widoczny
+
   const opt = {
-    margin:       0.165,
+    margin:       0.5,
     filename:     'Raport-Rozwoj-Psychologiczny.pdf',
     image:        { type: 'jpeg', quality: 0.98 },
     html2canvas:  { scale: 2, useCORS: true },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
   };
-  html2pdf().set(opt).from(element).save();
+
+  html2pdf().set(opt).from(element).save().catch(err => {
+    alert("Błąd podczas generowania PDF: " + err);
+  });
 };
 
 modeToggle.onclick = () => {
