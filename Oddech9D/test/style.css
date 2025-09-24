@@ -1,0 +1,99 @@
+body {
+  font-family: 'Segoe UI', Arial, Verdana, sans-serif;
+  background: linear-gradient(90deg, #e3ebf1, #d7ffe7);
+  margin: 0; padding: 0;
+  color: #233169;
+  transition: background 0.5s, color 0.5s;
+}
+body.dark {
+  background: linear-gradient(90deg, #1d2030, #233169 80%);
+  color: #eaf1fe;
+}
+#app {
+  width: 98vw;
+  max-width: 800px;
+  background: #fff;
+  border-radius: 18px;
+  padding: 5vw 2vw 7vw;
+  margin: 4vw auto 4vw auto;
+  box-shadow: 0 16px 48px rgba(45,90,80,0.13);
+  transition: background 0.5s, color 0.5s;
+}
+body.dark #app {
+  background: #252a39;
+  color: #eaf1fe;
+}
+h1 {
+  display:flex; align-items:center; justify-content:center; gap:16px;
+  text-align: center;
+  font-size: 2.1rem;
+  margin-bottom: 18px;
+  color: #42519e;
+  text-shadow: 0 2px 18px #cce6ff;
+}
+body.dark h1 { color: #bfcdf3; text-shadow: 0 2px 18px #233169; }
+
+#modeToggle {
+  position: absolute; right: 11vw; top: 3vw;
+  background: none; border:none; font-size:1.5rem; cursor:pointer;
+  color: #42519e; transition: color 0.5s;
+}
+body.dark #modeToggle { color:#bfcdf3; }
+
+#question {
+  font-size: 1.15rem;
+  margin: 22px 0 30px 0;
+  text-align: justify;
+  white-space: pre-line;
+  font-weight:500; line-height:1.5;
+}
+
+.questionIcon {
+  margin-right:7px; font-size: 1.45em; vertical-align: middle;
+}
+
+.choices { display: flex; flex-direction: column; gap: 11px; }
+.choice-btn {
+  background: #42519e; color: #fff; font-size: 1.08rem; padding: 13px 14px;
+  border-radius: 12px; border: none; cursor: pointer; box-shadow: 0 3px 18px #7aa9fc1a;
+  transition: background 0.2s; text-align:left; display:flex; gap:12px; align-items:center;
+}
+.choice-btn:hover, .choice-btn:focus {background: #233169;}
+body.dark .choice-btn { background: #173cad; color:#eaf1fe;}
+body.dark .choice-btn:hover { background: #4266bb; }
+input[type="text"], input[type="email"] {
+  width: 98%; padding: 10px 14px; font-size:1.13rem; margin-top: 22px;
+  border-radius:7px; border: 1px solid #9fc3e1; background: #f5faff;
+}
+body.dark input { background: #20243a; color: #eaf1fe; border: 1px solid #6e91d9;}
+#summary {
+  background: #eef8ff; border-left: 9px solid #42519e;
+  padding: 27px; margin: 2vw 0 32px 0; border-radius: 13px; font-size: 1.12rem;
+  word-break:break-word; color:inherit;
+}
+body.dark #summary { background: #1d2333; border-left-color: #5a78ea; color:#e2eaff;}
+#reportform { margin-top:22px;}
+#download-btn {
+  background: #59c771; color:#fff; font-size:1.18rem; padding:13px;
+  border-radius:12px; border:none; margin:13px 0 0 0; cursor:pointer; width:100%;
+  transition: background 0.2s;
+}
+#download-btn:hover { background: #387c3c;}
+#restart-btn {margin-top:33px; background: #42519e; color:#fff; width:100%;
+  font-size:1.1rem; padding:13px 0; border:none; border-radius: 13px; cursor:pointer;}
+body.dark #restart-btn {background:#233169; color:#bfcdf3;}
+@media screen and (max-width: 480px) {
+  #app {
+    max-width:100vw; border-radius:0; box-shadow:none; padding:8vw 2vw 16vw;
+  }
+  h1 { font-size:1.2rem; padding:0 4vw;}
+  #summary { padding: 17px;}
+  .choice-btn { padding: 9px 5px; font-size:1rem;}
+  #modeToggle { font-size:1.2rem; right: 4vw; top:2vw;}
+}
+.choiceIcon { font-size:1.16em; vertical-align:middle; margin-right:8px;}
+#rolesEdu {
+  margin:27px 0 14px 0; padding:17px; background: #dbeafe; border-radius:10px; font-size: 1.01rem; color:#233169;
+}
+body.dark #rolesEdu { background:#2d3650; color:#e2eaff;}
+#rolesEdu ul{margin:9px 0 0 0; padding-left:22px;}
