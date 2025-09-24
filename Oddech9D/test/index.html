@@ -1,48 +1,45 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Mapa Rozwoju Psychologicznego</title>
 <meta name="theme-color" content="#233169" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<!-- html2pdf.js - generowanie PDF z widocznego DIV -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.4/html2pdf.bundle.min.js"></script>
-
-<!-- GŁÓWNY STYL -->
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<button id="modeToggle" aria-label="Przełącz motyw"><i class="fas fa-moon"></i></button>
+<button id="modeToggle" aria-label="Przełącz tryb jasny/ciemny">
+  <i class="fas fa-moon"></i>
+</button>
 <div id="app" role="main" aria-live="polite">
   <h1><i class="fa-solid fa-seedling"></i> Mapa Rozwoju Psychologicznego</h1>
   <div id="question"></div>
   <div class="choices"></div>
 
-  <!-- Edukacyjny blok o rolach -->
   <div id="rolesEdu" hidden>
     <span class="questionIcon"><i class="fa-solid fa-masks-theater"></i></span>
     <b>Nie jesteś swoimi rolami!</b>
     <span>
-      <br>Każdy z nas pełni w życiu różne role: pracownik, rodzic, partner, przyjaciel...
-      <br><b>Świadomość ról</b> oznacza, że możesz je rozpoznawać, obserwować swoje reakcje i akceptować. Uczymy się:
+      <br>Każdy z nas pełni różne role: pracownik, rodzic, partner, przyjaciel...
+      <br><b>Świadomość ról</b> to rozpoznawanie własnych reakcji i akceptacja. Uczymy się:
       <ul>
-        <li>Które role są rzeczywiście nasze, wypływają z naszych wartości?</li>
-        <li>Które były nam narzucone przez innych, rodzinę, społeczeństwo?</li>
-        <li>Jak rozpoznać „włożone maski”, odróżnić od autentycznego ja?</li>
-        <li>Jak stopniowo uwalniać się od presji nie swoich ról?</li>
+        <li>Które role są nasze, wypływają z wartości, a które narzucone.</li>
+        <li>Jak rozpoznać „maski” i uwalniać się od nich.</li>
       </ul>
-      <b>Podstawą jest akceptacja siebie poza rolami i świadomy wybór tego, kim chcesz być.</b>
+      <b>Akceptacja siebie i świadome wybory to podstawy autentyczności.</b>
     </span>
   </div>
 
-  <!-- RAPORT summary -->
   <div id="summary" hidden></div>
-  <form id="reportform" hidden autocomplete="off"></form>
-  <button id="download-btn" hidden><i class="fa-solid fa-file-pdf"></i> Pobierz raport PDF</button>
+
+  <button id="download-btn" hidden>
+    <i class="fa-solid fa-file-pdf"></i> Pobierz raport PDF
+  </button>
   <button id="restart-btn" hidden>Rozpocznij ponownie</button>
 </div>
+
 <script src="main.js"></script>
 </body>
 </html>
