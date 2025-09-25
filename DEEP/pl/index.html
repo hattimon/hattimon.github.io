@@ -36,15 +36,19 @@
                 </ul>
             </div>
 
-            <div class="audio-control">
-                <label class="audio-toggle">
-                    <input type="checkbox" id="audio-enabled" checked>
-                    <span class="slider"></span>
-                    <span class="label">Muzyka i dźwięki</span>
-                </label>
-                <div class="volume-control">
-                    <label for="volume-slider">Głośność:</label>
+            <div class="audio-controls-container">
+                <div class="audio-toggle-wrapper">
+                    <label class="audio-toggle">
+                        <input type="checkbox" id="audio-enabled" checked>
+                        <span class="slider"></span>
+                        <span class="label">Muzyka</span>
+                    </label>
+                </div>
+                
+                <div class="volume-control-wrapper">
+                    <label for="volume-slider" class="volume-label">Głośność:</label>
                     <input type="range" id="volume-slider" min="0" max="100" value="30" class="volume-slider">
+                    <span class="volume-value">30%</span>
                 </div>
             </div>
 
@@ -144,7 +148,7 @@
 
             <div class="download-section">
                 <button class="btn btn--primary btn--lg download-btn" id="download-report">
-                    Pobierz Raport PDF
+                    Pobierz Raport
                 </button>
                 <button class="btn btn--outline restart-btn" id="restart-journey">
                     Rozpocznij Ponownie

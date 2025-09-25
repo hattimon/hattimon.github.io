@@ -1,25 +1,44 @@
 // Consciousness Journey - Main Application
 class ConsciousnessJourney {
     constructor() {
+        // Safe PDF texts using provided data
+        this.safePDFTexts = {
+            barriers: [
+                "Wstyd - Upokorzenie",
+                "Wina - Obwinianie", 
+                "Apatia - Rozpacz",
+                "Smutek - Zal",
+                "Lek - Niepokoj"
+            ],
+            practices: [
+                "Mindfulness",
+                "Praktyki groundingowe", 
+                "Rozwoj asertywnosci"
+            ],
+            developmentPath: "Jestes na etapie budowania odwagi i pewnosci siebie. Rozwijaj mindfulness i praktyki uczenia sie akceptacji. To czas na eksploracje i rozwoj osobisty.",
+            quote: "Znajdziesz sie na poziomie rozumu i logiki. Twoja sciezka prowadzi dalej.",
+            author: "David R. Hawkins"
+        };
+
         // Data from JSON - fully translated to Polish
         this.consciousnessLevels = [
-            {level: 20, name: "Wstyd", emotion: "Upokorzenie", color: "#8B0000", question: "Czy często czujesz, że nie zasługujesz na szacunek innych?"},
-            {level: 30, name: "Wina", emotion: "Obwinianie", color: "#DC143C", question: "Czy dręczą Cię myśli o błędach z przeszłości?"},
-            {level: 50, name: "Apatia", emotion: "Rozpacz", color: "#FF4500", question: "Czy często czujesz, że nic nie ma sensu?"},
-            {level: 75, name: "Smutek", emotion: "Żal", color: "#FF8C00", question: "Czy często doświadczasz głębokiej rozpaczy?"},
-            {level: 100, name: "Lęk", emotion: "Niepokój", color: "#FFA500", question: "Czy lęk paraliżuje Twoje działania?"},
-            {level: 125, name: "Pragnienie", emotion: "Żądza", color: "#FFD700", question: "Czy jesteś uzależniony od zewnętrznych źródeł satysfakcji?"},
-            {level: 150, name: "Gniew", emotion: "Nienawiść", color: "#FFFF00", question: "Czy gniew często kontroluje Twoje reakcje?"},
-            {level: 175, name: "Duma", emotion: "Pogarda", color: "#ADFF2F", question: "Czy Twoja wartość zależy od osiągnięć i opinii innych?"},
-            {level: 200, name: "Odwaga", emotion: "Afirmacja", color: "#00FF00", question: "Czy podejmujesz działania mimo niepewności?"},
-            {level: 250, name: "Neutralność", emotion: "Zaufanie", color: "#00CED1", question: "Czy potrafisz pozostać spokojny w trudnych sytuacjach?"},
-            {level: 310, name: "Chęć", emotion: "Optymizm", color: "#0000FF", question: "Czy jesteś otwarty na uczenie się i rozwój?"},
-            {level: 350, name: "Akceptacja", emotion: "Przebaczenie", color: "#4169E1", question: "Czy akceptujesz rzeczy, których nie możesz zmienić?"},
-            {level: 400, name: "Rozum", emotion: "Zrozumienie", color: "#8A2BE2", question: "Czy podejmujesz decyzje oparte na logice i analizie?"},
-            {level: 500, name: "Miłość", emotion: "Szacunek", color: "#DA70D6", question: "Czy czujesz bezwarunkową miłość do innych?"},
-            {level: 540, name: "Radość", emotion: "Spokój", color: "#FFB6C1", question: "Czy doświadczasz radości niezależnie od okoliczności?"},
-            {level: 600, name: "Pokój", emotion: "Błogość", color: "#F0F8FF", question: "Czy żyjesz w stanie wewnętrznego spokoju?"},
-            {level: 700, name: "Oświecenie", emotion: "Istnienie", color: "#FFFFFF", question: "Czy czujesz jedność ze wszystkim?"}
+            {level: 20, name: "Wstyd", emotion: "Upokorzenie", question: "Czy często czujesz, że nie zasługujesz na szacunek innych?"},
+            {level: 30, name: "Wina", emotion: "Obwinianie", question: "Czy dręczą Cię myśli o błędach z przeszłości?"},
+            {level: 50, name: "Apatia", emotion: "Rozpacz", question: "Czy często czujesz, że nic nie ma sensu?"},
+            {level: 75, name: "Smutek", emotion: "Żal", question: "Czy często doświadczasz głębokiej rozpaczy?"},
+            {level: 100, name: "Lęk", emotion: "Niepokój", question: "Czy lęk paraliżuje Twoje działania?"},
+            {level: 125, name: "Pragnienie", emotion: "Żądza", question: "Czy jesteś uzależniony od zewnętrznych źródeł satysfakcji?"},
+            {level: 150, name: "Gniew", emotion: "Nienawiść", question: "Czy gniew często kontroluje Twoje reakcje?"},
+            {level: 175, name: "Duma", emotion: "Pogarda", question: "Czy Twoja wartość zależy od osiągnięć i opinii innych?"},
+            {level: 200, name: "Odwaga", emotion: "Afirmacja", question: "Czy podejmujesz działania mimo niepewności?"},
+            {level: 250, name: "Neutralność", emotion: "Zaufanie", question: "Czy potrafisz pozostać spokojny w trudnych sytuacjach?"},
+            {level: 310, name: "Chęć", emotion: "Optymizm", question: "Czy jesteś otwarty na uczenie się i rozwój?"},
+            {level: 350, name: "Akceptacja", emotion: "Przebaczenie", question: "Czy akceptujesz rzeczy, których nie możesz zmienić?"},
+            {level: 400, name: "Rozum", emotion: "Zrozumienie", question: "Czy podejmujesz decyzje oparte na logice i analizie?"},
+            {level: 500, name: "Miłość", emotion: "Szacunek", question: "Czy czujesz bezwarunkową miłość do innych?"},
+            {level: 540, name: "Radość", emotion: "Spokój", question: "Czy doświadczasz radości niezależnie od okoliczności?"},
+            {level: 600, name: "Pokój", emotion: "Błogość", question: "Czy żyjesz w stanie wewnętrznego spokoju?"},
+            {level: 700, name: "Oświecenie", emotion: "Istnienie", question: "Czy czujesz jedność ze wszystkim?"}
         ];
 
         this.practicesRecommendations = {
@@ -40,7 +59,6 @@ class ConsciousnessJourney {
         this.answers = [];
         this.audioEnabled = true;
         this.volume = 0.3;
-        this.results = null; // Store results for PDF generation
 
         // 3D Scene
         this.scene = null;
@@ -56,6 +74,29 @@ class ConsciousnessJourney {
         this.gainNode = null;
 
         this.init();
+    }
+
+    // Safe PDF text function - converts Polish characters to ASCII
+    safePDFText(text) {
+        return text
+            .replace(/ą/g, 'a')
+            .replace(/ć/g, 'c')
+            .replace(/ę/g, 'e')
+            .replace(/ł/g, 'l')
+            .replace(/ń/g, 'n')
+            .replace(/ó/g, 'o')
+            .replace(/ś/g, 's')
+            .replace(/ź/g, 'z')
+            .replace(/ż/g, 'z')
+            .replace(/Ą/g, 'A')
+            .replace(/Ć/g, 'C')
+            .replace(/Ę/g, 'E')
+            .replace(/Ł/g, 'L')
+            .replace(/Ń/g, 'N')
+            .replace(/Ó/g, 'O')
+            .replace(/Ś/g, 'S')
+            .replace(/Ź/g, 'Z')
+            .replace(/Ż/g, 'Z');
     }
 
     init() {
@@ -84,10 +125,11 @@ class ConsciousnessJourney {
             this.updateAudioIcon();
         });
 
-        // Volume control
+        // Volume control with percentage display
         document.getElementById('volume-slider').addEventListener('input', (e) => {
             this.volume = e.target.value / 100;
             this.updateVolume();
+            this.updateVolumeDisplay(e.target.value);
         });
 
         // Answer buttons - Fixed event delegation
@@ -100,7 +142,6 @@ class ConsciousnessJourney {
 
         // Download report
         document.getElementById('download-report').addEventListener('click', () => {
-            console.log('PDF download clicked'); // Debug log
             this.generatePDFReport();
         });
 
@@ -108,6 +149,13 @@ class ConsciousnessJourney {
         document.getElementById('restart-journey').addEventListener('click', () => {
             this.restartJourney();
         });
+    }
+
+    updateVolumeDisplay(value) {
+        const volumeValueElement = document.querySelector('.volume-value');
+        if (volumeValueElement) {
+            volumeValueElement.textContent = value + '%';
+        }
     }
 
     setupAudio() {
@@ -445,7 +493,9 @@ class ConsciousnessJourney {
 
     updateAudioIcon() {
         const icon = document.querySelector('.audio-icon');
-        icon.textContent = this.audioEnabled ? '🔊' : '🔇';
+        if (icon) {
+            icon.textContent = this.audioEnabled ? '🔊' : '🔇';
+        }
     }
 
     startAnimation() {
@@ -525,9 +575,9 @@ class ConsciousnessJourney {
 
         // Update music type display
         let musicType = 'Ambient';
-        if (index < 6) musicType = 'Ambient głęboki';
-        else if (index < 12) musicType = 'Ambient medytacyjny';
-        else musicType = 'Ambient spokojny';
+        if (index < 6) musicType = 'Głęboki';
+        else if (index < 12) musicType = 'Medytacyjny';
+        else musicType = 'Spokojny';
         
         const musicValueElement = document.getElementById('music-value');
         if (musicValueElement) {
@@ -609,18 +659,18 @@ class ConsciousnessJourney {
 
     getRecommendations(levelCounts, averageLevel) {
         const category = this.categorizeLevelForRecommendations(averageLevel);
-        return this.practicesRecommendations[category] || [];
+        return this.practicesRecommendations[category] || this.safePDFTexts.practices;
     }
 
     getDevelopmentPath(averageLevel) {
         if (averageLevel < 200) {
-            return "Twoja ścieżka rozwoju koncentruje się na uzdrawianiu i budowaniu podstaw. Praca z traumą, wsparcie terapeutyczne i budowanie pozytywnego obrazu siebie są kluczowe na tym etapie.";
+            return "Twoja sciezka rozwoju koncentruje sie na uzdrawianiu i budowaniu podstaw. Praca z trauma, wsparcie terapeutyczne i budowanie pozytywnego obrazu siebie sa kluczowe na tym etapie.";
         } else if (averageLevel < 400) {
-            return "Jesteś na etapie budowania odwagi i pewności siebie. Rozwijaj mindfulness, asertywność i uczenia się akceptacji. To czas na eksplorację i rozwój osobisty.";
+            return this.safePDFTexts.developmentPath;
         } else if (averageLevel < 500) {
-            return "Znajdujesz się na poziomie rozumu i logiki. Twoja ścieżka prowadzi do integracji wiedzy z mądrością serca. Rozwijaj empatię i służbę innym.";
+            return "Znajdujesz sie na poziomie rozumu i logiki. Twoja sciezka prowadzi do integracji wiedzy z madroscia serca. Rozwijaj empatie i sluzbe innym.";
         } else {
-            return "Osiągnąłeś wysokie poziomy świadomości. Twoja ścieżka to dalsze pogłębianie praktyk medytacyjnych, kontemplacji i bycia w służbie ludzkości.";
+            return "Osiagnales wysokie poziomy swiadomosci. Twoja sciezka to dalsze pogleebianie praktyk medytacyjnych, kontemplacji i bycia w sluzbie ludzkosci.";
         }
     }
 
@@ -635,7 +685,6 @@ class ConsciousnessJourney {
         this.currentScreen = 'results';
 
         const results = this.calculateResults();
-        this.results = results; // Store results for PDF generation
         this.displayResults(results);
     }
 
@@ -683,268 +732,115 @@ class ConsciousnessJourney {
         if (devPathElement) {
             devPathElement.textContent = results.developmentPath;
         }
+
+        this.results = results;
     }
 
     generatePDFReport() {
-        try {
-            console.log('Starting PDF generation...'); // Debug log
-            
-            // Check if results are available
-            if (!this.results) {
-                console.error('No results available for PDF generation');
-                alert('Brak danych do wygenerowania raportu. Spróbuj ponownie.');
-                return;
-            }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
 
-            // Check if jsPDF is loaded
-            if (typeof window.jspdf === 'undefined') {
-                console.error('jsPDF library not loaded');
-                alert('Błąd ładowania biblioteki PDF. Odśwież stronę i spróbuj ponownie.');
-                return;
-            }
+        // Set font for better character support
+        doc.setFont('helvetica');
 
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4'
-            });
+        // Header
+        doc.setFillColor(33, 128, 141);
+        doc.rect(0, 0, 210, 40, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.text(this.safePDFText('Analiza Twojej Podświadomości'), 20, 25);
+        
+        doc.setFontSize(12);
+        doc.text(this.safePDFText('Według Mapy Świadomości Davida R. Hawkinsa'), 20, 35);
 
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const margin = 20;
-            const contentWidth = pageWidth - (2 * margin);
-            
-            let currentY = margin;
+        // Reset text color
+        doc.setTextColor(0, 0, 0);
+        
+        // Dominant consciousness level section
+        doc.setFontSize(18);
+        doc.setTextColor(212, 175, 55);
+        doc.text(this.safePDFText('Dominujący poziom świadomości:'), 20, 60);
+        
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0);
+        doc.text(this.safePDFText(this.results.dominantLevel.name), 20, 75);
+        
+        doc.setFontSize(12);
+        doc.text(this.safePDFText(`Emocja: ${this.results.dominantLevel.emotion}`), 20, 85);
+        doc.text(`Poziom: ${Math.round(this.results.averageLevel)}`, 20, 95);
 
-            // HEADER SECTION
-            doc.setFillColor(33, 128, 141);
-            doc.rect(0, 0, pageWidth, 45, 'F');
-            
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(24);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Analiza Twojej Podswiadomosci', margin, 25);
-            
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'normal');
-            doc.text('Wedlug Mapy Swiadomosci Davida R. Hawkinsa', margin, 35);
-            
-            currentY = 60;
+        // Consciousness meter visualization
+        doc.setFillColor(220, 220, 220);
+        doc.rect(20, 105, 170, 8, 'F');
+        
+        const meterPosition = ((this.results.averageLevel - 20) / (700 - 20)) * 170;
+        doc.setFillColor(33, 128, 141);
+        doc.rect(20, 105, meterPosition, 8, 'F');
+        
+        doc.setFontSize(10);
+        doc.text('Wstyd', 20, 120);
+        doc.text(this.safePDFText('Oświecenie'), 170, 120);
 
-            // COLORFUL CONSCIOUSNESS BAR
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Kolorowy Pasek Swiadomosci:', margin, currentY);
-            currentY += 15;
+        // Barriers section
+        doc.setFontSize(16);
+        doc.setTextColor(212, 175, 55);
+        doc.text(this.safePDFText('Główne bariery do przezwyciężenia:'), 20, 140);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        let yPos = 155;
+        
+        // Use safe PDF texts for barriers
+        this.safePDFTexts.barriers.slice(0, 5).forEach(barrier => {
+            doc.text(`• ${barrier}`, 25, yPos);
+            yPos += 10;
+        });
 
-            // Beautiful gradient consciousness bar
-            const barWidth = contentWidth;
-            const barHeight = 15;
-            const barX = margin;
-            const barY = currentY;
+        // Recommendations section
+        doc.setFontSize(16);
+        doc.setTextColor(212, 175, 55);
+        doc.text(this.safePDFText('Zalecane praktyki:'), 20, yPos + 15);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        yPos += 30;
+        
+        // Use safe PDF texts for practices
+        this.safePDFTexts.practices.forEach(practice => {
+            doc.text(`• ${practice}`, 25, yPos);
+            yPos += 10;
+        });
 
-            // Define gradient colors with exact level mapping
-            const gradientSteps = 150;
-            const stepWidth = barWidth / gradientSteps;
+        // Development path section
+        doc.setFontSize(16);
+        doc.setTextColor(212, 175, 55);
+        doc.text(this.safePDFText('Ścieżka Rozwoju Osobistego:'), 20, yPos + 15);
+        
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
+        const safeDevelopmentPath = this.safePDFText(this.results.developmentPath);
+        const splitPath = doc.splitTextToSize(safeDevelopmentPath, 170);
+        doc.text(splitPath, 20, yPos + 30);
 
-            // Gradient colors from shame to enlightenment
-            const gradientColors = [
-                {r: 139, g: 0, b: 0},     // Wstyd - deep red
-                {r: 220, g: 20, b: 60},   // Wina - crimson  
-                {r: 255, g: 69, b: 0},    // Apatia - red-orange
-                {r: 255, g: 140, b: 0},   // Smutek - dark orange
-                {r: 255, g: 165, b: 0},   // Lęk - orange
-                {r: 255, g: 215, b: 0},   // Pragnienie - gold
-                {r: 255, g: 255, b: 0},   // Gniew - yellow
-                {r: 173, g: 255, b: 47},  // Duma - green-yellow
-                {r: 0, g: 255, b: 0},     // Odwaga - green
-                {r: 0, g: 206, b: 209},   // Neutralność - turquoise
-                {r: 0, g: 0, b: 255},     // Chęć - blue
-                {r: 65, g: 105, b: 225},  // Akceptacja - royal blue
-                {r: 138, g: 43, b: 226},  // Rozum - purple
-                {r: 218, g: 112, b: 214}, // Miłość - orchid
-                {r: 255, g: 182, b: 193}, // Radość - light pink
-                {r: 240, g: 248, b: 255}, // Pokój - alice blue
-                {r: 255, g: 255, b: 255}  // Oświecenie - white
-            ];
+        // Footer with safe text
+        yPos = 280;
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(this.safePDFText(this.safePDFTexts.quote), 20, yPos);
+        doc.text(`- ${this.safePDFTexts.author}`, 20, yPos + 8);
+        
+        // Generation date
+        const now = new Date();
+        doc.text(`Wygenerowano: ${now.toLocaleDateString('pl-PL')}`, 140, yPos + 8);
 
-            // Draw smooth gradient
-            for (let i = 0; i < gradientSteps; i++) {
-                const ratio = i / (gradientSteps - 1);
-                const colorIndex = ratio * (gradientColors.length - 1);
-                const lowerIndex = Math.floor(colorIndex);
-                const upperIndex = Math.min(lowerIndex + 1, gradientColors.length - 1);
-                const localRatio = colorIndex - lowerIndex;
-                
-                const color1 = gradientColors[lowerIndex];
-                const color2 = gradientColors[upperIndex];
-                
-                const r = Math.round(color1.r + (color2.r - color1.r) * localRatio);
-                const g = Math.round(color1.g + (color2.g - color1.g) * localRatio);
-                const b = Math.round(color1.b + (color2.b - color1.b) * localRatio);
-                
-                doc.setFillColor(r, g, b);
-                doc.rect(barX + (i * stepWidth), barY, stepWidth + 0.5, barHeight, 'F');
-            }
-
-            // Add border
-            doc.setDrawColor(0, 0, 0);
-            doc.setLineWidth(1);
-            doc.rect(barX, barY, barWidth, barHeight);
-
-            // Add level labels
-            doc.setFontSize(9);
-            doc.setTextColor(139, 0, 0);
-            doc.setFont('helvetica', 'bold');
-            doc.text('WSTYD', barX, barY - 3);
-            doc.setTextColor(255, 215, 0);
-            doc.text('OSWIECENIE', barX + barWidth - 22, barY - 3);
-
-            // User's level indicator
-            const userPosition = ((this.results.averageLevel - 20) / (700 - 20)) * barWidth + barX;
-            doc.setFillColor(255, 255, 255);
-            doc.setDrawColor(0, 0, 0);
-            doc.setLineWidth(2);
-            doc.circle(userPosition, barY + barHeight/2, 5, 'FD');
-            
-            // User level indicator text
-            doc.setTextColor(33, 128, 141);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`TWOJ POZIOM: ${Math.round(this.results.averageLevel)}`, userPosition - 18, barY + barHeight + 15);
-
-            currentY += barHeight + 35;
-
-            // DOMINANT LEVEL SECTION
-            doc.setTextColor(212, 175, 55);
-            doc.setFontSize(18);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Dominujacy poziom swiadomosci:', margin, currentY);
-            currentY += 15;
-
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${this.results.dominantLevel.name}`, margin, currentY);
-            currentY += 12;
-
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Emocja: ${this.results.dominantLevel.emotion}`, margin, currentY);
-            currentY += 10;
-            doc.text(`Poziom: ${Math.round(this.results.averageLevel)}`, margin, currentY);
-            currentY += 20;
-
-            // BARRIERS SECTION  
-            doc.setTextColor(212, 175, 55);
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Glowne bariery do przezwyciezenia:', margin, currentY);
-            currentY += 15;
-
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-            
-            if (this.results.barriers && this.results.barriers.length > 0) {
-                this.results.barriers.slice(0, 5).forEach(barrier => {
-                    if (currentY > pageHeight - 30) {
-                        doc.addPage();
-                        currentY = margin;
-                    }
-                    doc.text(`• ${barrier.name} - ${barrier.emotion}`, margin + 5, currentY);
-                    currentY += 10;
-                });
-            } else {
-                doc.text('• Brak znaczacych barier - gratulacje!', margin + 5, currentY);
-                currentY += 10;
-            }
-            
-            currentY += 15;
-
-            // RECOMMENDATIONS SECTION
-            if (currentY > pageHeight - 60) {
-                doc.addPage();
-                currentY = margin;
-            }
-
-            doc.setTextColor(212, 175, 55);
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Zalecane praktyki:', margin, currentY);
-            currentY += 15;
-
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'normal');
-            
-            this.results.recommendations.forEach(rec => {
-                if (currentY > pageHeight - 30) {
-                    doc.addPage();
-                    currentY = margin;
-                }
-                doc.text(`• ${rec}`, margin + 5, currentY);
-                currentY += 10;
-            });
-            
-            currentY += 20;
-
-            // DEVELOPMENT PATH SECTION
-            if (currentY > pageHeight - 70) {
-                doc.addPage();
-                currentY = margin;
-            }
-
-            doc.setTextColor(212, 175, 55);
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Sciezka Rozwoju Osobistego:', margin, currentY);
-            currentY += 15;
-
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'normal');
-            const splitPath = doc.splitTextToSize(this.results.developmentPath, contentWidth - 10);
-            splitPath.forEach(line => {
-                if (currentY > pageHeight - 25) {
-                    doc.addPage();
-                    currentY = margin;
-                }
-                doc.text(line, margin, currentY);
-                currentY += 8;
-            });
-
-            // FOOTER
-            const footerY = pageHeight - 25;
-            doc.setFontSize(10);
-            doc.setTextColor(100, 100, 100);
-            doc.setFont('helvetica', 'italic');
-            doc.text('"Znajdziesz sie na poziomie rozumu i logiki. Twoja sciezka prowadzi dalej."', margin, footerY);
-            doc.text('- David R. Hawkins', margin, footerY + 8);
-
-            // Generation date
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('pl-PL');
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Wygenerowano: ${dateStr}`, pageWidth - 65, footerY + 8);
-
-            // Save the PDF
-            console.log('Saving PDF...'); // Debug log
-            doc.save('raport-swiadomosci.pdf');
-            console.log('PDF saved successfully!'); // Debug log
-
-        } catch (error) {
-            console.error('Error generating PDF:', error);
-            alert('Wystąpił błąd podczas generowania PDF. Spróbuj ponownie.');
-        }
+        // Save the PDF
+        doc.save('raport-swiadomosci.pdf');
     }
 
     restartJourney() {
         this.currentQuestionIndex = 0;
         this.answers = [];
-        this.results = null; // Clear results
         
         // Stop audio
         if (this.gainNode) {
