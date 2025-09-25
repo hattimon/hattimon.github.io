@@ -926,27 +926,12 @@ body {
   color: #D4AF37;
 }
 
-/* Fixed Audio Controls Layout */
-.audio-controls-container {
+.audio-control {
+  margin-bottom: var(--space-32);
   display: flex;
   flex-direction: column;
   gap: var(--space-16);
-  align-items: flex-start;
-  margin: var(--space-20) 0;
-  background: var(--color-bg-2);
-  padding: var(--space-20);
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(var(--color-brown-600-rgb), 0.2);
-  width: 100%;
-  max-width: 350px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.audio-toggle-wrapper {
-  display: flex;
   align-items: center;
-  width: 100%;
 }
 
 .audio-toggle {
@@ -967,7 +952,6 @@ body {
   border-radius: var(--radius-full);
   position: relative;
   transition: all var(--duration-fast) var(--ease-standard);
-  flex-shrink: 0;
 }
 
 .slider::before {
@@ -991,24 +975,14 @@ body {
   background: var(--color-white);
 }
 
-.volume-control-wrapper {
+.volume-control {
   display: flex;
   align-items: center;
-  gap: var(--space-10);
-  width: 100%;
-  max-width: 280px;
-}
-
-.volume-label {
-  min-width: 80px;
-  flex-shrink: 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
+  gap: var(--space-12);
 }
 
 .volume-slider {
-  flex-grow: 1;
-  max-width: 150px;
+  width: 120px;
   height: 4px;
   background: rgba(var(--color-brown-600-rgb), 0.3);
   border-radius: var(--radius-full);
@@ -1034,13 +1008,6 @@ body {
   border: none;
 }
 
-.volume-value {
-  min-width: 35px;
-  font-size: var(--font-size-sm);
-  color: var(--color-primary);
-  font-weight: var(--font-weight-medium);
-}
-
 .start-journey {
   font-size: var(--font-size-xl);
   padding: var(--space-16) var(--space-32);
@@ -1048,7 +1015,6 @@ body {
   border: none;
   box-shadow: 0 0 30px rgba(var(--color-teal-500-rgb), 0.3);
   animation: buttonPulse 2s ease-in-out infinite;
-  margin-top: var(--space-24);
 }
 
 @keyframes buttonPulse {
@@ -1193,7 +1159,7 @@ body {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-/* Audio Controls in Game */
+/* Audio Controls */
 .audio-controls {
   position: absolute;
   top: var(--space-24);
@@ -1202,7 +1168,6 @@ body {
   flex-direction: column;
   align-items: flex-end;
   gap: var(--space-8);
-  z-index: 20;
 }
 
 .audio-toggle-btn {
@@ -1225,8 +1190,6 @@ body {
   border-radius: var(--radius-base);
   border: 1px solid rgba(var(--color-brown-600-rgb), 0.3);
   font-size: var(--font-size-sm);
-  white-space: nowrap;
-  max-width: 120px;
 }
 
 .music-label {
@@ -1418,39 +1381,13 @@ body {
     font-size: var(--font-size-3xl);
   }
 
-  .audio-controls-container {
-    max-width: 100%;
-  }
-  
-  .volume-control-wrapper {
-    flex-wrap: wrap;
-    gap: var(--space-8);
-  }
-  
-  .volume-label {
-    min-width: auto;
-  }
-
-  .audio-controls {
-    position: fixed;
-    top: var(--space-16);
-    right: var(--space-16);
-  }
-
-  .music-display {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .volume-control-wrapper {
+  .audio-control {
     flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-8);
   }
-
-  .volume-slider {
-    max-width: 200px;
+  
+  .volume-control {
+    flex-direction: column;
+    gap: var(--space-8);
   }
 }
 

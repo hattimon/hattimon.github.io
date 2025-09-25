@@ -13,7 +13,7 @@
     <div id="loading-screen" class="loading-screen">
         <div class="loading-content">
             <div class="mine-cart-loader"></div>
-            <h2>Przygotowywanie podróży...</h2>
+            <h2>Przygotowywanie podrozy...</h2>
             <div class="loading-bar">
                 <div class="loading-progress"></div>
             </div>
@@ -23,37 +23,33 @@
     <!-- Welcome Screen -->
     <div id="welcome-screen" class="screen active">
         <div class="welcome-content">
-            <h1 class="glowing-title">Podróż w Głąb Podświadomości</h1>
-            <p class="subtitle">Odkryj swój poziom świadomości według Mapy Świadomości Davida R. Hawkinsa</p>
+            <h1 class="glowing-title">Podroz w Glab Podswiadomosci</h1>
+            <p class="subtitle">Odkryj swoj poziom swiadomosci wedlug Mapy Swiadomosci Davida R. Hawkinsa</p>
             
             <div class="instructions">
-                <h3>Jak to działa:</h3>
+                <h3>Jak to dziala:</h3>
                 <ul>
-                    <li>Wsiądziesz do wagonika i zjedziesz w głąb kopalni podświadomości</li>
-                    <li>Odpowiesz na 17 pytań psychologicznych</li>
-                    <li>Łagodna muzyka ambient pomoże Ci wejść w stan głębokiej koncentracji</li>
-                    <li>Otrzymasz szczegółowy raport osobowości do pobrania</li>
+                    <li>Wsiadziesz do wagonika i zjedziesz w glab kopalni podswiadomosci</li>
+                    <li>Odpowiesz na 17 pytan psychologicznych</li>
+                    <li>Lagodna muzyka ambient pomoze Ci wejsc w stan glebokiej koncentracji</li>
+                    <li>Otrzymasz szczegolowy raport osobowosci do pobrania</li>
                 </ul>
             </div>
 
-            <div class="audio-controls-container">
-                <div class="audio-toggle-wrapper">
-                    <label class="audio-toggle">
-                        <input type="checkbox" id="audio-enabled" checked>
-                        <span class="slider"></span>
-                        <span class="label">Muzyka</span>
-                    </label>
-                </div>
-                
-                <div class="volume-control-wrapper">
-                    <label for="volume-slider" class="volume-label">Głośność:</label>
+            <div class="audio-control">
+                <label class="audio-toggle">
+                    <input type="checkbox" id="audio-enabled" checked>
+                    <span class="slider"></span>
+                    <span class="label">Muzyka i dzwieki</span>
+                </label>
+                <div class="volume-control">
+                    <label for="volume-slider">Glosnosc:</label>
                     <input type="range" id="volume-slider" min="0" max="100" value="30" class="volume-slider">
-                    <span class="volume-value">30%</span>
                 </div>
             </div>
 
             <button class="btn btn--primary btn--lg start-journey" id="start-btn">
-                Rozpocznij Podróż
+                Rozpocznij Podroz
             </button>
         </div>
     </div>
@@ -68,7 +64,7 @@
             <!-- Progress Bar -->
             <div class="progress-container">
                 <div class="depth-indicator">
-                    <span class="depth-label">Głębokość:</span>
+                    <span class="depth-label">Glebokosc:</span>
                     <span class="depth-value" id="depth-value">0m</span>
                 </div>
                 <div class="progress-bar">
@@ -108,7 +104,7 @@
     <!-- Results Screen -->
     <div id="results-screen" class="screen">
         <div class="results-content">
-            <h1 class="results-title">Analiza Twojej Podświadomości</h1>
+            <h1 class="results-title">Analiza Twojej Podswiadomosci</h1>
             
             <div class="results-summary">
                 <div class="consciousness-meter">
@@ -117,12 +113,12 @@
                     </div>
                     <div class="meter-labels">
                         <span class="meter-label">Wstyd</span>
-                        <span class="meter-label">Oświecenie</span>
+                        <span class="meter-label">Oswiecenie</span>
                     </div>
                 </div>
                 
                 <div class="dominant-level">
-                    <h3>Dominujący poziom świadomości:</h3>
+                    <h3>Dominujacy poziom swiadomosci:</h3>
                     <div class="level-card" id="dominant-level-card">
                         <h4 id="dominant-level-name"></h4>
                         <p id="dominant-level-description"></p>
@@ -132,7 +128,7 @@
             </div>
 
             <div class="barriers-section">
-                <h3>Główne bariery do przezwyciężenia:</h3>
+                <h3>Glowne bariery do przezwyciezenia:</h3>
                 <ul id="barriers-list"></ul>
             </div>
 
@@ -142,7 +138,7 @@
             </div>
 
             <div class="development-section">
-                <h3>Ścieżka Rozwoju Osobistego:</h3>
+                <h3>Sciezka Rozwoju Osobistego:</h3>
                 <div id="development-path"></div>
             </div>
 
