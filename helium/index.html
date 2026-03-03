@@ -3,215 +3,200 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Helium Hotspot Monitor – Proper Raspberry Ram</title>
+  <title>Helium Hotspot Monitor - Proper Raspberry Ram</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0b1020; color: #f0f4ff; padding: 20px; }
-    h1 { color: #7dd3fc; margin-bottom: 4px; font-size: 1.6rem; }
-    h2 { color: #7dd3fc; font-size: 1.1rem; margin-bottom: 12px; }
-    .subtitle { color: #9ca3af; font-size: 0.85rem; margin-bottom: 20px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
-    .card { background: #111827; padding: 16px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.5); }
-    .card-wide { background: #111827; padding: 16px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.5); margin-bottom: 16px; }
-    .label { color: #9ca3af; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; color: #f0f4ff; }
-    .value.green { color: #22c55e; }
-    .value.red { color: #f87171; }
-    .value.yellow { color: #fbbf24; }
-    .value.blue { color: #38bdf8; }
-    .meta { font-size: 0.78rem; color: #6b7280; margin-top: 4px; }
-    .badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
-    .badge-online { background: #14532d; color: #4ade80; }
-    .badge-offline { background: #450a0a; color: #f87171; }
-    .badge-witness { background: #052e16; color: #22c55e; }
-    .badge-reward { background: #422006; color: #fbbf24; }
-    .badge-beacon { background: #0c2a3e; color: #38bdf8; }
-    .badge-other { background: #1e1b4b; color: #a5b4fc; }
-    input[type="text"] { background: #020617; border: 1px solid #374151; border-radius: 6px; padding: 8px 10px; color: #e5e7eb; width: 100%; font-size: 0.85rem; }
-    input[type="text"]:focus { outline: none; border-color: #22c55e; }
-    .btn { background: #22c55e; border: none; color: #020617; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
-    .btn:disabled { background: #374151; color: #6b7280; cursor: default; }
-    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .error { color: #f87171; font-size: 0.85rem; margin-top: 8px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 8px 10px; text-align: left; font-size: 0.85rem; border-bottom: 1px solid #1f2937; }
-    th { color: #9ca3af; font-weight: 600; background: #0b1020; }
-    tr:hover td { background: #0f172a; }
-    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #374151; border-top-color: #22c55e; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .updated { font-size: 0.75rem; color: #6b7280; margin-top: 8px; }
-    a { color: #38bdf8; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#0b1020;color:#f0f4ff;padding:20px;min-height:100vh}
+    h1{color:#7dd3fc;margin-bottom:4px;font-size:1.5rem}
+    h2{color:#7dd3fc;font-size:1rem;margin-bottom:10px}
+    p.sub{color:#9ca3af;font-size:.82rem;margin-bottom:18px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:14px}
+    .card{background:#111827;padding:14px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,.5)}
+    .card-wide{background:#111827;padding:14px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,.5);margin-bottom:14px}
+    .lbl{color:#9ca3af;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+    .val{font-size:1.35rem;font-weight:700;margin-top:4px}
+    .val.yellow{color:#fbbf24}.val.blue{color:#38bdf8}.val.green{color:#4ade80}.val.white{color:#f0f4ff}
+    .meta{font-size:.75rem;color:#6b7280;margin-top:3px}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700}
+    .b-on{background:#14532d;color:#4ade80}.b-off{background:#450a0a;color:#f87171}
+    .b-unk{background:#1e1b4b;color:#a5b4fc}
+    input{background:#020617;border:1px solid #374151;border-radius:6px;padding:8px 10px;color:#e5e7eb;font-size:.85rem;flex:1;min-width:260px}
+    input:focus{outline:none;border-color:#38bdf8}
+    .btn{background:#22c55e;border:none;color:#020617;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:700;font-size:.88rem;white-space:nowrap}
+    .btn:disabled{background:#374151;color:#6b7280;cursor:default}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .err{color:#f87171;font-size:.82rem;margin-top:8px}
+    .info-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+    .info-chip{background:#1f2937;border-radius:6px;padding:4px 10px;font-size:.78rem;color:#d1d5db}
+    .info-chip span{color:#7dd3fc;font-weight:600}
+    a.ext{color:#38bdf8;font-size:.8rem;text-decoration:none}
+    a.ext:hover{text-decoration:underline}
+    .updated{font-size:.72rem;color:#4b5563;margin-top:10px}
+    .spin{display:inline-block;width:13px;height:13px;border:2px solid #374151;border-top-color:#22c55e;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:5px}
+    @keyframes sp{to{transform:rotate(360deg)}}
+    .note{background:#1e3a5f;border-left:3px solid #38bdf8;padding:10px 14px;border-radius:0 8px 8px 0;font-size:.8rem;color:#bae6fd;margin-bottom:14px;line-height:1.5}
   </style>
 </head>
 <body>
-  <h1>Helium Hotspot Monitor</h1>
-  <p class="subtitle">Monitor hotspota <strong style="color:#f0f4ff">Proper Raspberry Ram</strong> – status, nagrody HNT i ostatnia aktywnosc.</p>
+<h1>Helium Hotspot Monitor</h1>
+<p class="sub">Monitor hotspota <strong style="color:#f0f4ff">Proper Raspberry Ram</strong> &ndash; metadane z Entity API Helium Foundation.</p>
 
-  <div class="card-wide">
-    <div class="row">
-      <input id="addr" type="text" value="112snfDtZybzjk99SiukzUspCNJfAUraqiPf9qsYSUg6urZwY8sD" style="flex:1;min-width:280px" />
-      <button class="btn" id="refreshBtn" onclick="loadAll()">Odswiez dane</button>
-    </div>
-    <div id="error" class="error"></div>
+<div class="note">
+  <strong>Informacja o API:</strong> Stare <code>api.helium.io/v1</code> jest wylaczone (Helium przeszlo na Solana w 2023r).
+  Ta strona korzysta z <strong>Entity API</strong> (oficjalne, darmowe, bez klucza) ktore dostarcza metadane hotspota.
+  Dla pelnych danych nagrod HNT kliknij link do Helium Explorer ponizej.
+</div>
+
+<div class="card-wide">
+  <div class="row">
+    <input id="addr" type="text" value="112snfDtZybzjk99SiukzUspCNJfAUraqiPf9qsYSUg6urZwY8sD" />
+    <button class="btn" id="btn" onclick="load()">Odswiez dane</button>
   </div>
+  <div id="err" class="err"></div>
+</div>
 
-  <div class="grid">
-    <div class="card">
-      <div class="label">Status</div>
-      <div id="hsStatus" class="value">–</div>
-      <div id="hsName" class="meta">–</div>
-    </div>
-    <div class="card">
-      <div class="label">Rewards 24h</div>
-      <div id="rewards24h" class="value yellow">–</div>
-      <div class="meta">HNT</div>
-    </div>
-    <div class="card">
-      <div class="label">Rewards 7 dni</div>
-      <div id="rewards7d" class="value yellow">–</div>
-      <div class="meta">HNT</div>
-    </div>
-    <div class="card">
-      <div class="label">Rewards 30 dni</div>
-      <div id="rewards30d" class="value yellow">–</div>
-      <div class="meta">HNT</div>
-    </div>
-    <div class="card">
-      <div class="label">Reward Scale</div>
-      <div id="rewardScale" class="value blue">–</div>
-      <div class="meta">skala nagrod PoC</div>
-    </div>
-    <div class="card">
-      <div class="label">Gain / Elevation</div>
-      <div id="gainElev" class="value">–</div>
-      <div class="meta">dBi / m n.p.m.</div>
-    </div>
+<div class="grid">
+  <div class="card">
+    <div class="lbl">Status sieci</div>
+    <div id="status" class="val"><span class="badge b-unk">...</span></div>
+    <div id="name" class="meta">-</div>
   </div>
-
-  <div class="card-wide">
-    <h2>Ostatnia aktywnosc (max 20 zdarzen)</h2>
-    <table>
-      <thead><tr><th>Typ</th><th>Czas (UTC)</th><th>Szczegoly</th></tr></thead>
-      <tbody id="actTable"><tr><td colspan="3">Brak danych...</td></tr></tbody>
-    </table>
-    <div id="lastWitness" class="updated">Ostatni witness: –</div>
-    <div id="updatedAt" class="updated">Ostatnie odswiezenie: –</div>
+  <div class="card">
+    <div class="lbl">Lokalizacja</div>
+    <div id="city" class="val white" style="font-size:1rem;margin-top:6px">-</div>
+    <div id="country" class="meta">-</div>
   </div>
+  <div class="card">
+    <div class="lbl">Gain anteny</div>
+    <div id="gain" class="val blue">-</div>
+    <div class="meta">dBi</div>
+  </div>
+  <div class="card">
+    <div class="lbl">Elevation</div>
+    <div id="elev" class="val white">-</div>
+    <div class="meta">metry n.p.m.</div>
+  </div>
+  <div class="card">
+    <div class="lbl">Rewardable</div>
+    <div id="rewardable" class="val">-</div>
+    <div class="meta">czy hotspot zarabia</div>
+  </div>
+  <div class="card">
+    <div class="lbl">Sieci</div>
+    <div id="networks" class="val white" style="font-size:.95rem;margin-top:6px">-</div>
+    <div class="meta">aktywne podsieci</div>
+  </div>
+</div>
 
-  <script>
-    const CORS = 'https://corsproxy.io/?';
-    const BASE = 'https://api.helium.io/v1';
+<div class="card-wide">
+  <h2>Szczegoly techniczne</h2>
+  <div id="chips" class="info-row">-</div>
+  <div style="margin-top:14px">
+    <a id="explorerLink" class="ext" href="#" target="_blank">Otworz w Helium Explorer &rarr;</a>
+    &nbsp;&nbsp;
+    <a id="trackerLink" class="ext" href="#" target="_blank">Otworz w HeliumTracker &rarr;</a>
+  </div>
+  <div id="updatedAt" class="updated">Ostatnie odswiezenie: -</div>
+</div>
 
-    function apiUrl(path) {
-      return CORS + encodeURIComponent(BASE + path);
+<script>
+async function load() {
+  const addr = document.getElementById('addr').value.trim();
+  const btn = document.getElementById('btn');
+  const err = document.getElementById('err');
+  if (!addr) { err.textContent = 'Podaj adres hotspota.'; return; }
+  err.textContent = '';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Ladowanie...';
+
+  // linki zewnetrzne
+  document.getElementById('explorerLink').href = 'https://explorer.helium.com/hotspots/' + addr;
+  document.getElementById('trackerLink').href = 'https://heliumtracker.io/hotspots/' + addr;
+
+  try {
+    // Entity API - oficjalne darmowe API Helium Foundation
+    // Endpoint: GET /v2/hotspot/:eccAddress
+    const url = 'https://entities.nft.helium.io/v2/hotspot/' + addr;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Entity API: HTTP ' + res.status + ' - adres moze byc nieprawidlowy lub hotspot nie istnieje');
+    const d = await res.json();
+
+    // Nazwa z atrybutow lub entity_key_str
+    const nameAttr = (d.attributes || []).find(a => a.trait_type === 'entity_key_string');
+    const nameStr = d.name || nameAttr?.value || addr.slice(0,16) + '...';
+    document.getElementById('name').textContent = nameStr;
+
+    // Status - is_active deprecated, zawsze false - pokazujemy rewardable
+    const rewardableAttr = (d.attributes || []).find(a => a.trait_type === 'rewardable');
+    const isRewardable = rewardableAttr ? rewardableAttr.value : null;
+    const statusEl = document.getElementById('status');
+    statusEl.innerHTML = '';
+    const badge = document.createElement('span');
+    if (isRewardable === true || isRewardable === 'true') {
+      badge.textContent = 'AKTYWNY';
+      badge.className = 'badge b-on';
+    } else if (isRewardable === false || isRewardable === 'false') {
+      badge.textContent = 'NIEAKTYWNY';
+      badge.className = 'badge b-off';
+    } else {
+      badge.textContent = 'BRAK DANYCH';
+      badge.className = 'badge b-unk';
     }
+    statusEl.appendChild(badge);
+    document.getElementById('rewardable').innerHTML = isRewardable === true || isRewardable === 'true'
+      ? '<span style="color:#4ade80">TAK</span>' : '<span style="color:#f87171">NIE / brak danych</span>';
 
-    function fmt(iso) {
-      if (!iso) return '–';
-      return new Date(iso).toLocaleString('pl-PL', { timeZone: 'UTC' }) + ' UTC';
-    }
+    // Lokalizacja
+    const iot = d.hotspot_infos?.iot;
+    const cityAttr = (d.attributes || []).find(a => a.trait_type === 'iot_city');
+    const stateAttr = (d.attributes || []).find(a => a.trait_type === 'iot_state');
+    const countryAttr = (d.attributes || []).find(a => a.trait_type === 'iot_country');
+    document.getElementById('city').textContent = cityAttr?.value || iot?.city || '-';
+    document.getElementById('country').textContent = (stateAttr?.value || '') + (countryAttr?.value ? ', ' + countryAttr.value : '');
 
-    function hnt(raw) {
-      return (Number(raw) / 1e8).toFixed(4);
-    }
+    // Gain / Elevation
+    const gain = iot?.gain;
+    const elev = iot?.elevation;
+    document.getElementById('gain').textContent = gain != null ? (gain / 10).toFixed(1) : '-';
+    document.getElementById('elev').textContent = elev != null ? elev : '-';
 
-    function badge(type) {
-      const s = document.createElement('span');
-      s.textContent = type || 'unknown';
-      s.className = 'badge';
-      if (type === 'poc_witnesses_v1' || type === 'poc_witnesses_v2') s.classList.add('badge-witness');
-      else if (type && type.includes('reward')) s.classList.add('badge-reward');
-      else if (type && (type.includes('beacon') || type.includes('challeng'))) s.classList.add('badge-beacon');
-      else s.classList.add('badge-other');
-      return s;
-    }
+    // Sieci
+    const networksAttr = (d.attributes || []).find(a => a.trait_type === 'networks');
+    const nets = networksAttr?.value;
+    document.getElementById('networks').textContent = Array.isArray(nets) ? nets.join(', ') : (nets || 'IoT');
 
-    async function fetchJ(url) {
-      const r = await fetch(url);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }
+    // Chips
+    const chips = document.getElementById('chips');
+    chips.innerHTML = '';
+    const fields = [
+      ['asset_id', d.asset_id],
+      ['key_to_asset', d.key_to_asset_key],
+      ['lat', iot?.lat != null ? iot.lat.toFixed(4) : null],
+      ['lon', iot?.long != null ? iot.long.toFixed(4) : null],
+      ['created_at', iot?.created_at ? iot.created_at.slice(0,10) : null],
+    ];
+    fields.forEach(([k, v]) => {
+      if (!v) return;
+      const c = document.createElement('div');
+      c.className = 'info-chip';
+      c.innerHTML = '<span>' + k + ':</span> ' + v;
+      chips.appendChild(c);
+    });
+    if (!chips.children.length) chips.textContent = 'Brak dodatkowych danych.';
 
-    async function loadAll() {
-      const addr = document.getElementById('addr').value.trim();
-      const btn = document.getElementById('refreshBtn');
-      const errDiv = document.getElementById('error');
-      if (!addr) { errDiv.textContent = 'Podaj adres hotspota.'; return; }
-      errDiv.textContent = '';
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Ladowanie...';
+    document.getElementById('updatedAt').textContent =
+      'Ostatnie odswiezenie: ' + new Date().toLocaleString('pl-PL') + ' (czas lokalny)';
 
-      try {
-        // 1. Info hotspota
-        const info = await fetchJ(apiUrl('/hotspots/' + addr));
-        const hs = info.data;
+  } catch(e) {
+    console.error(e);
+    err.textContent = 'Blad: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Odswiez dane';
+  }
+}
 
-        // Status
-        const statusEl = document.getElementById('hsStatus');
-        const online = hs?.status?.online === 'online';
-        statusEl.innerHTML = '';
-        const b = document.createElement('span');
-        b.textContent = online ? 'ONLINE' : 'OFFLINE';
-        b.className = 'badge ' + (online ? 'badge-online' : 'badge-offline');
-        statusEl.appendChild(b);
-
-        document.getElementById('hsName').textContent = (hs?.name || addr) + ' | ' + (hs?.geocode?.short_city || '') + ', ' + (hs?.geocode?.short_country || '');
-        document.getElementById('rewardScale').textContent = hs?.reward_scale != null ? Number(hs.reward_scale).toFixed(4) : '–';
-        document.getElementById('gainElev').textContent = (hs?.gain != null ? (hs.gain / 10).toFixed(1) + ' dBi' : '–') + ' / ' + (hs?.elevation != null ? hs.elevation + ' m' : '–');
-
-        // 2. Rewards sum 24h, 7d, 30d
-        const [r24, r7, r30] = await Promise.all([
-          fetchJ(apiUrl('/hotspots/' + addr + '/rewards/sum?min_time=-1%20day')),
-          fetchJ(apiUrl('/hotspots/' + addr + '/rewards/sum?min_time=-7%20day')),
-          fetchJ(apiUrl('/hotspots/' + addr + '/rewards/sum?min_time=-30%20day'))
-        ]);
-        document.getElementById('rewards24h').textContent = hnt(r24?.data?.total ?? 0);
-        document.getElementById('rewards7d').textContent = hnt(r7?.data?.total ?? 0);
-        document.getElementById('rewards30d').textContent = hnt(r30?.data?.total ?? 0);
-
-        // 3. Activity
-        const act = await fetchJ(apiUrl('/hotspots/' + addr + '/activity?limit=20'));
-        const activities = act?.data ?? [];
-        const tbody = document.getElementById('actTable');
-        tbody.innerHTML = '';
-
-        if (!activities.length) {
-          tbody.innerHTML = '<tr><td colspan="3">Brak aktywnosci.</td></tr>';
-        } else {
-          let lastWitness = null;
-          activities.forEach(ev => {
-            const tr = document.createElement('tr');
-            const tdT = document.createElement('td');
-            const tdD = document.createElement('td');
-            const tdI = document.createElement('td');
-            tdT.appendChild(badge(ev.type));
-            tdD.textContent = fmt(ev.time);
-            let info = ev.hash ? ev.hash.slice(0, 12) + '...' : '';
-            if (ev.type && ev.type.includes('reward')) {
-              const amt = ev.rewards ? ev.rewards.reduce((s,r) => s + (r.amount||0), 0) : (ev.amount || 0);
-              info = hnt(amt) + ' HNT';
-            }
-            tdI.textContent = info;
-            tr.append(tdT, tdD, tdI);
-            tbody.appendChild(tr);
-            if (!lastWitness && ev.type && ev.type.includes('witness')) lastWitness = ev;
-          });
-          document.getElementById('lastWitness').textContent = 'Ostatni witness: ' + (lastWitness ? fmt(lastWitness.time) : 'brak w historii');
-        }
-
-        document.getElementById('updatedAt').textContent = 'Ostatnie odswiezenie: ' + fmt(new Date().toISOString());
-
-      } catch(e) {
-        console.error(e);
-        document.getElementById('error').textContent = 'Blad: ' + e.message;
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Odswiez dane';
-      }
-    }
-
-    window.addEventListener('load', loadAll);
-  </script>
+window.addEventListener('load', load);
+</script>
 </body>
 </html>
