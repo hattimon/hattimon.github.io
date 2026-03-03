@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Helium Hotspot Monitor – Proper Raspberry Ram</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0b1020; color: #f0f4ff; padding: 20px; }
+    h1 { color: #7dd3fc; margin-bottom: 4px; font-size: 1.6rem; }
+    h2 { color: #7dd3fc; font-size: 1.1rem; margin-bottom: 12px; }
+    .subtitle { color: #9ca3af; font-size: 0.85rem; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .card { background: #111827; padding: 16px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.5); }
+    .card-wide { background: #111827; padding: 16px; border-radius: 10px; box-shadow: 0 0 12px rgba(0,0,0,0.5); margin-bottom: 16px; }
+    .label { color: #9ca3af; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .value { font-size: 1.5rem; font-weight: 700; margin-top: 4px; color: #f0f4ff; }
+    .value.green { color: #22c55e; }
+    .value.red { color: #f87171; }
+    .value.yellow { color: #fbbf24; }
+    .value.blue { color: #38bdf8; }
+    .meta { font-size: 0.78rem; color: #6b7280; margin-top: 4px; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+    .badge-online { background: #14532d; color: #4ade80; }
+    .badge-offline { background: #450a0a; color: #f87171; }
+    .badge-witness { background: #052e16; color: #22c55e; }
+    .badge-reward { background: #422006; color: #fbbf24; }
+    .badge-beacon { background: #0c2a3e; color: #38bdf8; }
+    .badge-other { background: #1e1b4b; color: #a5b4fc; }
+    input[type="text"] { background: #020617; border: 1px solid #374151; border-radius: 6px; padding: 8px 10px; color: #e5e7eb; width: 100%; font-size: 0.85rem; }
+    input[type="text"]:focus { outline: none; border-color: #22c55e; }
+    .btn { background: #22c55e; border: none; color: #020617; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+    .btn:disabled { background: #374151; color: #6b7280; cursor: default; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .error { color: #f87171; font-size: 0.85rem; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px 10px; text-align: left; font-size: 0.85rem; border-bottom: 1px solid #1f2937; }
+    th { color: #9ca3af; font-weight: 600; background: #0b1020; }
+    tr:hover td { background: #0f172a; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #374151; border-top-color: #22c55e; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .updated { font-size: 0.75rem; color: #6b7280; margin-top: 8px; }
+    a { color: #38bdf8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Helium Hotspot Monitor</h1>
+  <p class="subtitle">Monitor hotspota <strong style="color:#f0f4ff">Proper Raspberry Ram</strong> – status, nagrody HNT i ostatnia aktywnosc.</p>
+
+  <div class="card-wide">
+    <div class="row">
+      <input id="addr" type="text" value="112snfDtZybzjk99SiukzUspCNJfAUraqiPf9qsYSUg6urZwY8sD" style="flex:1;min-width:280px" />
+      <button class="btn" id="refreshBtn" onclick="loadAll()">Odswiez dane</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">Status</div>
+      <div id="hsStatus" class="value">–</div>
+      <div id="hsName" class="meta">–</div>
+    </div>
+    <div class="card">
+      <div class="label">Rewards 24h</div>
+      <div id="rewards24h" class="value yellow">–</div>
+      <div class="meta">HNT</div>
+    </div>
+    <div class="card">
+      <div class="label">Rewards 7 dni</div>
+      <div id="rewards7d" class="value yellow">–</div>
+      <div class="meta">HNT</div>
+    </div>
+    <div class="card">
+      <div class="label">Rewards 30 dni</div>
+      <div id="rewards30d" class="value yellow">–</div>
+      <div class="meta">HNT</div>
+    </div>
+    <div class="card">
+      <div class="label">Reward Scale</div>
+      <div id="rewardScale" class="value blue">–</div>
+      <div class="meta">skala nagrod PoC</div>
+    </div>
+    <div class="card">
+      <div class="label">Gain / Elevation</div>
+      <div id="gainElev" class="value">–</div>
+      <div class="meta">dBi / m n.p.m.</div>
+    </div>
+  </div>
+
+  <div class="card-wide">
+    <h2>Ostatnia aktywnosc (max 20 zdarzen)</h2>
+    <table>
+      <thead><tr><th>Typ</th><th>Czas (UTC)</th><th>Szczegoly</th></tr></thead>
+      <tbody id="actTable"><tr><td colspan="3">Brak danych...</td></tr></tbody>
+    </table>
+    <div id="lastWitness" class="updated">Ostatni witness: –</div>
+    <div id="updatedAt" class="updated">Ostatnie odswiezenie: –</div>
+  </div>
+
+  <script>
+    const CORS = 'https://corsproxy.io/?';
+    const BASE = 'https://api.helium.io/v1';
+
+    function apiUrl(path) {
+      return CORS + encodeURIComponent(BASE + path);
+    }
+
+    function fmt(iso) {
+      if (!iso) return '–';
+      return new Date(iso).toLocaleString('pl-PL', { timeZone: 'UTC' }) + ' UTC';
+    }
+
+    function hnt(raw) {
+      return (Number(raw) / 1e8).toFixed(4);
+    }
+
+    function badge(type) {
+      const s = document.createElement('span');
+      s.textContent = type || 'unknown';
+      s.className = 'badge';
+      if (type === 'poc_witnesses_v1' || type === 'poc_witnesses_v2') s.classList.add('badge-witness');
+      else if (type && type.includes('reward')) s.classList.add('badge-reward');
+      else if (type && (type.includes('beacon') || type.includes('challeng'))) s.classList.add('badge-beacon');
+      else s.classList.add('badge-other');
+      return s;
+    }
+
+    async function fetchJ(url) {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }
+
+    async function loadAll() {
+      const addr = document.getElementById('addr').value.trim();
+      const btn = document.getElementById('refreshBtn');
+      const errDiv = document.getElementById('error');
+      if (!addr) { errDiv.textContent = 'Podaj adres hotspota.'; return; }
+      errDiv.textContent = '';
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Ladowanie...';
+
+      try {
+        // 1. Info hotspota
+        const info = await fetchJ(apiUrl('/hotspots/' + addr));
+        const hs = info.data;
+
+        // Status
+        const statusEl = document.getElementById('hsStatus');
+        const online = hs?.status?.online === 'online';
+        statusEl.innerHTML = '';
+        const b = document.createElement('span');
+        b.textContent = online ? 'ONLINE' : 'OFFLINE';
+        b.className = 'badge ' + (online ? 'badge-online' : 'badge-offline');
+        statusEl.appendChild(b);
+
+        document.getElementById('hsName').textContent = (hs?.name || addr) + ' | ' + (hs?.geocode?.short_city || '') + ', ' + (hs?.geocode?.short_country || '');
+        document.getElementById('rewardScale').textContent = hs?.reward_scale != null ? Number(hs.reward_scale).toFixed(4) : '–';
+        document.getElementById('gainElev').textContent = (hs?.gain != null ? (hs.gain / 10).toFixed(1) + ' dBi' : '–') + ' / ' + (hs?.elevation != null ? hs.elevation + ' m' : '–');
+
+        // 2. Rewards sum 24h, 7d, 30d
+        const [r24, r7, r30] = await Promise.all([
+          fetchJ(apiUrl('/hotspots/' + addr + '/rewards/sum?min_time=-1%20day')),
+          fetchJ(apiUrl('/hotspots/' + addr + '/rewards/sum?min_time=-7%20day')),
+          fetchJ(apiUrl('/hotspots/' + addr + '/rewards/sum?min_time=-30%20day'))
+        ]);
+        document.getElementById('rewards24h').textContent = hnt(r24?.data?.total ?? 0);
+        document.getElementById('rewards7d').textContent = hnt(r7?.data?.total ?? 0);
+        document.getElementById('rewards30d').textContent = hnt(r30?.data?.total ?? 0);
+
+        // 3. Activity
+        const act = await fetchJ(apiUrl('/hotspots/' + addr + '/activity?limit=20'));
+        const activities = act?.data ?? [];
+        const tbody = document.getElementById('actTable');
+        tbody.innerHTML = '';
+
+        if (!activities.length) {
+          tbody.innerHTML = '<tr><td colspan="3">Brak aktywnosci.</td></tr>';
+        } else {
+          let lastWitness = null;
+          activities.forEach(ev => {
+            const tr = document.createElement('tr');
+            const tdT = document.createElement('td');
+            const tdD = document.createElement('td');
+            const tdI = document.createElement('td');
+            tdT.appendChild(badge(ev.type));
+            tdD.textContent = fmt(ev.time);
+            let info = ev.hash ? ev.hash.slice(0, 12) + '...' : '';
+            if (ev.type && ev.type.includes('reward')) {
+              const amt = ev.rewards ? ev.rewards.reduce((s,r) => s + (r.amount||0), 0) : (ev.amount || 0);
+              info = hnt(amt) + ' HNT';
+            }
+            tdI.textContent = info;
+            tr.append(tdT, tdD, tdI);
+            tbody.appendChild(tr);
+            if (!lastWitness && ev.type && ev.type.includes('witness')) lastWitness = ev;
+          });
+          document.getElementById('lastWitness').textContent = 'Ostatni witness: ' + (lastWitness ? fmt(lastWitness.time) : 'brak w historii');
+        }
+
+        document.getElementById('updatedAt').textContent = 'Ostatnie odswiezenie: ' + fmt(new Date().toISOString());
+
+      } catch(e) {
+        console.error(e);
+        document.getElementById('error').textContent = 'Blad: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Odswiez dane';
+      }
+    }
+
+    window.addEventListener('load', loadAll);
+  </script>
+</body>
+</html>
