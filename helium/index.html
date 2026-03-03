@@ -44,7 +44,9 @@
 <div class="note">
   <strong>Informacja o API:</strong> Stare <code>api.helium.io/v1</code> jest wylaczone (Helium przeszlo na Solana w 2023r).
   Ta strona korzysta z <strong>Entity API</strong> (oficjalne, darmowe, bez klucza) ktore dostarcza metadane hotspota.
-  Dla pelnych danych nagrod HNT kliknij link do Helium Explorer ponizej.
+  Dla pelnych danych nagrod HNT kliknij link do Helium Explorer ponizej.<br><br>
+  Jesli pojawi sie blad 404, oznacza to, ze podany adres nie ma przypisanego hotspotu NFT
+  w nowym systemie (moze to byc stary, usuniety lub niezmigrowany hotspot). [web:1]
 </div>
 
 <div class="card-wide">
@@ -104,7 +106,10 @@ async function load() {
   const addr = document.getElementById('addr').value.trim();
   const btn = document.getElementById('btn');
   const err = document.getElementById('err');
-  if (!addr) { err.textContent = 'Podaj adres hotspota.'; return; }
+  if (!addr) {
+    err.textContent = 'Podaj adres hotspota.';
+    return;
+  }
   err.textContent = '';
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>Ladowanie...';
@@ -115,23 +120,31 @@ async function load() {
 
   try {
     // Entity API - oficjalne darmowe API Helium Foundation
-    // Endpoint: GET /v2/hotspot/:eccAddress
-    const url = 'https://entities.nft.helium.io/v2/hotspot/' + addr;
+    // Dla ECC compact (legacy adres L1) stosuje sie endpoint bazowy, bez /v2/hotspot [web:1]
+    const url = 'https://entities.nft.helium.io/' + addr;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Entity API: HTTP ' + res.status + ' - adres moze byc nieprawidlowy lub hotspot nie istnieje');
+
+    if (!res.ok) {
+      if (res.status === 404) {
+        throw new Error('Ten adres nie istnieje w Entity API (brak hotspotu NFT / niezmigrowany lub usuniety hotspot).');
+      }
+      throw new Error('Entity API: HTTP ' + res.status + ' - problem z API lub adresem.');
+    }
+
     const d = await res.json();
 
-    // Nazwa z atrybutow lub entity_key_str
+    // Nazwa z pol top-level lub atrybutow
     const nameAttr = (d.attributes || []).find(a => a.trait_type === 'entity_key_string');
-    const nameStr = d.name || nameAttr?.value || addr.slice(0,16) + '...';
+    const nameStr = d.name || d.entity_key_str || nameAttr?.value || addr.slice(0,16) + '...';
     document.getElementById('name').textContent = nameStr;
 
-    // Status - is_active deprecated, zawsze false - pokazujemy rewardable
+    // Status - is_active deprecated, pokazujemy rewardable
     const rewardableAttr = (d.attributes || []).find(a => a.trait_type === 'rewardable');
     const isRewardable = rewardableAttr ? rewardableAttr.value : null;
     const statusEl = document.getElementById('status');
     statusEl.innerHTML = '';
     const badge = document.createElement('span');
+
     if (isRewardable === true || isRewardable === 'true') {
       badge.textContent = 'AKTYWNY';
       badge.className = 'badge b-on';
@@ -142,9 +155,12 @@ async function load() {
       badge.textContent = 'BRAK DANYCH';
       badge.className = 'badge b-unk';
     }
+
     statusEl.appendChild(badge);
-    document.getElementById('rewardable').innerHTML = isRewardable === true || isRewardable === 'true'
-      ? '<span style="color:#4ade80">TAK</span>' : '<span style="color:#f87171">NIE / brak danych</span>';
+    document.getElementById('rewardable').innerHTML =
+      (isRewardable === true || isRewardable === 'true')
+        ? '<span style="color:#4ade80">TAK</span>'
+        : '<span style="color:#f87171">NIE / brak danych</span>';
 
     // Lokalizacja
     const iot = d.hotspot_infos?.iot;
@@ -152,9 +168,10 @@ async function load() {
     const stateAttr = (d.attributes || []).find(a => a.trait_type === 'iot_state');
     const countryAttr = (d.attributes || []).find(a => a.trait_type === 'iot_country');
     document.getElementById('city').textContent = cityAttr?.value || iot?.city || '-';
-    document.getElementById('country').textContent = (stateAttr?.value || '') + (countryAttr?.value ? ', ' + countryAttr.value : '');
+    document.getElementById('country').textContent =
+      (stateAttr?.value || '') + (countryAttr?.value ? ', ' + countryAttr.value : '');
 
-    // Gain / Elevation
+    // Gain / Elevation (gain w dziesiatych dBi) [web:1]
     const gain = iot?.gain;
     const elev = iot?.elevation;
     document.getElementById('gain').textContent = gain != null ? (gain / 10).toFixed(1) : '-';
@@ -163,7 +180,8 @@ async function load() {
     // Sieci
     const networksAttr = (d.attributes || []).find(a => a.trait_type === 'networks');
     const nets = networksAttr?.value;
-    document.getElementById('networks').textContent = Array.isArray(nets) ? nets.join(', ') : (nets || 'IoT');
+    document.getElementById('networks').textContent =
+      Array.isArray(nets) ? nets.join(', ') : (nets || 'IoT');
 
     // Chips
     const chips = document.getElementById('chips');
@@ -187,7 +205,7 @@ async function load() {
     document.getElementById('updatedAt').textContent =
       'Ostatnie odswiezenie: ' + new Date().toLocaleString('pl-PL') + ' (czas lokalny)';
 
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     err.textContent = 'Blad: ' + e.message;
   } finally {
