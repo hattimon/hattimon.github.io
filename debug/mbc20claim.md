@@ -1,8 +1,5 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
 
-# napis zjedynie o tmy portfelu: 0xfEc58763fcd5Df39dD78a454a8304F41209fD1b8
-
-
 ---
 
 **Subject: GPT Token Claim – `execution reverted` / InvalidSignature on ClaimManagerV3**
