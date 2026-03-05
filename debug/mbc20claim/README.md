@@ -50,7 +50,7 @@ Python **3.10+** is recommended.
 Install dependencies:
 
 ``` bash
-pip install web3 eth-account
+pip install web3 eth-account python-dotenv
 ```
 
 ------------------------------------------------------------------------
