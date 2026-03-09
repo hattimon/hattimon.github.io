@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Błękit metylenowy – ulotka bezpieczeństwa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* Ustawienia ogólne i A4 do druku */
+    /* A4 dla druku – zawsze jasny, układ desktop */
     @page {
       size: A4;
       margin: 12mm;
@@ -17,17 +18,59 @@
         background: #ffffff !important;
         color: #000000 !important;
       }
-      #print-button,
-      #darkmode-toggle,
-      #audio-controls {
+      #controls-bar {
         display: none !important;
       }
       .page {
         box-shadow: none;
-        margin: 0;
-        padding: 15px 20px;
+        margin: 0 !important;
+        padding: 15px 20px !important;
         background: #ffffff !important;
         color: #000000 !important;
+        max-width: 100% !important;
+      }
+      /* wymuszenie jasnych styli w druku niezależnie od trybu */
+      .section-box {
+        background: #f9fafb !important;
+        border-color: #e5e7eb !important;
+      }
+      .warning {
+        background: #fef2f2 !important;
+        border-left-color: #dc2626 !important;
+      }
+      .info {
+        background: #eff6ff !important;
+        border-left-color: #2563eb !important;
+      }
+      .note {
+        background: #fffbeb !important;
+        border-left-color: #f59e0b !important;
+      }
+      .notes-area {
+        border-color: #9ca3af !important;
+      }
+      .small-text {
+        color: #4b5563 !important;
+      }
+      hr {
+        border-top-color: #e5e7eb !important;
+      }
+      .video-source {
+        background: #fef3c7 !important;
+        border-color: #f59e0b !important;
+      }
+      .video-source strong {
+        color: #92400e !important;
+      }
+      .video-source a {
+        color: #2563eb !important;
+      }
+      .dosage-table td {
+        border-color: #d1d5db !important;
+      }
+      .dosage-table td:first-child {
+        background: #f3f4f6 !important;
+        color: #111827 !important;
       }
     }
 
@@ -37,16 +80,16 @@
 
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0b1120;
-      color: #e5e7eb;
       margin: 0;
       padding: 20px;
+      background: #f0f2f5;
+      color: #111827;
       transition: background 0.25s ease, color 0.25s ease;
     }
 
-    body.light-mode {
-      background: #f0f2f5;
-      color: #111827;
+    body.dark-mode {
+      background: #0b1120;
+      color: #e5e7eb;
     }
 
     #controls-bar {
@@ -93,18 +136,18 @@
     .page {
       max-width: 800px;
       margin: 0 auto;
-      background: #020617;
-      color: #e5e7eb;
+      background: #ffffff;
+      color: #111827;
       padding: 15px 25px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+      box-shadow: 0 0 8px rgba(0,0,0,0.15);
       box-sizing: border-box;
       transition: background 0.25s ease, color 0.25s ease;
     }
 
-    body.light-mode .page {
-      background: #ffffff;
-      color: #111827;
-      box-shadow: 0 0 8px rgba(0,0,0,0.15);
+    body.dark-mode .page {
+      background: #020617;
+      color: #e5e7eb;
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
     }
 
     h1, h2 {
@@ -156,44 +199,59 @@
       min-width: 0;
     }
 
+    /* Wyświetlanie mobilne: pod sobą, bez zmian dla druku */
+    @media screen and (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      .page {
+        padding: 12px 12px;
+        box-shadow: none;
+        max-width: 100%;
+      }
+      .two-columns {
+        flex-direction: column;
+      }
+    }
+
     .section-box {
-      border: 1px solid #1f2937;
+      border: 1px solid #e5e7eb;
       border-radius: 4px;
       padding: 6px 8px;
       margin-top: 6px;
-      background: #020617;
+      background: #f9fafb;
     }
 
-    body.light-mode .section-box {
-      border-color: #e5e7eb;
-      background: #f9fafb;
+    body.dark-mode .section-box {
+      border-color: #1f2937;
+      background: #020617;
     }
 
     .warning {
       border-left: 3px solid #dc2626;
-      background: rgba(248,113,113,0.08);
+      background: #fef2f2;
     }
 
-    body.light-mode .warning {
-      background: #fef2f2;
+    body.dark-mode .warning {
+      background: rgba(248,113,113,0.08);
     }
 
     .info {
       border-left: 3px solid #2563eb;
-      background: rgba(59,130,246,0.06);
+      background: #eff6ff;
     }
 
-    body.light-mode .info {
-      background: #eff6ff;
+    body.dark-mode .info {
+      background: rgba(59,130,246,0.06);
     }
 
     .note {
       border-left: 3px solid #f59e0b;
-      background: rgba(251,191,36,0.06);
+      background: #fffbeb;
     }
 
-    body.light-mode .note {
-      background: #fffbeb;
+    body.dark-mode .note {
+      background: rgba(251,191,36,0.06);
     }
 
     .section-title {
@@ -204,70 +262,70 @@
 
     .notes-area {
       min-height: 50px;
-      border: 1px dashed #6b7280;
+      border: 1px dashed #9ca3af;
       border-radius: 3px;
       padding: 4px;
       font-size: 10px;
       white-space: pre-wrap;
     }
 
-    body.light-mode .notes-area {
-      border-color: #9ca3af;
+    body.dark-mode .notes-area {
+      border-color: #6b7280;
     }
 
     .small-text {
       font-size: 9px;
-      color: #9ca3af;
+      color: #4b5563;
     }
 
-    body.light-mode .small-text {
-      color: #4b5563;
+    body.dark-mode .small-text {
+      color: #9ca3af;
     }
 
     hr {
       margin: 8px 0;
       border: none;
-      border-top: 1px dashed #374151;
+      border-top: 1px dashed #e5e7eb;
     }
 
-    body.light-mode hr {
-      border-top-color: #e5e7eb;
+    body.dark-mode hr {
+      border-top-color: #374151;
     }
 
     .video-source {
       margin-top: 8px;
       padding: 6px 10px;
-      background: #451a03;
+      background: #fef3c7;
       border: 2px solid #f59e0b;
       border-radius: 4px;
       text-align: center;
     }
 
-    body.light-mode .video-source {
-      background: #fef3c7;
+    body.dark-mode .video-source {
+      background: #451a03;
     }
 
     .video-source strong {
-      color: #fde68a;
+      color: #92400e;
       font-size: 10px;
       display: block;
       margin-bottom: 4px;
     }
 
-    body.light-mode .video-source strong {
-      color: #92400e;
+    body.dark-mode .video-source strong {
+      color: #fde68a;
     }
 
     .video-source a {
-      color: #93c5fd;
+      color: #2563eb;
       text-decoration: none;
       font-weight: 500;
       word-break: break-all;
       font-size: 9px;
     }
 
-    body.light-mode .video-source a {
-      color: #2563eb;
+    body.dark-mode .video-source a {
+      color: #93c5fd;
     }
 
     .video-source a:hover {
@@ -283,23 +341,23 @@
 
     .dosage-table td {
       padding: 3px 4px;
-      border: 1px solid #4b5563;
+      border: 1px solid #d1d5db;
     }
 
-    body.light-mode .dosage-table td {
-      border-color: #d1d5db;
+    body.dark-mode .dosage-table td {
+      border-color: #4b5563;
     }
 
     .dosage-table td:first-child {
-      background: #111827;
+      background: #f3f4f6;
       font-weight: 600;
       width: 40%;
-      color: #e5e7eb;
+      color: #111827;
     }
 
-    body.light-mode .dosage-table td:first-child {
-      background: #f3f4f6;
-      color: #111827;
+    body.dark-mode .dosage-table td:first-child {
+      background: #111827;
+      color: #e5e7eb;
     }
 
     #audio-controls {
@@ -307,23 +365,25 @@
       align-items: center;
       gap: 6px;
       font-size: 10px;
+      color: #4b5563;
+    }
+
+    body.dark-mode #audio-controls {
       color: #9ca3af;
     }
   </style>
 </head>
-<body class="dark-mode">
+<body class="light-mode">
   <div id="controls-bar">
     <button id="print-button" onclick="window.print()">🖨️ Drukuj / Zapisz do PDF</button>
-    <button id="darkmode-toggle" onclick="toggleDarkMode()">🌙 Tryb ciemny: WŁ</button>
+    <button id="darkmode-toggle" onclick="toggleDarkMode()">🌙 Tryb ciemny: WYŁ</button>
     <div id="audio-controls">
       <button id="audio-toggle" onclick="toggleAudio()">🎵 Muzyka: OFF</button>
       <span>(delikatna, inspirująca nuta do czytania)</span>
     </div>
   </div>
 
-  <!-- delikatna, pozytywna muzyka w tle (użytkownik sam włącza/wyłącza) -->
   <audio id="bg-music" loop>
-    <!-- podstaw własny plik, np. mp3 z lekkim ambientem / lo-fi -->
     <source src="inspiracja_blekit.mp3" type="audio/mpeg">
     Twoja przeglądarka nie obsługuje elementu audio.
   </audio>
@@ -335,7 +395,6 @@
     </p>
 
     <div class="two-columns">
-      <!-- LEWA KOLUMNA -->
       <div class="column">
         <div class="section-box warning">
           <div class="section-title">❌ KIEDY ABSOLUTNIE NIE STOSOWAĆ</div>
@@ -388,7 +447,6 @@
         </div>
       </div>
 
-      <!-- PRAWA KOLUMNA -->
       <div class="column">
         <div class="section-box note">
           <div class="section-title">🧴 JAKOŚĆ I RODZAJE BŁĘKITU</div>
@@ -442,12 +500,12 @@
     function toggleDarkMode() {
       const body = document.body;
       const btn = document.getElementById('darkmode-toggle');
-      body.classList.toggle('light-mode');
       body.classList.toggle('dark-mode');
-      if (body.classList.contains('light-mode')) {
-        btn.textContent = '🌙 Tryb ciemny: WYŁ';
-      } else {
+      body.classList.toggle('light-mode');
+      if (body.classList.contains('dark-mode')) {
         btn.textContent = '🌙 Tryb ciemny: WŁ';
+      } else {
+        btn.textContent = '🌙 Tryb ciemny: WYŁ';
       }
     }
 
