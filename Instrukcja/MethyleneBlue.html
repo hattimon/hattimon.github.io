@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Błękit metylenowy – ulotka bezpieczeństwa</title>
+  <style>
+    /* Ustawienia ogólne i A4 do druku */
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      #print-button {
+        display: none;
+      }
+      .page {
+        box-shadow: none;
+        margin: 0;
+      }
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    #print-button {
+      display: inline-block;
+      margin: 0 0 15px 0;
+      padding: 8px 16px;
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #print-button:hover {
+      background: #1d4ed8;
+    }
+
+    .page {
+      max-width: 800px; /* dobrze mieści się na A4 w pionie */
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 20px 30px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.15);
+      box-sizing: border-box;
+    }
+
+    h1, h2 {
+      margin-top: 0;
+      color: #111827;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      font-size: 16px;
+      margin-top: 18px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 4px;
+    }
+
+    p {
+      margin: 6px 0;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #111827;
+    }
+
+    ul {
+      margin: 6px 0 6px 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 4px 0;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #111827;
+    }
+
+    .two-columns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .column {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .section-box {
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-top: 10px;
+      background: #f9fafb;
+    }
+
+    .warning {
+      border-left: 4px solid #dc2626;
+      background: #fef2f2;
+    }
+
+    .info {
+      border-left: 4px solid #2563eb;
+    }
+
+    .note {
+      border-left: 4px solid #f59e0b;
+    }
+
+    .section-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .notes-area {
+      min-height: 80px;
+      border: 1px dashed #9ca3af;
+      border-radius: 4px;
+      padding: 6px;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+
+    .small-text {
+      font-size: 11px;
+      color: #4b5563;
+    }
+
+    hr {
+      margin: 14px 0;
+      border: none;
+      border-top: 1px dashed #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+  <button id="print-button" onclick="window.print()">🖨️ Drukuj / Zapisz do PDF</button>
+
+  <div class="page">
+    <h1>🔵 BŁĘKIT METYLENOWY – ULOTKA BEZPIECZEŃSTWA</h1>
+    <p class="small-text" style="text-align:center; margin-bottom:12px;">
+      To jest uproszczona ulotka informacyjna. Nie zastępuje porady lekarza ani ulotki leku.
+    </p>
+
+    <div class="two-columns">
+      <!-- LEWA KOLUMNA -->
+      <div class="column">
+        <div class="section-box warning">
+          <div class="section-title">❌ KIEDY ABSOLUTNIE NIE STOSOWAĆ</div>
+          <ul>
+            <li>💊 Leki przeciwdepresyjne SSRI / SNRI (np. sertralina, escitalopram, fluoksetyna) – ryzyko zespołu serotoninowego (stan zagrożenia życia).</li>
+            <li>⚠️ Inne leki podnoszące serotoninę / inhibitory MAO (część leków na Parkinsona, inne MAOi, niektóre narkotyki – np. amfetamina).</li>
+            <li>🤧 Syropy / tabletki na kaszel z dekstrometorfanem (DXM) – możliwy zespół serotoninowy, konieczna pilna pomoc medyczna.</li>
+            <li>🧬 Niedobór enzymu G6PD (fawizm) – ryzyko rozpadu czerwonych krwinek (hemolizy).</li>
+            <li>🧾 Dowolne leki na receptę bez wcześniejszej konsultacji z lekarzem.</li>
+          </ul>
+        </div>
+
+        <div class="section-box info">
+          <div class="section-title">☠️ NAJWAŻNIEJSZE ZAGROŻENIA</div>
+          <ul>
+            <li>🧠 Błękit metylenowy hamuje MAO‑A – podnosi poziom serotoniny, dopaminy, noradrenaliny.</li>
+            <li>💣 W połączeniu z SSRI/SNRI lub DXM może wywołać zespół serotoninowy.</li>
+            <li>🚑 Objawy zespołu serotoninowego: silne pobudzenie, dezorientacja, wysoka gorączka, rozszerzone źrenice, drżenia, sztywność mięśni, w ciężkich przypadkach śpiączka i śmierć.</li>
+            <li>📉 Zbyt wysokie dawki zamiast wspierać mitochondria – zaczynają je blokować.</li>
+          </ul>
+        </div>
+
+        <div class="section-box info">
+          <div class="section-title">💉 DAWKI I ZASTOSOWANIE</div>
+          <ul>
+            <li>🏥 Zastosowanie szpitalne (np. zatrucia): ok. 2 mg/kg dożylnie – to dawki wyłącznie medyczne.</li>
+            <li>🧪 Mikrodozowanie (biohacking – wg materiału): start ok. 0,5 mg/dzień; typowo 0,5–2 mg/dzień.</li>
+            <li>🥤 Sposób przyjmowania: rozpuścić w wodzie, pić przez słomkę, raczej szybkim łykiem – aby nie barwić zębów.</li>
+            <li>🌙 Nie przyjmować wieczorem – może utrudniać zaśnięcie (pobudzenie, wzrost energii).</li>
+          </ul>
+          <p class="small-text"><strong>Uwaga:</strong> powyższe wartości mają charakter informacyjny i nie są zaleceniem dawkowania. Zawsze konsultuj się z lekarzem.</p>
+        </div>
+      </div>
+
+      <!-- PRAWA KOLUMNA -->
+      <div class="column">
+        <div class="section-box note">
+          <div class="section-title">🧴 JAKOŚĆ I RODZAJE BŁĘKITU</div>
+          <ul>
+            <li>🐠 Nie używaj błękitu akwarystycznego, technicznego ani odczynników przemysłowych – mogą zawierać metale ciężkie (arsen, rtęć, kadm, aluminium itd.).</li>
+            <li>⚗️ „CzDA” (czysty do analizy) w polskich realiach nadal dopuszcza śladowe metale ciężkie – to nie jest optymalny wybór do przewlekłego stosowania doustnego.</li>
+            <li>💊 Wybieraj wyłącznie klasę farmaceutyczną (np. USP / Ph. Eur., „pharmaceutical grade”).</li>
+            <li>🧠 Długotrwałe stosowanie zanieczyszczonego błękitu = ryzyko kumulacji metali ciężkich w organizmie.</li>
+          </ul>
+        </div>
+
+        <div class="section-box info">
+          <div class="section-title">⚙️ SKUTKI UBOCZNE I OBSERWACJA</div>
+          <ul>
+            <li>🔵 Typowe efekty: niebieski / zielonkawy mocz (wydalanie), niebieski język i zęby przy piciu bez słomki, lekkie nudności przy wyższych dawkach na pusty żołądek.</li>
+            <li>🧾 Przed regularnym stosowaniem: rozważ badanie G6PD, spisz wszystkie leki i suplementy, które przyjmujesz.</li>
+            <li>🩺 Skonsultuj listę leków (szczególnie SSRI/SNRI, leki na Parkinsona, preparaty z DXM) z lekarzem.</li>
+            <li>🧨 Pamiętaj: to silny lek z listy podstawowych leków WHO, a nie zwykły suplement.</li>
+          </ul>
+        </div>
+
+        <div class="section-box note">
+          <div class="section-title">📝 MIEJSCE NA TWOJE NOTATKI</div>
+          <p class="small-text">
+            Data rozpoczęcia: ___________________________<br>
+            Aktualna dawka: _____________________________<br>
+            Lekarz prowadzący / kontakt: _________________
+          </p>
+          <p class="small-text">Moje leki (szczególnie SSRI/SNRI, MAOi, DXM, inne):</p>
+          <div class="notes-area"></div>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <p class="small-text">
+      Źródło inspiracji: materiał edukacyjny o błękicie metylenowym (biohacking, mitochondria). Ulotka służy jako pomoc do rozmowy z lekarzem, nie jako samodzielne
+      wskazanie medyczne.
+    </p>
+  </div>
+</body>
+</html>
