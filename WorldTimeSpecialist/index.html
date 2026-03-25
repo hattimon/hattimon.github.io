@@ -1,4 +1,82 @@
-<video controls width="720">
-  <source src="https://raw.githubusercontent.com/hattimon/WorldTimeSpecialist/main/demo/demo.mp4" type="video/mp4">
-</video><br>
-<a href="https://github.com/hattimon/WorldTimeSpecialist/tree/main?tab=readme-ov-file">Repo: https://github.com/hattimon/WorldTimeSpecialist/tree/main?tab=readme-ov-file</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WorldTimeSpecialist Demo Video</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Ciemne tło zbliżone do GitHub dark */
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+        -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page-wrapper {
+      text-align: center;
+      padding: 24px;
+    }
+
+    .video-frame {
+      background-color: #161b22;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 0 0 1px #30363d;
+      display: inline-block;
+    }
+
+    video {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      display: block;
+    }
+
+    .links {
+      margin-top: 16px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    a {
+      color: #58a6ff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="video-frame">
+      <video controls width="720">
+        <source src="https://raw.githubusercontent.com/hattimon/WorldTimeSpecialist/main/demo/demo.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <div class="links">
+        <div>
+          Back to repo page:
+          <a href="https://github.com/hattimon/WorldTimeSpecialist/tree/main?tab=readme-ov-file">
+            WorldTimeSpecialist repository
+          </a>
+        </div>
+        <div>
+          Powrót do strony repozytorium:
+          <a href="https://github.com/hattimon/WorldTimeSpecialist/tree/main?tab=readme-ov-file">
+            WorldTimeSpecialist – repozytorium
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
