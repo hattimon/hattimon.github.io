@@ -588,6 +588,7 @@ function bindEvents() {
     state.theme = refs.themeSelect.value || DEFAULT_THEME;
     localStorage.setItem(STORAGE_KEYS.theme, state.theme);
     applyTheme(state.theme);
+    renderAll();
   });
   refs.saveIndexerButton.addEventListener("click", saveIndexerBaseUrl);
   refs.connectButton.addEventListener("click", wrapUi(connectSerial));
@@ -4182,6 +4183,22 @@ function renderEducation() {
 function renderAll() {
   ensureEnhancedRefs();
   ensureEnhancedState();
+  applyTheme(state.theme);
+  applyLanguage(state.language);
+  if (refs.languageSelect) {
+    refs.languageSelect.value = state.language;
+  }
+  if (refs.themeSelect) {
+    refs.themeSelect.value = state.theme;
+  }
+  if (refs.indexerBaseUrlInput) {
+    refs.indexerBaseUrlInput.value = state.indexerBaseUrl || DEFAULT_INDEXER_BASE_URL;
+  }
+  if (refs.serialSupportNotice) {
+    refs.serialSupportNotice.textContent = ("serial" in navigator)
+      ? t("misc.browserHint")
+      : t("misc.browserUnsupported");
+  }
   renderOverview();
   renderDeviceReadiness();
   renderKnownDevices();
