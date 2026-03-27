@@ -1035,7 +1035,8 @@ body[data-theme="dark"] .log-dock {
   font-size: 11px;
   line-height: 1.2;
   color: rgba(186, 204, 225, 0.95);
-  word-break: break-all;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .signal-title {
@@ -1074,6 +1075,7 @@ body[data-theme="dark"] .log-dock {
   font-size: 0.74rem;
   line-height: 1.3;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 @keyframes ambientFloat {

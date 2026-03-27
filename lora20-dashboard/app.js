@@ -460,6 +460,8 @@
     renderPortfolio();
     renderPrepared();
     renderProfiles();
+    renderOnboarding();
+    renderEducation();
     renderOperations();
     syncIndexerLookupFields();
     applyLogDockState();
