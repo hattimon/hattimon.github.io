@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>lora20 Dashboard</title>
+    <meta
+      name="description"
+      content="Dashboard do deploy, mint, transfer i automatyzacji inskrypcji lora20 przez Web Serial i publiczny indexer."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient--top"></div>
+    <div class="ambient ambient--bottom"></div>
+    <div class="shell">
+      <header class="card card--hero">
+        <div class="hero-copy">
+          <p class="eyebrow">lora20 control deck</p>
+          <h1>Deploy, mint, transfer and automate LoRa inscriptions.</h1>
+          <p class="lead">
+            Statyczny dashboard pod GitHub Pages. Laczy sie lokalnie z Helteciem przez Web Serial i opcjonalnie
+            odpytuje publiczny indexer.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <label class="field">
+            <span>Indexer base URL</span>
+            <input id="indexerBaseUrlInput" type="url" placeholder="https://lora20.hattimon.pl" />
+          </label>
+          <div class="button-row">
+            <button id="saveIndexerButton" class="button button--ghost" type="button">Save URL</button>
+            <button id="connectButton" class="button button--primary" type="button">Connect device</button>
+            <button id="disconnectButton" class="button button--ghost" type="button">Disconnect</button>
+            <button id="refreshButton" class="button button--secondary" type="button">Refresh</button>
+          </div>
+          <div class="status-stack">
+            <span id="connectionBadge" class="badge">Disconnected</span>
+            <p id="serialSupportNotice" class="helper"></p>
+          </div>
+        </div>
+      </header>
+
+      <main class="dashboard-grid">
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Device</p>
+              <h2>Cryptographic node</h2>
+            </div>
+            <button id="getInfoButton" class="button button--ghost" type="button">Pull info</button>
+          </div>
+          <div class="stat-grid">
+            <article class="stat">
+              <span class="stat__label">Device ID</span>
+              <strong id="deviceIdValue" class="mono">-</strong>
+            </article>
+            <article class="stat">
+              <span class="stat__label">Next nonce</span>
+              <strong id="nextNonceValue" class="mono">-</strong>
+            </article>
+            <article class="stat">
+              <span class="stat__label">Auto-mint</span>
+              <strong id="autoMintValue">-</strong>
+            </article>
+            <article class="stat">
+              <span class="stat__label">Default mint</span>
+              <strong id="defaultMintValue" class="mono">-</strong>
+            </article>
+          </div>
+          <pre id="deviceSummaryOutput" class="output output--compact">No device data yet.</pre>
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">LoRaWAN</p>
+              <h2>Radio runtime</h2>
+            </div>
+            <button id="getLorawanButton" class="button button--ghost" type="button">Pull radio</button>
+          </div>
+          <div class="stat-grid">
+            <article class="stat">
+              <span class="stat__label">Joined</span>
+              <strong id="lorawanJoinedValue">-</strong>
+            </article>
+            <article class="stat">
+              <span class="stat__label">Port</span>
+              <strong id="lorawanPortValue" class="mono">-</strong>
+            </article>
+            <article class="stat">
+              <span class="stat__label">Last event</span>
+              <strong id="lorawanEventValue">-</strong>
+            </article>
+            <article class="stat">
+              <span class="stat__label">DevEUI</span>
+              <strong id="lorawanDevEuiValue" class="mono">-</strong>
+            </article>
+          </div>
+          <pre id="lorawanSummaryOutput" class="output output--compact">No LoRaWAN status yet.</pre>
+        </section>
+
+        <section class="card card--wide">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Access</p>
+              <h2>Keys, backup, LoRaWAN and registration</h2>
+            </div>
+          </div>
+          <div class="columns columns--two">
+            <div class="stack">
+              <div class="button-row">
+                <button id="generateKeyButton" class="button button--primary" type="button">Generate key</button>
+                <button id="getPublicKeyButton" class="button button--ghost" type="button">Read public key</button>
+                <button id="joinLorawanButton" class="button button--secondary" type="button">Join LoRaWAN</button>
+              </div>
+
+              <label class="field">
+                <span>Heltec license</span>
+                <input id="heltecLicenseInput" type="text" placeholder="0x...,0x...,0x...,0x..." />
+              </label>
+              <button id="setLicenseButton" class="button button--ghost" type="button">Set license</button>
+
+              <div class="panel">
+                <h3>LoRaWAN config</h3>
+                <div class="field-grid">
+                  <label class="field field--checkbox">
+                    <input id="lorawanAutoDevEuiInput" type="checkbox" checked />
+                    <span>Auto DevEUI</span>
+                  </label>
+                  <label class="field field--checkbox">
+                    <input id="lorawanAdrInput" type="checkbox" checked />
+                    <span>ADR</span>
+                  </label>
+                  <label class="field field--checkbox">
+                    <input id="lorawanConfirmedInput" type="checkbox" />
+                    <span>Confirmed uplink</span>
+                  </label>
+                  <label class="field">
+                    <span>DevEUI</span>
+                    <input id="lorawanDevEuiInput" type="text" placeholder="6982686000009070" />
+                  </label>
+                  <label class="field">
+                    <span>JoinEUI</span>
+                    <input id="lorawanJoinEuiInput" type="text" placeholder="0000000000000000" />
+                  </label>
+                  <label class="field">
+                    <span>AppKey</span>
+                    <input id="lorawanAppKeyInput" type="text" placeholder="32 hex chars" />
+                  </label>
+                  <label class="field">
+                    <span>App port</span>
+                    <input id="lorawanAppPortInput" type="number" min="1" max="223" value="1" />
+                  </label>
+                  <label class="field">
+                    <span>Data rate</span>
+                    <input id="lorawanDataRateInput" type="number" min="0" max="15" value="3" />
+                  </label>
+                </div>
+                <button id="setLorawanButton" class="button button--secondary" type="button">Save radio config</button>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="panel">
+                <h3>Backup</h3>
+                <div class="field-grid">
+                  <label class="field">
+                    <span>Export passphrase</span>
+                    <input id="backupPassphraseInput" type="password" placeholder="Local passphrase" />
+                  </label>
+                  <label class="field">
+                    <span>Import passphrase</span>
+                    <input id="backupImportPassphraseInput" type="password" placeholder="Passphrase for restore" />
+                  </label>
+                </div>
+                <div class="button-row">
+                  <button id="exportBackupButton" class="button button--ghost" type="button">Export backup</button>
+                  <button id="importBackupButton" class="button button--ghost" type="button">Import backup</button>
+                </div>
+                <label class="field">
+                  <span>Backup JSON</span>
+                  <textarea id="backupJsonTextarea" rows="8" placeholder="{ ... backup json ... }"></textarea>
+                </label>
+              </div>
+
+              <div class="panel">
+                <h3>Indexer registration</h3>
+                <div class="field-grid">
+                  <label class="field">
+                    <span>DevEUI link</span>
+                    <input id="linkDevEuiInput" type="text" placeholder="6982686000009070" />
+                  </label>
+                </div>
+                <div class="button-row">
+                  <button id="registerDeviceButton" class="button button--secondary" type="button">Register device</button>
+                  <button id="linkDevEuiButton" class="button button--ghost" type="button">Link DevEUI</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card card--wide">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Inscriptions</p>
+              <h2>Deploy, mint, transfer and config</h2>
+            </div>
+          </div>
+          <div class="inscription-grid">
+            <article class="panel">
+              <h3>Deploy token</h3>
+              <div class="field-grid">
+                <label class="field">
+                  <span>Tick</span>
+                  <input id="deployTickInput" type="text" maxlength="4" value="LORA" />
+                </label>
+                <label class="field">
+                  <span>Max supply</span>
+                  <input id="deployMaxSupplyInput" type="text" value="21000000" />
+                </label>
+                <label class="field">
+                  <span>Limit per mint</span>
+                  <input id="deployLimitPerMintInput" type="text" value="100" />
+                </label>
+              </div>
+              <div class="button-row">
+                <button id="deployPrepareButton" class="button button--ghost" type="button">Prepare</button>
+                <button id="deploySendButton" class="button button--primary" type="button">Prepare + send</button>
+              </div>
+            </article>
+
+            <article class="panel">
+              <h3>Mint token</h3>
+              <div class="field-grid">
+                <label class="field">
+                  <span>Tick</span>
+                  <input id="mintTickInput" type="text" maxlength="4" value="LORA" />
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input id="mintAmountInput" type="text" value="100" />
+                </label>
+              </div>
+              <div class="button-row">
+                <button id="mintPrepareButton" class="button button--ghost" type="button">Prepare</button>
+                <button id="mintSendButton" class="button button--primary" type="button">Prepare + send</button>
+              </div>
+            </article>
+
+            <article class="panel">
+              <h3>Transfer token</h3>
+              <div class="field-grid">
+                <label class="field">
+                  <span>Tick</span>
+                  <input id="transferTickInput" type="text" maxlength="4" value="LORA" />
+                </label>
+                <label class="field">
+                  <span>Amount</span>
+                  <input id="transferAmountInput" type="text" value="1" />
+                </label>
+                <label class="field">
+                  <span>Recipient deviceId</span>
+                  <input id="transferRecipientInput" type="text" placeholder="0011223344556677" />
+                </label>
+              </div>
+              <div class="button-row">
+                <button id="transferPrepareButton" class="button button--ghost" type="button">Prepare</button>
+                <button id="transferSendButton" class="button button--primary" type="button">Prepare + send</button>
+              </div>
+            </article>
+
+            <article class="panel">
+              <h3>Config inscription</h3>
+              <div class="field-grid">
+                <label class="field field--checkbox">
+                  <input id="configAutoMintEnabledInput" type="checkbox" />
+                  <span>Auto-mint enabled</span>
+                </label>
+                <label class="field">
+                  <span>Interval (seconds)</span>
+                  <input id="configAutoMintIntervalInput" type="number" min="30" step="30" value="1800" />
+                </label>
+              </div>
+              <div class="button-row">
+                <button id="configPrepareButton" class="button button--ghost" type="button">Prepare</button>
+                <button id="configSendButton" class="button button--primary" type="button">Prepare + send</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="card card--wide">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Profiles</p>
+              <h2>Repeatable auto-mint presets</h2>
+            </div>
+          </div>
+          <p class="helper">
+            Tick i amount sa lokalnymi domyslnymi wartosciami urzadzenia. Protocol CONFIG inscription nadaje tylko
+            flage auto-mint i interwal.
+          </p>
+          <div class="profile-editor">
+            <div class="field-grid">
+              <label class="field">
+                <span>Name</span>
+                <input id="profileNameInput" type="text" placeholder="LORA / 100 / 30 min" />
+              </label>
+              <label class="field">
+                <span>Tick</span>
+                <input id="profileTickInput" type="text" maxlength="4" value="LORA" />
+              </label>
+              <label class="field">
+                <span>Mint amount</span>
+                <input id="profileAmountInput" type="text" value="100" />
+              </label>
+              <label class="field">
+                <span>Interval (minutes)</span>
+                <input id="profileIntervalInput" type="number" min="1" value="30" />
+              </label>
+              <label class="field field--checkbox">
+                <input id="profileEnabledInput" type="checkbox" checked />
+                <span>Auto-mint enabled</span>
+              </label>
+            </div>
+            <div class="button-row">
+              <button id="saveProfileButton" class="button button--secondary" type="button">Save profile</button>
+              <button id="clearProfileButton" class="button button--ghost" type="button">Clear editor</button>
+            </div>
+          </div>
+          <div id="profileList" class="profile-list"></div>
+        </section>
+
+        <section class="card card--wide">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Indexer</p>
+              <h2>Public read API</h2>
+            </div>
+          </div>
+          <div class="indexer-grid">
+            <article class="panel">
+              <h3>Health</h3>
+              <button id="healthButton" class="button button--ghost" type="button">Check /health</button>
+              <pre id="healthOutput" class="output output--compact">No health check yet.</pre>
+            </article>
+            <article class="panel">
+              <h3>Token lookup</h3>
+              <label class="field">
+                <span>Tick</span>
+                <input id="tokenTickInput" type="text" maxlength="4" value="LORA" />
+              </label>
+              <button id="tokenLookupButton" class="button button--ghost" type="button">Load token</button>
+              <pre id="tokenOutput" class="output output--compact">No token data yet.</pre>
+            </article>
+            <article class="panel">
+              <h3>Balance lookup</h3>
+              <div class="field-grid">
+                <label class="field">
+                  <span>Device ID</span>
+                  <input id="balanceDeviceIdInput" type="text" placeholder="cbbe9a389f75c9b6" />
+                </label>
+                <label class="field">
+                  <span>Tick</span>
+                  <input id="balanceTickInput" type="text" maxlength="4" value="LORA" />
+                </label>
+              </div>
+              <button id="balanceLookupButton" class="button button--ghost" type="button">Load balance</button>
+              <pre id="balanceOutput" class="output output--compact">No balance data yet.</pre>
+            </article>
+            <article class="panel">
+              <h3>Transactions</h3>
+              <div class="field-grid">
+                <label class="field">
+                  <span>Device ID</span>
+                  <input id="transactionsDeviceIdInput" type="text" placeholder="cbbe9a389f75c9b6" />
+                </label>
+                <label class="field">
+                  <span>Tick (optional)</span>
+                  <input id="transactionsTickInput" type="text" maxlength="4" value="LORA" />
+                </label>
+                <label class="field">
+                  <span>Limit</span>
+                  <input id="transactionsLimitInput" type="number" min="1" max="100" value="10" />
+                </label>
+              </div>
+              <button id="transactionsButton" class="button button--ghost" type="button">Load transactions</button>
+              <pre id="transactionsOutput" class="output output--compact">No transaction data yet.</pre>
+            </article>
+          </div>
+        </section>
+
+        <section class="card card--wide">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Console</p>
+              <h2>Payload preview and raw JSON</h2>
+            </div>
+          </div>
+          <div class="columns columns--two">
+            <div class="stack">
+              <div class="panel">
+                <h3>Last prepared payload</h3>
+                <pre id="preparedOutput" class="output">No prepared payload yet.</pre>
+              </div>
+            </div>
+            <div class="stack">
+              <div class="panel">
+                <h3>Raw command</h3>
+                <label class="field">
+                  <span>JSON request</span>
+                  <textarea id="rawCommandTextarea" rows="8" placeholder='{"command":"ping"}'></textarea>
+                </label>
+                <button id="sendRawCommandButton" class="button button--ghost" type="button">Send raw JSON</button>
+              </div>
+              <div class="panel">
+                <h3>Activity log</h3>
+                <div id="activityLog" class="log"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
