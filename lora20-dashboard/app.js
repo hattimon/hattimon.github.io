@@ -21,6 +21,8 @@
     scheduler: { enabled: false, intervalMinutes: 30 }
   };
 
+  const PLATFORM_COPY_COUNT = 2;
+
   const TIMEOUTS = {
     default: 15000,
     get_info: 20000,
@@ -40,9 +42,15 @@
   ]);
 
   const I18N_EN = {
+    "hero.eyebrow": "lora20 control plane",
+    "hero.title": "Lightweight dashboard for sending inscriptions through Heltec V4 and LoRaWAN.",
+    "hero.lead": "The panel guides you from onboarding and radio configuration to deploy, mint, transfer and balance checks.",
+    "hero.chipOne": "Web Serial + HTTPS",
+    "hero.chipTwo": "Heltec V4 onboarding",
+    "hero.chipThree": "Sticky log dock",
     "settings.language": "Language",
     "settings.theme": "Theme",
-    "settings.sound": "Sound",
+    "settings.sound": "Sounds",
     "settings.indexerUrl": "Public indexer URL",
     "actions.saveUrl": "Save URL",
     "actions.connect": "Connect device",
@@ -65,7 +73,98 @@
     "actions.prepareTransfer": "Prepare transfer",
     "actions.sendTransfer": "Prepare and send",
     "actions.prepareConfig": "Prepare config",
-    "actions.sendConfig": "Prepare and send"
+    "actions.sendConfig": "Prepare and send",
+    "actions.saveLicense": "Save license",
+    "actions.saveRadio": "Save radio",
+    "actions.linkDevEui": "Link DevEUI",
+    "actions.exportBackup": "Export backup",
+    "actions.importBackup": "Import backup",
+    "actions.sendRaw": "Send raw JSON",
+    "actions.saveProfile": "Save profile",
+    "actions.clearProfile": "Clear editor",
+    "actions.syncQueue": "Sync queue",
+    "actions.syncBroadcast": "Sync + broadcast",
+    "actions.stopQueue": "Stop loop",
+    "sections.overviewKicker": "Overview",
+    "sections.overviewTitle": "Most important things first",
+    "sections.deviceKicker": "Device",
+    "sections.deviceTitle": "Current node and known devices",
+    "sections.knownDevicesKicker": "Remembered",
+    "sections.knownDevicesTitle": "Configured devices",
+    "sections.radioKicker": "Radio",
+    "sections.radioTitle": "LoRaWAN readiness",
+    "sections.portfolioKicker": "Portfolio",
+    "sections.portfolioTitle": "Balances and recent events",
+    "sections.tokensKicker": "Tokens",
+    "sections.tokensTitle": "Deployed tickers and form autofill",
+    "sections.operationsKicker": "Operations",
+    "sections.operationsTitle": "Deploy, mint, transfer and config",
+    "sections.profilesKicker": "Profiles",
+    "sections.profilesTitle": "Mint library and round-robin queue",
+    "sections.onboardingKicker": "Onboarding",
+    "sections.onboardingTitle": "New device step by step",
+    "sections.educationKicker": "Education",
+    "sections.educationTitle": "How it works and what it does not promise",
+    "sections.advancedKicker": "Advanced",
+    "sections.advancedTitle": "Radio, backup and raw JSON",
+    "overview.deployedTokens": "Deployed tokens",
+    "overview.portfolioEntries": "Portfolio entries",
+    "overview.recentEvents": "Recent events",
+    "overview.activeProfiles": "Active profiles",
+    "overview.lastSend": "Last send",
+    "device.deviceId": "Device ID",
+    "device.nextNonce": "Next nonce",
+    "device.autoMint": "Auto-mint",
+    "device.defaultMint": "Default mint",
+    "radio.joined": "Joined",
+    "radio.port": "Port",
+    "radio.event": "Last event",
+    "radio.devEui": "DevEUI",
+    "portfolio.balancesTitle": "Tokens in portfolio",
+    "portfolio.historyTitle": "Recent events",
+    "tokens.search": "Search ticker",
+    "tokens.quickPick": "Pick for forms",
+    "operations.focusKicker": "Most used",
+    "operations.mintTitle": "Mint token",
+    "operations.tick": "Tick",
+    "operations.amount": "Amount",
+    "operations.payloadSize": "Payload",
+    "operations.dcCost": "Est. DC",
+    "operations.protocol": "Protocol",
+    "operations.allowRisky": "Allow send despite predicted indexer error",
+    "operations.deployTitle": "Deploy token",
+    "operations.maxSupply": "Max supply",
+    "operations.limitPerMint": "Limit per mint",
+    "operations.transferTitle": "Transfer token",
+    "operations.recipient": "Recipient deviceId",
+    "operations.configTitle": "Config inscription",
+    "operations.autoMintEnabled": "Auto-mint enabled",
+    "operations.intervalSeconds": "Interval (seconds)",
+    "operations.preparedPreview": "Preview of the last prepared payload",
+    "profiles.name": "Name",
+    "profiles.amount": "Mint amount",
+    "profiles.interval": "Preferred interval (min)",
+    "profiles.include": "Add to active queue",
+    "profiles.loopEnabled": "Loop enabled",
+    "profiles.loopInterval": "Loop interval (min)",
+    "advanced.radioConfig": "LoRaWAN config and Heltec license",
+    "advanced.license": "Heltec license",
+    "advanced.autoDevEui": "Auto DevEUI",
+    "advanced.adr": "ADR",
+    "advanced.confirmed": "Confirmed uplink",
+    "advanced.devEui": "DevEUI",
+    "advanced.joinEui": "JoinEUI",
+    "advanced.appKey": "AppKey",
+    "advanced.appPort": "App port",
+    "advanced.dataRate": "Data rate",
+    "advanced.indexerBinding": "DevEUI linking",
+    "advanced.devEuiLink": "DevEUI to link",
+    "advanced.backupTitle": "Backup and restore",
+    "advanced.exportPassphrase": "Export passphrase",
+    "advanced.importPassphrase": "Import passphrase",
+    "advanced.rawTitle": "Raw commands and indexer debug",
+    "logs.kicker": "Event report",
+    "logs.title": "Activity log"
   };
 
   const refs = {};
@@ -74,7 +173,7 @@
     "connectButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
     "serialSupportNotice", "overviewTokensValue", "overviewBalancesValue", "overviewEventsValue",
     "overviewProfilesValue", "overviewLastSendValue", "overviewStatusNote", "getInfoButton",
-    "quickMintChecklist", "tokenLibraryStatus", "logDock", "toggleLogDockButton",
+    "quickMintChecklist", "tokenLibraryStatus", "logDock", "toggleLogDockButton", "operationActionNote",
     "getLorawanButton", "generateKeyButton", "getPublicKeyButton", "registerDeviceButton",
     "joinLorawanButton", "heltecLicenseInput", "setLicenseButton", "lorawanAutoDevEuiInput",
     "lorawanAdrInput", "lorawanConfirmedInput", "lorawanDevEuiInput", "lorawanJoinEuiInput",
@@ -232,6 +331,7 @@
     state.language = refs.languageSelect?.value || DEFAULTS.language;
     writeStorage(STORAGE.language, state.language);
     applyLanguage();
+    updateSerialSupport();
     renderAll();
   }
 
@@ -303,8 +403,12 @@
   function updateSerialSupport() {
     if (!refs.serialSupportNotice) return;
     refs.serialSupportNotice.textContent = "serial" in navigator
-      ? "Przed połączeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM."
-      : "Web Serial działa tylko w Chrome lub Edge na HTTPS albo localhost.";
+      ? (state.language === "en"
+          ? "Before connecting, close VS Code Serial Monitor, PlatformIO, MobaXterm and any app holding the COM port."
+          : "Przed połączeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM.")
+      : (state.language === "en"
+          ? "Web Serial works only in Chrome or Edge on HTTPS or localhost."
+          : "Web Serial działa tylko w Chrome lub Edge na HTTPS albo localhost.");
   }
 
   function renderAll() {
@@ -534,7 +638,7 @@
     setText(refs.preparedOutput, state.lastPrepared ? prettyJson(state.lastPrepared) : "No prepared payload yet.");
     const payloadSize = state.lastPrepared?.payloadSize || 81;
     setText(refs.estimatedPayloadValue, `${payloadSize} B`);
-    setText(refs.estimatedDcValue, `~${estimateDc(payloadSize)} DC`);
+    setText(refs.estimatedDcValue, formatDcEstimate(payloadSize));
   }
 
   function renderProfiles() {
@@ -608,16 +712,29 @@
     if (runtime && (!runtime.hardwareReady || !runtime.initialized)) transportNotes.push("Radio po restarcie nie jest jeszcze gotowe do kolejnej wysyłki.");
     if (Number.isFinite(lastSendMs) && lastSendMs < 15000) transportNotes.push(`Ostatnia wysyłka była ${formatRelative(Date.now(), Date.parse(state.lastSendAt))}. Daj urządzeniu chwilę przed następną próbą.`);
     renderCallout(refs.transportStatusNote, transportNotes.length ? "warn" : "ok", transportNotes.length ? transportNotes.join(" ") : "Transport wygląda poprawnie.");
+
+    const actionNote = state.language === "en"
+      ? "Prepare only runs the local prepare_* command on Heltec, signs the payload and shows a preview. It does not transmit over LoRaWAN and does not commit the nonce. Prepare and send first prepares the payload, then calls lorawan_send, queues the uplink in the radio and commits the nonce after the device accepts the queue request. The indexer changes state only after ChirpStack forwards that uplink to the webhook."
+      : "Przygotuj uruchamia na Heltecu tylko lokalne polecenie prepare_*, podpisuje payload i pokazuje podgląd. Nie wysyła nic przez LoRaWAN i nie commit-uje nonce. Przygotuj i wyślij najpierw robi prepare, potem wywołuje lorawan_send, kolejkuje uplink w radiu i commit-uje nonce po zaakceptowaniu przez urządzenie. Stan indexera zmienia się dopiero po tym, jak ChirpStack prześle uplink do webhooka.";
+    renderCallout(refs.operationActionNote, "ok", actionNote);
   }
 
   function renderOnboarding() {
     if (!refs.onboardingChecklist) return;
-    refs.onboardingChecklist.innerHTML = [
-      { title: "1. Sterowniki i port", body: "Użyj Chrome albo Edge. Zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i każdą aplikację trzymającą COM przed kliknięciem „Połącz urządzenie”." },
-      { title: "2. Firmware i klucz", body: "Po połączeniu pobierz info, wygeneruj klucz, odczytaj public key i zarejestruj urządzenie w indexerze. Jeśli firmware był aktualizowany, sprawdź radio i join." },
-      { title: "3. LoRaWAN", body: "Wypełnij DevEUI, JoinEUI, AppKey i zapisz radio. Potem wykonaj join. Nie próbuj mintu, gdy runtime pokazuje joined=false albo hardwareReady=false." },
-      { title: "4. Indexer i webhook", body: "Sprawdź health indexera, podepnij DevEUI do deviceId i upewnij się, że ChirpStack wysyła webhook na /integrations/chirpstack z aktualnym tokenem." }
-    ].map((item) => `
+    const items = state.language === "en"
+      ? [
+          { title: "1. Drivers and port", body: "Use Chrome or Edge. Close VS Code Serial Monitor, PlatformIO, MobaXterm and every app holding the COM port before clicking Connect device." },
+          { title: "2. Firmware and key", body: "After connecting, fetch info, generate the key, read the public key and register the device in the indexer. If firmware changed, verify radio state and join." },
+          { title: "3. LoRaWAN", body: "Fill DevEUI, JoinEUI and AppKey, save radio settings and then run join. Do not try mint when runtime shows joined=false or hardwareReady=false." },
+          { title: "4. Indexer and webhook", body: "Check indexer health, link DevEUI to deviceId and confirm ChirpStack sends the webhook to /integrations/chirpstack with the current token." }
+        ]
+      : [
+          { title: "1. Sterowniki i port", body: "Użyj Chrome albo Edge. Zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i każdą aplikację trzymającą COM przed kliknięciem „Połącz urządzenie”." },
+          { title: "2. Firmware i klucz", body: "Po połączeniu pobierz info, wygeneruj klucz, odczytaj public key i zarejestruj urządzenie w indexerze. Jeśli firmware był aktualizowany, sprawdź radio i join." },
+          { title: "3. LoRaWAN", body: "Wypełnij DevEUI, JoinEUI, AppKey i zapisz radio. Potem wykonaj join. Nie próbuj mintu, gdy runtime pokazuje joined=false albo hardwareReady=false." },
+          { title: "4. Indexer i webhook", body: "Sprawdź health indexera, podepnij DevEUI do deviceId i upewnij się, że ChirpStack wysyła webhook na /integrations/chirpstack z aktualnym tokenem." }
+        ];
+    refs.onboardingChecklist.innerHTML = items.map((item) => `
       <article class="guide-card">
         <h3>${escapeHtml(item.title)}</h3>
         <p>${escapeHtml(item.body)}</p>
@@ -627,14 +744,27 @@
 
   function renderEducation() {
     if (!refs.educationContent) return;
-    refs.educationContent.innerHTML = `
-      <p>Każda wiadomość jest podpisywana Ed25519. Indexer używa nonce, żeby odrzucić replay i duplikaty. Deploy liczy się tylko pierwszy dla tickera, a mint przestaje być indeksowany po osiągnięciu max supply.</p>
-      <ul>
-        <li><strong>Mint</strong>: obecnie około 81 B payloadu, czyli około ${estimateDc(81)} DC bazowego kosztu przy porcjach 24 B.</li>
-        <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; profile round-robin są utrzymywane lokalnie w Heltecu po synchronizacji.</li>
-        <li><strong>Bezpieczeństwo</strong>: podpis udowadnia autora, nonce pilnuje kolejności, a webhook do indexera powinien być chroniony osobnym tokenem.</li>
-      </ul>
-    `;
+    const mintBaseDc = estimateDcBase(81);
+    const mintEffectiveDc = estimateDcTotal(81);
+    refs.educationContent.innerHTML = state.language === "en"
+      ? `
+        <p>Every message is signed with Ed25519. The indexer uses the nonce to reject replay and duplicates. Only the first deploy counts for a ticker, and mint stops being indexed after max supply is reached.</p>
+        <ul>
+          <li><strong>Mint</strong>: currently about 81 B of payload, which is about ${mintBaseDc} DC of base cost in 24 B chunks. With the current tenant setting Max copy = ${PLATFORM_COPY_COUNT}, this becomes about ${mintEffectiveDc} DC of effective cost.</li>
+          <li><strong>Prepare vs send</strong>: prepare only creates and signs the payload locally, while send also asks the radio to transmit a real LoRaWAN uplink.</li>
+          <li><strong>Config</strong>: stores auto-mint settings and interval; round-robin profiles stay locally in Heltec after synchronization.</li>
+          <li><strong>Security</strong>: the signature proves the author, nonce preserves order, and the webhook to the indexer should be protected by a separate token.</li>
+        </ul>
+      `
+      : `
+        <p>Każda wiadomość jest podpisywana Ed25519. Indexer używa nonce, żeby odrzucić replay i duplikaty. Deploy liczy się tylko pierwszy dla tickera, a mint przestaje być indeksowany po osiągnięciu max supply.</p>
+        <ul>
+          <li><strong>Mint</strong>: obecnie około 81 B payloadu, czyli około ${mintBaseDc} DC bazowego kosztu przy porcjach 24 B. Przy aktualnym ustawieniu tenantu Max copy = ${PLATFORM_COPY_COUNT} daje to około ${mintEffectiveDc} DC kosztu efektywnego.</li>
+          <li><strong>Prepare vs send</strong>: prepare tylko tworzy i podpisuje payload lokalnie, a send dodatkowo zleca faktyczny uplink LoRaWAN.</li>
+          <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; profile round-robin są utrzymywane lokalnie w Heltecu po synchronizacji.</li>
+          <li><strong>Bezpieczeństwo</strong>: podpis udowadnia autora, nonce pilnuje kolejności, a webhook do indexera powinien być chroniony osobnym tokenem.</li>
+        </ul>
+      `;
   }
 
   async function refreshEverything() {
@@ -1555,8 +1685,21 @@
     }
   }
 
-  function estimateDc(bytes) {
+  function estimateDcBase(bytes) {
     return Math.max(1, Math.ceil(Number(bytes || 0) / 24));
+  }
+
+  function estimateDcTotal(bytes, copies = PLATFORM_COPY_COUNT) {
+    return estimateDcBase(bytes) * Math.max(1, Number(copies) || 1);
+  }
+
+  function formatDcEstimate(bytes) {
+    const base = estimateDcBase(bytes);
+    const effective = estimateDcTotal(bytes);
+    if (effective === base) return `~${base} DC`;
+    return state.language === "en"
+      ? `~${base} DC base / ~${effective} DC with copy x${PLATFORM_COPY_COUNT}`
+      : `~${base} DC bazowe / ~${effective} DC przy copy x${PLATFORM_COPY_COUNT}`;
   }
 
   function prettyJson(value) {
