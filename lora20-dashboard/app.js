@@ -213,6 +213,7 @@
     portfolio: [],
     recentTransactions: [],
     tokenCatalogError: "",
+    tokenCatalogErrorRaw: "",
     deviceInfo: null,
     lorawanInfo: null,
     publicKeyInfo: null,
@@ -462,7 +463,7 @@
     const notes = [];
     if (!state.port) notes.push(txt("Urzadzenie nie jest jeszcze podlaczone przez Web Serial.", "The device is not connected via Web Serial yet."));
     if (state.indexerOnline !== true) notes.push(txt("Indexer nie odpowiada lub dashboard nie moze go odczytac.", "Indexer is not responding or dashboard cannot read it."));
-    if (state.tokenCatalogError) notes.push(txt(`Lista tickerow nie odswiezyla sie: ${state.tokenCatalogError}.`, `Token list refresh failed: ${state.tokenCatalogError}.`));
+    if (state.tokenCatalogError) notes.push(state.tokenCatalogError);
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
     if (runtime && !runtime.joined) notes.push(txt("Radio nie jest joined, wiec proba wysylki skonczy sie timeoutem albo odrzuceniem.", "Radio is not joined, so sending will likely timeout or be rejected."));
     if (state.lastSendAt) notes.push(txt(`Ostatnia wysylka: ${formatDateTime(state.lastSendAt)}.`, `Last send: ${formatDateTime(state.lastSendAt)}.`));
@@ -615,15 +616,9 @@
 
     if (refs.tokenLibraryStatus) {
       if (state.tokenCatalogError && knownTokens.length) {
-        renderCallout(refs.tokenLibraryStatus, "warn", txt(
-          `Lista tokenow z indexera nie odswiezyla sie, wiec panel pokazuje dane z portfela urzadzenia. ${state.tokenCatalogError}`,
-          `Indexer token list refresh failed, so dashboard is showing portfolio-derived token data. ${state.tokenCatalogError}`
-        ));
+        renderCallout(refs.tokenLibraryStatus, "warn", state.tokenCatalogError);
       } else if (state.tokenCatalogError) {
-        renderCallout(refs.tokenLibraryStatus, "danger", txt(
-          `Nie udalo sie pobrac listy tokenow z indexera. ${state.tokenCatalogError}`,
-          `Failed to fetch token list from indexer. ${state.tokenCatalogError}`
-        ));
+        renderCallout(refs.tokenLibraryStatus, "danger", state.tokenCatalogError);
       } else {
         renderCallout(refs.tokenLibraryStatus, "ok", txt(
           "Wybierz ticker z listy, aby automatycznie wypelnic pola deploy, mint i transfer.",
@@ -917,23 +912,52 @@
   }
 
   async function loadTokens() {
-    const search = refs.tokenSearchInput?.value?.trim() || "";
     const query = new URLSearchParams();
     query.set("limit", "100");
-    if (search) query.set("search", search);
     try {
       const response = await fetchJson(`/tokens?${query.toString()}`);
       state.tokenCatalog = Array.isArray(response.tokens) ? response.tokens : [];
       state.tokenCatalogError = "";
+      state.tokenCatalogErrorRaw = "";
       setText(refs.tokenOutput, prettyJson(response));
       renderAll();
       return response;
     } catch (error) {
-      state.tokenCatalogError = error instanceof Error ? error.message : String(error);
-      setText(refs.tokenOutput, prettyJson({ error: state.tokenCatalogError }));
+      const rawError = error instanceof Error ? error.message : String(error);
+      state.tokenCatalogErrorRaw = rawError;
+      state.tokenCatalogError = humanizeTokenCatalogError(rawError, getKnownTokens().length > 0);
+      setText(refs.tokenOutput, prettyJson({
+        error: state.tokenCatalogError,
+        rawError: state.tokenCatalogErrorRaw
+      }));
       renderAll();
       throw error;
     }
+  }
+
+  function humanizeTokenCatalogError(rawError, hasFallbackTokens) {
+    const normalized = String(rawError || "").trim();
+    if (/could not determine data type of parameter \$\d+/i.test(normalized)) {
+      return hasFallbackTokens
+        ? txt(
+            "Lista tokenow z indexera nie odswiezyla sie (blad zapytania po stronie indexera). Panel pokazuje dane z portfela urzadzenia.",
+            "Indexer token list refresh failed (server-side query error). Dashboard is showing portfolio-derived data."
+          )
+        : txt(
+            "Indexer zwrocil blad zapytania przy pobieraniu listy tokenow. Sprobuj ponownie po aktualizacji indexera.",
+            "Indexer returned a query error while loading the token list. Retry after updating the indexer."
+          );
+    }
+
+    return hasFallbackTokens
+      ? txt(
+          "Lista tokenow z indexera nie odswiezyla sie. Panel pokazuje dane z portfela urzadzenia.",
+          "Indexer token list refresh failed. Dashboard is showing portfolio-derived data."
+        )
+      : txt(
+          "Nie udalo sie pobrac listy tokenow z indexera.",
+          "Failed to fetch token list from indexer."
+        );
   }
 
   async function lookupToken() {

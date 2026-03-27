@@ -643,6 +643,22 @@ body[data-theme="dark"] .surface {
   gap: 12px;
 }
 
+#recentTransactionsList.timeline {
+  max-height: min(74vh, 760px);
+  overflow-y: auto;
+  align-content: start;
+  padding-right: 4px;
+}
+
+#recentTransactionsList.timeline::-webkit-scrollbar {
+  width: 10px;
+}
+
+#recentTransactionsList.timeline::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(120, 166, 214, 0.4);
+}
+
 .token-grid,
 .card-list,
 .guide-grid {
@@ -891,5 +907,9 @@ body[data-theme="dark"] .log-dock {
     left: 8px;
     right: 8px;
     bottom: 8px;
+  }
+
+  #recentTransactionsList.timeline {
+    max-height: 420px;
   }
 }
