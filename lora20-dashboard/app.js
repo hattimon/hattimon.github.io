@@ -665,6 +665,24 @@
     return null;
   }
 
+  function getPayloadSizeBytes(event) {
+    const candidates = [
+      event?.payloadHex,
+      event?.payload_hex,
+      event?.payload,
+      event?.data?.payloadHex,
+      event?.meta?.payloadHex
+    ];
+    for (const value of candidates) {
+      if (typeof value !== "string") continue;
+      const hexValue = value.trim();
+      if (!hexValue || (hexValue.length % 2) !== 0) continue;
+      if (!/^[0-9a-fA-F]+$/.test(hexValue)) continue;
+      return Math.floor(hexValue.length / 2);
+    }
+    return null;
+  }
+
   function formatMatrixDateTime(value) {
     if (!value) return "-";
     const date = new Date(value);
@@ -742,9 +760,13 @@
     if (refs.witnessModalSubtitle) {
       const nonce = getEventNonce(event);
       const nonceLabel = nonce != null ? ` · nonce ${nonce}` : "";
+      const payloadSize = getPayloadSizeBytes(event);
+      const payloadLabel = payloadSize != null
+        ? txt(` · rozmiar ${payloadSize} B`, ` · payload ${payloadSize} B`)
+        : "";
       const subtitle = txt(
-        `Pierwszy świadek: \"${firstWitness.name}\" - ${formatMatrixDateTime(event.receivedAt || event.createdAt)}${nonceLabel}`,
-        `First Witness by \"${firstWitness.name}\" - ${formatMatrixDateTime(event.receivedAt || event.createdAt)}${nonceLabel}`
+        `Pierwszy świadek: \"${firstWitness.name}\" - ${formatMatrixDateTime(event.receivedAt || event.createdAt)}${nonceLabel}${payloadLabel}`,
+        `First Witness by \"${firstWitness.name}\" - ${formatMatrixDateTime(event.receivedAt || event.createdAt)}${nonceLabel}${payloadLabel}`
       );
       refs.witnessModalSubtitle.textContent = subtitle;
     }
