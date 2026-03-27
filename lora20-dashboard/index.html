@@ -6,452 +6,431 @@
     <title>lora20 Dashboard</title>
     <meta
       name="description"
-      content="Dashboard do deploy, mint, transfer i automatyzacji inskrypcji lora20 przez Web Serial i publiczny indexer."
+      content="Przyjazny panel onboardingowy i operatorski do deploy, mint, transfer i automatyzacji inskrypcji lora20."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
-    <div class="ambient ambient--top"></div>
-    <div class="ambient ambient--bottom"></div>
-    <div class="shell">
-      <header class="card card--hero">
-        <div class="hero-copy">
-          <p class="eyebrow">lora20 control deck</p>
-          <h1>Deploy, mint, transfer and automate LoRa inscriptions.</h1>
-          <p class="lead">
-            Statyczny dashboard pod GitHub Pages. Laczy sie lokalnie z Helteciem przez Web Serial i opcjonalnie
-            odpytuje publiczny indexer.
+  <body data-theme="medium">
+    <div class="backdrop backdrop--left"></div>
+    <div class="backdrop backdrop--right"></div>
+    <div class="app-shell">
+      <header class="hero">
+        <div class="hero__copy">
+          <p class="eyebrow" data-i18n="hero.eyebrow">lora20 control plane</p>
+          <h1 data-i18n="hero.title">Lekki panel do wysyłania inskrypcji przez Heltec V4 i LoRaWAN.</h1>
+          <p class="lead" data-i18n="hero.lead">
+            Panel prowadzi od onboardingu i konfiguracji radia do deploy, mint, transfer oraz odczytu balansu.
           </p>
+          <div class="hero__chips">
+            <span class="hero-chip" data-i18n="hero.chipOne">Web Serial + HTTPS</span>
+            <span class="hero-chip" data-i18n="hero.chipTwo">Onboarding Heltec V4</span>
+            <span class="hero-chip" data-i18n="hero.chipThree">Sticky log dock</span>
+          </div>
         </div>
-        <div class="hero-panel">
+
+        <div class="hero__controls">
+          <div class="toolbar">
+            <label class="field field--mini">
+              <span data-i18n="settings.language">Język</span>
+              <select id="languageSelect">
+                <option value="pl">Polski</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            <label class="field field--mini">
+              <span data-i18n="settings.theme">Motyw</span>
+              <select id="themeSelect">
+                <option value="dark">Ciemny</option>
+                <option value="medium">Średni</option>
+                <option value="light">Jasny</option>
+              </select>
+            </label>
+            <label class="field field--mini field--toggle">
+              <span data-i18n="settings.sound">Dzwieki</span>
+              <input id="soundEnabledInput" type="checkbox" checked />
+            </label>
+          </div>
           <label class="field">
-            <span>Indexer base URL</span>
+            <span data-i18n="settings.indexerUrl">Publiczny adres indexera</span>
             <input id="indexerBaseUrlInput" type="url" placeholder="https://lora20.hattimon.pl" />
           </label>
           <div class="button-row">
-            <button id="saveIndexerButton" class="button button--ghost" type="button">Save URL</button>
-            <button id="connectButton" class="button button--primary" type="button">Connect device</button>
-            <button id="disconnectButton" class="button button--ghost" type="button">Disconnect</button>
-            <button id="refreshButton" class="button button--secondary" type="button">Refresh</button>
+            <button id="saveIndexerButton" class="button button--ghost" type="button" data-i18n="actions.saveUrl">Zapisz URL</button>
+            <button id="connectButton" class="button button--primary" type="button" data-i18n="actions.connect">Połącz urządzenie</button>
+            <button id="disconnectButton" class="button button--ghost" type="button" data-i18n="actions.disconnect">Rozłącz</button>
+            <button id="refreshButton" class="button button--secondary" type="button" data-i18n="actions.refresh">Odśwież stan</button>
           </div>
           <div class="status-stack">
-            <span id="connectionBadge" class="badge">Disconnected</span>
+            <div class="status-row">
+              <span id="connectionBadge" class="badge badge--warn">USB offline</span>
+              <span id="indexerBadge" class="badge badge--warn">Indexer probing</span>
+              <span id="radioBadge" class="badge badge--warn">LoRa idle</span>
+            </div>
             <p id="serialSupportNotice" class="helper"></p>
           </div>
         </div>
       </header>
 
-      <main class="dashboard-grid">
-        <section class="card">
+      <main class="layout">
+        <section class="surface surface--full" data-panel="overview">
           <div class="section-head">
             <div>
-              <p class="section-kicker">Device</p>
-              <h2>Cryptographic node</h2>
+              <p class="section-kicker" data-i18n="sections.overviewKicker">Przegląd</p>
+              <h2 data-i18n="sections.overviewTitle">Najważniejsze rzeczy na start</h2>
             </div>
-            <button id="getInfoButton" class="button button--ghost" type="button">Pull info</button>
           </div>
-          <div class="stat-grid">
+          <div class="stats">
             <article class="stat">
-              <span class="stat__label">Device ID</span>
-              <strong id="deviceIdValue" class="mono">-</strong>
+              <span class="stat__label" data-i18n="overview.deployedTokens">Wdrożone tokeny</span>
+              <strong id="overviewTokensValue">0</strong>
             </article>
             <article class="stat">
-              <span class="stat__label">Next nonce</span>
-              <strong id="nextNonceValue" class="mono">-</strong>
+              <span class="stat__label" data-i18n="overview.portfolioEntries">Pozycje w portfelu</span>
+              <strong id="overviewBalancesValue">0</strong>
             </article>
             <article class="stat">
-              <span class="stat__label">Auto-mint</span>
-              <strong id="autoMintValue">-</strong>
+              <span class="stat__label" data-i18n="overview.recentEvents">Ostatnie zdarzenia</span>
+              <strong id="overviewEventsValue">0</strong>
             </article>
             <article class="stat">
-              <span class="stat__label">Default mint</span>
-              <strong id="defaultMintValue" class="mono">-</strong>
+              <span class="stat__label" data-i18n="overview.activeProfiles">Aktywne profile</span>
+              <strong id="overviewProfilesValue">0</strong>
+            </article>
+            <article class="stat">
+              <span class="stat__label" data-i18n="overview.lastSend">Ostatnia wysylka</span>
+              <strong id="overviewLastSendValue">-</strong>
             </article>
           </div>
-          <pre id="deviceSummaryOutput" class="output output--compact">No device data yet.</pre>
+          <div id="overviewStatusNote" class="callout callout--neutral"></div>
         </section>
 
-        <section class="card">
+        <section class="surface surface--full" data-panel="device">
           <div class="section-head">
             <div>
-              <p class="section-kicker">LoRaWAN</p>
-              <h2>Radio runtime</h2>
+              <p class="section-kicker" data-i18n="sections.deviceKicker">Urządzenie</p>
+              <h2 data-i18n="sections.deviceTitle">Aktualny node i znane urządzenia</h2>
             </div>
-            <button id="getLorawanButton" class="button button--ghost" type="button">Pull radio</button>
+            <div class="section-tags">
+              <span class="route-badge route-badge--usb">USB</span>
+              <span class="route-badge route-badge--lora">LoRa</span>
+            </div>
+            <div class="button-row">
+              <button id="getInfoButton" class="button button--ghost" type="button" data-i18n="actions.pullInfo">Pobierz info</button>
+              <button id="getPublicKeyButton" class="button button--ghost" type="button" data-i18n="actions.publicKey">Odczytaj klucz</button>
+              <button id="generateKeyButton" class="button button--primary" type="button" data-i18n="actions.generateKey">Wygeneruj klucz</button>
+              <button id="registerDeviceButton" class="button button--secondary" type="button" data-i18n="actions.register">Zarejestruj w indexerze</button>
+            </div>
           </div>
-          <div class="stat-grid">
-            <article class="stat">
-              <span class="stat__label">Joined</span>
-              <strong id="lorawanJoinedValue">-</strong>
+          <div class="overview-grid">
+            <article class="panel panel--soft">
+              <div id="deviceReadinessBanner" class="callout callout--neutral"></div>
+              <div class="stats">
+                <article class="stat"><span class="stat__label" data-i18n="device.deviceId">Device ID</span><strong id="deviceIdValue" class="mono">-</strong></article>
+                <article class="stat"><span class="stat__label" data-i18n="device.nextNonce">Następny nonce</span><strong id="nextNonceValue" class="mono">-</strong></article>
+                <article class="stat"><span class="stat__label" data-i18n="device.autoMint">Auto-mint</span><strong id="autoMintValue">-</strong></article>
+                <article class="stat"><span class="stat__label" data-i18n="device.defaultMint">Domyślny mint</span><strong id="defaultMintValue" class="mono">-</strong></article>
+              </div>
+              <pre id="deviceSummaryOutput" class="output output--compact">No device data yet.</pre>
             </article>
-            <article class="stat">
-              <span class="stat__label">Port</span>
-              <strong id="lorawanPortValue" class="mono">-</strong>
-            </article>
-            <article class="stat">
-              <span class="stat__label">Last event</span>
-              <strong id="lorawanEventValue">-</strong>
-            </article>
-            <article class="stat">
-              <span class="stat__label">DevEUI</span>
-              <strong id="lorawanDevEuiValue" class="mono">-</strong>
+            <article class="panel panel--soft">
+              <div class="section-head section-head--compact">
+                <div>
+                  <p class="section-kicker" data-i18n="sections.knownDevicesKicker">Zapamiętane</p>
+                  <h3 data-i18n="sections.knownDevicesTitle">Skonfigurowane urządzenia</h3>
+                </div>
+              </div>
+              <div id="knownDevicesList" class="card-list"></div>
             </article>
           </div>
+        </section>
+
+        <section class="surface" data-panel="radio">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker" data-i18n="sections.radioKicker">Radio</p>
+              <h2 data-i18n="sections.radioTitle">Gotowość LoRaWAN</h2>
+            </div>
+            <div class="section-tags">
+              <span class="route-badge route-badge--usb">USB</span>
+              <span class="route-badge route-badge--lora">LoRa</span>
+            </div>
+            <div class="button-row">
+              <button id="getLorawanButton" class="button button--ghost" type="button" data-i18n="actions.pullRadio">Pobierz radio</button>
+              <button id="joinLorawanButton" class="button button--secondary" type="button" data-i18n="actions.join">Join LoRaWAN</button>
+            </div>
+          </div>
+          <div class="stats">
+            <article class="stat"><span class="stat__label" data-i18n="radio.joined">Joined</span><strong id="lorawanJoinedValue">-</strong></article>
+            <article class="stat"><span class="stat__label" data-i18n="radio.port">Port</span><strong id="lorawanPortValue" class="mono">-</strong></article>
+            <article class="stat"><span class="stat__label" data-i18n="radio.event">Ostatnie zdarzenie</span><strong id="lorawanEventValue">-</strong></article>
+            <article class="stat"><span class="stat__label" data-i18n="radio.devEui">DevEUI</span><strong id="lorawanDevEuiValue" class="mono">-</strong></article>
+          </div>
+          <div id="radioActionHint" class="callout callout--neutral"></div>
           <pre id="lorawanSummaryOutput" class="output output--compact">No LoRaWAN status yet.</pre>
         </section>
 
-        <section class="card card--wide">
+        <section class="surface" data-panel="portfolio">
           <div class="section-head">
             <div>
-              <p class="section-kicker">Access</p>
-              <h2>Keys, backup, LoRaWAN and registration</h2>
-            </div>
-          </div>
-          <div class="columns columns--two">
-            <div class="stack">
-              <div class="button-row">
-                <button id="generateKeyButton" class="button button--primary" type="button">Generate key</button>
-                <button id="getPublicKeyButton" class="button button--ghost" type="button">Read public key</button>
-                <button id="joinLorawanButton" class="button button--secondary" type="button">Join LoRaWAN</button>
-              </div>
-
-              <label class="field">
-                <span>Heltec license</span>
-                <input id="heltecLicenseInput" type="text" placeholder="0x...,0x...,0x...,0x..." />
-              </label>
-              <button id="setLicenseButton" class="button button--ghost" type="button">Set license</button>
-
-              <div class="panel">
-                <h3>LoRaWAN config</h3>
-                <div class="field-grid">
-                  <label class="field field--checkbox">
-                    <input id="lorawanAutoDevEuiInput" type="checkbox" checked />
-                    <span>Auto DevEUI</span>
-                  </label>
-                  <label class="field field--checkbox">
-                    <input id="lorawanAdrInput" type="checkbox" checked />
-                    <span>ADR</span>
-                  </label>
-                  <label class="field field--checkbox">
-                    <input id="lorawanConfirmedInput" type="checkbox" />
-                    <span>Confirmed uplink</span>
-                  </label>
-                  <label class="field">
-                    <span>DevEUI</span>
-                    <input id="lorawanDevEuiInput" type="text" placeholder="6982686000009070" />
-                  </label>
-                  <label class="field">
-                    <span>JoinEUI</span>
-                    <input id="lorawanJoinEuiInput" type="text" placeholder="0000000000000000" />
-                  </label>
-                  <label class="field">
-                    <span>AppKey</span>
-                    <input id="lorawanAppKeyInput" type="text" placeholder="32 hex chars" />
-                  </label>
-                  <label class="field">
-                    <span>App port</span>
-                    <input id="lorawanAppPortInput" type="number" min="1" max="223" value="1" />
-                  </label>
-                  <label class="field">
-                    <span>Data rate</span>
-                    <input id="lorawanDataRateInput" type="number" min="0" max="15" value="3" />
-                  </label>
-                </div>
-                <button id="setLorawanButton" class="button button--secondary" type="button">Save radio config</button>
-              </div>
-            </div>
-
-            <div class="stack">
-              <div class="panel">
-                <h3>Backup</h3>
-                <div class="field-grid">
-                  <label class="field">
-                    <span>Export passphrase</span>
-                    <input id="backupPassphraseInput" type="password" placeholder="Local passphrase" />
-                  </label>
-                  <label class="field">
-                    <span>Import passphrase</span>
-                    <input id="backupImportPassphraseInput" type="password" placeholder="Passphrase for restore" />
-                  </label>
-                </div>
-                <div class="button-row">
-                  <button id="exportBackupButton" class="button button--ghost" type="button">Export backup</button>
-                  <button id="importBackupButton" class="button button--ghost" type="button">Import backup</button>
-                </div>
-                <label class="field">
-                  <span>Backup JSON</span>
-                  <textarea id="backupJsonTextarea" rows="8" placeholder="{ ... backup json ... }"></textarea>
-                </label>
-              </div>
-
-              <div class="panel">
-                <h3>Indexer registration</h3>
-                <div class="field-grid">
-                  <label class="field">
-                    <span>DevEUI link</span>
-                    <input id="linkDevEuiInput" type="text" placeholder="6982686000009070" />
-                  </label>
-                </div>
-                <div class="button-row">
-                  <button id="registerDeviceButton" class="button button--secondary" type="button">Register device</button>
-                  <button id="linkDevEuiButton" class="button button--ghost" type="button">Link DevEUI</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="card card--wide">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">Inscriptions</p>
-              <h2>Deploy, mint, transfer and config</h2>
-            </div>
-          </div>
-          <div class="inscription-grid">
-            <article class="panel">
-              <h3>Deploy token</h3>
-              <div class="field-grid">
-                <label class="field">
-                  <span>Tick</span>
-                  <input id="deployTickInput" type="text" maxlength="4" value="LORA" />
-                </label>
-                <label class="field">
-                  <span>Max supply</span>
-                  <input id="deployMaxSupplyInput" type="text" value="21000000" />
-                </label>
-                <label class="field">
-                  <span>Limit per mint</span>
-                  <input id="deployLimitPerMintInput" type="text" value="100" />
-                </label>
-              </div>
-              <div class="button-row">
-                <button id="deployPrepareButton" class="button button--ghost" type="button">Prepare</button>
-                <button id="deploySendButton" class="button button--primary" type="button">Prepare + send</button>
-              </div>
-            </article>
-
-            <article class="panel">
-              <h3>Mint token</h3>
-              <div class="field-grid">
-                <label class="field">
-                  <span>Tick</span>
-                  <input id="mintTickInput" type="text" maxlength="4" value="LORA" />
-                </label>
-                <label class="field">
-                  <span>Amount</span>
-                  <input id="mintAmountInput" type="text" value="100" />
-                </label>
-              </div>
-              <div class="button-row">
-                <button id="mintPrepareButton" class="button button--ghost" type="button">Prepare</button>
-                <button id="mintSendButton" class="button button--primary" type="button">Prepare + send</button>
-              </div>
-            </article>
-
-            <article class="panel">
-              <h3>Transfer token</h3>
-              <div class="field-grid">
-                <label class="field">
-                  <span>Tick</span>
-                  <input id="transferTickInput" type="text" maxlength="4" value="LORA" />
-                </label>
-                <label class="field">
-                  <span>Amount</span>
-                  <input id="transferAmountInput" type="text" value="1" />
-                </label>
-                <label class="field">
-                  <span>Recipient deviceId</span>
-                  <input id="transferRecipientInput" type="text" placeholder="0011223344556677" />
-                </label>
-              </div>
-              <div class="button-row">
-                <button id="transferPrepareButton" class="button button--ghost" type="button">Prepare</button>
-                <button id="transferSendButton" class="button button--primary" type="button">Prepare + send</button>
-              </div>
-            </article>
-
-            <article class="panel">
-              <h3>Config inscription</h3>
-              <div class="field-grid">
-                <label class="field field--checkbox">
-                  <input id="configAutoMintEnabledInput" type="checkbox" />
-                  <span>Auto-mint enabled</span>
-                </label>
-                <label class="field">
-                  <span>Interval (seconds)</span>
-                  <input id="configAutoMintIntervalInput" type="number" min="30" step="30" value="1800" />
-                </label>
-              </div>
-              <div class="button-row">
-                <button id="configPrepareButton" class="button button--ghost" type="button">Prepare</button>
-                <button id="configSendButton" class="button button--primary" type="button">Prepare + send</button>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section class="card card--wide">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">Profiles</p>
-              <h2>Mint library and round-robin queue</h2>
-            </div>
-          </div>
-          <p class="helper">
-            Deploy robisz raz na token. Profile mintu to lokalna biblioteka, a zaznaczone profile synchronizujesz do
-            urzadzenia jako kolejke round-robin.
-          </p>
-          <div class="profile-editor">
-            <div class="field-grid">
-              <label class="field">
-                <span>Name</span>
-                <input id="profileNameInput" type="text" placeholder="LORA / 100 / 30 min" />
-              </label>
-                <label class="field">
-                  <span>Tick</span>
-                  <input id="profileTickInput" type="text" maxlength="4" value="LORA" />
-                </label>
-                <label class="field">
-                  <span>Mint amount</span>
-                  <input id="profileAmountInput" type="text" value="100" />
-                </label>
-                <label class="field">
-                  <span>Preferred interval (minutes)</span>
-                  <input id="profileIntervalInput" type="number" min="1" value="30" />
-                </label>
-                <label class="field field--checkbox">
-                  <input id="profileEnabledInput" type="checkbox" checked />
-                  <span>Include in active queue</span>
-                </label>
-              </div>
-              <div class="button-row">
-                <button id="saveProfileButton" class="button button--secondary" type="button">Save profile</button>
-                <button id="clearProfileButton" class="button button--ghost" type="button">Clear editor</button>
-              </div>
-            </div>
-          <div class="profile-queue">
-            <div class="field-grid">
-              <label class="field field--checkbox">
-                <input id="profileQueueEnabledInput" type="checkbox" checked />
-                <span>Loop enabled</span>
-              </label>
-              <label class="field">
-                <span>Loop interval (minutes)</span>
-                <input id="profileQueueIntervalInput" type="number" min="1" value="30" />
-              </label>
+              <p class="section-kicker" data-i18n="sections.portfolioKicker">Portfolio</p>
+              <h2 data-i18n="sections.portfolioTitle">Balanse i ostatnie zdarzenia</h2>
             </div>
             <div class="button-row">
-              <button id="syncProfilesButton" class="button button--secondary" type="button">Sync queue to device</button>
-              <button id="syncProfilesBroadcastButton" class="button button--primary" type="button">Sync queue + broadcast</button>
-              <button id="stopProfilesButton" class="button button--ghost" type="button">Stop queue</button>
+              <button id="loadPortfolioButton" class="button button--ghost" type="button" data-i18n="actions.reloadPortfolio">Odśwież portfolio</button>
+              <button id="transactionsButton" class="button button--ghost" type="button" data-i18n="actions.reloadHistory">Odśwież historię</button>
             </div>
-            <p class="helper">
-              Broadcast wysyla inscription <code>CONFIG</code> z flaga loop i interwalem. Sama kolejka profili jest
-              przechowywana lokalnie na urzadzeniu.
-            </p>
-            <pre id="profileQueuePreview" class="output output--compact">No active queue yet.</pre>
           </div>
-          <div id="profileList" class="profile-list"></div>
+          <div class="stack">
+            <div><h3 data-i18n="portfolio.balancesTitle">Tokeny w portfelu</h3><div id="portfolioList" class="token-grid"></div></div>
+            <div><h3 data-i18n="portfolio.historyTitle">Ostatnie zdarzenia</h3><div id="recentTransactionsList" class="timeline"></div></div>
+          </div>
+          <div class="visually-hidden">
+            <input id="balanceDeviceIdInput" type="text" />
+            <input id="balanceTickInput" type="text" value="LORA" />
+            <button id="balanceLookupButton" type="button">Hidden balance lookup</button>
+            <pre id="balanceOutput" class="output output--compact">No balance data yet.</pre>
+            <input id="transactionsDeviceIdInput" type="text" />
+            <input id="transactionsTickInput" type="text" value="LORA" />
+            <input id="transactionsLimitInput" type="number" value="10" />
+            <pre id="transactionsOutput" class="output output--compact">No transaction data yet.</pre>
+          </div>
         </section>
 
-        <section class="card card--wide">
+        <section class="surface surface--full" data-panel="tokens">
           <div class="section-head">
             <div>
-              <p class="section-kicker">Indexer</p>
-              <h2>Public read API</h2>
+              <p class="section-kicker" data-i18n="sections.tokensKicker">Tokeny</p>
+              <h2 data-i18n="sections.tokensTitle">Wdrożone tickery i wypełnianie formularzy</h2>
+            </div>
+            <div class="button-row">
+              <button id="reloadTokensButton" class="button button--ghost" type="button" data-i18n="actions.reloadTokens">Odśwież tokeny</button>
+              <button id="healthButton" class="button button--ghost" type="button" data-i18n="actions.checkHealth">Sprawdź indexer</button>
             </div>
           </div>
-          <div class="indexer-grid">
-            <article class="panel">
-              <h3>Health</h3>
-              <button id="healthButton" class="button button--ghost" type="button">Check /health</button>
-              <pre id="healthOutput" class="output output--compact">No health check yet.</pre>
-            </article>
-            <article class="panel">
-              <h3>Token lookup</h3>
-              <label class="field">
-                <span>Tick</span>
-                <input id="tokenTickInput" type="text" maxlength="4" value="LORA" />
+          <div class="library-head">
+            <label class="field"><span data-i18n="tokens.search">Szukaj tickera</span><input id="tokenSearchInput" type="search" placeholder="LORA" /></label>
+            <label class="field"><span data-i18n="tokens.quickPick">Wybierz do formularzy</span><select id="tokenQuickPick"><option value="">-</option></select></label>
+          </div>
+          <div id="tokenLibraryList" class="token-grid"></div>
+          <div class="visually-hidden">
+            <input id="tokenTickInput" type="text" value="LORA" />
+            <button id="tokenLookupButton" type="button">Hidden token lookup</button>
+            <pre id="tokenOutput" class="output output--compact">No token data yet.</pre>
+            <pre id="healthOutput" class="output output--compact">No health check yet.</pre>
+          </div>
+        </section>
+
+        <section class="surface surface--full" data-panel="operations">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker" data-i18n="sections.operationsKicker">Operacje</p>
+              <h2 data-i18n="sections.operationsTitle">Deploy, mint, transfer i config</h2>
+            </div>
+            <div class="section-tags">
+              <span class="route-badge route-badge--usb">USB</span>
+              <span class="route-badge route-badge--lora">LoRa</span>
+              <span class="route-badge route-badge--indexer">IDX</span>
+            </div>
+          </div>
+          <div class="operations-grid">
+            <article class="panel panel--strong">
+              <div class="section-head section-head--compact">
+                <div>
+                  <p class="section-kicker" data-i18n="operations.focusKicker">Najczęściej używane</p>
+                  <h3 data-i18n="operations.mintTitle">Mint tokena</h3>
+                </div>
+              </div>
+              <div id="selectedTokenSummary" class="callout callout--neutral"></div>
+              <div class="field-grid">
+                <label class="field"><span data-i18n="operations.tick">Tick</span><input id="mintTickInput" type="text" maxlength="4" value="LORA" /></label>
+                <label class="field"><span data-i18n="operations.amount">Ilość</span><input id="mintAmountInput" type="text" value="100" /></label>
+              </div>
+              <div id="operationWarnings" class="callout callout--neutral"></div>
+              <div class="metrics">
+                <article class="metric"><span class="metric__label" data-i18n="operations.payloadSize">Payload</span><strong id="estimatedPayloadValue">81 B</strong></article>
+                <article class="metric"><span class="metric__label" data-i18n="operations.dcCost">Szac. DC</span><strong id="estimatedDcValue">~4 DC</strong></article>
+                <article class="metric"><span class="metric__label" data-i18n="operations.protocol">Protokół</span><strong id="protocolVersionValue">v1 / Ed25519</strong></article>
+              </div>
+              <div id="transportStatusNote" class="callout callout--neutral"></div>
+              <label class="field field--checkbox">
+                <input id="allowRiskySendInput" type="checkbox" />
+                <span data-i18n="operations.allowRisky">Pozwól wysłać mimo przewidywanego błędu indexera</span>
               </label>
-              <button id="tokenLookupButton" class="button button--ghost" type="button">Load token</button>
-              <pre id="tokenOutput" class="output output--compact">No token data yet.</pre>
-            </article>
-            <article class="panel">
-              <h3>Balance lookup</h3>
-              <div class="field-grid">
-                <label class="field">
-                  <span>Device ID</span>
-                  <input id="balanceDeviceIdInput" type="text" placeholder="cbbe9a389f75c9b6" />
-                </label>
-                <label class="field">
-                  <span>Tick</span>
-                  <input id="balanceTickInput" type="text" maxlength="4" value="LORA" />
-                </label>
+              <div class="button-row">
+                <button id="mintPrepareButton" class="button button--ghost" type="button" data-i18n="actions.prepareMint">Przygotuj mint</button>
+                <button id="mintSendButton" class="button button--primary" type="button" data-i18n="actions.sendMint">Przygotuj i wyślij</button>
               </div>
-              <button id="balanceLookupButton" class="button button--ghost" type="button">Load balance</button>
-              <pre id="balanceOutput" class="output output--compact">No balance data yet.</pre>
             </article>
+
             <article class="panel">
-              <h3>Transactions</h3>
-              <div class="field-grid">
-                <label class="field">
-                  <span>Device ID</span>
-                  <input id="transactionsDeviceIdInput" type="text" placeholder="cbbe9a389f75c9b6" />
-                </label>
-                <label class="field">
-                  <span>Tick (optional)</span>
-                  <input id="transactionsTickInput" type="text" maxlength="4" value="LORA" />
-                </label>
-                <label class="field">
-                  <span>Limit</span>
-                  <input id="transactionsLimitInput" type="number" min="1" max="100" value="10" />
-                </label>
-              </div>
-              <button id="transactionsButton" class="button button--ghost" type="button">Load transactions</button>
-              <pre id="transactionsOutput" class="output output--compact">No transaction data yet.</pre>
+              <details class="accordion" open>
+                <summary><span data-i18n="operations.deployTitle">Deploy tokena</span></summary>
+                <div class="accordion__body">
+                  <div class="field-grid">
+                    <label class="field"><span data-i18n="operations.tick">Tick</span><input id="deployTickInput" type="text" maxlength="4" value="LORA" /></label>
+                    <label class="field"><span data-i18n="operations.maxSupply">Max supply</span><input id="deployMaxSupplyInput" type="text" value="21000000" /></label>
+                    <label class="field"><span data-i18n="operations.limitPerMint">Limit per mint</span><input id="deployLimitPerMintInput" type="text" value="100" /></label>
+                  </div>
+                  <div class="button-row">
+                    <button id="deployPrepareButton" class="button button--ghost" type="button" data-i18n="actions.prepareDeploy">Przygotuj deploy</button>
+                    <button id="deploySendButton" class="button button--secondary" type="button" data-i18n="actions.sendDeploy">Przygotuj i wyślij</button>
+                  </div>
+                </div>
+              </details>
+              <details class="accordion">
+                <summary><span data-i18n="operations.transferTitle">Transfer tokena</span></summary>
+                <div class="accordion__body">
+                  <div class="field-grid">
+                    <label class="field"><span data-i18n="operations.tick">Tick</span><input id="transferTickInput" type="text" maxlength="4" value="LORA" /></label>
+                    <label class="field"><span data-i18n="operations.amount">Ilość</span><input id="transferAmountInput" type="text" value="1" /></label>
+                    <label class="field"><span data-i18n="operations.recipient">Odbiorca deviceId</span><input id="transferRecipientInput" type="text" placeholder="0011223344556677" /></label>
+                  </div>
+                  <div class="button-row">
+                    <button id="transferPrepareButton" class="button button--ghost" type="button" data-i18n="actions.prepareTransfer">Przygotuj transfer</button>
+                    <button id="transferSendButton" class="button button--secondary" type="button" data-i18n="actions.sendTransfer">Przygotuj i wyślij</button>
+                  </div>
+                </div>
+              </details>
+              <details class="accordion">
+                <summary><span data-i18n="operations.configTitle">Config inscription</span></summary>
+                <div class="accordion__body">
+                  <div class="field-grid">
+                    <label class="field field--checkbox"><input id="configAutoMintEnabledInput" type="checkbox" /><span data-i18n="operations.autoMintEnabled">Auto-mint włączony</span></label>
+                    <label class="field"><span data-i18n="operations.intervalSeconds">Interwał (sekundy)</span><input id="configAutoMintIntervalInput" type="number" min="30" step="30" value="1800" /></label>
+                  </div>
+                  <div class="button-row">
+                    <button id="configPrepareButton" class="button button--ghost" type="button" data-i18n="actions.prepareConfig">Przygotuj config</button>
+                    <button id="configSendButton" class="button button--secondary" type="button" data-i18n="actions.sendConfig">Przygotuj i wyślij</button>
+                  </div>
+                </div>
+              </details>
             </article>
           </div>
+          <details class="accordion"><summary><span data-i18n="operations.preparedPreview">Podgląd ostatnio przygotowanego payloadu</span></summary><div class="accordion__body"><pre id="preparedOutput" class="output">No prepared payload yet.</pre></div></details>
         </section>
 
-        <section class="card card--wide">
+        <section class="surface surface--full" data-panel="profiles">
           <div class="section-head">
             <div>
-              <p class="section-kicker">Console</p>
-              <h2>Payload preview and raw JSON</h2>
+              <p class="section-kicker" data-i18n="sections.profilesKicker">Profile</p>
+              <h2 data-i18n="sections.profilesTitle">Biblioteka mintu i kolejka round-robin</h2>
             </div>
           </div>
-          <div class="columns columns--two">
-            <div class="stack">
-              <div class="panel">
-                <h3>Last prepared payload</h3>
-                <pre id="preparedOutput" class="output">No prepared payload yet.</pre>
+          <div class="profile-layout">
+            <article class="panel panel--soft">
+              <div class="field-grid">
+                <label class="field"><span data-i18n="profiles.name">Nazwa</span><input id="profileNameInput" type="text" placeholder="LORA / 100 / 30 min" /></label>
+                <label class="field"><span data-i18n="operations.tick">Tick</span><input id="profileTickInput" type="text" maxlength="4" value="LORA" /></label>
+                <label class="field"><span data-i18n="profiles.amount">Mint amount</span><input id="profileAmountInput" type="text" value="100" /></label>
+                <label class="field"><span data-i18n="profiles.interval">Preferowany interwał (min)</span><input id="profileIntervalInput" type="number" min="1" value="30" /></label>
+                <label class="field field--checkbox"><input id="profileEnabledInput" type="checkbox" checked /><span data-i18n="profiles.include">Dodaj do aktywnej kolejki</span></label>
               </div>
-            </div>
-            <div class="stack">
-              <div class="panel">
-                <h3>Raw command</h3>
-                <label class="field">
-                  <span>JSON request</span>
-                  <textarea id="rawCommandTextarea" rows="8" placeholder='{"command":"ping"}'></textarea>
-                </label>
-                <button id="sendRawCommandButton" class="button button--ghost" type="button">Send raw JSON</button>
+              <div id="profilesPersistenceNote" class="callout callout--neutral"></div>
+              <div class="button-row">
+                <button id="saveProfileButton" class="button button--secondary" type="button" data-i18n="actions.saveProfile">Zapisz profil</button>
+                <button id="clearProfileButton" class="button button--ghost" type="button" data-i18n="actions.clearProfile">Wyczyść edytor</button>
               </div>
-              <div class="panel">
-                <h3>Activity log</h3>
-                <div id="activityLog" class="log"></div>
+            </article>
+            <article class="panel panel--soft">
+              <div class="field-grid">
+                <label class="field field--checkbox"><input id="profileQueueEnabledInput" type="checkbox" checked /><span data-i18n="profiles.loopEnabled">Pętla włączona</span></label>
+                <label class="field"><span data-i18n="profiles.loopInterval">Interwał pętli (min)</span><input id="profileQueueIntervalInput" type="number" min="1" value="30" /></label>
               </div>
+              <div class="button-row">
+                <button id="syncProfilesButton" class="button button--ghost" type="button" data-i18n="actions.syncQueue">Synchronizuj kolejkę</button>
+                <button id="syncProfilesBroadcastButton" class="button button--primary" type="button" data-i18n="actions.syncBroadcast">Synchronizuj + broadcast</button>
+                <button id="stopProfilesButton" class="button button--ghost" type="button" data-i18n="actions.stopQueue">Zatrzymaj pętlę</button>
+              </div>
+              <pre id="profileQueuePreview" class="output output--compact">No active queue yet.</pre>
+            </article>
+          </div>
+          <div id="profileList" class="card-list"></div>
+        </section>
+
+        <section class="surface surface--full" data-panel="onboarding">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker" data-i18n="sections.onboardingKicker">Onboarding</p>
+              <h2 data-i18n="sections.onboardingTitle">Nowe urządzenie krok po kroku</h2>
             </div>
           </div>
+          <div id="onboardingChecklist" class="guide-grid"></div>
+        </section>
+
+        <section class="surface" data-panel="education">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker" data-i18n="sections.educationKicker">Edukacja</p>
+              <h2 data-i18n="sections.educationTitle">Jak to działa i czego nie obiecuje protokół</h2>
+            </div>
+          </div>
+          <div id="educationContent" class="education"></div>
+        </section>
+
+        <section class="surface" data-panel="advanced">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker" data-i18n="sections.advancedKicker">Zaawansowane</p>
+              <h2 data-i18n="sections.advancedTitle">Radio, backup i raw JSON</h2>
+            </div>
+          </div>
+          <details class="accordion"><summary><span data-i18n="advanced.radioConfig">Konfiguracja LoRaWAN i licencja Heltec</span></summary><div class="accordion__body stack">
+            <label class="field"><span data-i18n="advanced.license">Licencja Heltec</span><input id="heltecLicenseInput" type="text" placeholder="0x...,0x...,0x...,0x..." /></label>
+            <button id="setLicenseButton" class="button button--ghost" type="button" data-i18n="actions.saveLicense">Zapisz licencję</button>
+            <div class="field-grid">
+              <label class="field field--checkbox"><input id="lorawanAutoDevEuiInput" type="checkbox" checked /><span data-i18n="advanced.autoDevEui">Auto DevEUI</span></label>
+              <label class="field field--checkbox"><input id="lorawanAdrInput" type="checkbox" checked /><span data-i18n="advanced.adr">ADR</span></label>
+              <label class="field field--checkbox"><input id="lorawanConfirmedInput" type="checkbox" /><span data-i18n="advanced.confirmed">Confirmed uplink</span></label>
+              <label class="field"><span data-i18n="advanced.devEui">DevEUI</span><input id="lorawanDevEuiInput" type="text" placeholder="6982686000009070" /></label>
+              <label class="field"><span data-i18n="advanced.joinEui">JoinEUI</span><input id="lorawanJoinEuiInput" type="text" placeholder="0000000000000000" /></label>
+              <label class="field"><span data-i18n="advanced.appKey">AppKey</span><input id="lorawanAppKeyInput" type="text" placeholder="32 hex chars" /></label>
+              <label class="field"><span data-i18n="advanced.appPort">App port</span><input id="lorawanAppPortInput" type="number" min="1" max="223" value="1" /></label>
+              <label class="field"><span data-i18n="advanced.dataRate">Data rate</span><input id="lorawanDataRateInput" type="number" min="0" max="15" value="3" /></label>
+            </div>
+            <button id="setLorawanButton" class="button button--secondary" type="button" data-i18n="actions.saveRadio">Zapisz radio</button>
+          </div></details>
+          <details class="accordion"><summary><span data-i18n="advanced.indexerBinding">Powiązanie DevEUI</span></summary><div class="accordion__body stack">
+            <label class="field"><span data-i18n="advanced.devEuiLink">DevEUI do powiązania</span><input id="linkDevEuiInput" type="text" placeholder="6982686000009070" /></label>
+            <button id="linkDevEuiButton" class="button button--ghost" type="button" data-i18n="actions.linkDevEui">Powiąż DevEUI</button>
+          </div></details>
+          <details class="accordion"><summary><span data-i18n="advanced.backupTitle">Backup i restore</span></summary><div class="accordion__body stack">
+            <div class="field-grid">
+              <label class="field"><span data-i18n="advanced.exportPassphrase">Hasło eksportu</span><input id="backupPassphraseInput" type="password" /></label>
+              <label class="field"><span data-i18n="advanced.importPassphrase">Hasło importu</span><input id="backupImportPassphraseInput" type="password" /></label>
+            </div>
+            <div class="button-row">
+              <button id="exportBackupButton" class="button button--ghost" type="button" data-i18n="actions.exportBackup">Eksportuj backup</button>
+              <button id="importBackupButton" class="button button--ghost" type="button" data-i18n="actions.importBackup">Importuj backup</button>
+            </div>
+            <textarea id="backupJsonTextarea" rows="8" placeholder="{ ... backup json ... }"></textarea>
+          </div></details>
+          <details class="accordion"><summary><span data-i18n="advanced.rawTitle">Surowe polecenia i debug indexera</span></summary><div class="accordion__body stack">
+            <textarea id="rawCommandTextarea" rows="8" placeholder='{"command":"ping"}'></textarea>
+            <button id="sendRawCommandButton" class="button button--ghost" type="button" data-i18n="actions.sendRaw">Wyślij raw JSON</button>
+            <pre id="tokenOutput" class="output output--compact">No token data yet.</pre>
+            <pre id="balanceOutput" class="output output--compact">No balance data yet.</pre>
+            <pre id="transactionsOutput" class="output output--compact">No transaction data yet.</pre>
+            <pre id="healthOutput" class="output output--compact">No health check yet.</pre>
+          </div></details>
         </section>
       </main>
     </div>
+
+    <aside class="log-dock">
+      <div class="log-dock__head">
+        <div>
+          <p class="section-kicker" data-i18n="logs.kicker">Raport zdarzeń</p>
+          <h2 data-i18n="logs.title">Activity log</h2>
+        </div>
+      </div>
+      <div id="activityLog" class="log"></div>
+    </aside>
 
     <script type="module" src="./app.js"></script>
   </body>
