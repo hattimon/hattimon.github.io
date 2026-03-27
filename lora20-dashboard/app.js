@@ -239,7 +239,6 @@
     mintMatrixLastUserScrollAt: 0,
     mintMatrixResumeTimer: null,
     mintMatrixAutoPaused: false,
-    mintMatrixHoverPaused: false,
     mintMatrixProgrammaticScroll: false,
     activeWitnessEventId: null
   };
@@ -322,8 +321,6 @@
     refs.knownDevicesList?.addEventListener("click", handleKnownDevicesClick);
     refs.mintMatrixFeed?.addEventListener("click", handleMintMatrixClick);
     refs.mintMatrixFeed?.addEventListener("scroll", handleMintMatrixScroll);
-    refs.mintMatrixFeed?.addEventListener("mouseenter", handleMintMatrixHoverStart);
-    refs.mintMatrixFeed?.addEventListener("mouseleave", handleMintMatrixHoverEnd);
     refs.closeWitnessModalButton?.addEventListener("click", closeWitnessModal);
     refs.witnessModal?.addEventListener("click", (event) => {
       const target = event.target;
@@ -687,23 +684,9 @@
       stopMintMatrixAutoScroll();
       const container = refs.mintMatrixFeed;
       if (!container) return;
-      window.setTimeout(() => {
-        if (!refs.mintMatrixFeed) return;
-        if (container.scrollHeight <= container.clientHeight + 8) return;
-        state.mintMatrixScrollTimer = window.setInterval(() => {
-          if (!refs.mintMatrixFeed) return;
-          if (refs.witnessModal?.classList.contains("is-open")) return;
-          if (state.mintMatrixHoverPaused) return;
-          if (state.mintMatrixAutoPaused && Date.now() - state.mintMatrixLastUserScrollAt < 10000) return;
-          state.mintMatrixAutoPaused = false;
-          state.mintMatrixProgrammaticScroll = true;
-          container.scrollTop += 1;
-          if (container.scrollTop + container.clientHeight >= container.scrollHeight - 2) {
-            state.mintMatrixProgrammaticScroll = true;
-            container.scrollTop = 0;
-          }
-        }, 140);
-      }, 120);
+      if (state.mintMatrixAutoPaused) return;
+      state.mintMatrixProgrammaticScroll = true;
+      container.scrollTop = 0;
     }
 
     function stopMintMatrixAutoScroll() {
@@ -713,31 +696,14 @@
       }
     }
 
-    function handleMintMatrixHoverStart() {
-      state.mintMatrixHoverPaused = true;
-      state.mintMatrixLastUserScrollAt = Date.now();
-    }
-
-    function handleMintMatrixHoverEnd() {
-      state.mintMatrixHoverPaused = false;
-      state.mintMatrixLastUserScrollAt = Date.now();
-    }
-
   function handleMintMatrixScroll() {
-    if (state.mintMatrixProgrammaticScroll) {
-      state.mintMatrixProgrammaticScroll = false;
-      return;
-    }
-    state.mintMatrixLastUserScrollAt = Date.now();
-    state.mintMatrixAutoPaused = true;
-    if (state.mintMatrixResumeTimer) window.clearTimeout(state.mintMatrixResumeTimer);
-    state.mintMatrixResumeTimer = window.setTimeout(() => {
-      state.mintMatrixAutoPaused = false;
-      if (refs.mintMatrixFeed) {
-        state.mintMatrixProgrammaticScroll = true;
-        refs.mintMatrixFeed.scrollTop = 0;
+      if (state.mintMatrixProgrammaticScroll) {
+        state.mintMatrixProgrammaticScroll = false;
+        return;
       }
-    }, 10000);
+      state.mintMatrixLastUserScrollAt = Date.now();
+      state.mintMatrixAutoPaused = true;
+      if (state.mintMatrixResumeTimer) window.clearTimeout(state.mintMatrixResumeTimer);
   }
 
   function handleMintMatrixClick(event) {
