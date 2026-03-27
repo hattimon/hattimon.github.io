@@ -1,4377 +1,1504 @@
-const STORAGE_KEYS = {
-  indexerBaseUrl: "lora20.dashboard.indexerBaseUrl",
-  profiles: "lora20.dashboard.profiles",
-  scheduler: "lora20.dashboard.scheduler",
-  language: "lora20.dashboard.language",
-  theme: "lora20.dashboard.theme",
-  knownDevices: "lora20.dashboard.knownDevices"
-};
+(() => {
+  "use strict";
 
-const DEFAULT_INDEXER_BASE_URL = "https://lora20.hattimon.pl";
-const DEFAULT_LANGUAGE = "pl";
-const DEFAULT_THEME = "medium";
-const DEFAULT_PROFILES = [
-  {
-    id: "seed-lora-100",
-    name: "LORA / 100",
-    tick: "LORA",
-    amount: "100",
-    intervalMinutes: 30,
-    enabled: true
-  }
-];
-const DEFAULT_SCHEDULER = {
-  enabled: true,
-  intervalMinutes: 30
-};
+  const STORAGE = {
+    language: "lora20.dashboard.language",
+    theme: "lora20.dashboard.theme",
+    sound: "lora20.dashboard.soundEnabled",
+    indexerUrl: "lora20.dashboard.indexerBaseUrl",
+    profiles: "lora20.dashboard.profiles",
+    scheduler: "lora20.dashboard.scheduler",
+    knownDevices: "lora20.dashboard.knownDevices",
+    lastSendAt: "lora20.dashboard.lastSuccessfulSendAt"
+  };
 
-const OPERATION_SIZES = {
-  prepare_deploy: 89,
-  prepare_mint: 81,
-  prepare_transfer: 89,
-  prepare_config: 74
-};
+  const DEFAULTS = {
+    language: "pl",
+    theme: "dark",
+    indexerUrl: "https://lora20.hattimon.pl",
+    profiles: [],
+    scheduler: { enabled: false, intervalMinutes: 30 }
+  };
 
-const COMMAND_TIMEOUTS = {
-  default: 15000,
-  get_info: 20000,
-  get_lorawan: 20000,
-  join_lorawan: 45000,
-  lorawan_send: 30000
-};
+  const TIMEOUTS = {
+    default: 15000,
+    get_info: 20000,
+    get_lorawan: 20000,
+    join_lorawan: 70000,
+    lorawan_send: 50000
+  };
 
-const CONTENT = {
-  pl: {
-    hero: {
-      eyebrow: "lora20 control plane",
-      title: "Lekki panel do wysyłania inskrypcji przez Heltec V4 i LoRaWAN.",
-      lead: "Panel prowadzi od onboardingu i konfiguracji radia do deploy, mint, transfer oraz odczytu balansu.",
-      chipOne: "Web Serial + HTTPS",
-      chipTwo: "Onboarding Heltec V4",
-      chipThree: "Sticky log dock"
-    },
-    settings: {
-      language: "Język",
-      theme: "Motyw",
-      indexerUrl: "Publiczny adres indexera"
-    },
-    actions: {
-      saveUrl: "Zapisz URL",
-      connect: "Połącz urządzenie",
-      disconnect: "Rozłącz",
-      refresh: "Odśwież stan",
-      pullInfo: "Pobierz info",
-      publicKey: "Odczytaj klucz",
-      generateKey: "Wygeneruj klucz",
-      register: "Zarejestruj w indexerze",
-      pullRadio: "Pobierz radio",
-      join: "Join LoRaWAN",
-      reloadPortfolio: "Odśwież portfolio",
-      reloadHistory: "Odśwież historię",
-      reloadTokens: "Odśwież tokeny",
-      checkHealth: "Sprawdź indexer",
-      prepareMint: "Przygotuj mint",
-      sendMint: "Przygotuj i wyślij",
-      prepareDeploy: "Przygotuj deploy",
-      sendDeploy: "Przygotuj i wyślij",
-      prepareTransfer: "Przygotuj transfer",
-      sendTransfer: "Przygotuj i wyślij",
-      prepareConfig: "Przygotuj config",
-      sendConfig: "Przygotuj i wyślij",
-      saveProfile: "Zapisz profil",
-      clearProfile: "Wyczyść edytor",
-      syncQueue: "Synchronizuj kolejkę",
-      syncBroadcast: "Synchronizuj + broadcast",
-      stopQueue: "Zatrzymaj pętlę",
-      saveLicense: "Zapisz licencję",
-      saveRadio: "Zapisz radio",
-      linkDevEui: "Powiąż DevEUI",
-      exportBackup: "Eksportuj backup",
-      importBackup: "Importuj backup",
-      sendRaw: "Wyślij raw JSON"
-    },
-    sections: {
-      overviewKicker: "Przegląd",
-      overviewTitle: "Najważniejsze rzeczy na start",
-      deviceKicker: "Urządzenie",
-      deviceTitle: "Aktualny node i znane urządzenia",
-      knownDevicesKicker: "Zapamiętane",
-      knownDevicesTitle: "Skonfigurowane urządzenia",
-      radioKicker: "Radio",
-      radioTitle: "Gotowość LoRaWAN",
-      portfolioKicker: "Portfolio",
-      portfolioTitle: "Balanse i ostatnie zdarzenia",
-      tokensKicker: "Tokeny",
-      tokensTitle: "Wdrożone tickery i wypełnianie formularzy",
-      operationsKicker: "Operacje",
-      operationsTitle: "Deploy, mint, transfer i config",
-      profilesKicker: "Profile",
-      profilesTitle: "Biblioteka mintu i kolejka round-robin",
-      onboardingKicker: "Onboarding",
-      onboardingTitle: "Nowe urządzenie krok po kroku",
-      educationKicker: "Edukacja",
-      educationTitle: "Jak to działa i czego nie obiecuje protokół",
-      advancedKicker: "Zaawansowane",
-      advancedTitle: "Radio, backup i raw JSON"
-    },
-    overview: {
-      deployedTokens: "Wdrożone tokeny",
-      portfolioEntries: "Pozycje w portfelu",
-      recentEvents: "Ostatnie zdarzenia",
-      activeProfiles: "Aktywne profile"
-    },
-    device: {
-      deviceId: "Device ID",
-      nextNonce: "Następny nonce",
-      autoMint: "Auto-mint",
-      defaultMint: "Domyślny mint",
-      waitingTitle: "Brak danych urządzenia",
-      waitingBody: "Połącz Helteca przez Web Serial, a panel zapisze go też do listy znanych urządzeń.",
-      knownHint: "Panel zapamiętuje lokalnie urządzenia, które były już odczytane.",
-      activeTitle: "Urządzenie gotowe",
-      activeBody: "Klucz i tożsamość są widoczne. Teraz sprawdź radio i limity tokena przed wysyłką."
-    },
-    radio: {
-      joined: "Joined",
-      port: "Port",
-      event: "Ostatnie zdarzenie",
-      devEui: "DevEUI",
-      waitingTitle: "Radio jeszcze niegotowe",
-      waitingBody: "Jeżeli `joined=false`, panel przed wysyłką najpierw wykona join i sprawdzi status.",
-      okTitle: "Radio gotowe",
-      okBody: "Urządzenie jest dołączone do sieci i może przyjąć kolejny uplink."
-    },
-    portfolio: {
-      balancesTitle: "Tokeny w portfelu",
-      historyTitle: "Ostatnie zdarzenia"
-    },
-    tokens: {
-      search: "Szukaj tickera",
-      quickPick: "Wybierz do formularzy"
-    },
-    operations: {
-      focusKicker: "Najczęściej używane",
-      mintTitle: "Mint tokena",
-      noTokenSelectedTitle: "Nie wybrano tokena",
-      noTokenSelectedBody: "Kliknij wdrożony ticker wyżej, aby wypełnić formularz i zobaczyć limity.",
-      preflightTitle: "Analiza przed wysyłką",
-      preflightBody: "Tu pojawią się limity tokena, ryzyka logiczne i szacowany koszt uplinku.",
-      tick: "Tick",
-      amount: "Ilość",
-      payloadSize: "Payload",
-      dcCost: "Szac. DC",
-      protocol: "Protokół",
-      allowRisky: "Pozwól wysłać mimo przewidywanego błędu indexera",
-      deployTitle: "Deploy tokena",
-      maxSupply: "Max supply",
-      limitPerMint: "Limit per mint",
-      transferTitle: "Transfer tokena",
-      recipient: "Odbiorca deviceId",
-      configTitle: "Config inscription",
-      autoMintEnabled: "Auto-mint włączony",
-      intervalSeconds: "Interwał (sekundy)",
-      preparedPreview: "Podgląd ostatnio przygotowanego payloadu"
-    },
-    profiles: {
-      name: "Nazwa",
-      amount: "Mint amount",
-      interval: "Preferowany interwał (min)",
-      include: "Dodaj do aktywnej kolejki",
-      loopEnabled: "Pętla włączona",
-      loopInterval: "Interwał pętli (min)"
-    },
-    advanced: {
-      radioConfig: "Konfiguracja LoRaWAN i licencja Heltec",
-      license: "Licencja Heltec",
-      autoDevEui: "Auto DevEUI",
-      adr: "ADR",
-      confirmed: "Confirmed uplink",
-      devEui: "DevEUI",
-      joinEui: "JoinEUI",
-      appKey: "AppKey",
-      appPort: "App port",
-      dataRate: "Data rate",
-      indexerBinding: "Powiązanie DevEUI",
-      devEuiLink: "DevEUI do powiązania",
-      backupTitle: "Backup i restore",
-      exportPassphrase: "Hasło eksportu",
-      importPassphrase: "Hasło importu",
-      rawTitle: "Surowe polecenia i debug indexera"
-    },
-    logs: {
-      kicker: "Raport zdarzeń",
-      title: "Activity log"
-    },
-    misc: {
-      browserHint: "Web Serial działa w Chrome lub Edge na HTTPS albo localhost.",
-      browserUnsupported: "Ta przeglądarka nie obsługuje Web Serial. Użyj Chrome albo Edge.",
-      disconnected: "Rozłączono",
-      connected: "Połączono",
-      ready: "Gotowe"
+  const SECRET_KEYS = new Set([
+    "appKeyHex",
+    "licenseHex",
+    "passphrase",
+    "ciphertextHex",
+    "tagHex",
+    "saltHex",
+    "ivHex"
+  ]);
+
+  const I18N_EN = {
+    "settings.language": "Language",
+    "settings.theme": "Theme",
+    "settings.sound": "Sound",
+    "settings.indexerUrl": "Public indexer URL",
+    "actions.saveUrl": "Save URL",
+    "actions.connect": "Connect device",
+    "actions.disconnect": "Disconnect",
+    "actions.refresh": "Refresh state",
+    "actions.pullInfo": "Fetch info",
+    "actions.publicKey": "Read public key",
+    "actions.generateKey": "Generate key",
+    "actions.register": "Register in indexer",
+    "actions.pullRadio": "Fetch radio",
+    "actions.join": "Join LoRaWAN",
+    "actions.reloadPortfolio": "Refresh portfolio",
+    "actions.reloadHistory": "Refresh history",
+    "actions.reloadTokens": "Refresh tokens",
+    "actions.checkHealth": "Check indexer",
+    "actions.prepareMint": "Prepare mint",
+    "actions.sendMint": "Prepare and send",
+    "actions.prepareDeploy": "Prepare deploy",
+    "actions.sendDeploy": "Prepare and send",
+    "actions.prepareTransfer": "Prepare transfer",
+    "actions.sendTransfer": "Prepare and send",
+    "actions.prepareConfig": "Prepare config",
+    "actions.sendConfig": "Prepare and send"
+  };
+
+  const refs = {};
+  const refNames = [
+    "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "saveIndexerButton",
+    "connectButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
+    "serialSupportNotice", "overviewTokensValue", "overviewBalancesValue", "overviewEventsValue",
+    "overviewProfilesValue", "overviewLastSendValue", "overviewStatusNote", "getInfoButton",
+    "getLorawanButton", "generateKeyButton", "getPublicKeyButton", "registerDeviceButton",
+    "joinLorawanButton", "heltecLicenseInput", "setLicenseButton", "lorawanAutoDevEuiInput",
+    "lorawanAdrInput", "lorawanConfirmedInput", "lorawanDevEuiInput", "lorawanJoinEuiInput",
+    "lorawanAppKeyInput", "lorawanAppPortInput", "lorawanDataRateInput", "setLorawanButton",
+    "linkDevEuiInput", "linkDevEuiButton", "exportBackupButton", "importBackupButton",
+    "backupPassphraseInput", "backupImportPassphraseInput", "backupJsonTextarea", "deviceIdValue",
+    "nextNonceValue", "autoMintValue", "defaultMintValue", "lorawanJoinedValue", "lorawanPortValue",
+    "lorawanEventValue", "lorawanDevEuiValue", "deviceSummaryOutput", "lorawanSummaryOutput",
+    "deviceReadinessBanner", "radioActionHint", "knownDevicesList", "tokenSearchInput", "tokenQuickPick",
+    "tokenLibraryList", "portfolioList", "recentTransactionsList", "loadPortfolioButton",
+    "reloadTokensButton", "selectedTokenSummary", "operationWarnings", "estimatedPayloadValue",
+    "estimatedDcValue", "protocolVersionValue", "transportStatusNote", "preparedOutput",
+    "allowRiskySendInput", "deployTickInput", "deployMaxSupplyInput", "deployLimitPerMintInput",
+    "deployPrepareButton", "deploySendButton", "mintTickInput", "mintAmountInput", "mintPrepareButton",
+    "mintSendButton", "transferTickInput", "transferAmountInput", "transferRecipientInput",
+    "transferPrepareButton", "transferSendButton", "configAutoMintEnabledInput",
+    "configAutoMintIntervalInput", "configPrepareButton", "configSendButton", "profileNameInput",
+    "profileTickInput", "profileAmountInput", "profileIntervalInput", "profileEnabledInput",
+    "saveProfileButton", "clearProfileButton", "profileQueueEnabledInput", "profileQueueIntervalInput",
+    "syncProfilesButton", "syncProfilesBroadcastButton", "stopProfilesButton", "profileQueuePreview",
+    "profilesPersistenceNote", "profileList", "onboardingChecklist", "educationContent", "healthButton",
+    "healthOutput", "tokenTickInput", "tokenLookupButton", "tokenOutput", "balanceDeviceIdInput",
+    "balanceTickInput", "balanceLookupButton", "balanceOutput", "transactionsDeviceIdInput",
+    "transactionsTickInput", "transactionsLimitInput", "transactionsButton", "transactionsOutput",
+    "rawCommandTextarea", "sendRawCommandButton", "activityLog"
+  ];
+  const state = {
+    language: readStorage(STORAGE.language, DEFAULTS.language),
+    theme: readStorage(STORAGE.theme, DEFAULTS.theme),
+    soundEnabled: readStorage(STORAGE.sound, "1") !== "0",
+    indexerBaseUrl: normalizeUrl(readStorage(STORAGE.indexerUrl, DEFAULTS.indexerUrl)) || DEFAULTS.indexerUrl,
+    profiles: loadJson(STORAGE.profiles, DEFAULTS.profiles),
+    scheduler: loadJson(STORAGE.scheduler, DEFAULTS.scheduler),
+    knownDevices: loadJson(STORAGE.knownDevices, []),
+    lastSendAt: readStorage(STORAGE.lastSendAt, ""),
+    tokenCatalog: [],
+    portfolio: [],
+    recentTransactions: [],
+    deviceInfo: null,
+    lorawanInfo: null,
+    publicKeyInfo: null,
+    lastPrepared: null,
+    indexerOnline: null,
+    port: null,
+    reader: null,
+    disconnecting: false,
+    pending: new Map(),
+    requestId: 1,
+    audioContext: null
+  };
+
+  function init() {
+    for (const name of refNames) {
+      refs[name] = document.getElementById(name);
     }
-  },
-  en: {
-    hero: {
-      eyebrow: "lora20 control plane",
-      title: "A lightweight panel for sending inscriptions over Heltec V4 and LoRaWAN.",
-      lead: "The panel guides users from onboarding and radio setup to deploy, mint, transfer, and balance reads.",
-      chipOne: "Web Serial + HTTPS",
-      chipTwo: "Heltec V4 onboarding",
-      chipThree: "Sticky log dock"
-    },
-    settings: {
-      language: "Language",
-      theme: "Theme",
-      indexerUrl: "Public indexer URL"
-    },
-    actions: {
-      saveUrl: "Save URL",
-      connect: "Connect device",
-      disconnect: "Disconnect",
-      refresh: "Refresh state",
-      pullInfo: "Pull info",
-      publicKey: "Read public key",
-      generateKey: "Generate key",
-      register: "Register in indexer",
-      pullRadio: "Pull radio",
-      join: "Join LoRaWAN",
-      reloadPortfolio: "Reload portfolio",
-      reloadHistory: "Reload history",
-      reloadTokens: "Reload tokens",
-      checkHealth: "Check indexer",
-      prepareMint: "Prepare mint",
-      sendMint: "Prepare and send",
-      prepareDeploy: "Prepare deploy",
-      sendDeploy: "Prepare and send",
-      prepareTransfer: "Prepare transfer",
-      sendTransfer: "Prepare and send",
-      prepareConfig: "Prepare config",
-      sendConfig: "Prepare and send",
-      saveProfile: "Save profile",
-      clearProfile: "Clear editor",
-      syncQueue: "Sync queue",
-      syncBroadcast: "Sync + broadcast",
-      stopQueue: "Stop loop",
-      saveLicense: "Save license",
-      saveRadio: "Save radio",
-      linkDevEui: "Link DevEUI",
-      exportBackup: "Export backup",
-      importBackup: "Import backup",
-      sendRaw: "Send raw JSON"
-    },
-    sections: {
-      overviewKicker: "Overview",
-      overviewTitle: "What matters first",
-      deviceKicker: "Device",
-      deviceTitle: "Current node and known devices",
-      knownDevicesKicker: "Remembered",
-      knownDevicesTitle: "Configured devices",
-      radioKicker: "Radio",
-      radioTitle: "LoRaWAN readiness",
-      portfolioKicker: "Portfolio",
-      portfolioTitle: "Balances and recent activity",
-      tokensKicker: "Tokens",
-      tokensTitle: "Deployed tickers and form autofill",
-      operationsKicker: "Operations",
-      operationsTitle: "Deploy, mint, transfer, and config",
-      profilesKicker: "Profiles",
-      profilesTitle: "Mint library and round-robin queue",
-      onboardingKicker: "Onboarding",
-      onboardingTitle: "New device step by step",
-      educationKicker: "Education",
-      educationTitle: "How it works and what the protocol does not promise",
-      advancedKicker: "Advanced",
-      advancedTitle: "Radio, backup, and raw JSON"
-    },
-    overview: {
-      deployedTokens: "Deployed tokens",
-      portfolioEntries: "Portfolio entries",
-      recentEvents: "Recent events",
-      activeProfiles: "Active profiles"
-    },
-    device: {
-      deviceId: "Device ID",
-      nextNonce: "Next nonce",
-      autoMint: "Auto-mint",
-      defaultMint: "Default mint",
-      waitingTitle: "No device data yet",
-      waitingBody: "Connect the Heltec over Web Serial and the panel will also store it in the known devices list.",
-      knownHint: "The panel stores previously read devices locally.",
-      activeTitle: "Device ready",
-      activeBody: "The signing identity is available. Check radio readiness and token limits before sending."
-    },
-    radio: {
-      joined: "Joined",
-      port: "Port",
-      event: "Last event",
-      devEui: "DevEUI",
-      waitingTitle: "Radio not ready yet",
-      waitingBody: "If `joined=false`, the panel will perform join first and verify the status before sending.",
-      okTitle: "Radio ready",
-      okBody: "The device is joined and can accept the next uplink."
-    },
-    portfolio: {
-      balancesTitle: "Tokens in wallet",
-      historyTitle: "Recent events"
-    },
-    tokens: {
-      search: "Search ticker",
-      quickPick: "Fill forms from ticker"
-    },
-    operations: {
-      focusKicker: "Most used",
-      mintTitle: "Mint token",
-      noTokenSelectedTitle: "No token selected",
-      noTokenSelectedBody: "Click a deployed ticker above to fill the form and load its mint limits.",
-      preflightTitle: "Preflight analysis",
-      preflightBody: "Token limits, logical risks, and estimated uplink cost will appear here.",
-      tick: "Tick",
-      amount: "Amount",
-      payloadSize: "Payload",
-      dcCost: "Est. DC",
-      protocol: "Protocol",
-      allowRisky: "Allow send even if the indexer is expected to reject it",
-      deployTitle: "Deploy token",
-      maxSupply: "Max supply",
-      limitPerMint: "Limit per mint",
-      transferTitle: "Transfer token",
-      recipient: "Recipient deviceId",
-      configTitle: "Config inscription",
-      autoMintEnabled: "Auto-mint enabled",
-      intervalSeconds: "Interval (seconds)",
-      preparedPreview: "Last prepared payload preview"
-    },
-    profiles: {
-      name: "Name",
-      amount: "Mint amount",
-      interval: "Preferred interval (min)",
-      include: "Include in active queue",
-      loopEnabled: "Loop enabled",
-      loopInterval: "Loop interval (min)"
-    },
-    advanced: {
-      radioConfig: "LoRaWAN config and Heltec license",
-      license: "Heltec license",
-      autoDevEui: "Auto DevEUI",
-      adr: "ADR",
-      confirmed: "Confirmed uplink",
-      devEui: "DevEUI",
-      joinEui: "JoinEUI",
-      appKey: "AppKey",
-      appPort: "App port",
-      dataRate: "Data rate",
-      indexerBinding: "Link DevEUI",
-      devEuiLink: "DevEUI to link",
-      backupTitle: "Backup and restore",
-      exportPassphrase: "Export passphrase",
-      importPassphrase: "Import passphrase",
-      rawTitle: "Raw commands and indexer debug"
-    },
-    logs: {
-      kicker: "Activity feed",
-      title: "Activity log"
-    },
-    misc: {
-      browserHint: "Web Serial works in Chrome or Edge on HTTPS or localhost.",
-      browserUnsupported: "This browser does not support Web Serial. Use Chrome or Edge.",
-      disconnected: "Disconnected",
-      connected: "Connected",
-      ready: "Ready"
-    }
-  }
-};
 
-const SENSITIVE_KEYS = new Set([
-  "appKeyHex",
-  "passphrase",
-  "licenseHex",
-  "ciphertextHex",
-  "tagHex",
-  "saltHex",
-  "ivHex",
-  "backup"
-]);
-
-const refs = {
-  languageSelect: document.getElementById("languageSelect"),
-  themeSelect: document.getElementById("themeSelect"),
-  indexerBaseUrlInput: document.getElementById("indexerBaseUrlInput"),
-  saveIndexerButton: document.getElementById("saveIndexerButton"),
-  connectButton: document.getElementById("connectButton"),
-  disconnectButton: document.getElementById("disconnectButton"),
-  refreshButton: document.getElementById("refreshButton"),
-  connectionBadge: document.getElementById("connectionBadge"),
-  serialSupportNotice: document.getElementById("serialSupportNotice"),
-  overviewTokensValue: document.getElementById("overviewTokensValue"),
-  overviewBalancesValue: document.getElementById("overviewBalancesValue"),
-  overviewEventsValue: document.getElementById("overviewEventsValue"),
-  overviewProfilesValue: document.getElementById("overviewProfilesValue"),
-  overviewStatusNote: document.getElementById("overviewStatusNote"),
-  getInfoButton: document.getElementById("getInfoButton"),
-  getLorawanButton: document.getElementById("getLorawanButton"),
-  deviceSummaryOutput: document.getElementById("deviceSummaryOutput"),
-  lorawanSummaryOutput: document.getElementById("lorawanSummaryOutput"),
-  deviceIdValue: document.getElementById("deviceIdValue"),
-  nextNonceValue: document.getElementById("nextNonceValue"),
-  autoMintValue: document.getElementById("autoMintValue"),
-  defaultMintValue: document.getElementById("defaultMintValue"),
-  lorawanJoinedValue: document.getElementById("lorawanJoinedValue"),
-  lorawanPortValue: document.getElementById("lorawanPortValue"),
-  lorawanEventValue: document.getElementById("lorawanEventValue"),
-  lorawanDevEuiValue: document.getElementById("lorawanDevEuiValue"),
-  deviceReadinessBanner: document.getElementById("deviceReadinessBanner"),
-  knownDevicesList: document.getElementById("knownDevicesList"),
-  radioActionHint: document.getElementById("radioActionHint"),
-  generateKeyButton: document.getElementById("generateKeyButton"),
-  getPublicKeyButton: document.getElementById("getPublicKeyButton"),
-  joinLorawanButton: document.getElementById("joinLorawanButton"),
-  heltecLicenseInput: document.getElementById("heltecLicenseInput"),
-  setLicenseButton: document.getElementById("setLicenseButton"),
-  lorawanAutoDevEuiInput: document.getElementById("lorawanAutoDevEuiInput"),
-  lorawanAdrInput: document.getElementById("lorawanAdrInput"),
-  lorawanConfirmedInput: document.getElementById("lorawanConfirmedInput"),
-  lorawanDevEuiInput: document.getElementById("lorawanDevEuiInput"),
-  lorawanJoinEuiInput: document.getElementById("lorawanJoinEuiInput"),
-  lorawanAppKeyInput: document.getElementById("lorawanAppKeyInput"),
-  lorawanAppPortInput: document.getElementById("lorawanAppPortInput"),
-  lorawanDataRateInput: document.getElementById("lorawanDataRateInput"),
-  setLorawanButton: document.getElementById("setLorawanButton"),
-  backupPassphraseInput: document.getElementById("backupPassphraseInput"),
-  backupImportPassphraseInput: document.getElementById("backupImportPassphraseInput"),
-  backupJsonTextarea: document.getElementById("backupJsonTextarea"),
-  exportBackupButton: document.getElementById("exportBackupButton"),
-  importBackupButton: document.getElementById("importBackupButton"),
-  registerDeviceButton: document.getElementById("registerDeviceButton"),
-  linkDevEuiButton: document.getElementById("linkDevEuiButton"),
-  linkDevEuiInput: document.getElementById("linkDevEuiInput"),
-  deployTickInput: document.getElementById("deployTickInput"),
-  deployMaxSupplyInput: document.getElementById("deployMaxSupplyInput"),
-  deployLimitPerMintInput: document.getElementById("deployLimitPerMintInput"),
-  deployPrepareButton: document.getElementById("deployPrepareButton"),
-  deploySendButton: document.getElementById("deploySendButton"),
-  mintTickInput: document.getElementById("mintTickInput"),
-  mintAmountInput: document.getElementById("mintAmountInput"),
-  mintPrepareButton: document.getElementById("mintPrepareButton"),
-  mintSendButton: document.getElementById("mintSendButton"),
-  transferTickInput: document.getElementById("transferTickInput"),
-  transferAmountInput: document.getElementById("transferAmountInput"),
-  transferRecipientInput: document.getElementById("transferRecipientInput"),
-  transferPrepareButton: document.getElementById("transferPrepareButton"),
-  transferSendButton: document.getElementById("transferSendButton"),
-  configAutoMintEnabledInput: document.getElementById("configAutoMintEnabledInput"),
-  configAutoMintIntervalInput: document.getElementById("configAutoMintIntervalInput"),
-  configPrepareButton: document.getElementById("configPrepareButton"),
-  configSendButton: document.getElementById("configSendButton"),
-  profileNameInput: document.getElementById("profileNameInput"),
-  profileTickInput: document.getElementById("profileTickInput"),
-  profileAmountInput: document.getElementById("profileAmountInput"),
-  profileIntervalInput: document.getElementById("profileIntervalInput"),
-  profileEnabledInput: document.getElementById("profileEnabledInput"),
-  saveProfileButton: document.getElementById("saveProfileButton"),
-  clearProfileButton: document.getElementById("clearProfileButton"),
-  profileQueueEnabledInput: document.getElementById("profileQueueEnabledInput"),
-  profileQueueIntervalInput: document.getElementById("profileQueueIntervalInput"),
-  syncProfilesButton: document.getElementById("syncProfilesButton"),
-  syncProfilesBroadcastButton: document.getElementById("syncProfilesBroadcastButton"),
-  stopProfilesButton: document.getElementById("stopProfilesButton"),
-  profileQueuePreview: document.getElementById("profileQueuePreview"),
-  profileList: document.getElementById("profileList"),
-  loadPortfolioButton: document.getElementById("loadPortfolioButton"),
-  reloadTokensButton: document.getElementById("reloadTokensButton"),
-  tokenSearchInput: document.getElementById("tokenSearchInput"),
-  tokenQuickPick: document.getElementById("tokenQuickPick"),
-  tokenLibraryList: document.getElementById("tokenLibraryList"),
-  portfolioList: document.getElementById("portfolioList"),
-  recentTransactionsList: document.getElementById("recentTransactionsList"),
-  selectedTokenSummary: document.getElementById("selectedTokenSummary"),
-  operationWarnings: document.getElementById("operationWarnings"),
-  estimatedPayloadValue: document.getElementById("estimatedPayloadValue"),
-  estimatedDcValue: document.getElementById("estimatedDcValue"),
-  protocolVersionValue: document.getElementById("protocolVersionValue"),
-  allowRiskySendInput: document.getElementById("allowRiskySendInput"),
-  onboardingChecklist: document.getElementById("onboardingChecklist"),
-  educationContent: document.getElementById("educationContent"),
-  healthButton: document.getElementById("healthButton"),
-  healthOutput: document.getElementById("healthOutput"),
-  tokenTickInput: document.getElementById("tokenTickInput"),
-  tokenLookupButton: document.getElementById("tokenLookupButton"),
-  tokenOutput: document.getElementById("tokenOutput"),
-  balanceDeviceIdInput: document.getElementById("balanceDeviceIdInput"),
-  balanceTickInput: document.getElementById("balanceTickInput"),
-  balanceLookupButton: document.getElementById("balanceLookupButton"),
-  balanceOutput: document.getElementById("balanceOutput"),
-  transactionsDeviceIdInput: document.getElementById("transactionsDeviceIdInput"),
-  transactionsTickInput: document.getElementById("transactionsTickInput"),
-  transactionsLimitInput: document.getElementById("transactionsLimitInput"),
-  transactionsButton: document.getElementById("transactionsButton"),
-  transactionsOutput: document.getElementById("transactionsOutput"),
-  rawCommandTextarea: document.getElementById("rawCommandTextarea"),
-  sendRawCommandButton: document.getElementById("sendRawCommandButton"),
-  preparedOutput: document.getElementById("preparedOutput"),
-  activityLog: document.getElementById("activityLog")
-};
-
-const state = {
-  port: null,
-  reader: null,
-  writer: null,
-  nextRequestId: 1,
-  pending: new Map(),
-  readLoopTask: null,
-  decoder: new TextDecoder(),
-  deviceInfo: null,
-  lorawanInfo: null,
-  lastPrepared: null,
-  profiles: loadProfiles(),
-  scheduler: loadScheduler(),
-  language: loadPreference(STORAGE_KEYS.language, DEFAULT_LANGUAGE),
-  theme: loadPreference(STORAGE_KEYS.theme, DEFAULT_THEME),
-  knownDevices: loadKnownDevices(),
-  tokenCatalog: [],
-  portfolio: [],
-  recentTransactions: [],
-  editingProfileId: null,
-  indexerBaseUrl: loadIndexerBaseUrl(),
-  formsHydrated: false,
-  joinPollTimer: null,
-  lastBootAt: 0
-};
-
-init();
-
-function init() {
-  applyLanguage(state.language);
-  applyTheme(state.theme);
-  refs.languageSelect.value = state.language;
-  refs.themeSelect.value = state.theme;
-  refs.indexerBaseUrlInput.value = state.indexerBaseUrl;
-  refs.profileQueueEnabledInput.checked = state.scheduler.enabled;
-  refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes);
-  refs.serialSupportNotice.textContent = t("misc.browserHint");
-  refs.disconnectButton.disabled = true;
-  refs.protocolVersionValue.textContent = "v1 / Ed25519";
-
-  syncConfigFormFromScheduler();
-  bindEvents();
-  renderOverview();
-  renderDeviceReadiness();
-  renderKnownDevices();
-  renderProfiles();
-  renderQueuePreview();
-  renderPreparedOutput();
-  renderDeviceSummary();
-  renderLorawanSummary();
-  renderPortfolio();
-  renderRecentTransactions();
-  renderTokenLibrary();
-  renderOperationWarnings();
-  renderOnboarding();
-  renderEducation();
-  clearProfileEditor();
-
-  if (!("serial" in navigator)) {
-    refs.serialSupportNotice.textContent = t("misc.browserUnsupported");
-    refs.connectButton.disabled = true;
-  }
-
-  void loadIndexerDashboardData({ silent: true });
-}
-
-function bindEvents() {
-  refs.languageSelect.addEventListener("change", () => {
-    state.language = refs.languageSelect.value || DEFAULT_LANGUAGE;
-    localStorage.setItem(STORAGE_KEYS.language, state.language);
-    applyLanguage(state.language);
+    captureDefaultTexts();
+    bindEvents();
+    hydrateSettings();
+    renderOnboarding();
+    renderEducation();
+    applyTheme();
+    applyLanguage();
     renderAll();
-  });
-  refs.themeSelect.addEventListener("change", () => {
-    state.theme = refs.themeSelect.value || DEFAULT_THEME;
-    localStorage.setItem(STORAGE_KEYS.theme, state.theme);
-    applyTheme(state.theme);
-    renderAll();
-  });
-  refs.saveIndexerButton.addEventListener("click", saveIndexerBaseUrl);
-  refs.connectButton.addEventListener("click", wrapUi(connectSerial));
-  refs.disconnectButton.addEventListener("click", wrapUi(() => disconnectSerial({ notify: true })));
-  refs.refreshButton.addEventListener("click", wrapUi(refreshDeviceState));
-  refs.getInfoButton.addEventListener("click", wrapUi(async () => {
-    const info = await sendCommand("get_info");
-    state.deviceInfo = info;
-    hydrateFromDevice(true);
-    renderDeviceSummary();
-  }));
-  refs.getLorawanButton.addEventListener("click", wrapUi(async () => {
-    const lorawan = await sendCommand("get_lorawan");
-    state.lorawanInfo = lorawan;
-    hydrateFromLoRaWan(true);
-    renderLorawanSummary();
-  }));
-  refs.generateKeyButton.addEventListener("click", wrapUi(handleGenerateKey));
-  refs.getPublicKeyButton.addEventListener("click", wrapUi(async () => {
-    const result = await sendCommand("get_public_key");
-    appendLog("device", "Public key loaded", result);
-  }));
-  refs.joinLorawanButton.addEventListener("click", wrapUi(handleJoin));
-  refs.setLicenseButton.addEventListener("click", wrapUi(handleSetLicense));
-  refs.setLorawanButton.addEventListener("click", wrapUi(handleSetLorawan));
-  refs.exportBackupButton.addEventListener("click", wrapUi(handleExportBackup));
-  refs.importBackupButton.addEventListener("click", wrapUi(handleImportBackup));
-  refs.registerDeviceButton.addEventListener("click", wrapUi(handleRegisterDevice));
-  refs.linkDevEuiButton.addEventListener("click", wrapUi(handleLinkDevEui));
-  refs.deployPrepareButton.addEventListener("click", wrapUi(() => handleDeploy(false)));
-  refs.deploySendButton.addEventListener("click", wrapUi(() => handleDeploy(true)));
-  refs.mintPrepareButton.addEventListener("click", wrapUi(() => handleMint(false)));
-  refs.mintSendButton.addEventListener("click", wrapUi(() => handleMint(true)));
-  refs.transferPrepareButton.addEventListener("click", wrapUi(() => handleTransfer(false)));
-  refs.transferSendButton.addEventListener("click", wrapUi(() => handleTransfer(true)));
-  refs.configPrepareButton.addEventListener("click", wrapUi(() => handleConfigInscription(false)));
-  refs.configSendButton.addEventListener("click", wrapUi(() => handleConfigInscription(true)));
-  refs.saveProfileButton.addEventListener("click", wrapUi(saveProfileFromEditor));
-  refs.clearProfileButton.addEventListener("click", clearProfileEditor);
-  refs.syncProfilesButton.addEventListener("click", wrapUi(() => syncProfilesToDevice({ broadcastConfig: false })));
-  refs.syncProfilesBroadcastButton.addEventListener(
-    "click",
-    wrapUi(() => syncProfilesToDevice({ broadcastConfig: true }))
-  );
-  refs.stopProfilesButton.addEventListener("click", wrapUi(stopProfileLoop));
-  refs.profileList.addEventListener("click", wrapUi(handleProfileAction));
-  refs.profileQueueEnabledInput.addEventListener("change", handleSchedulerInputChange);
-  refs.profileQueueIntervalInput.addEventListener("input", handleSchedulerInputChange);
-  refs.loadPortfolioButton.addEventListener("click", wrapUi(() => loadPortfolioSummary(true)));
-  refs.reloadTokensButton.addEventListener("click", wrapUi(() => loadTokenCatalog(true)));
-  refs.tokenSearchInput.addEventListener("input", renderTokenLibrary);
-  refs.tokenQuickPick.addEventListener("change", () => {
-    if (refs.tokenQuickPick.value) {
-      fillOperationFormsFromToken(refs.tokenQuickPick.value);
-    }
-  });
-  refs.tokenLibraryList?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-token-select]");
-    if (button) {
-      fillOperationFormsFromToken(button.dataset.tokenSelect);
-    }
-  });
-  refs.portfolioList?.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-token-select]");
-    if (button) {
-      fillOperationFormsFromToken(button.dataset.tokenSelect);
-    }
-  });
-  refs.knownDevicesList?.addEventListener("click", wrapUi(handleKnownDeviceAction));
-  refs.healthButton.addEventListener("click", wrapUi(loadHealth));
-  refs.tokenLookupButton.addEventListener("click", wrapUi(loadToken));
-  refs.balanceLookupButton.addEventListener("click", wrapUi(loadBalance));
-  refs.transactionsButton.addEventListener("click", wrapUi(loadTransactions));
-  refs.sendRawCommandButton.addEventListener("click", wrapUi(handleRawCommand));
-  [
-    refs.deployTickInput,
-    refs.deployMaxSupplyInput,
-    refs.deployLimitPerMintInput,
-    refs.mintTickInput,
-    refs.mintAmountInput,
-    refs.transferTickInput,
-    refs.transferAmountInput,
-    refs.transferRecipientInput,
-    refs.configAutoMintEnabledInput,
-    refs.configAutoMintIntervalInput,
-    refs.allowRiskySendInput
-  ].forEach((element) => {
-    element?.addEventListener("input", () => renderOperationWarnings());
-    element?.addEventListener("change", () => renderOperationWarnings());
-  });
-
-  if ("serial" in navigator) {
-    navigator.serial.addEventListener("disconnect", async (event) => {
-      if (state.port && event.target === state.port) {
-        await disconnectSerial({ notify: true });
+    updateSerialSupport();
+    window.addEventListener("beforeunload", () => {
+      if (state.port) {
+        void disconnectDevice(false);
       }
     });
+    void refreshIndexer(false);
   }
-}
 
-function wrapUi(handler) {
-  return async (event) => {
+  function captureDefaultTexts() {
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      node.dataset.defaultText = node.textContent;
+    });
+  }
+
+  function bindEvents() {
+    refs.languageSelect?.addEventListener("change", handleLanguageChange);
+    refs.themeSelect?.addEventListener("change", handleThemeChange);
+    refs.soundEnabledInput?.addEventListener("change", handleSoundToggle);
+    wireAction(refs.saveIndexerButton, handleSaveIndexerUrl);
+    wireAction(refs.connectButton, () => connectDevice());
+    wireAction(refs.disconnectButton, () => disconnectDevice(true));
+    wireAction(refs.refreshButton, () => refreshEverything());
+    wireAction(refs.getInfoButton, () => refreshDeviceInfo());
+    wireAction(refs.getLorawanButton, () => refreshLorawanInfo());
+    wireAction(refs.generateKeyButton, () => generateKey());
+    wireAction(refs.getPublicKeyButton, () => readPublicKey());
+    wireAction(refs.registerDeviceButton, () => registerDevice());
+    wireAction(refs.joinLorawanButton, () => joinLorawan());
+    wireAction(refs.setLicenseButton, () => saveHeltecLicense());
+    wireAction(refs.setLorawanButton, () => saveLorawanConfig());
+    wireAction(refs.linkDevEuiButton, () => linkDevEui());
+    wireAction(refs.exportBackupButton, () => exportBackup());
+    wireAction(refs.importBackupButton, () => importBackup());
+    wireAction(refs.loadPortfolioButton, () => loadPortfolioAndHistory());
+    wireAction(refs.transactionsButton, () => loadTransactions());
+    wireAction(refs.reloadTokensButton, () => loadTokens());
+    wireAction(refs.healthButton, () => refreshIndexer(true));
+    wireAction(refs.tokenLookupButton, () => lookupToken());
+    wireAction(refs.balanceLookupButton, () => lookupBalance());
+    wireAction(refs.sendRawCommandButton, () => sendRawCommand());
+    wireAction(refs.deployPrepareButton, () => prepareDeploy());
+    wireAction(refs.deploySendButton, () => sendDeploy());
+    wireAction(refs.mintPrepareButton, () => prepareMint());
+    wireAction(refs.mintSendButton, () => sendMint());
+    wireAction(refs.transferPrepareButton, () => prepareTransfer());
+    wireAction(refs.transferSendButton, () => sendTransfer());
+    wireAction(refs.configPrepareButton, () => prepareConfig());
+    wireAction(refs.configSendButton, () => sendConfig());
+    wireAction(refs.saveProfileButton, () => handleSaveProfile());
+    wireAction(refs.clearProfileButton, () => clearProfileEditor());
+    wireAction(refs.syncProfilesButton, () => syncProfiles(false));
+    wireAction(refs.syncProfilesBroadcastButton, () => syncProfiles(true));
+    wireAction(refs.stopProfilesButton, () => stopProfiles());
+    refs.tokenSearchInput?.addEventListener("input", renderTokenLibrary);
+    refs.tokenQuickPick?.addEventListener("change", handleQuickPickChange);
+    refs.mintTickInput?.addEventListener("input", renderOperations);
+    refs.mintAmountInput?.addEventListener("input", renderOperations);
+    refs.allowRiskySendInput?.addEventListener("change", renderOperations);
+    refs.profileList?.addEventListener("click", handleProfileListClick);
+    refs.tokenLibraryList?.addEventListener("click", handleTokenLibraryClick);
+    refs.knownDevicesList?.addEventListener("click", handleKnownDevicesClick);
+  }
+
+  function wireAction(node, task) {
+    node?.addEventListener("click", (event) => {
+      event.preventDefault();
+      Promise.resolve()
+        .then(() => task())
+        .catch((error) => {
+          addLog("error", error instanceof Error ? error.message : String(error));
+        });
+    });
+  }
+
+  function hydrateSettings() {
+    if (refs.languageSelect) refs.languageSelect.value = state.language;
+    if (refs.themeSelect) refs.themeSelect.value = state.theme;
+    if (refs.soundEnabledInput) refs.soundEnabledInput.checked = state.soundEnabled;
+    if (refs.indexerBaseUrlInput) refs.indexerBaseUrlInput.value = state.indexerBaseUrl;
+    if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
+    if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes || 30);
+    if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
+  }
+
+  function handleLanguageChange() {
+    state.language = refs.languageSelect?.value || DEFAULTS.language;
+    writeStorage(STORAGE.language, state.language);
+    applyLanguage();
+    renderAll();
+  }
+
+  function handleThemeChange() {
+    state.theme = refs.themeSelect?.value || DEFAULTS.theme;
+    writeStorage(STORAGE.theme, state.theme);
+    applyTheme();
+    renderAll();
+  }
+
+  function handleSoundToggle() {
+    state.soundEnabled = Boolean(refs.soundEnabledInput?.checked);
+    writeStorage(STORAGE.sound, state.soundEnabled ? "1" : "0");
+  }
+
+  function handleSaveIndexerUrl() {
+    state.indexerBaseUrl = normalizeUrl(refs.indexerBaseUrlInput?.value) || DEFAULTS.indexerUrl;
+    if (refs.indexerBaseUrlInput) refs.indexerBaseUrlInput.value = state.indexerBaseUrl;
+    writeStorage(STORAGE.indexerUrl, state.indexerBaseUrl);
+    addLog("device", `Indexer URL saved: ${state.indexerBaseUrl}`);
+    void refreshIndexer(true);
+  }
+
+  function applyLanguage() {
+    document.documentElement.lang = state.language;
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      const key = node.dataset.i18n;
+      node.textContent = state.language === "en" && I18N_EN[key]
+        ? I18N_EN[key]
+        : (node.dataset.defaultText || node.textContent);
+    });
+
+    setSelectLabels(refs.languageSelect, state.language === "en" ? ["Polish", "English"] : ["Polski", "English"]);
+    setSelectLabels(refs.themeSelect, state.language === "en" ? ["Dark", "Medium", "Light"] : ["Ciemny", "Średni", "Jasny"]);
+
+    const soundLabel = refs.soundEnabledInput?.parentElement?.querySelector("span");
+    if (soundLabel) {
+      soundLabel.textContent = state.language === "en" ? "Sound" : "Dźwięki";
+    }
+  }
+
+  function applyTheme() {
+    document.body.dataset.theme = state.theme;
+  }
+
+  function setSelectLabels(select, labels) {
+    if (!select) return;
+    Array.from(select.options).forEach((option, index) => {
+      if (labels[index]) option.textContent = labels[index];
+    });
+  }
+
+  function updateSerialSupport() {
+    if (!refs.serialSupportNotice) return;
+    refs.serialSupportNotice.textContent = "serial" in navigator
+      ? "Przed połączeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM."
+      : "Web Serial działa tylko w Chrome lub Edge na HTTPS albo localhost.";
+  }
+
+  function renderAll() {
+    renderBadges();
+    renderOverview();
+    renderDevice();
+    renderRadio();
+    renderTokenLibrary();
+    renderPortfolio();
+    renderPrepared();
+    renderProfiles();
+    renderOperations();
+    syncIndexerLookupFields();
+  }
+
+  function renderBadges() {
+    setBadge(refs.connectionBadge, state.port ? "connected" : "danger", state.port ? "USB connected" : "USB offline");
+    if (state.indexerOnline === true) setBadge(refs.indexerBadge, "ok", "Indexer online");
+    else if (state.indexerOnline === false) setBadge(refs.indexerBadge, "danger", "Indexer offline");
+    else setBadge(refs.indexerBadge, "warn", "Indexer probing");
+
+    const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
+    if (!runtime) setBadge(refs.radioBadge, "warn", "LoRa idle");
+    else if (runtime.joined) setBadge(refs.radioBadge, "ok", "LoRa joined");
+    else if (runtime.configured || runtime.initialized || runtime.hardwareReady) setBadge(refs.radioBadge, "warn", "LoRa configured");
+    else setBadge(refs.radioBadge, "danger", "LoRa not ready");
+  }
+
+  function renderOverview() {
+    setText(refs.overviewTokensValue, String(state.tokenCatalog.length));
+    setText(refs.overviewBalancesValue, String(state.portfolio.length));
+    setText(refs.overviewEventsValue, String(state.recentTransactions.length));
+    setText(refs.overviewProfilesValue, String(state.profiles.filter((profile) => profile.enabled).length));
+    setText(refs.overviewLastSendValue, formatLastSend(state.lastSendAt));
+
+    const notes = [];
+    if (!state.port) notes.push("Urządzenie nie jest jeszcze podłączone przez Web Serial.");
+    if (state.indexerOnline !== true) notes.push("Indexer nie odpowiada lub dashboard nie może go odczytać.");
+    const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
+    if (runtime && !runtime.joined) notes.push("Radio nie jest joined, więc próba wysyłki skończy się timeoutem albo odrzuceniem.");
+    if (state.lastSendAt) notes.push(`Ostatnia wysyłka: ${formatDateTime(state.lastSendAt)}.`);
+    renderCallout(refs.overviewStatusNote, notes.length ? "warn" : "ok", notes.length ? notes.join(" ") : "Panel wygląda na gotowy do pracy.");
+  }
+
+  function renderDevice() {
+    const device = state.deviceInfo;
+    setText(refs.deviceIdValue, device?.deviceId || "-");
+    setText(refs.nextNonceValue, device?.nextNonce == null ? "-" : String(device.nextNonce));
+    setText(refs.autoMintValue, device?.config?.autoMintEnabled ? "on" : "off");
+    setText(refs.defaultMintValue, device?.config ? `${device.config.defaultTick || "-"} / ${device.config.defaultMintAmount || "-"}` : "-");
+    setText(refs.deviceSummaryOutput, device ? prettyJson(device) : "No device data yet.");
+
+    const hints = [];
+    if (!device) hints.push("Po połączeniu kliknij „Pobierz info”.");
+    else {
+      hints.push(`Aktywny deviceId: ${device.deviceId}.`);
+      if (!device.hasKey) hints.push("Klucz urządzenia nie został jeszcze wygenerowany.");
+    }
+    renderCallout(refs.deviceReadinessBanner, device?.hasKey ? "ok" : "warn", hints.join(" "));
+
+    if (!refs.knownDevicesList) return;
+    if (!state.knownDevices.length) {
+      refs.knownDevicesList.innerHTML = `<div class="known-device"><h3>Brak zapisanych urządzeń</h3><p class="helper">Po udanym odczycie info lub rejestracji w indexerze urządzenie pojawi się tutaj.</p></div>`;
+      return;
+    }
+
+    refs.knownDevicesList.innerHTML = state.knownDevices.map((deviceEntry) => `
+      <article class="known-device">
+        <div class="known-device__head">
+          <div>
+            <h3 class="mono">${escapeHtml(deviceEntry.deviceId)}</h3>
+            <p class="helper">${escapeHtml(maskSecret(deviceEntry.publicKeyHex || ""))}</p>
+          </div>
+          <div class="button-row">
+            <button class="button button--ghost" type="button" data-action="use-device" data-id="${escapeHtml(deviceEntry.deviceId)}">Use</button>
+            <button class="button button--ghost" type="button" data-action="remove-device" data-id="${escapeHtml(deviceEntry.deviceId)}">Remove</button>
+          </div>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  function renderRadio() {
+    const info = state.lorawanInfo;
+    const runtime = info?.runtime || info?.lorawanRuntime;
+    const config = info?.config || state.deviceInfo?.lorawan;
+
+    setText(refs.lorawanJoinedValue, runtime ? String(Boolean(runtime.joined)) : "-");
+    setText(refs.lorawanPortValue, config?.appPort == null ? "-" : String(config.appPort));
+    setText(refs.lorawanEventValue, runtime?.lastEvent || "-");
+    setText(refs.lorawanDevEuiValue, config?.devEuiHex || "-");
+    setText(refs.lorawanSummaryOutput, info ? prettyJson(info) : "No LoRaWAN status yet.");
+
+    const messages = [];
+    if (!config?.hasAppKey || !config?.hasJoinEui) messages.push("Brakuje pełnej konfiguracji OTAA.");
+    if (runtime && !runtime.hardwareReady) messages.push("hardwareReady=false. Po restarcie Helteca odczekaj chwilę i dopiero odczytaj radio lub wykonaj join.");
+    if (runtime && !runtime.initialized) messages.push("initialized=false. Radio nie jest gotowe do wysyłki.");
+    if (runtime && !runtime.joined) messages.push("joined=false. Wykonaj join przed wysyłką.");
+    renderCallout(refs.radioActionHint, messages.length ? "warn" : "ok", messages.length ? messages.join(" ") : "Radio wygląda na gotowe do wysyłki.");
+  }
+
+  function renderPortfolio() {
+    if (refs.portfolioList) {
+      if (!state.portfolio.length) {
+        refs.portfolioList.innerHTML = `<div class="token-card"><h3>Brak balansu</h3><p class="helper">Po pobraniu portfela zobaczysz tu tokeny przypisane do aktywnego deviceId.</p></div>`;
+      } else {
+        refs.portfolioList.innerHTML = state.portfolio.map((entry) => `
+          <article class="token-card">
+            <div class="token-card__head">
+              <h3>${escapeHtml(entry.tick)}</h3>
+              <span class="token-pill">${escapeHtml(entry.balance)}</span>
+            </div>
+            <div class="token-meta">
+              <span class="hero-chip">max ${escapeHtml(entry.token?.maxSupply || "-")}</span>
+              <span class="hero-chip">limit ${escapeHtml(entry.token?.limitPerMint || "-")}</span>
+            </div>
+          </article>
+        `).join("");
+      }
+    }
+
+    if (!refs.recentTransactionsList) return;
+    if (!state.recentTransactions.length) {
+      refs.recentTransactionsList.innerHTML = `<div class="timeline-card"><h3>Brak historii</h3><p class="helper">Po synchronizacji webhooka i wysłaniu nowego uplinku zobaczysz tu zdarzenia z indexera.</p></div>`;
+      return;
+    }
+
+    refs.recentTransactionsList.innerHTML = state.recentTransactions.map((event) => `
+      <article class="timeline-card">
+        <div class="timeline-card__head">
+          <h3>${escapeHtml(event.opName || `op ${event.op}`)}</h3>
+          <span class="badge ${event.status === "accepted" ? "badge--ok" : "badge--warn"}">${escapeHtml(event.status)}</span>
+        </div>
+        <div class="token-meta">
+          ${event.tick ? `<span class="hero-chip">${escapeHtml(event.tick)}</span>` : ""}
+          ${event.amount ? `<span class="hero-chip">${escapeHtml(event.amount)}</span>` : ""}
+          ${event.nonce != null ? `<span class="hero-chip">nonce ${escapeHtml(String(event.nonce))}</span>` : ""}
+        </div>
+        <p class="helper">${escapeHtml(formatDateTime(event.receivedAt || event.createdAt))}</p>
+      </article>
+    `).join("");
+  }
+
+  function renderTokenLibrary() {
+    const search = normalizeTick(refs.tokenSearchInput?.value || "");
+    const filtered = state.tokenCatalog.filter((token) => !search || token.tick.includes(search));
+
+    if (refs.tokenQuickPick) {
+      const current = refs.tokenQuickPick.value;
+      refs.tokenQuickPick.innerHTML = `<option value="">-</option>${state.tokenCatalog.map((token) => `<option value="${escapeHtml(token.tick)}">${escapeHtml(token.tick)}</option>`).join("")}`;
+      if (current && state.tokenCatalog.some((token) => token.tick === current)) refs.tokenQuickPick.value = current;
+    }
+
+    if (!refs.tokenLibraryList) return;
+    if (!filtered.length) {
+      refs.tokenLibraryList.innerHTML = `<div class="token-card"><h3>Brak tokenów</h3><p class="helper">Indexer nie zwrócił jeszcze żadnych wdrożonych tickerów.</p></div>`;
+      return;
+    }
+
+    refs.tokenLibraryList.innerHTML = filtered.map((token) => {
+      const remaining = safeBigInt(token.maxSupply) - safeBigInt(token.totalSupply);
+      return `
+        <article class="token-card">
+          <div class="token-card__head">
+            <h3>${escapeHtml(token.tick)}</h3>
+            <button class="button button--ghost" type="button" data-action="use-token" data-tick="${escapeHtml(token.tick)}">Use</button>
+          </div>
+          <div class="token-meta">
+            <span class="hero-chip">mint ${escapeHtml(token.limitPerMint)}</span>
+            <span class="hero-chip">supply ${escapeHtml(token.totalSupply)} / ${escapeHtml(token.maxSupply)}</span>
+            <span class="hero-chip">left ${escapeHtml(remaining.toString())}</span>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function renderPrepared() {
+    setText(refs.preparedOutput, state.lastPrepared ? prettyJson(state.lastPrepared) : "No prepared payload yet.");
+    const payloadSize = state.lastPrepared?.payloadSize || 81;
+    setText(refs.estimatedPayloadValue, `${payloadSize} B`);
+    setText(refs.estimatedDcValue, `~${estimateDc(payloadSize)} DC`);
+  }
+
+  function renderProfiles() {
+    saveJson(STORAGE.profiles, state.profiles);
+    saveJson(STORAGE.scheduler, state.scheduler);
+
+    if (refs.profilesPersistenceNote) {
+      refs.profilesPersistenceNote.textContent = "Profile są zapamiętywane lokalnie w przeglądarce. „Synchronizuj kolejkę” zapisuje je do Helteca, więc urządzenie może mintować także bez podłączonego panelu.";
+    }
+
+    if (refs.profileQueuePreview) {
+      const active = state.profiles.filter((profile) => profile.enabled);
+      refs.profileQueuePreview.textContent = prettyJson({
+        loopEnabled: Boolean(state.scheduler.enabled),
+        intervalMinutes: Number(refs.profileQueueIntervalInput?.value || state.scheduler.intervalMinutes || 30),
+        activeProfiles: active.map((profile) => ({ tick: profile.tick, amount: profile.amount }))
+      });
+    }
+
+    if (!refs.profileList) return;
+    if (!state.profiles.length) {
+      refs.profileList.innerHTML = `<div class="profile-card"><h3>Brak profili</h3><p class="helper">Dodaj profil mintu, a potem zsynchronizuj kolejkę z urządzeniem.</p></div>`;
+      return;
+    }
+
+    refs.profileList.innerHTML = state.profiles.map((profile, index) => `
+      <article class="profile-card ${profile.enabled ? "profile-card--active" : ""}">
+        <div class="token-card__head">
+          <div>
+            <h3>${escapeHtml(profile.name || `${profile.tick} / ${profile.amount}`)}</h3>
+            <p class="helper">${escapeHtml(profile.tick)} / ${escapeHtml(profile.amount)} / ${escapeHtml(String(profile.intervalMinutes || 30))} min</p>
+          </div>
+          <span class="badge ${profile.enabled ? "badge--ok" : "badge--warn"}">${profile.enabled ? "active" : "paused"}</span>
+        </div>
+        <div class="button-row">
+          <button class="button button--ghost" type="button" data-action="use-profile" data-id="${escapeHtml(profile.id)}">Use</button>
+          <button class="button button--ghost" type="button" data-action="toggle-profile" data-id="${escapeHtml(profile.id)}">${profile.enabled ? "Pause" : "Enable"}</button>
+          <button class="button button--ghost" type="button" data-action="move-up" data-id="${escapeHtml(profile.id)}" ${index === 0 ? "disabled" : ""}>Up</button>
+          <button class="button button--ghost" type="button" data-action="move-down" data-id="${escapeHtml(profile.id)}" ${index === state.profiles.length - 1 ? "disabled" : ""}>Down</button>
+          <button class="button button--ghost" type="button" data-action="remove-profile" data-id="${escapeHtml(profile.id)}">Remove</button>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  function renderOperations() {
+    const mintTick = normalizeTick(refs.mintTickInput?.value || "");
+    const mintAmount = refs.mintAmountInput?.value?.trim() || "0";
+    const selectedToken = findToken(mintTick);
+    const warnings = getMintWarnings(mintTick, mintAmount, selectedToken);
+
+    if (refs.selectedTokenSummary) {
+      if (!selectedToken) {
+        renderCallout(refs.selectedTokenSummary, "warn", mintTick ? `Ticker ${mintTick} nie jest jeszcze widoczny w indexerze. Mint bez wcześniejszego deploy prawdopodobnie nie zostanie zaindeksowany.` : "Wybierz ticker albo kliknij token z biblioteki.");
+      } else {
+        const remaining = safeBigInt(selectedToken.maxSupply) - safeBigInt(selectedToken.totalSupply);
+        renderCallout(refs.selectedTokenSummary, "ok", `${selectedToken.tick}: minted ${selectedToken.totalSupply}/${selectedToken.maxSupply}, limit per mint ${selectedToken.limitPerMint}, remaining ${remaining}.`);
+      }
+    }
+
+    if (refs.operationWarnings) {
+      if (!warnings.length) renderCallout(refs.operationWarnings, "ok", "Brak oczywistych błędów logicznych dla aktualnego mintu.");
+      else renderCallout(refs.operationWarnings, warnings.some((warning) => warning.blocking) ? "danger" : "warn", warnings.map((warning) => warning.message).join(" "));
+    }
+
+    const lastSendMs = state.lastSendAt ? Date.now() - Date.parse(state.lastSendAt) : Number.POSITIVE_INFINITY;
+    const transportNotes = [];
+    const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
+    if (!state.port) transportNotes.push("Brak połączenia USB.");
+    if (runtime && !runtime.joined) transportNotes.push("Radio nie jest joined.");
+    if (runtime && (!runtime.hardwareReady || !runtime.initialized)) transportNotes.push("Radio po restarcie nie jest jeszcze gotowe do kolejnej wysyłki.");
+    if (Number.isFinite(lastSendMs) && lastSendMs < 15000) transportNotes.push(`Ostatnia wysyłka była ${formatRelative(Date.now(), Date.parse(state.lastSendAt))}. Daj urządzeniu chwilę przed następną próbą.`);
+    renderCallout(refs.transportStatusNote, transportNotes.length ? "warn" : "ok", transportNotes.length ? transportNotes.join(" ") : "Transport wygląda poprawnie.");
+  }
+
+  function renderOnboarding() {
+    if (!refs.onboardingChecklist) return;
+    refs.onboardingChecklist.innerHTML = [
+      { title: "1. Sterowniki i port", body: "Użyj Chrome albo Edge. Zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i każdą aplikację trzymającą COM przed kliknięciem „Połącz urządzenie”." },
+      { title: "2. Firmware i klucz", body: "Po połączeniu pobierz info, wygeneruj klucz, odczytaj public key i zarejestruj urządzenie w indexerze. Jeśli firmware był aktualizowany, sprawdź radio i join." },
+      { title: "3. LoRaWAN", body: "Wypełnij DevEUI, JoinEUI, AppKey i zapisz radio. Potem wykonaj join. Nie próbuj mintu, gdy runtime pokazuje joined=false albo hardwareReady=false." },
+      { title: "4. Indexer i webhook", body: "Sprawdź health indexera, podepnij DevEUI do deviceId i upewnij się, że ChirpStack wysyła webhook na /integrations/chirpstack z aktualnym tokenem." }
+    ].map((item) => `
+      <article class="guide-card">
+        <h3>${escapeHtml(item.title)}</h3>
+        <p>${escapeHtml(item.body)}</p>
+      </article>
+    `).join("");
+  }
+
+  function renderEducation() {
+    if (!refs.educationContent) return;
+    refs.educationContent.innerHTML = `
+      <p>Każda wiadomość jest podpisywana Ed25519. Indexer używa nonce, żeby odrzucić replay i duplikaty. Deploy liczy się tylko pierwszy dla tickera, a mint przestaje być indeksowany po osiągnięciu max supply.</p>
+      <ul>
+        <li><strong>Mint</strong>: obecnie około 81 B payloadu, czyli około ${estimateDc(81)} DC bazowego kosztu przy porcjach 24 B.</li>
+        <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; profile round-robin są utrzymywane lokalnie w Heltecu po synchronizacji.</li>
+        <li><strong>Bezpieczeństwo</strong>: podpis udowadnia autora, nonce pilnuje kolejności, a webhook do indexera powinien być chroniony osobnym tokenem.</li>
+      </ul>
+    `;
+  }
+
+  async function refreshEverything() {
+    await Promise.allSettled([refreshDeviceState(), refreshIndexer(true)]);
+  }
+
+  async function refreshDeviceState() {
+    await Promise.allSettled([refreshDeviceInfo(), refreshLorawanInfo()]);
+  }
+
+  async function refreshDeviceInfo() {
+    const result = await requestDevice("get_info", {});
+    state.deviceInfo = result.device || null;
+    if (result.lorawanRuntime) {
+      state.lorawanInfo = {
+        ...(state.lorawanInfo || {}),
+        config: state.lorawanInfo?.config || result.device?.lorawan || null,
+        runtime: result.lorawanRuntime,
+        heltec: state.lorawanInfo?.heltec || { hasLicense: Boolean(result.device?.heltecLicensePresent) }
+      };
+    }
+    if (result.device?.deviceId) {
+      upsertKnownDevice({ deviceId: result.device.deviceId, publicKeyHex: result.device.publicKeyHex || state.publicKeyInfo?.publicKeyHex || "" });
+    }
+    renderAll();
+    return result;
+  }
+
+  async function refreshLorawanInfo() {
+    const result = await requestDevice("get_lorawan", {});
+    state.lorawanInfo = result;
+    renderAll();
+    return result;
+  }
+
+  async function generateKey() {
+    const result = await requestDevice("generate_key", { force: false }, 30000);
+    state.deviceInfo = result.device || state.deviceInfo;
+    if (result.device?.deviceId) {
+      upsertKnownDevice({ deviceId: result.device.deviceId, publicKeyHex: result.device.publicKeyHex || "" });
+    }
+    renderAll();
+  }
+
+  async function readPublicKey() {
+    const result = await requestDevice("get_public_key", {});
+    state.publicKeyInfo = result;
+    if (state.deviceInfo) {
+      state.deviceInfo.publicKeyHex = result.publicKeyHex;
+      state.deviceInfo.deviceId = result.deviceId;
+      upsertKnownDevice(result);
+    }
+    addLog("device", "Public key loaded", result);
+    renderAll();
+    return result;
+  }
+
+  async function registerDevice() {
+    let publicKeyHex = state.publicKeyInfo?.publicKeyHex || state.deviceInfo?.publicKeyHex;
+    if (!publicKeyHex) {
+      const result = await readPublicKey();
+      publicKeyHex = result.publicKeyHex;
+    }
+
+    const response = await fetchJson("/devices/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicKeyRaw: publicKeyHex })
+    });
+
+    if (response.device) {
+      upsertKnownDevice({ deviceId: response.device.deviceId, publicKeyHex: response.device.publicKeyRaw });
+      addLog("indexer", "Device registered in indexer", response.device);
+      await loadPortfolioAndHistory();
+    }
+  }
+
+  async function refreshIndexer(loadMore) {
     try {
-      await handler(event);
+      const health = await fetchJson("/health");
+      state.indexerOnline = health?.status === "ok";
+      setText(refs.healthOutput, prettyJson(health));
+      if (loadMore || !state.tokenCatalog.length) await loadTokens();
+      if (loadMore && getCurrentDeviceId()) await loadPortfolioAndHistory();
     } catch (error) {
-      appendLog("error", error instanceof Error ? error.message : String(error));
+      state.indexerOnline = false;
+      addLog("error", error.message);
+    } finally {
+      renderAll();
     }
-  };
-}
-
-function renderAll() {
-  renderOverview();
-  renderDeviceReadiness();
-  renderKnownDevices();
-  renderProfiles();
-  renderQueuePreview();
-  renderPreparedOutput();
-  renderDeviceSummary();
-  renderLorawanSummary();
-  renderPortfolio();
-  renderRecentTransactions();
-  renderTokenLibrary();
-  renderOperationWarnings();
-  renderOnboarding();
-  renderEducation();
-}
-
-function loadIndexerBaseUrl() {
-  return localStorage.getItem(STORAGE_KEYS.indexerBaseUrl) || DEFAULT_INDEXER_BASE_URL;
-}
-
-function loadPreference(key, fallback) {
-  return localStorage.getItem(key) || fallback;
-}
-
-function loadKnownDevices() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.knownDevices);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
   }
-}
 
-function persistKnownDevices() {
-  localStorage.setItem(STORAGE_KEYS.knownDevices, JSON.stringify(state.knownDevices.slice(0, 12)));
-}
+  async function loadTokens() {
+    const search = refs.tokenSearchInput?.value?.trim() || "";
+    const query = new URLSearchParams();
+    query.set("limit", "100");
+    if (search) query.set("search", search);
+    const response = await fetchJson(`/tokens?${query.toString()}`);
+    state.tokenCatalog = Array.isArray(response.tokens) ? response.tokens : [];
+    setText(refs.tokenOutput, prettyJson(response));
+    renderAll();
+  }
 
-function applyTheme(theme) {
-  document.body.dataset.theme = theme || DEFAULT_THEME;
-}
+  async function lookupToken() {
+    const tick = normalizeTick(refs.tokenTickInput?.value || refs.mintTickInput?.value || "");
+    if (!tick) throw new Error("Podaj tick do sprawdzenia tokena.");
+    const response = await fetchJson(`/tokens/${encodeURIComponent(tick)}`);
+    setText(refs.tokenOutput, prettyJson(response));
+  }
 
-function applyLanguage(language) {
-  const locale = CONTENT[language] ? language : DEFAULT_LANGUAGE;
-  document.documentElement.lang = locale;
-  document.querySelectorAll("[data-i18n]").forEach((element) => {
-    const value = t(element.dataset.i18n, locale);
-    if (value) {
-      element.textContent = value;
+  async function loadPortfolioAndHistory() {
+    await Promise.allSettled([loadPortfolio(), loadTransactions()]);
+  }
+
+  async function loadPortfolio() {
+    const deviceId = getCurrentDeviceId();
+    if (!deviceId) throw new Error("Brak aktywnego deviceId. Najpierw odczytaj info urządzenia albo wybierz zapisany node.");
+    const response = await fetchJson(`/devices/${encodeURIComponent(deviceId)}/balances?limit=100`);
+    state.portfolio = Array.isArray(response.balances) ? response.balances : [];
+    setText(refs.balanceOutput, prettyJson(response));
+    renderAll();
+  }
+
+  async function lookupBalance() {
+    const deviceId = (refs.balanceDeviceIdInput?.value || getCurrentDeviceId() || "").trim().toLowerCase();
+    const tick = normalizeTick(refs.balanceTickInput?.value || refs.mintTickInput?.value || "");
+    if (!deviceId || !tick) throw new Error("Do sprawdzenia balansu potrzebny jest deviceId i tick.");
+    const response = await fetchJson(`/balances/${encodeURIComponent(deviceId)}/${encodeURIComponent(tick)}`);
+    setText(refs.balanceOutput, prettyJson(response));
+  }
+
+  async function loadTransactions() {
+    const deviceId = getCurrentDeviceId();
+    if (!deviceId) throw new Error("Brak aktywnego deviceId do pobrania historii.");
+    const query = new URLSearchParams({ deviceId, limit: String(Number(refs.transactionsLimitInput?.value || 20)) });
+    const response = await fetchJson(`/transactions?${query.toString()}`);
+    state.recentTransactions = Array.isArray(response.transactions) ? response.transactions : [];
+    setText(refs.transactionsOutput, prettyJson(response));
+    renderAll();
+  }
+
+  async function saveHeltecLicense() {
+    const licenseHex = refs.heltecLicenseInput?.value?.trim() || "";
+    if (!licenseHex) throw new Error("Wpisz licencję Heltec przed zapisaniem.");
+    await requestDevice("set_heltec_license", { licenseHex }, 30000);
+    await refreshLorawanInfo();
+  }
+
+  async function saveLorawanConfig() {
+    const params = {
+      autoDevEui: Boolean(refs.lorawanAutoDevEuiInput?.checked),
+      adr: Boolean(refs.lorawanAdrInput?.checked),
+      confirmedUplink: Boolean(refs.lorawanConfirmedInput?.checked),
+      appPort: Number(refs.lorawanAppPortInput?.value || 1),
+      defaultDataRate: Number(refs.lorawanDataRateInput?.value || 3)
+    };
+    const devEuiHex = refs.lorawanDevEuiInput?.value?.trim();
+    const joinEuiHex = refs.lorawanJoinEuiInput?.value?.trim();
+    const appKeyHex = refs.lorawanAppKeyInput?.value?.trim();
+    if (devEuiHex) params.devEuiHex = devEuiHex;
+    if (joinEuiHex) params.joinEuiHex = joinEuiHex;
+    if (appKeyHex) params.appKeyHex = appKeyHex;
+    await requestDevice("set_lorawan", params, 30000);
+    await refreshLorawanInfo();
+  }
+
+  async function linkDevEui() {
+    const deviceId = getCurrentDeviceId();
+    const devEui = (refs.linkDevEuiInput?.value || state.lorawanInfo?.config?.devEuiHex || "").trim();
+    if (!deviceId) throw new Error("Brak aktywnego deviceId.");
+    if (!devEui) throw new Error("Podaj DevEUI do powiązania.");
+    const response = await fetchJson(`/devices/${encodeURIComponent(deviceId)}/lorawan`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ devEui })
+    });
+    addLog("indexer", "DevEUI linked in indexer", response);
+  }
+
+  async function exportBackup() {
+    const passphrase = refs.backupPassphraseInput?.value || "";
+    if (!passphrase) throw new Error("Podaj hasło backupu przed eksportem.");
+    const response = await requestDevice("export_backup", { passphrase }, 30000);
+    if (refs.backupJsonTextarea) refs.backupJsonTextarea.value = prettyJson(response);
+  }
+
+  async function importBackup() {
+    const passphrase = refs.backupImportPassphraseInput?.value || "";
+    if (!passphrase) throw new Error("Podaj hasło importu backupu.");
+    const backup = JSON.parse(refs.backupJsonTextarea?.value || "{}");
+    const response = await requestDevice("import_backup", { passphrase, backup, overwrite: true }, 30000);
+    state.deviceInfo = response.device || state.deviceInfo;
+    renderAll();
+  }
+
+  async function joinLorawan() {
+    await requestDevice("join_lorawan", {}, TIMEOUTS.join_lorawan);
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await delay(4000);
+      const info = await refreshLorawanInfo();
+      if (info.runtime?.joined) {
+        addLog("device", "LoRaWAN join completed");
+        return;
+      }
     }
-  });
-}
-
-function t(path, locale = state.language || DEFAULT_LANGUAGE) {
-  const segments = path.split(".");
-  let cursor = CONTENT[locale] ?? CONTENT[DEFAULT_LANGUAGE];
-  for (const segment of segments) {
-    cursor = cursor?.[segment];
-  }
-  return typeof cursor === "string" ? cursor : path;
-}
-
-function localeText(pl, en) {
-  return state.language === "pl" ? pl : en;
-}
-
-function isRecentBoot(windowMs = 8000) {
-  return Boolean(state.lastBootAt) && Date.now() - state.lastBootAt < windowMs;
-}
-
-function formatClock(value) {
-  if (!value) {
-    return "-";
+    addLog("warn", "Join started, but joined=true did not appear yet. Check ChirpStack and radio status.");
   }
 
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleTimeString();
-}
-
-function radioReadyForSend(runtime = state.lorawanInfo?.runtime) {
-  return Boolean(runtime?.hardwareReady && runtime?.initialized && runtime?.configured && runtime?.joined);
-}
-
-function saveIndexerBaseUrl({ silent = false } = {}) {
-  state.indexerBaseUrl = normalizeBaseUrl(refs.indexerBaseUrlInput.value) || DEFAULT_INDEXER_BASE_URL;
-  refs.indexerBaseUrlInput.value = state.indexerBaseUrl;
-  localStorage.setItem(STORAGE_KEYS.indexerBaseUrl, state.indexerBaseUrl);
-  if (!silent) {
-    appendLog("indexer", `Saved indexer URL: ${state.indexerBaseUrl}`);
+  async function prepareDeploy() {
+    const warnings = getDeployWarnings();
+    enforceWarnings(warnings);
+    const response = await requestDevice("prepare_deploy", {
+      tick: normalizeTick(refs.deployTickInput?.value || ""),
+      maxSupply: refs.deployMaxSupplyInput?.value?.trim() || "0",
+      limitPerMint: refs.deployLimitPerMintInput?.value?.trim() || "0",
+      commit: false
+    });
+    state.lastPrepared = { type: "deploy", ...response };
+    renderAll();
   }
-}
 
-function loadProfiles() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.profiles);
-    const parsed = raw ? JSON.parse(raw) : DEFAULT_PROFILES;
-    if (!Array.isArray(parsed) || !parsed.length) {
-      return DEFAULT_PROFILES.map((profile, index) => normalizeProfile(profile, index));
+  async function sendDeploy() {
+    const warnings = getDeployWarnings();
+    enforceWarnings(warnings);
+    const prepared = await requestDevice("prepare_deploy", {
+      tick: normalizeTick(refs.deployTickInput?.value || ""),
+      maxSupply: refs.deployMaxSupplyInput?.value?.trim() || "0",
+      limitPerMint: refs.deployLimitPerMintInput?.value?.trim() || "0",
+      commit: false
+    });
+    state.lastPrepared = { type: "deploy", ...prepared };
+    renderAll();
+    await sendPreparedPayload(prepared);
+  }
+
+  async function prepareMint() {
+    const warnings = getMintWarnings(normalizeTick(refs.mintTickInput?.value || ""), refs.mintAmountInput?.value?.trim() || "0", findToken(normalizeTick(refs.mintTickInput?.value || "")));
+    enforceWarnings(warnings);
+    const response = await requestDevice("prepare_mint", {
+      tick: normalizeTick(refs.mintTickInput?.value || ""),
+      amount: refs.mintAmountInput?.value?.trim() || "0",
+      commit: false
+    });
+    state.lastPrepared = { type: "mint", ...response };
+    renderAll();
+  }
+
+  async function sendMint() {
+    const warnings = getMintWarnings(normalizeTick(refs.mintTickInput?.value || ""), refs.mintAmountInput?.value?.trim() || "0", findToken(normalizeTick(refs.mintTickInput?.value || "")));
+    enforceWarnings(warnings);
+    const prepared = await requestDevice("prepare_mint", {
+      tick: normalizeTick(refs.mintTickInput?.value || ""),
+      amount: refs.mintAmountInput?.value?.trim() || "0",
+      commit: false
+    });
+    state.lastPrepared = { type: "mint", ...prepared };
+    renderAll();
+    await sendPreparedPayload(prepared);
+  }
+
+  async function prepareTransfer() {
+    const warnings = getTransferWarnings();
+    enforceWarnings(warnings);
+    const response = await requestDevice("prepare_transfer", {
+      tick: normalizeTick(refs.transferTickInput?.value || ""),
+      amount: refs.transferAmountInput?.value?.trim() || "0",
+      toDeviceId: refs.transferRecipientInput?.value?.trim() || "",
+      commit: false
+    });
+    state.lastPrepared = { type: "transfer", ...response };
+    renderAll();
+  }
+
+  async function sendTransfer() {
+    const warnings = getTransferWarnings();
+    enforceWarnings(warnings);
+    const prepared = await requestDevice("prepare_transfer", {
+      tick: normalizeTick(refs.transferTickInput?.value || ""),
+      amount: refs.transferAmountInput?.value?.trim() || "0",
+      toDeviceId: refs.transferRecipientInput?.value?.trim() || "",
+      commit: false
+    });
+    state.lastPrepared = { type: "transfer", ...prepared };
+    renderAll();
+    await sendPreparedPayload(prepared);
+  }
+
+  async function prepareConfig() {
+    const response = await requestDevice("prepare_config", {
+      autoMintEnabled: Boolean(refs.configAutoMintEnabledInput?.checked),
+      autoMintIntervalSeconds: Number(refs.configAutoMintIntervalInput?.value || 1800),
+      commit: false
+    });
+    state.lastPrepared = { type: "config", ...response };
+    renderAll();
+  }
+
+  async function sendConfig() {
+    const prepared = await requestDevice("prepare_config", {
+      autoMintEnabled: Boolean(refs.configAutoMintEnabledInput?.checked),
+      autoMintIntervalSeconds: Number(refs.configAutoMintIntervalInput?.value || 1800),
+      commit: false
+    });
+    state.lastPrepared = { type: "config", ...prepared };
+    renderAll();
+    await sendPreparedPayload(prepared);
+  }
+
+  async function sendPreparedPayload(prepared) {
+    const radio = await refreshLorawanInfo();
+    const runtime = radio.runtime || radio.lorawanRuntime;
+    const config = radio.config || state.deviceInfo?.lorawan;
+    if (!runtime?.configured) throw new Error("Radio nie jest skonfigurowane. Najpierw zapisz LoRaWAN.");
+    if (!runtime.hardwareReady || !runtime.initialized) throw new Error("Radio nie jest gotowe po restarcie. Odczekaj chwilę, pobierz stan radia i w razie potrzeby zrób join.");
+    if (!runtime.joined) throw new Error("Radio nie jest joined. Zrób join przed wysyłką.");
+
+    const response = await requestDevice("lorawan_send", {
+      payloadHex: prepared.payloadHex,
+      port: config?.appPort || 1,
+      confirmed: Boolean(config?.confirmedUplink),
+      commitNonce: true,
+      nonceToCommit: prepared.nonce
+    }, TIMEOUTS.lorawan_send);
+
+    state.lastSendAt = new Date().toISOString();
+    writeStorage(STORAGE.lastSendAt, state.lastSendAt);
+    addLog("tx", "lorawan_send accepted", response);
+    renderAll();
+
+    setTimeout(() => {
+      void Promise.allSettled([refreshLorawanInfo(), loadPortfolioAndHistory(), loadTokens()]);
+    }, 4000);
+  }
+
+  async function sendRawCommand() {
+    const payload = JSON.parse(refs.rawCommandTextarea?.value || "{}");
+    const response = await sendDevicePayload(payload, TIMEOUTS.default, payload.command || payload.method || "raw");
+    addLog("rx", "Raw response", response);
+  }
+
+  function handleSaveProfile() {
+    const tick = normalizeTick(refs.profileTickInput?.value || "");
+    const amount = refs.profileAmountInput?.value?.trim() || "";
+    if (!tick || !amount) {
+      addLog("error", "Profil wymaga tick i amount.");
+      return;
     }
-    return parsed.map((profile, index) => normalizeProfile(profile, index));
-  } catch {
-    return DEFAULT_PROFILES.map((profile, index) => normalizeProfile(profile, index));
-  }
-}
 
-function loadScheduler() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.scheduler);
-    const parsed = raw ? JSON.parse(raw) : DEFAULT_SCHEDULER;
-    return normalizeScheduler(parsed);
-  } catch {
-    return { ...DEFAULT_SCHEDULER };
-  }
-}
+    const profileId = refs.profileNameInput?.dataset.editingId || `profile-${Date.now()}`;
+    const profile = {
+      id: profileId,
+      name: refs.profileNameInput?.value?.trim() || `${tick} / ${amount}`,
+      tick,
+      amount,
+      intervalMinutes: Number(refs.profileIntervalInput?.value || 30),
+      enabled: Boolean(refs.profileEnabledInput?.checked)
+    };
 
-function persistProfiles() {
-  localStorage.setItem(STORAGE_KEYS.profiles, JSON.stringify(state.profiles));
-}
-
-function persistScheduler() {
-  localStorage.setItem(STORAGE_KEYS.scheduler, JSON.stringify(state.scheduler));
-}
-
-function normalizeScheduler(input) {
-  const intervalMinutes = Number(input?.intervalMinutes);
-  return {
-    enabled: input?.enabled !== false,
-    intervalMinutes: Number.isFinite(intervalMinutes) && intervalMinutes > 0 ? intervalMinutes : 30
-  };
-}
-
-function normalizeProfile(input, index = 0) {
-  const tick = String(input?.tick || "LORA").trim().toUpperCase().slice(0, 4) || "LORA";
-  const amount = String(input?.amount || "100").trim() || "100";
-  const intervalMinutes = Number(input?.intervalMinutes);
-  return {
-    id: input?.id || `profile-${Date.now()}-${index}`,
-    name: String(input?.name || `${tick} / ${amount}`).trim() || `${tick} / ${amount}`,
-    tick,
-    amount,
-    intervalMinutes: Number.isFinite(intervalMinutes) && intervalMinutes > 0 ? intervalMinutes : 30,
-    enabled: input?.enabled !== false
-  };
-}
-
-function profileFingerprint(profile) {
-  return `${profile.tick}:${profile.amount}`;
-}
-
-function normalizeBaseUrl(value) {
-  return String(value || "").trim().replace(/\/+$/, "");
-}
-
-function createRequestId() {
-  return `req-${state.nextRequestId++}`;
-}
-
-function updateConnectionBadge(label, variant = "") {
-  refs.connectionBadge.textContent = label;
-  refs.connectionBadge.className = "badge";
-  if (variant) {
-    refs.connectionBadge.classList.add(`badge--${variant}`);
-  }
-}
-
-async function connectSerial() {
-  if (!("serial" in navigator)) {
-    throw new Error("Web Serial is not available in this browser.");
+    const existingIndex = state.profiles.findIndex((item) => item.id === profileId);
+    if (existingIndex >= 0) state.profiles.splice(existingIndex, 1, profile);
+    else state.profiles.push(profile);
+    clearProfileEditor(false);
+    renderAll();
+    addLog("device", "Profile saved", profile);
   }
 
-  if (state.port) {
-    await disconnectSerial({ notify: false });
+  function clearProfileEditor(render = true) {
+    if (refs.profileNameInput) {
+      refs.profileNameInput.value = "";
+      delete refs.profileNameInput.dataset.editingId;
+    }
+    if (refs.profileTickInput) refs.profileTickInput.value = "LORA";
+    if (refs.profileAmountInput) refs.profileAmountInput.value = "100";
+    if (refs.profileIntervalInput) refs.profileIntervalInput.value = "30";
+    if (refs.profileEnabledInput) refs.profileEnabledInput.checked = true;
+    if (render) renderAll();
   }
 
-  const port = await navigator.serial.requestPort();
-  await port.open({ baudRate: 115200 });
+  async function syncProfiles(broadcast) {
+    state.scheduler.enabled = Boolean(refs.profileQueueEnabledInput?.checked);
+    state.scheduler.intervalMinutes = Number(refs.profileQueueIntervalInput?.value || 30);
+    saveJson(STORAGE.scheduler, state.scheduler);
 
-  state.port = port;
-  state.reader = port.readable.getReader();
-  state.writer = port.writable.getWriter();
-  state.readLoopTask = readLoop();
-  refs.connectButton.disabled = true;
-  refs.disconnectButton.disabled = false;
-  updateConnectionBadge(t("misc.connected"), "connected");
-  appendLog("device", "Serial port connected.");
+    const response = await requestDevice("set_config", {
+      autoMintEnabled: state.scheduler.enabled && state.profiles.some((profile) => profile.enabled),
+      autoMintIntervalSeconds: Math.max(30, Number(state.scheduler.intervalMinutes || 30) * 60),
+      profiles: state.profiles.map((profile) => ({
+        tick: profile.tick,
+        amount: profile.amount,
+        enabled: profile.enabled
+      }))
+    }, 30000);
 
-  await delay(1200);
-  try {
-    await refreshDeviceState();
-  } catch (error) {
-    appendLog("warn", "Initial device refresh failed after connect. Retrying once.");
+    if (response) state.deviceInfo = { ...(state.deviceInfo || {}), config: response };
+    if (broadcast) await sendConfig();
+    else addLog("device", "Profiles synced to device", response);
+    renderAll();
+  }
+
+  async function stopProfiles() {
+    if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = false;
+    state.scheduler.enabled = false;
+    await syncProfiles(false);
+  }
+
+  function handleProfileListClick(event) {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const profile = state.profiles.find((item) => item.id === button.dataset.id);
+    if (!profile) return;
+
+    switch (button.dataset.action) {
+      case "use-profile":
+        if (refs.profileNameInput) {
+          refs.profileNameInput.value = profile.name || "";
+          refs.profileNameInput.dataset.editingId = profile.id;
+        }
+        if (refs.profileTickInput) refs.profileTickInput.value = profile.tick;
+        if (refs.profileAmountInput) refs.profileAmountInput.value = profile.amount;
+        if (refs.profileIntervalInput) refs.profileIntervalInput.value = String(profile.intervalMinutes || 30);
+        if (refs.profileEnabledInput) refs.profileEnabledInput.checked = Boolean(profile.enabled);
+        if (refs.mintTickInput) refs.mintTickInput.value = profile.tick;
+        if (refs.mintAmountInput) refs.mintAmountInput.value = profile.amount;
+        break;
+      case "toggle-profile":
+        profile.enabled = !profile.enabled;
+        break;
+      case "move-up":
+        moveProfile(profile.id, -1);
+        break;
+      case "move-down":
+        moveProfile(profile.id, 1);
+        break;
+      case "remove-profile":
+        state.profiles = state.profiles.filter((item) => item.id !== profile.id);
+        break;
+      default:
+        break;
+    }
+
+    renderAll();
+  }
+
+  function handleTokenLibraryClick(event) {
+    const button = event.target.closest("button[data-action='use-token']");
+    if (!button) return;
+    const token = findToken(button.dataset.tick || "");
+    if (!token) return;
+    applyTokenToForms(token);
+    renderOperations();
+  }
+
+  function handleKnownDevicesClick(event) {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const deviceId = button.dataset.id;
+    if (!deviceId) return;
+
+    if (button.dataset.action === "remove-device") {
+      state.knownDevices = state.knownDevices.filter((item) => item.deviceId !== deviceId);
+      saveJson(STORAGE.knownDevices, state.knownDevices);
+      renderAll();
+      return;
+    }
+
+    if (button.dataset.action === "use-device") {
+      const entry = state.knownDevices.find((item) => item.deviceId === deviceId);
+      if (!entry) return;
+      state.deviceInfo = {
+        ...(state.deviceInfo || {}),
+        deviceId: entry.deviceId,
+        publicKeyHex: entry.publicKeyHex || state.deviceInfo?.publicKeyHex || "",
+        nextNonce: state.deviceInfo?.nextNonce ?? null,
+        config: state.deviceInfo?.config || null
+      };
+      renderAll();
+      void loadPortfolioAndHistory();
+    }
+  }
+
+  function handleQuickPickChange() {
+    const token = findToken(refs.tokenQuickPick?.value || "");
+    if (!token) return;
+    applyTokenToForms(token);
+    renderOperations();
+  }
+
+  function applyTokenToForms(token) {
+    if (refs.mintTickInput) refs.mintTickInput.value = token.tick;
+    if (refs.transferTickInput) refs.transferTickInput.value = token.tick;
+    if (refs.deployTickInput) refs.deployTickInput.value = token.tick;
+    if (refs.deployMaxSupplyInput) refs.deployMaxSupplyInput.value = token.maxSupply;
+    if (refs.deployLimitPerMintInput) refs.deployLimitPerMintInput.value = token.limitPerMint;
+    if (refs.mintAmountInput) refs.mintAmountInput.value = token.limitPerMint;
+    if (refs.tokenTickInput) refs.tokenTickInput.value = token.tick;
+    if (refs.balanceTickInput) refs.balanceTickInput.value = token.tick;
+    if (refs.transactionsTickInput) refs.transactionsTickInput.value = token.tick;
+  }
+
+  function moveProfile(profileId, delta) {
+    const index = state.profiles.findIndex((item) => item.id === profileId);
+    if (index < 0) return;
+    const nextIndex = index + delta;
+    if (nextIndex < 0 || nextIndex >= state.profiles.length) return;
+    const [profile] = state.profiles.splice(index, 1);
+    state.profiles.splice(nextIndex, 0, profile);
+  }
+
+  async function connectDevice() {
+    if (!("serial" in navigator)) throw new Error("Ta przeglądarka nie wspiera Web Serial.");
+    if (state.port) {
+      addLog("device", "Urządzenie jest już podłączone.");
+      return;
+    }
+    const port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 115200, bufferSize: 4096 });
+    state.port = port;
+    state.disconnecting = false;
+    addLog("device", "Serial port connected.");
+    renderAll();
+    void startReadLoop();
     await delay(1200);
     await refreshDeviceState();
   }
-}
 
-async function disconnectSerial({ notify } = { notify: false }) {
-  clearJoinPolling();
-  rejectPending("Serial connection closed.");
-
-  const reader = state.reader;
-  const writer = state.writer;
-  const port = state.port;
-
-  state.reader = null;
-  state.writer = null;
-  state.port = null;
-  state.readLoopTask = null;
-
-  try {
-    await reader?.cancel();
-  } catch {}
-
-  try {
-    reader?.releaseLock();
-  } catch {}
-
-  try {
-    writer?.releaseLock();
-  } catch {}
-
-  try {
-    await port?.close();
-  } catch {}
-
-  refs.connectButton.disabled = !("serial" in navigator);
-  refs.disconnectButton.disabled = true;
-  updateConnectionBadge(t("misc.disconnected"), "warn");
-
-  if (notify) {
-    appendLog("device", "Serial port disconnected.");
-  }
-}
-
-function rejectPending(message) {
-  for (const pending of state.pending.values()) {
-    clearTimeout(pending.timeoutId);
-    pending.reject(new Error(message));
-  }
-  state.pending.clear();
-}
-
-async function readLoop() {
-  let buffer = "";
-
-  while (state.reader) {
-    let chunk;
+  async function disconnectDevice(logIt) {
+    if (!state.port) return;
+    state.disconnecting = true;
+    for (const pending of state.pending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(new Error("Serial port disconnected."));
+    }
+    state.pending.clear();
     try {
-      chunk = await state.reader.read();
-    } catch (error) {
-      appendLog("error", "Serial read failed.", error instanceof Error ? error.message : String(error));
-      break;
+      if (state.reader) await state.reader.cancel();
+    } catch (_error) {
+      // ignore
     }
-
-    if (!chunk || chunk.done) {
-      break;
+    try {
+      await state.port.close();
+    } catch (_error) {
+      // ignore
     }
-
-    buffer += state.decoder.decode(chunk.value, { stream: true });
-
-    let newlineIndex = buffer.indexOf("\n");
-    while (newlineIndex >= 0) {
-      const line = buffer.slice(0, newlineIndex).trim();
-      buffer = buffer.slice(newlineIndex + 1);
-      if (line) {
-        handleIncomingLine(line);
-      }
-      newlineIndex = buffer.indexOf("\n");
-    }
+    cleanupPortState();
+    if (logIt) addLog("device", "Serial port disconnected.");
   }
 
-  if (state.port) {
-    await disconnectSerial({ notify: true });
-  }
-}
-
-function handleIncomingLine(line) {
-  let payload;
-  try {
-    payload = JSON.parse(line);
-  } catch {
-    appendLog("serial", line);
-    if (line.includes("ESP-ROM") || line.toLowerCase().includes("reset")) {
-      state.lastBootAt = Date.now();
-      appendLog(
-        "device",
-        localeText(
-          "Wykryto restart płytki. Wstrzymaj wysyłkę, aż odświeżenie ponownie pokaże stan radia.",
-          "Board reboot detected. Pause sending until refresh shows radio state again."
-        )
-      );
-    }
-    if (line.toLowerCase().includes("joined")) {
-      scheduleJoinPolling();
-    }
-    return;
-  }
-
-  if (payload.type === "boot") {
-    appendLog("boot", "Device boot event", sanitizeForLog(payload));
-    scheduleJoinPolling();
-    return;
-  }
-
-  if (payload.id && state.pending.has(payload.id)) {
-    const pending = state.pending.get(payload.id);
-    state.pending.delete(payload.id);
-    clearTimeout(pending.timeoutId);
-
-    if (payload.ok) {
-      appendLog("rx", `${pending.command} ok`, sanitizeForLog(payload.result));
-      pending.resolve(payload.result);
-      return;
-    }
-
-    const error = new Error(payload.error?.message || payload.error?.code || "Unknown device error");
-    appendLog("error", `${pending.command} failed`, sanitizeForLog(payload.error));
-    pending.reject(error);
-    return;
-  }
-
-  appendLog("event", "Device event", sanitizeForLog(payload));
-}
-
-async function sendCommand(command, params = {}) {
-  if (!state.writer) {
-    throw new Error("Connect the device first.");
-  }
-
-  const id = createRequestId();
-  const request = { id, command, params };
-  appendLog("tx", command, sanitizeForLog(request));
-
-  const timeoutId = window.setTimeout(() => {
-    const pending = state.pending.get(id);
-    if (pending) {
-      state.pending.delete(id);
-      const extra =
-        command === "lorawan_send"
-          ? `${isRecentBoot(12000) ? " A recent reboot was detected." : ""} Verify join status, close VS Code / PlatformIO / serial monitors, and press RST if the board rebooted.`
-          : "";
-      pending.reject(new Error(`Timeout waiting for ${command}.${extra}`));
-      appendLog("error", `${command} timed out`);
-    }
-  }, COMMAND_TIMEOUTS[command] ?? COMMAND_TIMEOUTS.default);
-
-  const promise = new Promise((resolve, reject) => {
-    state.pending.set(id, {
-      command,
-      resolve,
-      reject,
-      timeoutId
-    });
-  });
-
-  await writeJsonLine(request);
-  return promise;
-}
-
-async function writeJsonLine(payload) {
-  const encoded = new TextEncoder().encode(`${JSON.stringify(payload)}\n`);
-  await state.writer.write(encoded);
-}
-
-async function refreshDeviceState() {
-  if (!state.port) {
-    throw new Error("Connect the device before refreshing.");
-  }
-
-  const info = await sendCommand("get_info");
-  const lorawan = await sendCommand("get_lorawan");
-  state.deviceInfo = info;
-  state.lorawanInfo = lorawan;
-  hydrateFromDevice(!state.formsHydrated);
-  hydrateFromLoRaWan(!state.formsHydrated);
-  state.formsHydrated = true;
-  rememberKnownDevice();
-  renderDeviceSummary();
-  renderLorawanSummary();
-  await loadIndexerDashboardData({ silent: true });
-  renderAll();
-}
-
-function hydrateFromDevice(force = false) {
-  const device = state.deviceInfo?.device;
-  if (!device) {
-    return;
-  }
-
-  const autoMintIntervalSeconds = device.config?.autoMintIntervalSeconds || 1800;
-  const queueIntervalMinutes = Math.max(1, Math.round(autoMintIntervalSeconds / 60));
-
-  if (force) {
-    state.scheduler = {
-      enabled: Boolean(device.config?.autoMintEnabled),
-      intervalMinutes: queueIntervalMinutes
-    };
-    persistScheduler();
-    refs.profileQueueEnabledInput.checked = state.scheduler.enabled;
-    refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes);
-    syncConfigFormFromScheduler();
-
-    refs.mintTickInput.value = device.config?.defaultTick || refs.mintTickInput.value;
-    refs.mintAmountInput.value = String(device.config?.defaultMintAmount || refs.mintAmountInput.value);
-    refs.deployTickInput.value = device.config?.defaultTick || refs.deployTickInput.value;
-    refs.transferTickInput.value = device.config?.defaultTick || refs.transferTickInput.value;
-    refs.balanceDeviceIdInput.value = device.deviceId || refs.balanceDeviceIdInput.value;
-    refs.transactionsDeviceIdInput.value = device.deviceId || refs.transactionsDeviceIdInput.value;
-
-    reconcileProfilesWithDevice(device.config?.profiles);
-  }
-}
-
-function hydrateFromLoRaWan(force = false) {
-  const config = state.lorawanInfo?.config;
-  if (!config) {
-    return;
-  }
-
-  if (force) {
-    refs.lorawanAutoDevEuiInput.checked = Boolean(config.autoDevEui);
-    refs.lorawanAdrInput.checked = Boolean(config.adr);
-    refs.lorawanConfirmedInput.checked = Boolean(config.confirmedUplink);
-    refs.lorawanDevEuiInput.value = config.devEuiHex || refs.lorawanDevEuiInput.value;
-    refs.lorawanJoinEuiInput.value = config.joinEuiHex || refs.lorawanJoinEuiInput.value;
-    refs.lorawanAppPortInput.value = String(config.appPort || 1);
-    refs.lorawanDataRateInput.value = String(config.defaultDataRate ?? 3);
-    refs.linkDevEuiInput.value = config.devEuiHex || refs.linkDevEuiInput.value;
-  }
-}
-
-function reconcileProfilesWithDevice(deviceProfiles) {
-  if (!Array.isArray(deviceProfiles)) {
-    return;
-  }
-
-  const localProfiles = state.profiles.map((profile, index) => normalizeProfile(profile, index));
-  const usedProfileIds = new Set();
-  const nextProfiles = [];
-
-  for (const deviceProfile of deviceProfiles) {
-    const normalized = normalizeProfile(
-      {
-        name: `${deviceProfile.tick} / ${deviceProfile.amount}`,
-        tick: deviceProfile.tick,
-        amount: String(deviceProfile.amount),
-        intervalMinutes: state.scheduler.intervalMinutes,
-        enabled: deviceProfile.enabled !== false
-      },
-      nextProfiles.length
-    );
-
-    const match = localProfiles.find((profile) => {
-      return !usedProfileIds.has(profile.id) && profileFingerprint(profile) === profileFingerprint(normalized);
-    });
-
-    if (match) {
-      usedProfileIds.add(match.id);
-      nextProfiles.push({
-        ...match,
-        enabled: true
-      });
-      continue;
-    }
-
-    nextProfiles.push({
-      ...normalized,
-      id: `device-${Date.now()}-${nextProfiles.length}`
-    });
-  }
-
-  for (const profile of localProfiles) {
-    if (usedProfileIds.has(profile.id)) {
-      continue;
-    }
-    nextProfiles.push({
-      ...profile,
-      enabled: false
-    });
-  }
-
-  state.profiles = nextProfiles;
-  persistProfiles();
-}
-
-function renderDeviceSummary() {
-  const device = state.deviceInfo?.device;
-  if (!device) {
-    refs.deviceIdValue.textContent = "-";
-    refs.nextNonceValue.textContent = "-";
-    refs.autoMintValue.textContent = "-";
-    refs.defaultMintValue.textContent = "-";
-    refs.deviceSummaryOutput.textContent = localeText("Brak danych urządzenia.", "No device data yet.");
-    renderDeviceReadiness();
-    return;
-  }
-
-  const profileCount = Array.isArray(device.config?.profiles) ? device.config.profiles.length : 0;
-  refs.deviceIdValue.textContent = device.deviceId || "-";
-  refs.nextNonceValue.textContent = String(device.nextNonce ?? "-");
-  refs.autoMintValue.textContent = device.config.autoMintEnabled
-    ? `${state.language === "pl" ? "Włączony" : "Enabled"} / ${device.config.autoMintIntervalSeconds}s / ${profileCount} ${state.language === "pl" ? "profil(i)" : "profile(s)"}`
-    : `${state.language === "pl" ? "Wyłączony" : "Disabled"} / ${profileCount} ${state.language === "pl" ? "profil(i)" : "profile(s)"} ${state.language === "pl" ? "wczytanych" : "loaded"}`;
-  refs.autoMintValue.textContent = device.config.autoMintEnabled
-    ? `${localeText("Włączony", "Enabled")} / ${device.config.autoMintIntervalSeconds}s / ${profileCount} ${localeText("profil(i)", "profile(s)")}`
-    : `${localeText("Wyłączony", "Disabled")} / ${profileCount} ${localeText("profil(i) wczytanych", "profile(s) loaded")}`;
-  refs.defaultMintValue.textContent = `${device.config.defaultTick} / ${device.config.defaultMintAmount}`;
-  refs.deviceSummaryOutput.textContent = formatJson(device);
-  renderDeviceReadiness();
-}
-
-function renderLorawanSummary() {
-  const config = state.lorawanInfo?.config;
-  const runtime = state.lorawanInfo?.runtime;
-  const heltec = state.lorawanInfo?.heltec;
-  if (!config || !runtime) {
-    refs.lorawanJoinedValue.textContent = "-";
-    refs.lorawanPortValue.textContent = "-";
-    refs.lorawanEventValue.textContent = "-";
-    refs.lorawanDevEuiValue.textContent = "-";
-    refs.lorawanSummaryOutput.textContent = localeText("Brak danych LoRaWAN.", "No LoRaWAN status yet.");
-    renderRadioHint();
-    return;
-  }
-
-  refs.lorawanJoinedValue.textContent = runtime.joined
-    ? (state.language === "pl" ? "Tak" : "Yes")
-    : runtime.joining
-      ? (state.language === "pl" ? "Dołączanie..." : "Joining...")
-      : (state.language === "pl" ? "Nie" : "No");
-  refs.lorawanPortValue.textContent = String(config.appPort ?? "-");
-  refs.lorawanEventValue.textContent = runtime.lastEvent || "-";
-  refs.lorawanDevEuiValue.textContent = config.devEuiHex || runtime.chipIdHex || "-";
-  refs.lorawanSummaryOutput.textContent = formatJson(sanitizeForLog({ config, runtime, heltec }));
-  renderRadioHint();
-}
-
-function renderPreparedOutput() {
-  refs.preparedOutput.textContent = state.lastPrepared
-    ? formatJson(state.lastPrepared)
-    : localeText("Brak przygotowanego payloadu.", "No prepared payload yet.");
-}
-
-async function handleGenerateKey() {
-  const alreadyHasKey = Boolean(state.deviceInfo?.device?.hasKey);
-  const force = alreadyHasKey
-    ? window.confirm("Generate a new device key? This resets the active signing identity on the device.")
-    : true;
-  if (alreadyHasKey && !force) {
-    appendLog("device", "Key generation cancelled.");
-    return;
-  }
-  const result = await sendCommand("generate_key", { force });
-  appendLog("device", "Key material updated", sanitizeForLog(result));
-  await refreshDeviceState();
-}
-
-async function handleJoin() {
-  const result = await sendCommand("join_lorawan");
-  state.lorawanInfo = {
-    ...(state.lorawanInfo || {}),
-    runtime: result
-  };
-  renderLorawanSummary();
-  scheduleJoinPolling();
-}
-
-function clearJoinPolling() {
-  if (state.joinPollTimer) {
-    window.clearTimeout(state.joinPollTimer);
-    state.joinPollTimer = null;
-  }
-}
-
-function scheduleJoinPolling() {
-  clearJoinPolling();
-  const startedAt = Date.now();
-
-  const tick = async () => {
-    if (!state.port) {
-      return;
-    }
+  async function startReadLoop() {
+    if (!state.port?.readable) return;
+    const decoder = new TextDecoder();
+    state.reader = state.port.readable.getReader();
+    let buffer = "";
 
     try {
-      const lorawan = await sendCommand("get_lorawan");
-      state.lorawanInfo = lorawan;
-      renderLorawanSummary();
-      if (lorawan.runtime?.joined || Date.now() - startedAt > 30000) {
-        return;
+      while (state.port && state.reader) {
+        const { value, done } = await state.reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        while (buffer.includes("\n")) {
+          const lineBreakIndex = buffer.indexOf("\n");
+          const line = buffer.slice(0, lineBreakIndex).replace(/\r$/, "");
+          buffer = buffer.slice(lineBreakIndex + 1);
+          handleSerialLine(line);
+        }
       }
     } catch (error) {
-      appendLog("warn", "Could not poll join status.", error instanceof Error ? error.message : String(error));
-      return;
-    }
-
-    state.joinPollTimer = window.setTimeout(tick, 3000);
-  };
-
-  state.joinPollTimer = window.setTimeout(tick, 2000);
-}
-
-async function handleSetLicense() {
-  const licenseHex = refs.heltecLicenseInput.value.trim();
-  const result = await sendCommand("set_heltec_license", { licenseHex });
-  appendLog("radio", "Heltec license updated", sanitizeForLog(result));
-  await refreshDeviceState();
-}
-
-async function handleSetLorawan() {
-  const params = {
-    autoDevEui: refs.lorawanAutoDevEuiInput.checked,
-    adr: refs.lorawanAdrInput.checked,
-    confirmedUplink: refs.lorawanConfirmedInput.checked,
-    appPort: Number(refs.lorawanAppPortInput.value),
-    defaultDataRate: Number(refs.lorawanDataRateInput.value)
-  };
-
-  if (refs.lorawanDevEuiInput.value.trim()) {
-    params.devEuiHex = refs.lorawanDevEuiInput.value.trim();
-  }
-  if (refs.lorawanJoinEuiInput.value.trim()) {
-    params.joinEuiHex = refs.lorawanJoinEuiInput.value.trim();
-  }
-  if (refs.lorawanAppKeyInput.value.trim()) {
-    params.appKeyHex = refs.lorawanAppKeyInput.value.trim();
-  }
-
-  const result = await sendCommand("set_lorawan", params);
-  appendLog("radio", "LoRaWAN config saved", sanitizeForLog(result));
-  state.lorawanInfo = result;
-  await refreshDeviceState();
-}
-
-async function handleExportBackup() {
-  const passphrase = refs.backupPassphraseInput.value;
-  if (!passphrase) {
-    throw new Error("Provide an export passphrase first.");
-  }
-
-  const result = await sendCommand("export_backup", { passphrase });
-  refs.backupJsonTextarea.value = JSON.stringify(result, null, 2);
-}
-
-async function handleImportBackup() {
-  const passphrase = refs.backupImportPassphraseInput.value;
-  if (!passphrase) {
-    throw new Error("Provide the import passphrase first.");
-  }
-
-  let backup;
-  try {
-    backup = JSON.parse(refs.backupJsonTextarea.value);
-  } catch {
-    throw new Error("Backup JSON is invalid.");
-  }
-
-  await sendCommand("import_backup", {
-    passphrase,
-    overwrite: true,
-    backup
-  });
-  await refreshDeviceState();
-}
-
-async function handleRegisterDevice() {
-  const publicKey = await sendCommand("get_public_key");
-  const maybeDevEui = refs.linkDevEuiInput.value.trim();
-  const result = await indexerRequest("/devices/register", {
-    method: "POST",
-    body: {
-      publicKeyRaw: publicKey.publicKeyHex,
-      lorawanDevEui: maybeDevEui || undefined
-    }
-  });
-  appendLog("indexer", "Device registered in indexer", sanitizeForLog(result));
-}
-
-async function handleLinkDevEui() {
-  const deviceId = state.deviceInfo?.device?.deviceId;
-  const devEui = refs.linkDevEuiInput.value.trim();
-
-  if (!deviceId) {
-    throw new Error("Load device info first so the dashboard knows the deviceId.");
-  }
-  if (!devEui) {
-    throw new Error("Provide a DevEUI to link.");
-  }
-
-  const result = await indexerRequest(`/devices/${deviceId}/lorawan`, {
-    method: "PUT",
-    body: { devEui }
-  });
-  appendLog("indexer", "DevEUI linked to deviceId", sanitizeForLog(result));
-}
-
-async function handleDeploy(sendNow) {
-  await prepareAndMaybeSend("Deploy", "prepare_deploy", {
-    tick: refs.deployTickInput.value.trim().toUpperCase(),
-    maxSupply: refs.deployMaxSupplyInput.value.trim(),
-    limitPerMint: refs.deployLimitPerMintInput.value.trim(),
-    commit: false
-  }, sendNow);
-}
-
-async function handleMint(sendNow) {
-  await prepareAndMaybeSend("Mint", "prepare_mint", {
-    tick: refs.mintTickInput.value.trim().toUpperCase(),
-    amount: refs.mintAmountInput.value.trim(),
-    commit: false
-  }, sendNow);
-}
-
-async function handleTransfer(sendNow) {
-  await prepareAndMaybeSend("Transfer", "prepare_transfer", {
-    tick: refs.transferTickInput.value.trim().toUpperCase(),
-    amount: refs.transferAmountInput.value.trim(),
-    toDeviceId: refs.transferRecipientInput.value.trim().toLowerCase(),
-    commit: false
-  }, sendNow);
-}
-
-async function handleConfigInscription(sendNow) {
-  await prepareAndMaybeSend("Config", "prepare_config", {
-    autoMintEnabled: refs.configAutoMintEnabledInput.checked,
-    autoMintIntervalSeconds: Number(refs.configAutoMintIntervalInput.value),
-    commit: false
-  }, sendNow);
-}
-
-async function prepareAndMaybeSend(label, prepareCommand, params, sendNow) {
-  enforcePreflightOrThrow(prepareCommand);
-
-  const prepared = await sendCommand(prepareCommand, params);
-  state.lastPrepared = {
-    label,
-    preparedAt: new Date().toISOString(),
-    result: prepared
-  };
-  renderPreparedOutput();
-
-  if (!sendNow) {
-    renderOperationWarnings();
-    return prepared;
-  }
-
-  await ensureLoRaWanReadyForSend();
-  const config = state.lorawanInfo?.config || {};
-  const sendResult = await sendCommand("lorawan_send", {
-    payloadHex: prepared.payloadHex,
-    port: config.appPort || 1,
-    confirmed: Boolean(config.confirmedUplink),
-    commitNonce: true,
-    nonceToCommit: prepared.nonce
-  });
-
-  state.lastPrepared.sendResult = sendResult;
-  await waitForSendAcceptance();
-  renderPreparedOutput();
-  await refreshDeviceState();
-  return { prepared, sendResult };
-}
-
-function enforcePreflightOrThrow(command) {
-  const allowRisk = refs.allowRiskySendInput?.checked;
-  const token = currentMintToken();
-  const amount = parseBigIntOrNull(refs.mintAmountInput.value);
-
-  if (command === "prepare_mint" && token && amount !== null) {
-    if (amount > BigInt(token.limitPerMint) && !allowRisk) {
-      throw new Error(`Mint ${amount.toString()} exceeds limitPerMint ${token.limitPerMint}. Enable risky send to force it.`);
-    }
-    if (BigInt(token.totalSupply) + amount > BigInt(token.maxSupply) && !allowRisk) {
-      throw new Error(`Mint would exceed maxSupply ${token.maxSupply}. Enable risky send to force it.`);
-    }
-  }
-
-  if (command === "prepare_mint" && !token && !allowRisk) {
-    throw new Error("This token is not known in the indexer token list. Deploy it first or enable risky send to continue.");
-  }
-
-  if (command === "prepare_deploy") {
-    const deployTick = refs.deployTickInput.value.trim().toUpperCase();
-    const maxSupply = parseBigIntOrNull(refs.deployMaxSupplyInput.value);
-    const limitPerMint = parseBigIntOrNull(refs.deployLimitPerMintInput.value);
-    if (state.tokenCatalog.some((entry) => entry.tick === deployTick) && !allowRisk) {
-      throw new Error(`Token ${deployTick} already exists. Deploy duplicates are rejected unless you explicitly override.`);
-    }
-    if (maxSupply !== null && limitPerMint !== null && limitPerMint > maxSupply && !allowRisk) {
-      throw new Error("limitPerMint cannot be greater than maxSupply.");
-    }
-  }
-
-  if (command === "prepare_transfer") {
-    const transferTick = refs.transferTickInput.value.trim().toUpperCase();
-    const transferAmount = parseBigIntOrNull(refs.transferAmountInput.value);
-    const portfolioEntry = state.portfolio.find((entry) => entry.tick === transferTick);
-    if (portfolioEntry && transferAmount !== null && transferAmount > BigInt(portfolioEntry.balance) && !allowRisk) {
-      throw new Error(`Transfer ${transferAmount.toString()} exceeds indexed balance ${portfolioEntry.balance}.`);
-    }
-  }
-}
-
-async function ensureLoRaWanReadyForSend() {
-  if (isRecentBoot(5000)) {
-    appendLog(
-      "radio",
-      localeText(
-        "Wykryto świeży restart urządzenia. Czekam chwilę na ponowną inicjalizację portu i radia.",
-        "A recent device reboot was detected. Waiting briefly for serial and radio reinitialization."
-      )
-    );
-    await delay(5000 - (Date.now() - state.lastBootAt));
-  }
-
-  const lorawan = await sendCommand("get_lorawan");
-  state.lorawanInfo = lorawan;
-  renderLorawanSummary();
-
-  if (!lorawan.config?.hasJoinEui || !lorawan.config?.hasAppKey) {
-    throw new Error("LoRaWAN config is incomplete. Set JoinEUI and AppKey first.");
-  }
-
-  if (!lorawan.heltec?.hasLicense) {
-    throw new Error("Heltec vendor license is missing.");
-  }
-
-  if (lorawan.runtime?.queuePending) {
-    throw new Error(
-      localeText(
-        "Urządzenie ma już uplink w kolejce. Poczekaj na zakończenie join lub enqueue poprzedniej wiadomości.",
-        "The device already has an uplink queued. Wait for join or previous enqueue to finish first."
-      )
-    );
-  }
-
-  if (lorawan.runtime?.joined) {
-    return;
-  }
-
-  appendLog(
-    "radio",
-    localeText(
-      lorawan.runtime?.initialized
-        ? "Radio nie jest joined. Uruchamiam join przed wysyłką."
-        : "Radio po restarcie nie jest jeszcze zainicjalizowane. Join uruchomi też stos LoRaWAN przed wysyłką.",
-      lorawan.runtime?.initialized
-        ? "Radio is not joined. Starting join before send."
-        : "Radio is not initialized after reboot yet. Join will also initialize the LoRaWAN stack before send."
-    )
-  );
-  const joined = await sendCommand("join_lorawan");
-  state.lorawanInfo = {
-    ...(state.lorawanInfo || {}),
-    runtime: joined
-  };
-  renderLorawanSummary();
-  await waitForJoinReady();
-}
-
-async function waitForJoinReady() {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < 45000) {
-    await delay(2500);
-    const lorawan = await sendCommand("get_lorawan");
-    state.lorawanInfo = lorawan;
-    renderLorawanSummary();
-
-    if (lorawan.runtime?.joined) {
-      appendLog("radio", localeText("Join zakończony.", "Join completed."));
-      return;
-    }
-
-    if (lorawan.runtime?.lastError) {
-      throw new Error(lorawan.runtime.lastError);
-    }
-  }
-
-  throw new Error(localeText("Join nie zakończył się w oczekiwanym czasie.", "Join did not complete in time."));
-}
-
-async function waitForSendAcceptance() {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < 12000) {
-    await delay(1500);
-    const lorawan = await sendCommand("get_lorawan");
-    state.lorawanInfo = lorawan;
-    renderLorawanSummary();
-
-    if (lorawan.runtime?.lastSendAccepted || lorawan.runtime?.lastEvent === "uplink_enqueued") {
-      appendLog(
-        "radio",
-        localeText("Uplink został przyjęty do kolejki radiowej urządzenia.", "Uplink was accepted by the device radio queue."),
-        sanitizeForLog(lorawan.runtime)
-      );
-      return;
-    }
-  }
-
-  const runtime = state.lorawanInfo?.runtime || {};
-  throw new Error(
-    localeText(
-      `Urządzenie nie potwierdziło enqueue uplinku. lastEvent=${runtime.lastEvent || "-"}${runtime.lastError ? `, lastError=${runtime.lastError}` : ""}`,
-      `The device did not confirm uplink enqueue. lastEvent=${runtime.lastEvent || "-"}${runtime.lastError ? `, lastError=${runtime.lastError}` : ""}`
-    )
-  );
-}
-
-function saveProfileFromEditor() {
-  const profile = normalizeProfile({
-    id: state.editingProfileId || `profile-${Date.now()}`,
-    name: refs.profileNameInput.value.trim(),
-    tick: refs.profileTickInput.value.trim(),
-    amount: refs.profileAmountInput.value.trim(),
-    intervalMinutes: Number(refs.profileIntervalInput.value),
-    enabled: refs.profileEnabledInput.checked
-  });
-
-  if (!profile.tick || profile.tick.length !== 4) {
-    throw new Error("Profile tick must be exactly 4 characters.");
-  }
-  if (!profile.amount || Number(profile.amount) <= 0) {
-    throw new Error("Profile mint amount must be positive.");
-  }
-  if (!Number.isFinite(profile.intervalMinutes) || profile.intervalMinutes <= 0) {
-    throw new Error("Profile interval must be a positive number of minutes.");
-  }
-
-  const existingIndex = state.profiles.findIndex((entry) => entry.id === profile.id);
-  if (existingIndex >= 0) {
-    state.profiles.splice(existingIndex, 1, profile);
-  } else if (profile.enabled) {
-    state.profiles.unshift(profile);
-  } else {
-    state.profiles.push(profile);
-  }
-
-  persistProfiles();
-  renderProfiles();
-  renderQueuePreview();
-  clearProfileEditor();
-}
-
-function clearProfileEditor() {
-  state.editingProfileId = null;
-  refs.profileNameInput.value = "";
-  refs.profileTickInput.value = "LORA";
-  refs.profileAmountInput.value = "100";
-  refs.profileIntervalInput.value = String(state.scheduler.intervalMinutes);
-  refs.profileEnabledInput.checked = true;
-}
-
-function renderProfiles() {
-  refs.profileList.innerHTML = "";
-
-  if (!state.profiles.length) {
-    refs.profileList.innerHTML = `<article class="profile-card"><strong>${escapeHtml(state.language === "pl" ? "Brak zapisanych profili." : "No profiles saved.")}</strong></article>`;
-    return;
-  }
-
-  let queuePosition = 0;
-  for (const [index, profile] of state.profiles.entries()) {
-    const article = document.createElement("article");
-    article.className = `profile-card${profile.enabled ? " profile-card--active" : ""}`;
-
-    if (profile.enabled) {
-      queuePosition += 1;
-    }
-    const queueBadge = profile.enabled
-      ? `<span class="profile-chip profile-chip--teal">${escapeHtml(state.language === "pl" ? `kolejka #${queuePosition}` : `queue #${queuePosition}`)}</span>`
-      : `<span class="profile-chip">${escapeHtml(state.language === "pl" ? "tylko biblioteka" : "library only")}</span>`;
-    const toggleLabel = profile.enabled
-      ? (state.language === "pl" ? "Usuń z kolejki" : "Remove from queue")
-      : (state.language === "pl" ? "Dodaj do kolejki" : "Add to queue");
-
-    article.innerHTML = `
-      <div>
-        <div class="profile-card__meta">
-          <span class="profile-chip">${escapeHtml(profile.tick)}</span>
-          <span class="profile-chip profile-chip--teal">${escapeHtml(String(profile.amount))}</span>
-          <span class="profile-chip">${escapeHtml(String(profile.intervalMinutes))} ${escapeHtml(state.language === "pl" ? "min" : "min")}</span>
-          ${queueBadge}
-        </div>
-        <h3>${escapeHtml(profile.name)}</h3>
-      </div>
-      <div class="button-row">
-        <button class="button button--ghost" type="button" data-profile-action="edit" data-profile-id="${profile.id}">${escapeHtml(state.language === "pl" ? "Edytuj" : "Edit")}</button>
-        <button class="button button--ghost" type="button" data-profile-action="toggle" data-profile-id="${profile.id}">${toggleLabel}</button>
-        <button class="button button--ghost" type="button" data-profile-action="up" data-profile-id="${profile.id}">${escapeHtml(state.language === "pl" ? "Wyżej" : "Up")}</button>
-        <button class="button button--ghost" type="button" data-profile-action="down" data-profile-id="${profile.id}">${escapeHtml(state.language === "pl" ? "Niżej" : "Down")}</button>
-        <button class="button button--secondary" type="button" data-profile-action="solo" data-profile-id="${profile.id}">${escapeHtml(state.language === "pl" ? "Solo loop" : "Solo loop")}</button>
-        <button class="button button--primary" type="button" data-profile-action="mint" data-profile-id="${profile.id}">${escapeHtml(state.language === "pl" ? "Mint teraz" : "Mint now")}</button>
-        <button class="button button--ghost" type="button" data-profile-action="delete" data-profile-id="${profile.id}">${escapeHtml(state.language === "pl" ? "Usuń" : "Delete")}</button>
-      </div>
-    `;
-    refs.profileList.append(article);
-  }
-}
-
-function renderQueuePreview() {
-  const queueProfiles = getQueueProfiles();
-  if (!queueProfiles.length) {
-    refs.profileQueuePreview.textContent = state.language === "pl"
-      ? "Brak aktywnej kolejki. Zapisz profil i zostaw go włączonego w kolejce."
-      : "No active queue yet. Save a profile and leave it enabled in the queue.";
-    return;
-  }
-
-  refs.profileQueuePreview.textContent = formatJson({
-    loopEnabled: refs.profileQueueEnabledInput.checked,
-    intervalMinutes: Number(refs.profileQueueIntervalInput.value || state.scheduler.intervalMinutes),
-    order: queueProfiles.map((profile, index) => ({
-      position: index + 1,
-      name: profile.name,
-      tick: profile.tick,
-      amount: profile.amount
-    }))
-  });
-}
-
-async function handleProfileAction(event) {
-  const button = event.target.closest("[data-profile-action]");
-  if (!button) {
-    return;
-  }
-
-  const profile = state.profiles.find((entry) => entry.id === button.dataset.profileId);
-  if (!profile) {
-    return;
-  }
-
-  const action = button.dataset.profileAction;
-  if (action === "edit") {
-    state.editingProfileId = profile.id;
-    refs.profileNameInput.value = profile.name;
-    refs.profileTickInput.value = profile.tick;
-    refs.profileAmountInput.value = profile.amount;
-    refs.profileIntervalInput.value = String(profile.intervalMinutes);
-    refs.profileEnabledInput.checked = Boolean(profile.enabled);
-    return;
-  }
-
-  if (action === "delete") {
-    state.profiles = state.profiles.filter((entry) => entry.id !== profile.id);
-    persistProfiles();
-    renderProfiles();
-    renderQueuePreview();
-    return;
-  }
-
-  if (action === "toggle") {
-    const nextEnabled = !profile.enabled;
-    state.profiles = state.profiles.filter((entry) => entry.id !== profile.id);
-    profile.enabled = nextEnabled;
-    if (nextEnabled) {
-      const enabledCount = state.profiles.filter((entry) => entry.enabled).length;
-      state.profiles.splice(enabledCount, 0, profile);
-    } else {
-      state.profiles.push(profile);
-    }
-    persistProfiles();
-    renderProfiles();
-    renderQueuePreview();
-    return;
-  }
-
-  if (action === "up" || action === "down") {
-    const direction = action === "up" ? -1 : 1;
-    moveProfile(profile.id, direction);
-    return;
-  }
-
-  if (action === "solo") {
-    state.scheduler.enabled = true;
-    state.scheduler.intervalMinutes = profile.intervalMinutes;
-    persistScheduler();
-    refs.profileQueueEnabledInput.checked = true;
-    refs.profileQueueIntervalInput.value = String(profile.intervalMinutes);
-    syncConfigFormFromScheduler();
-    await syncProfilesToDevice({
-      broadcastConfig: false,
-      profiles: [
-        {
-          tick: profile.tick,
-          amount: profile.amount,
-          enabled: true
-        }
-      ]
-    });
-    appendLog("profile", `Device loop narrowed to solo profile ${profile.name}.`);
-    return;
-  }
-
-  if (action === "mint") {
-    await prepareAndMaybeSend("Profile mint", "prepare_mint", {
-      tick: profile.tick,
-      amount: profile.amount,
-      commit: false
-    }, true);
-  }
-}
-
-function moveProfile(profileId, direction) {
-  const currentIndex = state.profiles.findIndex((entry) => entry.id === profileId);
-  if (currentIndex < 0) {
-    return;
-  }
-
-  const nextIndex = currentIndex + direction;
-  if (nextIndex < 0 || nextIndex >= state.profiles.length) {
-    return;
-  }
-
-  const swap = state.profiles[nextIndex];
-  state.profiles[nextIndex] = state.profiles[currentIndex];
-  state.profiles[currentIndex] = swap;
-  persistProfiles();
-  renderProfiles();
-  renderQueuePreview();
-}
-
-function handleSchedulerInputChange() {
-  updateSchedulerFromInputs();
-  syncConfigFormFromScheduler();
-  renderQueuePreview();
-}
-
-function updateSchedulerFromInputs() {
-  state.scheduler = {
-    enabled: refs.profileQueueEnabledInput.checked,
-    intervalMinutes: normalizeScheduler({
-      intervalMinutes: Number(refs.profileQueueIntervalInput.value)
-    }).intervalMinutes
-  };
-  refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes);
-  persistScheduler();
-}
-
-function syncConfigFormFromScheduler() {
-  refs.configAutoMintEnabledInput.checked = state.scheduler.enabled;
-  refs.configAutoMintIntervalInput.value = String(state.scheduler.intervalMinutes * 60);
-}
-
-function getQueueProfiles() {
-  return state.profiles
-    .filter((profile) => profile.enabled)
-    .map((profile) => ({
-      tick: profile.tick,
-      amount: profile.amount,
-      enabled: true,
-      name: profile.name,
-      intervalMinutes: profile.intervalMinutes
-    }));
-}
-
-async function syncProfilesToDevice({ broadcastConfig, profiles } = {}) {
-  updateSchedulerFromInputs();
-  const queueProfiles = Array.isArray(profiles) ? profiles : getQueueProfiles();
-  const queueEnabled = state.scheduler.enabled && queueProfiles.length > 0;
-
-  if (state.scheduler.enabled && queueProfiles.length === 0) {
-    throw new Error("Queue loop is enabled, but no profiles are selected.");
-  }
-
-  const intervalSeconds = state.scheduler.intervalMinutes * 60;
-  await sendCommand("set_config", {
-    autoMintEnabled: queueEnabled,
-    autoMintIntervalSeconds: intervalSeconds,
-    profiles: queueProfiles.map((profile) => ({
-      tick: profile.tick,
-      amount: profile.amount,
-      enabled: true
-    }))
-  });
-
-  refs.configAutoMintEnabledInput.checked = queueEnabled;
-  refs.configAutoMintIntervalInput.value = String(intervalSeconds);
-  appendLog(
-    "profile",
-    `Synced ${queueProfiles.length} profile(s) to the device queue.`,
-    queueProfiles.map((profile, index) => ({
-      position: index + 1,
-      tick: profile.tick,
-      amount: profile.amount
-    }))
-  );
-
-  if (broadcastConfig) {
-    await prepareAndMaybeSend("Queue config", "prepare_config", {
-      autoMintEnabled: queueEnabled,
-      autoMintIntervalSeconds: intervalSeconds,
-      commit: false
-    }, true);
-  } else {
-    await refreshDeviceState();
-  }
-}
-
-async function stopProfileLoop() {
-  updateSchedulerFromInputs();
-  state.scheduler.enabled = false;
-  persistScheduler();
-  refs.profileQueueEnabledInput.checked = false;
-  syncConfigFormFromScheduler();
-  await syncProfilesToDevice({ broadcastConfig: false, profiles: getQueueProfiles() });
-  appendLog("profile", "Auto-mint loop stopped. Queue remains stored on the device.");
-}
-
-function delay(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
-
-function renderOverview() {
-  if (!refs.overviewTokensValue) {
-    return;
-  }
-
-  refs.overviewTokensValue.textContent = String(state.tokenCatalog.length);
-  refs.overviewBalancesValue.textContent = String(state.portfolio.length);
-  refs.overviewEventsValue.textContent = String(state.recentTransactions.length);
-  refs.overviewProfilesValue.textContent = String(state.profiles.filter((profile) => profile.enabled).length);
-
-  const runtime = state.lorawanInfo?.runtime;
-  const device = state.deviceInfo?.device;
-  let variant = "neutral";
-  let title = localeText("Podłącz urządzenie", "Connect a device");
-  let body = localeText(
-    "Pierwszy ekran ma odpowiadać na jedno pytanie: czy możesz bezpiecznie wysłać deploy, mint lub transfer.",
-    "The first screen should answer one question: can you safely send deploy, mint, or transfer right now."
-  );
-
-  if (device && !runtime?.configured) {
-    variant = "warn";
-    title = localeText("Ustaw radio przed pierwszym mintem", "Configure radio before the first mint");
-    body = localeText(
-      "Masz już tożsamość urządzenia, ale LoRaWAN nie ma jeszcze pełnej konfiguracji OTAA.",
-      "The device identity is ready, but LoRaWAN OTAA settings are still incomplete."
-    );
-  } else if (isRecentBoot()) {
-    variant = "warn";
-    title = localeText("Wykryto świeży restart płytki", "Recent board reboot detected");
-    body = localeText(
-      "Po komunikacie ESP-ROM poczekaj kilka sekund, odśwież radio i dopiero potem wysyłaj.",
-      "After an ESP-ROM reboot message, wait a few seconds, refresh radio state, and only then send."
-    );
-  } else if (runtime?.queuePending) {
-    variant = "warn";
-    title = localeText("Uplink już czeka w kolejce", "An uplink is already queued");
-    body = localeText(
-      "Nie wysyłaj kolejnego payloadu, dopóki urządzenie nie potwierdzi enqueue albo nie skończy join.",
-      "Do not send another payload until the device confirms enqueue or finishes join."
-    );
-  } else if (radioReadyForSend(runtime)) {
-    variant = "ok";
-    title = localeText("Ścieżka mintu jest gotowa", "Mint path is ready");
-    body = localeText(
-      "Urządzenie ma klucz, radio jest joined, a panel może wysłać podpisaną inskrypcję.",
-      "The device key exists, radio is joined, and the panel can send a signed inscription."
-    );
-  } else if (device) {
-    variant = "warn";
-    title = localeText("Urządzenie jest widoczne, ale radio nie jest gotowe", "The device is visible, but radio is not ready");
-    body = localeText(
-      "Panel wymusi refresh i join przed wysyłką, ale brak join lub restart płytki nadal może opóźnić uplink.",
-      "The panel will force refresh and join before sending, but missing join or a board reboot can still delay the uplink."
-    );
-  }
-
-  refs.overviewStatusNote.className = `callout callout--${variant}`;
-  refs.overviewStatusNote.innerHTML = `
-    <strong>${escapeHtml(title)}</strong>
-    <p>${escapeHtml(body)}</p>
-  `;
-}
-
-function rememberKnownDevice() {
-  const device = state.deviceInfo?.device;
-  const lorawan = state.lorawanInfo?.config;
-  if (!device?.deviceId) {
-    return;
-  }
-
-  const snapshot = {
-    deviceId: device.deviceId,
-    publicKeyHex: device.publicKeyHex || "",
-    devEuiHex: lorawan?.devEuiHex || device.lorawan?.devEuiHex || "",
-    defaultTick: device.config?.defaultTick || "LORA",
-    defaultMintAmount: String(device.config?.defaultMintAmount || "1"),
-    lastSeenAt: new Date().toISOString()
-  };
-
-  state.knownDevices = [
-    snapshot,
-    ...state.knownDevices.filter((entry) => entry.deviceId !== snapshot.deviceId)
-  ].slice(0, 12);
-  persistKnownDevices();
-}
-
-function renderDeviceReadiness() {
-  if (!refs.deviceReadinessBanner) {
-    return;
-  }
-
-  const device = state.deviceInfo?.device;
-  if (!device) {
-    refs.deviceReadinessBanner.className = "callout callout--neutral";
-    refs.deviceReadinessBanner.innerHTML = `
-      <strong>${escapeHtml(t("device.waitingTitle"))}</strong>
-      <p>${escapeHtml(t("device.waitingBody"))}</p>
-    `;
-    return;
-  }
-
-  refs.deviceReadinessBanner.className = "callout callout--ok";
-  refs.deviceReadinessBanner.innerHTML = `
-    <strong>${escapeHtml(t("device.activeTitle"))}</strong>
-    <p>${escapeHtml(t("device.activeBody"))}</p>
-  `;
-
-  const runtime = state.lorawanInfo?.runtime;
-  if (isRecentBoot() || (runtime && !radioReadyForSend(runtime))) {
-    const body = isRecentBoot()
-      ? localeText(
-          "Płytka właśnie się zresetowała. Daj jej kilka sekund, odśwież radio i dopiero wtedy wysyłaj inskrypcję.",
-          "The board has just rebooted. Give it a few seconds, refresh radio state, and only then send an inscription."
-        )
-      : localeText(
-          "Tożsamość urządzenia jest gotowa, ale tor radiowy nadal wymaga join lub ponownej inicjalizacji po resecie.",
-          "The device identity is ready, but the radio path still needs join or post-reboot initialization."
-        );
-
-    refs.deviceReadinessBanner.className = "callout callout--warn";
-    refs.deviceReadinessBanner.innerHTML = `
-      <strong>${escapeHtml(t("device.activeTitle"))}</strong>
-      <p>${escapeHtml(body)}</p>
-    `;
-  }
-}
-
-function renderRadioHint() {
-  if (!refs.radioActionHint) {
-    return;
-  }
-
-  const runtime = state.lorawanInfo?.runtime;
-  const config = state.lorawanInfo?.config;
-  const heltec = state.lorawanInfo?.heltec;
-
-  let variant = "neutral";
-  let title = t("radio.waitingTitle");
-  let body = t("radio.waitingBody");
-
-  if (config && !config.hasJoinEui) {
-    variant = "danger";
-    title = localeText("Brak JoinEUI", "JoinEUI missing");
-    body = localeText("Ustaw JoinEUI i AppKey przed join lub wysyłką.", "Set JoinEUI and AppKey before join or send.");
-  } else if (heltec && !heltec.hasLicense) {
-    variant = "danger";
-    title = localeText("Brak licencji Heltec", "Heltec license missing");
-    body = localeText(
-      "Ta płytka wymaga licencji vendorowej do inicjalizacji stosu radiowego.",
-      "This board requires the vendor license before the radio stack can initialize."
-    );
-  } else if (runtime?.queuePending) {
-    variant = "warn";
-    title = localeText("Uplink oczekuje w kolejce", "Uplink waiting in queue");
-    body = localeText(
-      "Nie wysyłaj kolejnej wiadomości, dopóki poprzednia nie zostanie przyjęta albo dopóki nie skończy się join.",
-      "Do not send another message until the previous one is accepted or until join finishes."
-    );
-  } else if (runtime && (!runtime.hardwareReady || !runtime.initialized)) {
-    variant = "warn";
-    title = localeText("Radio po restarcie jeszcze się podnosi", "Radio is still coming back after reboot");
-    body = localeText(
-      "To jest normalne po restarcie Helteca. Odśwież radio albo wykonaj join, żeby ponownie zainicjalizować stos.",
-      "This is normal after a Heltec reboot. Refresh radio state or run join to initialize the stack again."
-    );
-  } else if (runtime?.joined) {
-    variant = "ok";
-    title = t("radio.okTitle");
-    body = t("radio.okBody");
-  } else if (runtime?.joining) {
-    variant = "warn";
-    title = localeText("Join w toku", "Join in progress");
-    body = localeText(
-      "Poczekaj na joined=true. Panel nie powinien nadawać, dopóki join się nie zakończy.",
-      "Wait for joined=true. The panel should not transmit until join completes."
-    );
-  } else if (runtime?.configured) {
-    variant = "warn";
-    title = localeText("Radio skonfigurowane, ale niejoined", "Radio configured, not joined");
-    body = localeText(
-      "To jest normalne po resecie albo świeżym starcie. Kliknij Join lub pozwól panelowi zrobić auto-join przed send.",
-      "This is normal after reset or a fresh start. Click Join or let the panel auto-join before send."
-    );
-  }
-
-  refs.radioActionHint.className = `callout callout--${variant}`;
-  refs.radioActionHint.innerHTML = `
-    <strong>${escapeHtml(title)}</strong>
-    <p>${escapeHtml(body)}</p>
-  `;
-}
-
-function renderKnownDevices() {
-  if (!refs.knownDevicesList) {
-    return;
-  }
-
-  refs.knownDevicesList.innerHTML = "";
-  if (!state.knownDevices.length) {
-    refs.knownDevicesList.innerHTML = `<article class="known-device"><strong>${escapeHtml(localeText("Brak zapisanych urządzeń.", "No saved devices yet."))}</strong></article>`;
-    return;
-  }
-
-  for (const device of state.knownDevices) {
-    const article = document.createElement("article");
-    article.className = "known-device";
-    article.innerHTML = `
-      <div class="known-device__head">
-        <div>
-          <h3 class="mono">${escapeHtml(device.deviceId)}</h3>
-          <p class="helper">${escapeHtml(device.devEuiHex || localeText("DevEUI jeszcze niepowiązane", "DevEUI pending"))}</p>
-        </div>
-        <span class="token-pill">${escapeHtml(device.defaultTick)} / ${escapeHtml(device.defaultMintAmount)}</span>
-      </div>
-      <div class="button-row">
-        <button class="button button--ghost" type="button" data-known-device="${device.deviceId}">${escapeHtml(localeText("Użyj", "Use"))}</button>
-      </div>
-    `;
-    refs.knownDevicesList.append(article);
-  }
-}
-
-async function handleKnownDeviceAction(event) {
-  const button = event.target.closest("[data-known-device]");
-  if (!button) {
-    return;
-  }
-
-  const deviceId = button.dataset.knownDevice;
-  refs.balanceDeviceIdInput.value = deviceId;
-  refs.transactionsDeviceIdInput.value = deviceId;
-  await loadPortfolioSummary(true, deviceId);
-  await loadRecentTransactionsSummary(true, deviceId);
-}
-
-async function loadIndexerDashboardData({ silent = false } = {}) {
-  await Promise.allSettled([
-    loadTokenCatalog(silent),
-    loadPortfolioSummary(silent),
-    loadRecentTransactionsSummary(silent)
-  ]);
-}
-
-async function loadTokenCatalog(logSuccess = false) {
-  const data = await indexerRequest("/tokens?limit=100");
-  state.tokenCatalog = Array.isArray(data.tokens) ? data.tokens : [];
-  refs.tokenOutput.textContent = formatJson(data);
-  renderTokenLibrary();
-  renderOperationWarnings();
-  if (logSuccess) {
-    appendLog("indexer", "Token library refreshed", { count: state.tokenCatalog.length });
-  }
-}
-
-async function loadPortfolioSummary(logSuccess = false, explicitDeviceId = "") {
-  const deviceId = (explicitDeviceId || refs.balanceDeviceIdInput.value || state.deviceInfo?.device?.deviceId || "").trim().toLowerCase();
-  if (!deviceId) {
-    state.portfolio = [];
-    renderPortfolio();
-    return;
-  }
-
-  const data = await indexerRequest(`/devices/${deviceId}/balances?limit=50`);
-  state.portfolio = Array.isArray(data.balances) ? data.balances : [];
-  refs.balanceOutput.textContent = formatJson(data);
-  renderPortfolio();
-  if (logSuccess) {
-    appendLog("indexer", "Portfolio refreshed", { deviceId, balances: state.portfolio.length });
-  }
-}
-
-async function loadRecentTransactionsSummary(logSuccess = false, explicitDeviceId = "") {
-  const deviceId = (explicitDeviceId || refs.transactionsDeviceIdInput.value || state.deviceInfo?.device?.deviceId || "").trim().toLowerCase();
-  const params = new URLSearchParams();
-  if (deviceId) {
-    params.set("deviceId", deviceId);
-  }
-  params.set("limit", "12");
-  const data = await indexerRequest(`/transactions?${params.toString()}`);
-  state.recentTransactions = Array.isArray(data.transactions) ? data.transactions : [];
-  refs.transactionsOutput.textContent = formatJson(data);
-  renderRecentTransactions();
-  if (logSuccess) {
-    appendLog("indexer", "Recent transactions refreshed", { deviceId, count: state.recentTransactions.length });
-  }
-}
-
-function renderPortfolio() {
-  if (!refs.portfolioList) {
-    return;
-  }
-
-  refs.portfolioList.innerHTML = "";
-  if (!state.portfolio.length) {
-    refs.portfolioList.innerHTML = `<article class="token-card"><strong>${escapeHtml(localeText("Brak zindeksowanych balansów.", "No indexed balances yet."))}</strong></article>`;
-    return;
-  }
-
-  for (const entry of state.portfolio) {
-    const token = entry.token ?? {};
-    const article = document.createElement("article");
-    article.className = "token-card";
-    article.innerHTML = `
-      <div class="token-card__head">
-        <div>
-          <h3>${escapeHtml(entry.tick)}</h3>
-          <p class="helper">${escapeHtml(entry.balance)} ${escapeHtml(localeText("jednostek", "units"))}</p>
-        </div>
-        <span class="token-pill">${escapeHtml(localeText("max mint", "max mint"))} ${escapeHtml(token.limitPerMint || "?")}</span>
-      </div>
-      <div class="token-meta">
-        <span class="token-pill">${escapeHtml(localeText("supply", "supply"))} ${escapeHtml(token.totalSupply || "0")} / ${escapeHtml(token.maxSupply || "?")}</span>
-      </div>
-      <div class="button-row">
-        <button class="button button--ghost" type="button" data-token-select="${escapeHtml(entry.tick)}">${escapeHtml(localeText("Użyj", "Use"))}</button>
-      </div>
-    `;
-    refs.portfolioList.append(article);
-  }
-}
-
-function renderRecentTransactions() {
-  if (!refs.recentTransactionsList) {
-    return;
-  }
-
-  refs.recentTransactionsList.innerHTML = "";
-  if (!state.recentTransactions.length) {
-    refs.recentTransactionsList.innerHTML = `<article class="timeline-card"><strong>${escapeHtml(localeText("Brak zindeksowanych zdarzeń.", "No indexed events yet."))}</strong></article>`;
-    return;
-  }
-
-  for (const event of state.recentTransactions.slice(0, 8)) {
-    const article = document.createElement("article");
-    article.className = "timeline-card";
-    article.innerHTML = `
-      <div class="timeline-card__head">
-        <div>
-          <h3>${escapeHtml(event.opName || "EVENT")} ${event.tick ? `/${escapeHtml(event.tick)}` : ""}</h3>
-          <p class="helper">${escapeHtml(event.status)}${event.rejectionReason ? ` • ${escapeHtml(event.rejectionReason)}` : ""}</p>
-        </div>
-        <span class="token-pill">${escapeHtml(formatClock(event.receivedAt || event.createdAt))}</span>
-      </div>
-      <div class="token-meta">
-        <span class="token-pill">${escapeHtml(localeText("nonce", "nonce"))} ${escapeHtml(String(event.nonce ?? "-"))}</span>
-        ${event.amount ? `<span class="token-pill">${escapeHtml(localeText("amount", "amount"))} ${escapeHtml(event.amount)}</span>` : ""}
-      </div>
-    `;
-    refs.recentTransactionsList.append(article);
-  }
-}
-
-function renderTokenLibrary() {
-  if (!refs.tokenLibraryList || !refs.tokenQuickPick) {
-    return;
-  }
-
-  const query = refs.tokenSearchInput?.value.trim().toUpperCase() || "";
-  const tokens = state.tokenCatalog.filter((token) => !query || token.tick.includes(query));
-
-  refs.tokenLibraryList.innerHTML = "";
-  refs.tokenQuickPick.innerHTML = `<option value="">-</option>`;
-  for (const token of state.tokenCatalog) {
-    const option = document.createElement("option");
-    option.value = token.tick;
-    option.textContent = `${token.tick} • ${localeText("limit", "limit")} ${token.limitPerMint}`;
-    refs.tokenQuickPick.append(option);
-  }
-
-  if (!tokens.length) {
-    refs.tokenLibraryList.innerHTML = `<article class="token-card"><strong>${escapeHtml(localeText("Brak wdrożonych tokenów.", "No deployed tokens found."))}</strong></article>`;
-    return;
-  }
-
-  for (const token of tokens) {
-    const article = document.createElement("article");
-    article.className = "token-card";
-    article.innerHTML = `
-      <div class="token-card__head">
-        <div>
-          <h3>${escapeHtml(token.tick)}</h3>
-          <p class="helper">${escapeHtml(token.totalSupply)} / ${escapeHtml(token.maxSupply)}</p>
-        </div>
-        <span class="token-pill">${escapeHtml(localeText("max mint", "max mint"))} ${escapeHtml(token.limitPerMint)}</span>
-      </div>
-      <div class="button-row">
-        <button class="button button--ghost" type="button" data-token-select="${escapeHtml(token.tick)}">${escapeHtml(localeText("Użyj", "Use"))}</button>
-      </div>
-    `;
-    refs.tokenLibraryList.append(article);
-  }
-}
-
-function fillOperationFormsFromToken(tick) {
-  const token = state.tokenCatalog.find((entry) => entry.tick === tick);
-  if (!token) {
-    return;
-  }
-
-  refs.tokenQuickPick.value = token.tick;
-  refs.mintTickInput.value = token.tick;
-  refs.deployTickInput.value = token.tick;
-  refs.transferTickInput.value = token.tick;
-  refs.tokenTickInput.value = token.tick;
-  refs.balanceTickInput.value = token.tick;
-  refs.transactionsTickInput.value = token.tick;
-  refs.deployLimitPerMintInput.value = token.limitPerMint;
-  refs.deployMaxSupplyInput.value = token.maxSupply;
-  renderOperationWarnings();
-}
-
-function currentMintToken() {
-  const tick = refs.mintTickInput.value.trim().toUpperCase();
-  return state.tokenCatalog.find((entry) => entry.tick === tick) ?? null;
-}
-
-function renderOperationWarnings() {
-  if (!refs.operationWarnings || !refs.selectedTokenSummary) {
-    return;
-  }
-
-  const token = currentMintToken();
-  const mintAmount = parseBigIntOrNull(refs.mintAmountInput.value);
-  const warnings = [];
-  const deployTick = refs.deployTickInput.value.trim().toUpperCase();
-  const deployMaxSupply = parseBigIntOrNull(refs.deployMaxSupplyInput.value);
-  const deployLimitPerMint = parseBigIntOrNull(refs.deployLimitPerMintInput.value);
-  const transferTick = refs.transferTickInput.value.trim().toUpperCase();
-  const transferAmount = parseBigIntOrNull(refs.transferAmountInput.value);
-  const portfolioEntry = state.portfolio.find((entry) => entry.tick === transferTick);
-  const mintTick = refs.mintTickInput.value.trim().toUpperCase();
-
-  if (token) {
-    refs.selectedTokenSummary.className = "callout callout--ok";
-    refs.selectedTokenSummary.innerHTML = `
-      <strong>${escapeHtml(token.tick)}</strong>
-      <p>${escapeHtml(token.totalSupply)} / ${escapeHtml(token.maxSupply)} minted • max ${escapeHtml(token.limitPerMint)} per mint</p>
-    `;
-
-    if (mintAmount !== null && mintAmount > BigInt(token.limitPerMint)) {
-      warnings.push({ level: "danger", text: `Mint ${mintAmount.toString()} exceeds limitPerMint ${token.limitPerMint}.` });
-    }
-
-    if (mintAmount !== null && BigInt(token.totalSupply) + mintAmount > BigInt(token.maxSupply)) {
-      warnings.push({ level: "danger", text: `Mint would exceed maxSupply ${token.maxSupply}.` });
-    }
-  } else {
-    refs.selectedTokenSummary.className = "callout callout--neutral";
-    refs.selectedTokenSummary.innerHTML = `
-      <strong>${escapeHtml(t("operations.noTokenSelectedTitle"))}</strong>
-      <p>${escapeHtml(t("operations.noTokenSelectedBody"))}</p>
-    `;
-    if (mintTick) {
-      warnings.push({ level: "warn", text: `Token ${mintTick} is not in the deployed token list yet.` });
-    }
-  }
-
-  if (!state.lorawanInfo?.config?.hasAppKey || !state.lorawanInfo?.config?.hasJoinEui) {
-    warnings.push({ level: "danger", text: "LoRaWAN config is incomplete. Set JoinEUI and AppKey first." });
-  } else if (state.lorawanInfo?.runtime?.joined === false) {
-    warnings.push({ level: "warn", text: "Radio is not joined right now. The panel will run join before sending." });
-  }
-
-  if (deployTick && state.tokenCatalog.some((entry) => entry.tick === deployTick)) {
-    warnings.push({ level: "warn", text: `Deploy ${deployTick} already exists and will be rejected by the indexer.` });
-  }
-
-  if (deployMaxSupply !== null && deployLimitPerMint !== null && deployLimitPerMint > deployMaxSupply) {
-    warnings.push({ level: "danger", text: "Deploy limitPerMint is greater than maxSupply." });
-  }
-
-  if (portfolioEntry && transferAmount !== null && transferAmount > BigInt(portfolioEntry.balance)) {
-    warnings.push({
-      level: "danger",
-      text: `Transfer ${transferAmount.toString()} exceeds indexed balance ${portfolioEntry.balance} for ${transferTick}.`
-    });
-  }
-
-  const estimatedBytes = estimatePayloadSize("prepare_mint");
-  const estimatedDc = estimateDataCredits(estimatedBytes);
-  refs.estimatedPayloadValue.textContent = `${estimatedBytes} B`;
-  refs.estimatedDcValue.textContent = `~${estimatedDc} DC`;
-  refs.protocolVersionValue.textContent = "v1 / Ed25519";
-
-  const top = warnings[0];
-  const variant = top?.level === "danger" ? "danger" : top?.level === "warn" ? "warn" : "ok";
-  const text = warnings.length
-    ? warnings.map((entry) => `• ${entry.text}`).join("\n")
-    : "No logical blockers detected for the current mint draft.";
-
-  refs.operationWarnings.className = `callout callout--${variant}`;
-  refs.operationWarnings.innerHTML = `
-    <strong>${escapeHtml(t("operations.preflightTitle"))}</strong>
-    <p>${escapeHtml(text)}</p>
-  `;
-}
-
-function estimatePayloadSize(command) {
-  return OPERATION_SIZES[command] ?? 0;
-}
-
-function estimateDataCredits(payloadBytes) {
-  return Math.max(1, Math.ceil(Number(payloadBytes || 0) / 24));
-}
-
-function parseBigIntOrNull(value) {
-  const trimmed = String(value ?? "").trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  try {
-    return BigInt(trimmed);
-  } catch {
-    return null;
-  }
-}
-
-function renderOnboarding() {
-  if (!refs.onboardingChecklist) {
-    return;
-  }
-
-  const steps = state.language === "pl"
-    ? [
-        "Użyj Chrome albo Edge na HTTPS, kabla USB-C do danych i zamknij VS Code Serial Monitor, PlatformIO, MobaXterm, PuTTY lub inne blokery COM.",
-        "Połącz płytkę, poczekaj aż skończą się logi po restarcie i dopiero wtedy odśwież info urządzenia oraz stan radia.",
-        "Wygeneruj klucz tylko raz, zrób zaszyfrowany backup i nie rotuj tożsamości podpisującej bez wyraźnej potrzeby.",
-        "Zapisz licencję Heltec, DevEUI, JoinEUI i AppKey, a potem wykonaj Join LoRaWAN.",
-        "Zarejestruj urządzenie w indexerze i powiąż DevEUI, żeby ChirpStack kierował uplinki do właściwego deviceId.",
-        "Przed mintem zawsze czytaj limit tokena. Panel blokuje oczywiste błędy, ale pozwala na świadome obejście."
-      ]
-    : [
-        "Use Chrome or Edge over HTTPS, a data USB-C cable, and close VS Code Serial Monitor, PlatformIO, MobaXterm, PuTTY, or other COM blockers.",
-        "Connect the board, wait for reboot noise to settle, then refresh device info and radio state.",
-        "Generate the device key once, export an encrypted backup, and avoid rotating the signing key unless you really mean to reset identity.",
-        "Store the Heltec license, DevEUI, JoinEUI, and AppKey, then run Join LoRaWAN.",
-        "Register the device in the indexer and link the DevEUI so ChirpStack routes uplinks to the correct deviceId.",
-        "Read token limits before mint. The panel blocks obvious mistakes by default but still allows an expert override."
-      ];
-
-  refs.onboardingChecklist.innerHTML = steps
-    .map(
-      (step, index) => `
-        <article class="guide-card">
-          <strong>${escapeHtml(`${index + 1}.`)} </strong>
-          <p class="helper">${escapeHtml(step)}</p>
-        </article>
-      `
-    )
-    .join("");
-}
-
-function renderEducation() {
-  if (!refs.educationContent) {
-    return;
-  }
-
-  refs.educationContent.innerHTML = state.language === "pl"
-    ? `
-      <p><strong>Podpis i anti-replay.</strong> Każda inskrypcja jest podpisana kluczem urządzenia przez Ed25519 i ma nonce. Indexer weryfikuje podpis i odrzuca stare lub powtórzone nonce.</p>
-      <p><strong>Co jest gwarantowane.</strong> Jeśli payload dotrze do indexera i przejdzie weryfikację, pochodzi od zarejestrowanej tożsamości urządzenia i nie jest replayem. Sam protokół nie gwarantuje, że każdy uplink LoRa zawsze dotrze do sieci.</p>
-      <p><strong>Dlaczego payload jest duży.</strong> W v1 wewnątrz wiadomości jest pełny podpis Ed25519 o długości 64 bajtów. Dlatego mint ma około 81 bajtów, a deploy i transfer jeszcze więcej.</p>
-      <ul>
-        <li>Deploy wykonuje się raz na token.</li>
-        <li>Mint jest ograniczony przez <code>limitPerMint</code> i <code>maxSupply</code>.</li>
-        <li>Transfer zależy też od zindeksowanego balansu nadawcy.</li>
-        <li>Wskaźnik DC w panelu jest heurystyką opartą o wiadra 24-bajtowe.</li>
-      </ul>
-    `
-    : `
-      <p><strong>Signature and anti-replay.</strong> Every inscription is signed by the device key with Ed25519 and includes a nonce. The indexer verifies the signature and rejects stale or replayed nonces.</p>
-      <p><strong>What is guaranteed.</strong> If the payload reaches the indexer and verifies successfully, it came from the registered device identity and was not replayed. The protocol does not guarantee that every LoRa uplink always reaches the network.</p>
-      <p><strong>Why payloads are large.</strong> v1 keeps the full 64-byte Ed25519 signature inside the message. That is why mint is about 81 bytes and deploy or transfer are even larger.</p>
-      <ul>
-        <li>Deploy is one-time per token.</li>
-        <li>Mint is limited by <code>limitPerMint</code> and <code>maxSupply</code>.</li>
-        <li>Transfer also depends on the indexed sender balance.</li>
-        <li>The DC figure in the panel is a planning heuristic based on 24-byte buckets.</li>
-      </ul>
-    `;
-}
-
-async function loadHealth() {
-  const data = await indexerRequest("/health");
-  refs.healthOutput.textContent = formatJson(data);
-}
-
-async function loadToken() {
-  const tick = refs.tokenTickInput.value.trim().toUpperCase();
-  const data = await indexerRequest(`/tokens/${tick}`);
-  refs.tokenOutput.textContent = formatJson(data);
-}
-
-async function loadBalance() {
-  const deviceId = refs.balanceDeviceIdInput.value.trim().toLowerCase();
-  const tick = refs.balanceTickInput.value.trim().toUpperCase();
-  const data = await indexerRequest(`/balances/${deviceId}/${tick}`);
-  refs.balanceOutput.textContent = formatJson(data);
-}
-
-async function loadTransactions() {
-  const params = new URLSearchParams();
-  const deviceId = refs.transactionsDeviceIdInput.value.trim().toLowerCase();
-  const tick = refs.transactionsTickInput.value.trim().toUpperCase();
-  const limit = refs.transactionsLimitInput.value.trim();
-
-  if (deviceId) {
-    params.set("deviceId", deviceId);
-  }
-  if (tick) {
-    params.set("tick", tick);
-  }
-  if (limit) {
-    params.set("limit", limit);
-  }
-
-  const data = await indexerRequest(`/transactions?${params.toString()}`);
-  refs.transactionsOutput.textContent = formatJson(data);
-}
-
-async function handleRawCommand() {
-  let payload;
-  try {
-    payload = JSON.parse(refs.rawCommandTextarea.value);
-  } catch {
-    throw new Error("Raw JSON is invalid.");
-  }
-
-  const command = payload.command || payload.method;
-  if (!command) {
-    throw new Error("Raw JSON must contain command or method.");
-  }
-
-  const result = await sendCommand(command, payload.params || {});
-  appendLog("raw", `Raw command ${command} completed.`, sanitizeForLog(result));
-}
-
-async function indexerRequest(path, { method = "GET", body } = {}) {
-  const baseUrl = normalizeBaseUrl(refs.indexerBaseUrlInput.value || state.indexerBaseUrl || DEFAULT_INDEXER_BASE_URL);
-  if (!baseUrl) {
-    throw new Error("Indexer base URL is empty.");
-  }
-
-  saveIndexerBaseUrl({ silent: true });
-
-  const response = await fetch(`${baseUrl}${path}`, {
-    method,
-    headers: {
-      "content-type": "application/json"
-    },
-    body: body ? JSON.stringify(body) : undefined
-  }).catch((error) => {
-    throw new Error(
-      `${error.message}. If this dashboard runs on GitHub Pages, set CORS_ALLOWED_ORIGINS on the indexer.`
-    );
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload?.error?.message || `Indexer request failed with ${response.status}`);
-  }
-  return payload;
-}
-
-function appendLog(kind, message, detail = null) {
-  const entry = document.createElement("article");
-  entry.className = "log-entry";
-
-  const head = document.createElement("div");
-  head.className = "log-entry__head";
-  head.innerHTML = `
-    <span class="log-entry__kind">${escapeHtml(kind)}</span>
-    <span class="mono">${new Date().toLocaleTimeString()}</span>
-  `;
-
-  const body = document.createElement("div");
-  body.className = "log-entry__message";
-  body.textContent = message;
-
-  entry.append(head, body);
-
-  if (detail !== null && detail !== undefined && detail !== "") {
-    const pre = document.createElement("pre");
-    pre.textContent = typeof detail === "string" ? detail : formatJson(detail);
-    entry.append(pre);
-  }
-
-  refs.activityLog.prepend(entry);
-  while (refs.activityLog.children.length > 40) {
-    refs.activityLog.lastElementChild?.remove();
-  }
-}
-
-function sanitizeForLog(value, parentKey = "") {
-  if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeForLog(entry, parentKey));
-  }
-
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => {
-        if (SENSITIVE_KEYS.has(key) || SENSITIVE_KEYS.has(parentKey)) {
-          return [key, maskValue(entry)];
-        }
-        return [key, sanitizeForLog(entry, key)];
-      })
-    );
-  }
-
-  return value;
-}
-
-function maskValue(value) {
-  if (typeof value !== "string") {
-    return "[hidden]";
-  }
-  if (value.length <= 8) {
-    return "[hidden]";
-  }
-  return `${value.slice(0, 4)}...${value.slice(-4)}`;
-}
-
-function formatJson(value) {
-  return JSON.stringify(value, null, 2);
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function renderOverview() {
-  if (!refs.overviewTokensValue) {
-    return;
-  }
-
-  refs.overviewTokensValue.textContent = String(state.tokenCatalog.length);
-  refs.overviewBalancesValue.textContent = String(state.portfolio.length);
-  refs.overviewEventsValue.textContent = String(state.recentTransactions.length);
-  refs.overviewProfilesValue.textContent = String(state.profiles.filter((profile) => profile.enabled).length);
-
-  const runtime = state.lorawanInfo?.runtime;
-  const device = state.deviceInfo?.device;
-  let variant = "neutral";
-  let title = localeText("Podłącz urządzenie", "Connect a device");
-  let body = localeText(
-    "Najpierw połącz Helteca, sprawdź radio i dopiero potem przejdź do deploy, mint albo transferu.",
-    "Connect the Heltec, verify radio state, and only then move to deploy, mint, or transfer."
-  );
-
-  if (device && !state.lorawanInfo?.config?.hasJoinEui) {
-    variant = "danger";
-    title = localeText("Brakuje konfiguracji OTAA", "OTAA configuration is incomplete");
-    body = localeText(
-      "Uzupełnij JoinEUI i AppKey. Bez tego panel nie powinien pozwolić na bezpieczny mint.",
-      "Fill in JoinEUI and AppKey. Without them the panel should not allow a safe mint flow."
-    );
-  } else if (isRecentBoot()) {
-    variant = "warn";
-    title = localeText("Wykryto świeży restart płytki", "Recent board reboot detected");
-    body = localeText(
-      "Po komunikacie ESP-ROM odczekaj kilka sekund, odśwież stan i dopiero potem wysyłaj.",
-      "After an ESP-ROM reboot message, wait a few seconds, refresh state, and only then send."
-    );
-  } else if (runtime?.queuePending) {
-    variant = "warn";
-    title = localeText("W kolejce jest już uplink", "An uplink is already queued");
-    body = localeText(
-      "Poczekaj aż urządzenie potwierdzi enqueue poprzedniej wiadomości albo zakończy join.",
-      "Wait until the device confirms the previous enqueue or finishes join."
-    );
-  } else if (runtime && radioReadyForSend(runtime)) {
-    variant = "ok";
-    title = localeText("Ścieżka mintu jest gotowa", "The mint path is ready");
-    body = localeText(
-      "Radio jest joined, tożsamość urządzenia jest dostępna, a panel może wysłać podpisaną inskrypcję.",
-      "Radio is joined, the device identity is available, and the panel can send a signed inscription."
-    );
-  } else if (device) {
-    variant = "warn";
-    title = localeText("Urządzenie jest widoczne, ale radio nie jest gotowe", "The device is visible, but radio is not ready");
-    body = localeText(
-      "Panel spróbuje odświeżyć stan i wykonać join przed wysyłką, ale po resecie Helteca nadal trzeba chwilę poczekać.",
-      "The panel will try to refresh state and join before sending, but after a Heltec reboot you still need to wait briefly."
-    );
-  }
-
-  refs.overviewStatusNote.className = `callout callout--${variant}`;
-  refs.overviewStatusNote.innerHTML = `
-    <strong>${escapeHtml(title)}</strong>
-    <p>${escapeHtml(body)}</p>
-  `;
-}
-
-function renderDeviceSummary() {
-  const device = state.deviceInfo?.device;
-  if (!device) {
-    refs.deviceIdValue.textContent = "-";
-    refs.nextNonceValue.textContent = "-";
-    refs.autoMintValue.textContent = "-";
-    refs.defaultMintValue.textContent = "-";
-    refs.deviceSummaryOutput.textContent = localeText("Brak danych urządzenia.", "No device data yet.");
-    renderDeviceReadiness();
-    return;
-  }
-
-  const profileCount = Array.isArray(device.config?.profiles) ? device.config.profiles.length : 0;
-  refs.deviceIdValue.textContent = device.deviceId || "-";
-  refs.nextNonceValue.textContent = String(device.nextNonce ?? "-");
-  refs.autoMintValue.textContent = device.config.autoMintEnabled
-    ? `${localeText("Włączony", "Enabled")} / ${device.config.autoMintIntervalSeconds}s / ${profileCount} ${localeText("profil(i)", "profile(s)")}`
-    : `${localeText("Wyłączony", "Disabled")} / ${profileCount} ${localeText("profil(i) wczytanych", "profile(s) loaded")}`;
-  refs.defaultMintValue.textContent = `${device.config.defaultTick} / ${device.config.defaultMintAmount}`;
-  refs.deviceSummaryOutput.textContent = formatJson(device);
-  renderDeviceReadiness();
-}
-
-function renderLorawanSummary() {
-  const config = state.lorawanInfo?.config;
-  const runtime = state.lorawanInfo?.runtime;
-  const heltec = state.lorawanInfo?.heltec;
-
-  if (!config || !runtime) {
-    refs.lorawanJoinedValue.textContent = "-";
-    refs.lorawanPortValue.textContent = "-";
-    refs.lorawanEventValue.textContent = "-";
-    refs.lorawanDevEuiValue.textContent = "-";
-    refs.lorawanSummaryOutput.textContent = localeText("Brak danych LoRaWAN.", "No LoRaWAN status yet.");
-    renderRadioHint();
-    return;
-  }
-
-  refs.lorawanJoinedValue.textContent = runtime.joined
-    ? localeText("Tak", "Yes")
-    : runtime.joining
-      ? localeText("Dołączanie...", "Joining...")
-      : localeText("Nie", "No");
-  refs.lorawanPortValue.textContent = String(config.appPort ?? "-");
-  refs.lorawanEventValue.textContent = runtime.lastEvent || "-";
-  refs.lorawanDevEuiValue.textContent = config.devEuiHex || runtime.chipIdHex || "-";
-  refs.lorawanSummaryOutput.textContent = formatJson(sanitizeForLog({ config, runtime, heltec }));
-  renderRadioHint();
-}
-
-function renderDeviceReadiness() {
-  if (!refs.deviceReadinessBanner) {
-    return;
-  }
-
-  const device = state.deviceInfo?.device;
-  if (!device) {
-    refs.deviceReadinessBanner.className = "callout callout--neutral";
-    refs.deviceReadinessBanner.innerHTML = `
-      <strong>${escapeHtml(t("device.waitingTitle"))}</strong>
-      <p>${escapeHtml(t("device.waitingBody"))}</p>
-    `;
-    return;
-  }
-
-  const runtime = state.lorawanInfo?.runtime;
-  const variant = isRecentBoot() || (runtime && !radioReadyForSend(runtime)) ? "warn" : "ok";
-  const body = isRecentBoot()
-    ? localeText(
-        "Płytka właśnie się zresetowała. Daj jej kilka sekund, odśwież radio i dopiero wtedy wysyłaj inskrypcję.",
-        "The board has just rebooted. Give it a few seconds, refresh radio state, and only then send an inscription."
-      )
-    : runtime && !radioReadyForSend(runtime)
-      ? localeText(
-          "Tożsamość urządzenia jest gotowa, ale tor radiowy nadal wymaga join lub ponownej inicjalizacji po resecie.",
-          "The device identity is ready, but the radio path still needs join or post-reboot initialization."
-        )
-      : t("device.activeBody");
-
-  refs.deviceReadinessBanner.className = `callout callout--${variant}`;
-  refs.deviceReadinessBanner.innerHTML = `
-    <strong>${escapeHtml(t("device.activeTitle"))}</strong>
-    <p>${escapeHtml(body)}</p>
-  `;
-}
-
-function renderRadioHint() {
-  if (!refs.radioActionHint) {
-    return;
-  }
-
-  const runtime = state.lorawanInfo?.runtime;
-  const config = state.lorawanInfo?.config;
-  const heltec = state.lorawanInfo?.heltec;
-
-  let variant = "neutral";
-  let title = t("radio.waitingTitle");
-  let body = t("radio.waitingBody");
-
-  if (config && !config.hasJoinEui) {
-    variant = "danger";
-    title = localeText("Brak JoinEUI", "JoinEUI missing");
-    body = localeText("Ustaw JoinEUI i AppKey przed join lub wysyłką.", "Set JoinEUI and AppKey before join or send.");
-  } else if (heltec && !heltec.hasLicense) {
-    variant = "danger";
-    title = localeText("Brak licencji Heltec", "Heltec license missing");
-    body = localeText(
-      "Ta płytka wymaga licencji vendorowej do inicjalizacji stosu radiowego.",
-      "This board requires the vendor license before the radio stack can initialize."
-    );
-  } else if (runtime?.queuePending) {
-    variant = "warn";
-    title = localeText("Uplink oczekuje w kolejce", "Uplink waiting in queue");
-    body = localeText(
-      "Nie wysyłaj kolejnej wiadomości, dopóki poprzednia nie zostanie przyjęta albo dopóki nie skończy się join.",
-      "Do not send another message until the previous one is accepted or until join finishes."
-    );
-  } else if (runtime && (!runtime.hardwareReady || !runtime.initialized)) {
-    variant = "warn";
-    title = localeText("Radio po restarcie jeszcze się podnosi", "Radio is still coming back after reboot");
-    body = localeText(
-      "To jest normalne po resecie Helteca. Odśwież radio albo wykonaj join, aby ponownie zainicjalizować stos.",
-      "This is normal after a Heltec reboot. Refresh radio state or run join to initialize the stack again."
-    );
-  } else if (runtime?.joined) {
-    variant = "ok";
-    title = t("radio.okTitle");
-    body = t("radio.okBody");
-  } else if (runtime?.joining) {
-    variant = "warn";
-    title = localeText("Join w toku", "Join in progress");
-    body = localeText(
-      "Poczekaj na joined=true. Panel nie powinien nadawać, dopóki join się nie zakończy.",
-      "Wait for joined=true. The panel should not transmit until join completes."
-    );
-  } else if (runtime?.configured) {
-    variant = "warn";
-    title = localeText("Radio skonfigurowane, ale niejoined", "Radio configured, not joined");
-    body = localeText(
-      "To jest normalne po resecie albo świeżym starcie. Kliknij Join lub pozwól panelowi zrobić auto-join przed send.",
-      "This is normal after reset or a fresh start. Click Join or let the panel auto-join before send."
-    );
-  }
-
-  refs.radioActionHint.className = `callout callout--${variant}`;
-  refs.radioActionHint.innerHTML = `
-    <strong>${escapeHtml(title)}</strong>
-    <p>${escapeHtml(body)}</p>
-  `;
-}
-
-function renderKnownDevices() {
-  if (!refs.knownDevicesList) {
-    return;
-  }
-
-  refs.knownDevicesList.innerHTML = "";
-  if (!state.knownDevices.length) {
-    refs.knownDevicesList.innerHTML = `<article class="known-device"><strong>${escapeHtml(localeText("Brak zapisanych urządzeń.", "No saved devices yet."))}</strong></article>`;
-    return;
-  }
-
-  for (const device of state.knownDevices) {
-    const article = document.createElement("article");
-    article.className = "known-device";
-    article.innerHTML = `
-      <div class="known-device__head">
-        <div>
-          <h3 class="mono">${escapeHtml(device.deviceId)}</h3>
-          <p class="helper">${escapeHtml(device.devEuiHex || localeText("DevEUI jeszcze niepowiązane", "DevEUI pending"))}</p>
-        </div>
-        <span class="token-pill">${escapeHtml(device.defaultTick)} / ${escapeHtml(device.defaultMintAmount)}</span>
-      </div>
-      <div class="token-meta">
-        <span class="token-pill">${escapeHtml(localeText("ostatnio", "last"))} ${escapeHtml(formatClock(device.lastSeenAt))}</span>
-      </div>
-      <div class="button-row">
-        <button class="button button--ghost" type="button" data-known-device="${device.deviceId}">${escapeHtml(localeText("Użyj", "Use"))}</button>
-      </div>
-    `;
-    refs.knownDevicesList.append(article);
-  }
-}
-
-function renderPortfolio() {
-  if (!refs.portfolioList) {
-    return;
-  }
-
-  refs.portfolioList.innerHTML = "";
-  if (!state.portfolio.length) {
-    refs.portfolioList.innerHTML = `<article class="token-card"><strong>${escapeHtml(localeText("Brak zindeksowanych balansów.", "No indexed balances yet."))}</strong></article>`;
-    return;
-  }
-
-  for (const entry of state.portfolio) {
-    const token = entry.token ?? {};
-    const article = document.createElement("article");
-    article.className = "token-card";
-    article.innerHTML = `
-      <div class="token-card__head">
-        <div>
-          <h3>${escapeHtml(entry.tick)}</h3>
-          <p class="helper">${escapeHtml(entry.balance)} ${escapeHtml(localeText("jednostek", "units"))}</p>
-        </div>
-        <span class="token-pill">${escapeHtml(localeText("max mint", "max mint"))} ${escapeHtml(token.limitPerMint || "?")}</span>
-      </div>
-      <div class="token-meta">
-        <span class="token-pill">${escapeHtml(localeText("supply", "supply"))} ${escapeHtml(token.totalSupply || "0")} / ${escapeHtml(token.maxSupply || "?")}</span>
-      </div>
-      <div class="button-row">
-        <button class="button button--ghost" type="button" data-token-select="${escapeHtml(entry.tick)}">${escapeHtml(localeText("Użyj", "Use"))}</button>
-      </div>
-    `;
-    refs.portfolioList.append(article);
-  }
-}
-
-function renderRecentTransactions() {
-  if (!refs.recentTransactionsList) {
-    return;
-  }
-
-  refs.recentTransactionsList.innerHTML = "";
-  if (!state.recentTransactions.length) {
-    refs.recentTransactionsList.innerHTML = `<article class="timeline-card"><strong>${escapeHtml(localeText("Brak zindeksowanych zdarzeń.", "No indexed events yet."))}</strong></article>`;
-    return;
-  }
-
-  for (const event of state.recentTransactions.slice(0, 8)) {
-    const article = document.createElement("article");
-    article.className = "timeline-card";
-    const statusLine = event.rejectionReason
-      ? `${event.status} • ${event.rejectionReason}`
-      : event.status;
-    article.innerHTML = `
-      <div class="timeline-card__head">
-        <div>
-          <h3>${escapeHtml(event.opName || "EVENT")} ${event.tick ? `/${escapeHtml(event.tick)}` : ""}</h3>
-          <p class="helper">${escapeHtml(statusLine)}</p>
-        </div>
-        <span class="token-pill">${escapeHtml(formatClock(event.receivedAt || event.createdAt))}</span>
-      </div>
-      <div class="token-meta">
-        <span class="token-pill">${escapeHtml(localeText("nonce", "nonce"))} ${escapeHtml(String(event.nonce ?? "-"))}</span>
-        ${event.amount ? `<span class="token-pill">${escapeHtml(localeText("amount", "amount"))} ${escapeHtml(event.amount)}</span>` : ""}
-      </div>
-    `;
-    refs.recentTransactionsList.append(article);
-  }
-}
-
-function renderTokenLibrary() {
-  if (!refs.tokenLibraryList || !refs.tokenQuickPick) {
-    return;
-  }
-
-  const query = refs.tokenSearchInput?.value.trim().toUpperCase() || "";
-  const tokens = state.tokenCatalog.filter((token) => !query || token.tick.includes(query));
-
-  refs.tokenLibraryList.innerHTML = "";
-  refs.tokenQuickPick.innerHTML = `<option value="">-</option>`;
-  for (const token of state.tokenCatalog) {
-    const option = document.createElement("option");
-    option.value = token.tick;
-    option.textContent = `${token.tick} • ${localeText("limit", "limit")} ${token.limitPerMint}`;
-    refs.tokenQuickPick.append(option);
-  }
-
-  if (!tokens.length) {
-    refs.tokenLibraryList.innerHTML = `<article class="token-card"><strong>${escapeHtml(localeText("Brak wdrożonych tokenów.", "No deployed tokens found."))}</strong></article>`;
-    return;
-  }
-
-  for (const token of tokens) {
-    const article = document.createElement("article");
-    article.className = "token-card";
-    article.innerHTML = `
-      <div class="token-card__head">
-        <div>
-          <h3>${escapeHtml(token.tick)}</h3>
-          <p class="helper">${escapeHtml(token.totalSupply)} / ${escapeHtml(token.maxSupply)}</p>
-        </div>
-        <span class="token-pill">${escapeHtml(localeText("max mint", "max mint"))} ${escapeHtml(token.limitPerMint)}</span>
-      </div>
-      <div class="button-row">
-        <button class="button button--ghost" type="button" data-token-select="${escapeHtml(token.tick)}">${escapeHtml(localeText("Użyj", "Use"))}</button>
-      </div>
-    `;
-    refs.tokenLibraryList.append(article);
-  }
-}
-
-function renderOperationWarnings() {
-  if (!refs.operationWarnings || !refs.selectedTokenSummary) {
-    return;
-  }
-
-  const token = currentMintToken();
-  const mintAmount = parseBigIntOrNull(refs.mintAmountInput.value);
-  const warnings = [];
-  const deployTick = refs.deployTickInput.value.trim().toUpperCase();
-  const deployMaxSupply = parseBigIntOrNull(refs.deployMaxSupplyInput.value);
-  const deployLimitPerMint = parseBigIntOrNull(refs.deployLimitPerMintInput.value);
-  const transferTick = refs.transferTickInput.value.trim().toUpperCase();
-  const transferAmount = parseBigIntOrNull(refs.transferAmountInput.value);
-  const portfolioEntry = state.portfolio.find((entry) => entry.tick === transferTick);
-  const mintTick = refs.mintTickInput.value.trim().toUpperCase();
-  const runtime = state.lorawanInfo?.runtime;
-
-  if (token) {
-    refs.selectedTokenSummary.className = "callout callout--ok";
-    refs.selectedTokenSummary.innerHTML = `
-      <strong>${escapeHtml(token.tick)}</strong>
-      <p>${escapeHtml(token.totalSupply)} / ${escapeHtml(token.maxSupply)} ${escapeHtml(localeText("zindeksowane", "indexed"))} • ${escapeHtml(localeText("max", "max"))} ${escapeHtml(token.limitPerMint)} ${escapeHtml(localeText("na jeden mint", "per mint"))}</p>
-    `;
-
-    if (mintAmount !== null && mintAmount > BigInt(token.limitPerMint)) {
-      warnings.push({
-        level: "danger",
-        text: localeText(
-          `Mint ${mintAmount.toString()} przekracza limitPerMint ${token.limitPerMint}.`,
-          `Mint ${mintAmount.toString()} exceeds limitPerMint ${token.limitPerMint}.`
-        )
-      });
-    }
-
-    if (mintAmount !== null && BigInt(token.totalSupply) + mintAmount > BigInt(token.maxSupply)) {
-      warnings.push({
-        level: "danger",
-        text: localeText(
-          `Mint przekroczyłby maxSupply ${token.maxSupply}.`,
-          `Mint would exceed maxSupply ${token.maxSupply}.`
-        )
-      });
-    }
-  } else {
-    refs.selectedTokenSummary.className = "callout callout--neutral";
-    refs.selectedTokenSummary.innerHTML = `
-      <strong>${escapeHtml(t("operations.noTokenSelectedTitle"))}</strong>
-      <p>${escapeHtml(t("operations.noTokenSelectedBody"))}</p>
-    `;
-    if (mintTick) {
-      warnings.push({
-        level: "warn",
-        text: localeText(
-          `Token ${mintTick} nie jest jeszcze w liście wdrożonych tickerów.`,
-          `Token ${mintTick} is not in the deployed token list yet.`
-        )
-      });
-    }
-  }
-
-  if (!state.lorawanInfo?.config?.hasAppKey || !state.lorawanInfo?.config?.hasJoinEui) {
-    warnings.push({
-      level: "danger",
-      text: localeText(
-        "Konfiguracja LoRaWAN jest niepełna. Najpierw ustaw JoinEUI i AppKey.",
-        "LoRaWAN config is incomplete. Set JoinEUI and AppKey first."
-      )
-    });
-  } else if (runtime && !radioReadyForSend(runtime)) {
-    warnings.push({
-      level: "warn",
-      text: localeText(
-        "Radio nie jest jeszcze gotowe do bezpiecznej wysyłki. Panel wymusi refresh i join przed send.",
-        "Radio is not ready for a safe send yet. The panel will refresh and join before send."
-      )
-    });
-  }
-
-  if (deployTick && state.tokenCatalog.some((entry) => entry.tick === deployTick)) {
-    warnings.push({
-      level: "warn",
-      text: localeText(
-        `Deploy ${deployTick} już istnieje i indexer go odrzuci.`,
-        `Deploy ${deployTick} already exists and will be rejected by the indexer.`
-      )
-    });
-  }
-
-  if (deployMaxSupply !== null && deployLimitPerMint !== null && deployLimitPerMint > deployMaxSupply) {
-    warnings.push({
-      level: "danger",
-      text: localeText(
-        "W deploy limitPerMint jest większy niż maxSupply.",
-        "Deploy limitPerMint is greater than maxSupply."
-      )
-    });
-  }
-
-  if (portfolioEntry && transferAmount !== null && transferAmount > BigInt(portfolioEntry.balance)) {
-    warnings.push({
-      level: "danger",
-      text: localeText(
-        `Transfer ${transferAmount.toString()} przekracza zindeksowany balans ${portfolioEntry.balance} dla ${transferTick}.`,
-        `Transfer ${transferAmount.toString()} exceeds indexed balance ${portfolioEntry.balance} for ${transferTick}.`
-      )
-    });
-  }
-
-  const estimatedBytes = estimatePayloadSize("prepare_mint");
-  const estimatedDc = estimateDataCredits(estimatedBytes);
-  refs.estimatedPayloadValue.textContent = `${estimatedBytes} B`;
-  refs.estimatedDcValue.textContent = `~${estimatedDc} DC (${localeText("koszyk 24 B", "24 B bucket")})`;
-  refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
-
-  const top = warnings[0];
-  const variant = top?.level === "danger" ? "danger" : top?.level === "warn" ? "warn" : "ok";
-  const text = warnings.length
-    ? warnings.map((entry) => `• ${entry.text}`).join("\n")
-    : localeText(
-        "Nie wykryto logicznych blokad dla aktualnego szkicu mintu.",
-        "No logical blockers detected for the current mint draft."
-      );
-
-  refs.operationWarnings.className = `callout callout--${variant}`;
-  refs.operationWarnings.innerHTML = `
-    <strong>${escapeHtml(t("operations.preflightTitle"))}</strong>
-    <p>${escapeHtml(text)}</p>
-  `;
-}
-
-function renderOnboarding() {
-  if (!refs.onboardingChecklist) {
-    return;
-  }
-
-  const installGuide = "https://github.com/hattimon/lora20-firmware/blob/main/docs/install-platformio-vscode.md";
-  const flashGuide = "https://github.com/hattimon/lora20-firmware/blob/main/docs/flashing-windows.md";
-  const serialGuide = "https://github.com/hattimon/lora20-firmware/blob/main/docs/serial-api.md";
-
-  const steps = state.language === "pl"
-    ? [
-        {
-          title: "1. Przygotuj komputer hosta",
-          body: `Użyj Chrome albo Edge na HTTPS. Jeśli konfigurujesz nowe urządzenie, doinstaluj PlatformIO według <a href="${installGuide}" target="_blank" rel="noreferrer">instrukcji VS Code</a>.`
-        },
-        {
-          title: "2. Upewnij się, że COM nie jest zablokowany",
-          body: "Przed połączeniem zamknij VS Code Serial Monitor, PlatformIO Monitor, MobaXterm, PuTTY i inne aplikacje, które trzymają port COM."
-        },
-        {
-          title: "3. Wgraj firmware i podłącz Helteca",
-          body: `Jeśli to nowe urządzenie, wykonaj flash zgodnie z <a href="${flashGuide}" target="_blank" rel="noreferrer">przewodnikiem Windows</a>, potem kliknij „Połącz urządzenie”.`
-        },
-        {
-          title: "4. Odczytaj tożsamość i zrób backup",
-          body: "Wygeneruj klucz tylko raz, odczytaj public key i eksportuj zaszyfrowany backup. Nie resetuj tożsamości bez wyraźnej potrzeby."
-        },
-        {
-          title: "5. Skonfiguruj radio i join",
-          body: "Wprowadź licencję Heltec, DevEUI, JoinEUI i AppKey. Po restarcie odśwież radio, a przed pierwszym mintem upewnij się, że panel widzi joined=true."
-        },
-        {
-          title: "6. Zarejestruj urządzenie i korzystaj z tokenów",
-          body: `Powiąż DevEUI z deviceId w indexerze, sprawdź limity wdrożonego tokena, a dopiero potem wykonuj deploy, mint albo transfer. Surowe komendy opisuje <a href="${serialGuide}" target="_blank" rel="noreferrer">serial API</a>.`
-        }
-      ]
-    : [
-        {
-          title: "1. Prepare the host machine",
-          body: `Use Chrome or Edge over HTTPS. If this is a new device, install PlatformIO by following the <a href="${installGuide}" target="_blank" rel="noreferrer">VS Code guide</a>.`
-        },
-        {
-          title: "2. Make sure COM is not blocked",
-          body: "Close VS Code Serial Monitor, PlatformIO Monitor, MobaXterm, PuTTY, and any other app that may hold the COM port."
-        },
-        {
-          title: "3. Flash firmware and connect the Heltec",
-          body: `If this is a fresh board, flash it using the <a href="${flashGuide}" target="_blank" rel="noreferrer">Windows flashing guide</a>, then click “Connect device”.`
-        },
-        {
-          title: "4. Read identity and create a backup",
-          body: "Generate the key once, read the public key, and export an encrypted backup. Do not rotate the signing identity without intent."
-        },
-        {
-          title: "5. Configure radio and join",
-          body: "Enter the Heltec license, DevEUI, JoinEUI, and AppKey. After any reboot, refresh radio state and confirm joined=true before the first mint."
-        },
-        {
-          title: "6. Register the device and use tokens",
-          body: `Link DevEUI to deviceId in the indexer, review deployed token limits, and only then use deploy, mint, or transfer. Raw commands are documented in the <a href="${serialGuide}" target="_blank" rel="noreferrer">serial API</a>.`
-        }
-      ];
-
-  refs.onboardingChecklist.innerHTML = steps
-    .map(
-      (step) => `
-        <article class="guide-card">
-          <strong>${escapeHtml(step.title)}</strong>
-          <p class="helper">${step.body}</p>
-        </article>
-      `
-    )
-    .join("");
-}
-
-function renderEducation() {
-  if (!refs.educationContent) {
-    return;
-  }
-
-  refs.educationContent.innerHTML = state.language === "pl"
-    ? `
-      <p><strong>Podpis i anti-replay.</strong> Każda inskrypcja ma podpis Ed25519 i nonce. Indexer weryfikuje podpis, a następnie odrzuca replay albo nonce starszy od ostatnio zaakceptowanego.</p>
-      <p><strong>Co naprawdę jest gwarantowane.</strong> Jeśli payload dotrze do indexera i przejdzie weryfikację, wiadomość pochodzi od zarejestrowanego urządzenia i nie została podrobiona ani powtórzona. Sam protokół LoRaWAN nie gwarantuje, że każda transmisja radiowa zawsze dotrze do bramki.</p>
-      <p><strong>Skąd bierze się koszt DC.</strong> W panelu pokazuję heurystykę <code>ceil(payloadBytes / 24)</code>. Mint v1 ma zwykle około 81 B, więc planowo wychodzi około 4 DC. Krótszy payload 24 B to około 1 DC, a 51 B to około 3 DC.</p>
-      <ul>
-        <li>Deploy wykonuje się raz na token i duplikat jest logicznie błędny.</li>
-        <li>Mint jest ograniczony przez <code>limitPerMint</code> i <code>maxSupply</code>.</li>
-        <li>Transfer wymaga zindeksowanego balansu po stronie nadawcy.</li>
-        <li>Jeśli radio jest po resecie, panel powinien najpierw odświeżyć stan i wykonać join.</li>
-        <li>Pełne „skompresowanie” v1 jest ograniczone przez 64-bajtowy podpis Ed25519. Większe oszczędności wymagają nowego protokołu v2.</li>
-      </ul>
-    `
-    : `
-      <p><strong>Signature and anti-replay.</strong> Every inscription carries an Ed25519 signature and a nonce. The indexer verifies the signature and rejects replays or stale nonces.</p>
-      <p><strong>What is actually guaranteed.</strong> If the payload reaches the indexer and validates, it came from the registered device identity and was not forged or replayed. LoRaWAN itself does not guarantee that every radio transmission will always reach a gateway.</p>
-      <p><strong>Where DC cost comes from.</strong> The panel shows the heuristic <code>ceil(payloadBytes / 24)</code>. A v1 mint is usually around 81 B, so the planning estimate is about 4 DC. A 24 B payload is about 1 DC, and 51 B is about 3 DC.</p>
-      <ul>
-        <li>Deploy is a one-time action per token and duplicates are logically invalid.</li>
-        <li>Mint is limited by <code>limitPerMint</code> and <code>maxSupply</code>.</li>
-        <li>Transfer requires indexed sender balance.</li>
-        <li>If the radio has just rebooted, the panel should refresh state and join before sending.</li>
-        <li>True compression of v1 is limited by the 64-byte Ed25519 signature. Bigger savings need a protocol v2 redesign.</li>
-      </ul>
-    `;
-}
-
-window.addEventListener("error", (event) => {
-  appendLog("error", event.message);
-});
-
-window.addEventListener("unhandledrejection", (event) => {
-  appendLog("error", event.reason?.message || "Unhandled promise rejection.");
-});
-
-function t(path, locale = state.language || DEFAULT_LANGUAGE) {
-  const segments = path.split(".");
-
-  function read(source) {
-    let cursor = source;
-    for (const segment of segments) {
-      cursor = cursor?.[segment];
-    }
-    return typeof cursor === "string" ? cursor : null;
-  }
-
-  return read(CONTENT[locale] ?? CONTENT[DEFAULT_LANGUAGE]) ?? read(extraContent(locale)) ?? path;
-}
-
-function extraContent(locale) {
-  if (locale === "pl") {
-    return {
-      settings: {
-        sound: "Dzwieki"
-      },
-      overview: {
-        lastSend: "Ostatnia wysylka"
+      if (!state.disconnecting) addLog("error", `Serial read failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      try {
+        state.reader?.releaseLock();
+      } catch (_error) {
+        // ignore
       }
-    };
-  }
-
-  return {
-    settings: {
-      sound: "Sound"
-    },
-    overview: {
-      lastSend: "Last send"
+      state.reader = null;
+      if (!state.disconnecting) {
+        cleanupPortState();
+        addLog("device", "Serial port disconnected.");
+      }
+      renderAll();
     }
-  };
-}
-
-function ensureEnhancedRefs() {
-  Object.assign(refs, {
-    soundEnabledInput: refs.soundEnabledInput || document.getElementById("soundEnabledInput"),
-    indexerBadge: refs.indexerBadge || document.getElementById("indexerBadge"),
-    radioBadge: refs.radioBadge || document.getElementById("radioBadge"),
-    overviewLastSendValue: refs.overviewLastSendValue || document.getElementById("overviewLastSendValue"),
-    transportStatusNote: refs.transportStatusNote || document.getElementById("transportStatusNote"),
-    profilesPersistenceNote: refs.profilesPersistenceNote || document.getElementById("profilesPersistenceNote")
-  });
-}
-
-function ensureEnhancedState() {
-  if (typeof state.soundEnabled !== "boolean") {
-    state.soundEnabled = readStoredBoolean("lora20.dashboard.soundEnabled", true);
-  }
-  if (!("lastSuccessfulSendAt" in state)) {
-    state.lastSuccessfulSendAt = localStorage.getItem("lora20.dashboard.lastSuccessfulSendAt") || "";
-  }
-  if (!state.indexerStatus) {
-    state.indexerStatus = {
-      online: null,
-      message: localeText("Indexer nie byl jeszcze sprawdzony.", "Indexer has not been checked yet."),
-      checkedAt: 0
-    };
-  }
-  if (!("chromeEnhancementsBound" in state)) {
-    state.chromeEnhancementsBound = false;
-  }
-  if (!("healthProbeTimer" in state)) {
-    state.healthProbeTimer = null;
-  }
-  if (!("audioContext" in state)) {
-    state.audioContext = null;
-  }
-}
-
-function readStoredBoolean(key, fallback) {
-  const raw = localStorage.getItem(key);
-  if (raw === null) {
-    return fallback;
-  }
-  return raw === "1" || raw === "true";
-}
-
-function persistSoundPreference() {
-  localStorage.setItem("lora20.dashboard.soundEnabled", state.soundEnabled ? "1" : "0");
-}
-
-function rememberLastSuccessfulSend(timestamp = new Date().toISOString()) {
-  state.lastSuccessfulSendAt = timestamp;
-  localStorage.setItem("lora20.dashboard.lastSuccessfulSendAt", timestamp);
-}
-
-function formatDateTimeLabel(value) {
-  if (!value) {
-    return "-";
   }
 
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "-";
+  function cleanupPortState() {
+    state.port = null;
+    state.reader = null;
+    state.disconnecting = false;
   }
 
-  return date.toLocaleString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    day: "2-digit",
-    month: "2-digit"
-  });
-}
-
-function formatRelativeCountdown(targetDate) {
-  if (!(targetDate instanceof Date) || Number.isNaN(targetDate.getTime())) {
-    return localeText("teraz", "now");
+  async function requestDevice(command, params, timeout) {
+    const payload = { id: `req-${state.requestId++}`, command, params: params || {} };
+    const response = await sendDevicePayload(payload, timeout || TIMEOUTS[command] || TIMEOUTS.default, command);
+    if (response.ok === false) {
+      const error = new Error(response.error?.message || `Command ${command} failed`);
+      error.code = response.error?.code || "device_command_failed";
+      throw error;
+    }
+    return response.result || {};
   }
 
-  const diff = targetDate.getTime() - Date.now();
-  if (diff <= 0) {
-    return localeText("teraz", "now");
+  async function sendDevicePayload(payload, timeout, label) {
+    if (!state.port?.writable) throw new Error("Urządzenie nie jest podłączone.");
+    const writer = state.port.writable.getWriter();
+    const encoder = new TextEncoder();
+    const serialized = JSON.stringify(payload);
+    addLog("tx", label || payload.command || payload.method || "raw", payload);
+
+    const responsePromise = new Promise((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        state.pending.delete(payload.id);
+        reject(new Error(`Timeout waiting for ${label || payload.command || "response"}`));
+      }, timeout || TIMEOUTS.default);
+      state.pending.set(payload.id, { resolve, reject, timer, label: label || payload.command || payload.method || "raw" });
+    });
+
+    try {
+      await writer.write(encoder.encode(`${serialized}\n`));
+    } finally {
+      writer.releaseLock();
+    }
+
+    return responsePromise;
   }
 
-  const totalSeconds = Math.ceil(diff / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  if (minutes > 0) {
-    return localeText(`za ${minutes} min ${seconds}s`, `in ${minutes}m ${seconds}s`);
-  }
-  return localeText(`za ${seconds}s`, `in ${seconds}s`);
-}
-
-function computeSuggestedNextSend() {
-  if (!state.lastSuccessfulSendAt) {
-    return null;
-  }
-
-  const last = new Date(state.lastSuccessfulSendAt);
-  if (Number.isNaN(last.getTime())) {
-    return null;
-  }
-
-  const queueProfiles = getQueueProfiles();
-  if (state.scheduler?.enabled && queueProfiles.length) {
-    return {
-      mode: "loop",
-      at: new Date(last.getTime() + state.scheduler.intervalMinutes * 60_000)
-    };
-  }
-
-  return {
-    mode: "manual",
-    at: new Date(last.getTime() + 45_000)
-  };
-}
-
-function renderBadge(element, label, variant = "idle") {
-  if (!element) {
-    return;
-  }
-  element.textContent = label;
-  element.className = "badge";
-  element.classList.add(`badge--${variant}`);
-}
-
-function updateConnectionBadge(label, variant = "idle") {
-  ensureEnhancedRefs();
-  const mappedVariant = variant === "connected" ? "ok" : variant;
-  renderBadge(refs.connectionBadge, label, mappedVariant);
-}
-
-function updateIndexerStatus(online, message) {
-  ensureEnhancedState();
-  state.indexerStatus = {
-    online,
-    message,
-    checkedAt: Date.now()
-  };
-  renderIndexerBadge();
-}
-
-function renderIndexerBadge() {
-  ensureEnhancedRefs();
-  ensureEnhancedState();
-
-  let label = localeText("Indexer: probing", "Indexer: probing");
-  let variant = "warn";
-
-  if (state.indexerStatus?.online === true) {
-    label = localeText("Indexer: online", "Indexer: online");
-    variant = "ok";
-  } else if (state.indexerStatus?.online === false) {
-    label = localeText("Indexer: offline", "Indexer: offline");
-    variant = "danger";
-  }
-
-  renderBadge(refs.indexerBadge, label, variant);
-}
-
-function renderRadioBadge() {
-  ensureEnhancedRefs();
-  const runtime = state.lorawanInfo?.runtime;
-  const config = state.lorawanInfo?.config;
-
-  let label = localeText("LoRa: idle", "LoRa: idle");
-  let variant = "warn";
-
-  if (!runtime && !config) {
-    renderBadge(refs.radioBadge, label, variant);
-    return;
-  }
-
-  if (runtime?.queuePending) {
-    label = localeText("LoRa: queued", "LoRa: queued");
-    variant = "warn";
-  } else if (runtime?.joined) {
-    label = localeText("LoRa: ready", "LoRa: ready");
-    variant = "ok";
-  } else if (runtime?.joining) {
-    label = localeText("LoRa: joining", "LoRa: joining");
-    variant = "warn";
-  } else if (runtime && (!runtime.hardwareReady || !runtime.initialized)) {
-    label = localeText("LoRa: reboot", "LoRa: reboot");
-    variant = "danger";
-  } else if (config?.hasJoinEui && config?.hasAppKey) {
-    label = localeText("LoRa: not joined", "LoRa: not joined");
-    variant = "warn";
-  } else {
-    label = localeText("LoRa: config", "LoRa: config");
-    variant = "danger";
-  }
-
-  renderBadge(refs.radioBadge, label, variant);
-}
-
-function renderOverview() {
-  ensureEnhancedRefs();
-  ensureEnhancedState();
-  if (!refs.overviewTokensValue) {
-    return;
-  }
-
-  refs.overviewTokensValue.textContent = String(state.tokenCatalog.length);
-  refs.overviewBalancesValue.textContent = String(state.portfolio.length);
-  refs.overviewEventsValue.textContent = String(state.recentTransactions.length);
-  refs.overviewProfilesValue.textContent = String(state.profiles.filter((profile) => profile.enabled).length);
-  if (refs.overviewLastSendValue) {
-    refs.overviewLastSendValue.textContent = state.lastSuccessfulSendAt
-      ? formatDateTimeLabel(state.lastSuccessfulSendAt)
-      : "-";
-  }
-
-  const runtime = state.lorawanInfo?.runtime;
-  const device = state.deviceInfo?.device;
-  const lastSend = state.lastSuccessfulSendAt
-    ? localeText(`Ostatni uplink: ${formatDateTimeLabel(state.lastSuccessfulSendAt)}.`, `Last uplink: ${formatDateTimeLabel(state.lastSuccessfulSendAt)}.`)
-    : localeText("Brak potwierdzonego uplinku w tej przegladarce.", "No confirmed uplink recorded in this browser yet.");
-  const indexerSentence = state.indexerStatus?.online === false
-    ? localeText("Indexer jest offline albo CORS blokuje odczyt, wiec balans i historia moga byc nieaktualne.", "Indexer is offline or blocked by CORS, so balances and history may be stale.")
-    : state.indexerStatus?.online === true
-      ? localeText("Indexer odpowiada prawidlowo.", "Indexer is responding normally.")
-      : localeText("Indexer nie byl jeszcze jednoznacznie sprawdzony.", "Indexer has not been verified yet.");
-
-  let variant = "neutral";
-  let title = localeText("Podlacz Helteca", "Connect the Heltec");
-  let body = `${lastSend} ${indexerSentence}`;
-
-  if (device && !runtime?.configured) {
-    variant = "warn";
-    title = localeText("Tozsamosc gotowa, radio jeszcze nie", "Identity ready, radio still not ready");
-    body = localeText(
-      "Masz juz deviceId i klucz, ale LoRaWAN nie ma kompletnej konfiguracji. Ustaw JoinEUI, AppKey i wykonaj join. ",
-      "The device already has a key and deviceId, but LoRaWAN is not fully configured yet. Set JoinEUI, AppKey, and run join. "
-    ) + lastSend;
-  } else if (isRecentBoot()) {
-    variant = "warn";
-    title = localeText("Wykryto restart plytki", "Board reboot detected");
-    body = localeText(
-      "Po komunikacie ESP-ROM daj radiu kilka sekund, odswiez stan i dopiero potem probuj kolejnego uplinku. ",
-      "After an ESP-ROM message, give the radio a few seconds, refresh state, and only then try the next uplink. "
-    ) + lastSend;
-  } else if (runtime?.queuePending) {
-    variant = "warn";
-    title = localeText("Poprzedni uplink nadal jest w kolejce", "The previous uplink is still queued");
-    body = localeText(
-      "Heltec nie przyjmie nastepnej wysylki, dopoki poprzednia nie zostanie enqueued lub join sie nie zakonczy. ",
-      "Heltec will not accept the next send until the previous one is enqueued or join completes. "
-    ) + lastSend;
-  } else if (radioReadyForSend(runtime) && state.indexerStatus?.online !== false) {
-    variant = "ok";
-    title = localeText("Sciezka mintu jest gotowa", "The mint path is ready");
-    body = localeText(
-      "Urzadzenie ma klucz, radio jest joined, a panel widzi indexer. Mozesz przygotowac deploy, mint lub transfer. ",
-      "The device key exists, radio is joined, and the panel sees the indexer. You can prepare deploy, mint, or transfer. "
-    ) + lastSend;
-  } else if (device) {
-    variant = "warn";
-    title = localeText("Urzadzenie jest widoczne, ale nie wszystko jest gotowe", "The device is visible, but not everything is ready");
-    body = `${indexerSentence} ${lastSend}`;
-  }
-
-  refs.overviewStatusNote.className = `callout callout--${variant}`;
-  refs.overviewStatusNote.innerHTML = `
-    <strong>${escapeHtml(title)}</strong>
-    <p>${escapeHtml(body)}</p>
-  `;
-
-  renderIndexerBadge();
-  renderRadioBadge();
-}
-
-function renderLorawanSummary() {
-  const config = state.lorawanInfo?.config;
-  const runtime = state.lorawanInfo?.runtime;
-  const heltec = state.lorawanInfo?.heltec;
-
-  if (!config || !runtime) {
-    refs.lorawanJoinedValue.textContent = "-";
-    refs.lorawanPortValue.textContent = "-";
-    refs.lorawanEventValue.textContent = "-";
-    refs.lorawanDevEuiValue.textContent = "-";
-    refs.lorawanSummaryOutput.textContent = localeText("Brak danych LoRaWAN.", "No LoRaWAN status yet.");
-    renderRadioHint();
-    renderRadioBadge();
-    renderTransportStatusNote();
-    return;
-  }
-
-  refs.lorawanJoinedValue.textContent = runtime.joined
-    ? localeText("Tak", "Yes")
-    : runtime.joining
-      ? localeText("Dolaczanie...", "Joining...")
-      : localeText("Nie", "No");
-  refs.lorawanPortValue.textContent = String(config.appPort ?? "-");
-  refs.lorawanEventValue.textContent = runtime.lastEvent || "-";
-  refs.lorawanDevEuiValue.textContent = config.devEuiHex || runtime.chipIdHex || "-";
-  refs.lorawanSummaryOutput.textContent = formatJson(sanitizeForLog({ config, runtime, heltec }));
-  renderRadioHint();
-  renderRadioBadge();
-  renderTransportStatusNote();
-}
-
-function renderQueuePreview() {
-  const queueProfiles = getQueueProfiles();
-  if (!queueProfiles.length) {
-    refs.profileQueuePreview.textContent = state.language === "pl"
-      ? "Brak aktywnej kolejki. Zapisz profil i zostaw go wlaczonego w kolejce."
-      : "No active queue yet. Save a profile and leave it enabled in the queue.";
-    renderProfilesPersistenceNote();
-    return;
-  }
-
-  refs.profileQueuePreview.textContent = formatJson({
-    loopEnabled: refs.profileQueueEnabledInput.checked,
-    intervalMinutes: Number(refs.profileQueueIntervalInput.value || state.scheduler.intervalMinutes),
-    order: queueProfiles.map((profile, index) => ({
-      position: index + 1,
-      name: profile.name,
-      tick: profile.tick,
-      amount: profile.amount,
-      route: "Heltec -> LoRaWAN -> ChirpStack -> Indexer"
-    }))
-  });
-  renderProfilesPersistenceNote();
-}
-
-function renderTransportStatusNote() {
-  ensureEnhancedRefs();
-  ensureEnhancedState();
-  if (!refs.transportStatusNote) {
-    return;
-  }
-
-  const runtime = state.lorawanInfo?.runtime;
-  const nextWindow = computeSuggestedNextSend();
-  const lastWindowText = state.lastSuccessfulSendAt
-    ? localeText(
-        `Ostatni zaakceptowany uplink: ${formatDateTimeLabel(state.lastSuccessfulSendAt)}.`,
-        `Last accepted uplink: ${formatDateTimeLabel(state.lastSuccessfulSendAt)}.`
-      )
-    : localeText(
-        "Brak zapisanego zaakceptowanego uplinku w tej przegladarce.",
-        "No accepted uplink has been recorded in this browser."
-      );
-  const nextWindowText = nextWindow
-    ? nextWindow.mode === "loop"
-      ? localeText(
-          `Kolejna automatyczna proba z petli: ${formatDateTimeLabel(nextWindow.at)} (${formatRelativeCountdown(nextWindow.at)}).`,
-          `Next automatic loop attempt: ${formatDateTimeLabel(nextWindow.at)} (${formatRelativeCountdown(nextWindow.at)}).`
-        )
-      : localeText(
-          `Reczny cooldown po ostatniej wysylce konczy sie ${formatRelativeCountdown(nextWindow.at)}.`,
-          `Manual cooldown after the last send ends ${formatRelativeCountdown(nextWindow.at)}.`
-        )
-    : localeText(
-        "Po pierwszym poprawnym uplinku panel zacznie pamietac ostatni czas wysylki i zasugeruje kolejna probe.",
-        "After the first successful uplink, the panel will remember the send time and suggest the next attempt."
-      );
-
-  let variant = "neutral";
-  let title = localeText("Trasa wysylki", "Send route");
-  let body = localeText(
-    "Kazdy deploy, mint, transfer i config idzie przez Heltec, LoRaWAN, ChirpStack i dopiero potem do indexera. ",
-    "Every deploy, mint, transfer, and config flows through Heltec, LoRaWAN, ChirpStack, and only then into the indexer. "
-  );
-
-  if (state.indexerStatus?.online === false) {
-    variant = "warn";
-    title = localeText("Indexer chwilowo poza zasiegiem", "Indexer temporarily unreachable");
-    body = localeText(
-      "Wysylka radiowa moze sie udac, ale dashboard nie potwierdzi balansu ani historii, dopoki indexer znowu nie odpowie. ",
-      "The radio send may still work, but the dashboard cannot confirm balances or history until the indexer responds again. "
-    );
-  } else if (runtime?.queuePending) {
-    variant = "warn";
-    title = localeText("Radio nadal obrabia poprzednia wiadomosc", "Radio is still handling the previous message");
-    body = localeText(
-      "Poczekaj na enqueue poprzedniego uplinku albo na zakonczenie join. Kolejna proba teraz najpewniej skonczy sie timeoutem. ",
-      "Wait for the previous uplink to enqueue or for join to complete. Another attempt right now will likely time out. "
-    );
-  } else if (runtime && (!runtime.hardwareReady || !runtime.initialized || !runtime.joined)) {
-    variant = "warn";
-    title = localeText("Radio nie jest gotowe do wysylki", "Radio is not ready to send");
-    body = localeText(
-      "Po resecie albo rozlaczeniu odswiez radio i doprowadz do joined=true zanim uruchomisz nastepny mint. ",
-      "After a reboot or disconnect, refresh radio state and get back to joined=true before sending the next mint. "
-    );
-  } else if (state.lastSuccessfulSendAt) {
-    variant = "ok";
-    title = localeText("Tor wysylki jest stabilny", "The send path is stable");
-    body = localeText(
-      "Ostatni uplink zostal przyjety przez radio. Panel zapamietal ten moment i wylicza sensowne okno kolejnej proby. ",
-      "The last uplink was accepted by the radio. The panel remembered that moment and computes a reasonable next-attempt window. "
-    );
-  }
-
-  const dcHeuristic = localeText(
-    "Heurystyka DC: 24 B ~= 1 DC, 51 B ~= 3 DC, mint v1 81 B ~= 4 DC.",
-    "DC heuristic: 24 B ~= 1 DC, 51 B ~= 3 DC, a v1 mint at 81 B ~= 4 DC."
-  );
-
-  refs.transportStatusNote.className = `callout callout--${variant}`;
-  refs.transportStatusNote.innerHTML = `
-    <strong>${escapeHtml(title)}</strong>
-    <p>${escapeHtml(`${body}${lastWindowText} ${nextWindowText} ${dcHeuristic}`)}</p>
-  `;
-}
-
-function renderProfilesPersistenceNote() {
-  ensureEnhancedRefs();
-  if (!refs.profilesPersistenceNote) {
-    return;
-  }
-
-  const queueProfiles = getQueueProfiles();
-  const variant = queueProfiles.length ? "ok" : "neutral";
-  const title = queueProfiles.length
-    ? localeText("Petla moze dzialac bez panelu", "The loop can run without the panel")
-    : localeText("Biblioteka profili jest gotowa", "The profile library is ready");
-  const body = queueProfiles.length
-    ? localeText(
-        `Po Sync queue kolejka jest zapisywana w urzadzeniu. Heltec V4 moze dalej realizowac petle ${queueProfiles.length} profil(i) co ${state.scheduler.intervalMinutes} min nawet po zamknieciu panelu. Po resecie odswiez radio i sprawdz join.`,
-        `After Sync queue the queue is stored in the device. Heltec V4 can keep running the ${queueProfiles.length} profile loop every ${state.scheduler.intervalMinutes} min even after the panel is closed. After a reboot, refresh radio state and verify join.`
-      )
-    : localeText(
-        "Zapisz profile i zsynchronizuj kolejke do urzadzenia, aby pominac panel podczas przyszlych automatycznych mintow.",
-        "Save profiles and sync the queue to the device to let future automatic mints run without the panel."
-      );
-
-  refs.profilesPersistenceNote.className = `callout callout--${variant}`;
-  refs.profilesPersistenceNote.innerHTML = `
-    <strong>${escapeHtml(title)}</strong>
-    <p>${escapeHtml(body)}</p>
-  `;
-}
-
-async function prepareAndMaybeSend(label, prepareCommand, params, sendNow) {
-  enforcePreflightOrThrow(prepareCommand);
-
-  const prepared = await sendCommand(prepareCommand, params);
-  state.lastPrepared = {
-    label,
-    preparedAt: new Date().toISOString(),
-    result: prepared
-  };
-  renderPreparedOutput();
-
-  if (!sendNow) {
-    renderOperationWarnings();
-    renderTransportStatusNote();
-    return prepared;
-  }
-
-  await ensureLoRaWanReadyForSend();
-  const config = state.lorawanInfo?.config || {};
-  void playUiCue("dispatch");
-  const sendResult = await sendCommand("lorawan_send", {
-    payloadHex: prepared.payloadHex,
-    port: config.appPort || 1,
-    confirmed: Boolean(config.confirmedUplink),
-    commitNonce: true,
-    nonceToCommit: prepared.nonce
-  });
-
-  state.lastPrepared.sendResult = sendResult;
-  await waitForSendAcceptance();
-  renderPreparedOutput();
-  await refreshDeviceState();
-  return { prepared, sendResult };
-}
-
-async function waitForSendAcceptance() {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < 12_000) {
-    await delay(1500);
-    const lorawan = await sendCommand("get_lorawan");
-    state.lorawanInfo = lorawan;
-    renderLorawanSummary();
-
-    if (lorawan.runtime?.lastSendAccepted || lorawan.runtime?.lastEvent === "uplink_enqueued") {
-      rememberLastSuccessfulSend();
-      appendLog(
-        "radio",
-        localeText(
-          "Uplink zostal przyjety do kolejki radiowej urzadzenia.",
-          "Uplink was accepted by the device radio queue."
-        ),
-        sanitizeForLog(lorawan.runtime)
-      );
-      void playUiCue("accepted");
-      renderOverview();
-      renderTransportStatusNote();
+  function handleSerialLine(line) {
+    if (!line) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(line);
+    } catch (_error) {
+      addLog("serial", line);
       return;
     }
+
+    if (parsed.id && state.pending.has(parsed.id)) {
+      const pending = state.pending.get(parsed.id);
+      clearTimeout(pending.timer);
+      state.pending.delete(parsed.id);
+      if (parsed.ok === false) addLog("error", `${pending.label} failed`, parsed.error);
+      else addLog("rx", `${pending.label} ok`, parsed.result);
+      pending.resolve(parsed);
+      return;
+    }
+
+    if (parsed.type === "boot") {
+      addLog("device", "Boot event", parsed);
+      return;
+    }
+    if (parsed.ok === false) {
+      addLog("error", parsed.error?.message || "Device returned an error", parsed.error);
+      return;
+    }
+    addLog("event", "Device event", parsed);
   }
 
-  const runtime = state.lorawanInfo?.runtime || {};
-  throw new Error(
-    localeText(
-      `Urzadzenie nie potwierdzilo enqueue uplinku. lastEvent=${runtime.lastEvent || "-"}${runtime.lastError ? `, lastError=${runtime.lastError}` : ""}`,
-      `The device did not confirm uplink enqueue. lastEvent=${runtime.lastEvent || "-"}${runtime.lastError ? `, lastError=${runtime.lastError}` : ""}`
-    )
-  );
-}
-
-async function loadIndexerDashboardData({ silent = false } = {}) {
-  const results = await Promise.allSettled([
-    loadTokenCatalog(silent),
-    loadPortfolioSummary(silent),
-    loadRecentTransactionsSummary(silent)
-  ]);
-
-  if (results.every((entry) => entry.status === "rejected")) {
-    updateIndexerStatus(false, localeText("Indexer nie odpowiedzial na zestaw odczytow dashboardu.", "Indexer did not answer the dashboard reads."));
+  async function fetchJson(path, options = {}) {
+    const response = await fetch(`${state.indexerBaseUrl}${path}`, options);
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
+    if (!response.ok) throw new Error(data?.error?.message || `${response.status} ${response.statusText}`);
+    return data;
   }
 
-  renderOverview();
-  renderTransportStatusNote();
-  renderProfilesPersistenceNote();
-}
-
-async function loadTokenCatalog(logSuccess = false) {
-  const data = await indexerRequest("/tokens?limit=100");
-  state.tokenCatalog = Array.isArray(data.tokens) ? data.tokens : [];
-  refs.tokenOutput.textContent = formatJson(data);
-  renderTokenLibrary();
-  renderOperationWarnings();
-  renderOverview();
-  if (logSuccess) {
-    appendLog("indexer", "Token library refreshed", { count: state.tokenCatalog.length });
-  }
-}
-
-async function loadPortfolioSummary(logSuccess = false, explicitDeviceId = "") {
-  const deviceId = (explicitDeviceId || refs.balanceDeviceIdInput.value || state.deviceInfo?.device?.deviceId || "").trim().toLowerCase();
-  if (!deviceId) {
-    state.portfolio = [];
-    renderPortfolio();
-    renderOverview();
-    return;
+  function getCurrentDeviceId() {
+    return state.deviceInfo?.deviceId || state.publicKeyInfo?.deviceId || state.knownDevices[0]?.deviceId || "";
   }
 
-  const data = await indexerRequest(`/devices/${deviceId}/balances?limit=50`);
-  state.portfolio = Array.isArray(data.balances) ? data.balances : [];
-  refs.balanceOutput.textContent = formatJson(data);
-  renderPortfolio();
-  renderOverview();
-  renderOperationWarnings();
-  if (logSuccess) {
-    appendLog("indexer", "Portfolio refreshed", { deviceId, balances: state.portfolio.length });
-  }
-}
-
-async function loadRecentTransactionsSummary(logSuccess = false, explicitDeviceId = "") {
-  const deviceId = (explicitDeviceId || refs.transactionsDeviceIdInput.value || state.deviceInfo?.device?.deviceId || "").trim().toLowerCase();
-  const params = new URLSearchParams();
-  if (deviceId) {
-    params.set("deviceId", deviceId);
-  }
-  params.set("limit", "12");
-  const data = await indexerRequest(`/transactions?${params.toString()}`);
-  state.recentTransactions = Array.isArray(data.transactions) ? data.transactions : [];
-  refs.transactionsOutput.textContent = formatJson(data);
-  renderRecentTransactions();
-  renderOverview();
-  if (logSuccess) {
-    appendLog("indexer", "Recent transactions refreshed", { deviceId, count: state.recentTransactions.length });
-  }
-}
-
-async function loadHealth() {
-  const data = await probeIndexerHealth({ silent: false });
-  refs.healthOutput.textContent = formatJson(data || { status: "offline" });
-}
-
-async function probeIndexerHealth({ silent = true } = {}) {
-  ensureEnhancedState();
-  const baseUrl = normalizeBaseUrl(refs.indexerBaseUrlInput?.value || state.indexerBaseUrl || DEFAULT_INDEXER_BASE_URL);
-  if (!baseUrl) {
-    updateIndexerStatus(false, localeText("Brak URL indexera.", "Indexer URL is empty."));
-    return null;
+  function syncIndexerLookupFields() {
+    const deviceId = getCurrentDeviceId();
+    if (refs.balanceDeviceIdInput && !refs.balanceDeviceIdInput.value) refs.balanceDeviceIdInput.value = deviceId;
+    if (refs.transactionsDeviceIdInput && !refs.transactionsDeviceIdInput.value) refs.transactionsDeviceIdInput.value = deviceId;
+    const config = state.lorawanInfo?.config || state.deviceInfo?.lorawan;
+    if (refs.linkDevEuiInput && !refs.linkDevEuiInput.value && config?.devEuiHex) refs.linkDevEuiInput.value = config.devEuiHex;
+    if (refs.lorawanDevEuiInput && !refs.lorawanDevEuiInput.value && config?.devEuiHex) refs.lorawanDevEuiInput.value = config.devEuiHex;
+    if (refs.lorawanJoinEuiInput && !refs.lorawanJoinEuiInput.value && config?.joinEuiHex) refs.lorawanJoinEuiInput.value = config.joinEuiHex;
+    if (refs.lorawanAppPortInput && config?.appPort != null) refs.lorawanAppPortInput.value = String(config.appPort);
+    if (refs.lorawanDataRateInput && config?.defaultDataRate != null) refs.lorawanDataRateInput.value = String(config.defaultDataRate);
+    if (refs.lorawanAutoDevEuiInput) refs.lorawanAutoDevEuiInput.checked = Boolean(config?.autoDevEui);
+    if (refs.lorawanAdrInput) refs.lorawanAdrInput.checked = Boolean(config?.adr);
+    if (refs.lorawanConfirmedInput) refs.lorawanConfirmedInput.checked = Boolean(config?.confirmedUplink);
+    if (refs.configAutoMintEnabledInput) refs.configAutoMintEnabledInput.checked = Boolean(state.deviceInfo?.config?.autoMintEnabled);
+    if (refs.configAutoMintIntervalInput && state.deviceInfo?.config?.autoMintIntervalSeconds != null) refs.configAutoMintIntervalInput.value = String(state.deviceInfo.config.autoMintIntervalSeconds);
   }
 
-  try {
-    const response = await fetch(`${baseUrl}/health`, {
-      method: "GET",
-      headers: {
-        "content-type": "application/json"
+  function getDeployWarnings() {
+    const tick = normalizeTick(refs.deployTickInput?.value || "");
+    const maxSupply = safeBigInt(refs.deployMaxSupplyInput?.value || "0");
+    const limitPerMint = safeBigInt(refs.deployLimitPerMintInput?.value || "0");
+    const existing = findToken(tick);
+    const warnings = [];
+    if (!tick) warnings.push({ blocking: true, message: "Tick deploy musi być ustawiony." });
+    if (maxSupply <= 0n) warnings.push({ blocking: true, message: "maxSupply musi być większe od zera." });
+    if (limitPerMint <= 0n) warnings.push({ blocking: true, message: "limitPerMint musi być większe od zera." });
+    if (limitPerMint > maxSupply) warnings.push({ blocking: true, message: "limitPerMint nie może przekraczać maxSupply." });
+    if (existing) warnings.push({ blocking: true, message: `Ticker ${tick} jest już wdrożony. Duplikat deploy nie zostanie uznany przez indexer.` });
+    return warnings;
+  }
+
+  function getMintWarnings(tick, amountText, token) {
+    const amount = safeBigInt(amountText || "0");
+    const warnings = [];
+    if (!tick) {
+      warnings.push({ blocking: true, message: "Tick mintu jest pusty." });
+      return warnings;
+    }
+    if (amount <= 0n) warnings.push({ blocking: true, message: "Ilość mintu musi być większa od zera." });
+    if (!token) {
+      warnings.push({ blocking: true, message: `Ticker ${tick} nie jest wdrożony w indexerze. Taki mint najpewniej nie zostanie zaindeksowany.` });
+      return warnings;
+    }
+    const limit = safeBigInt(token.limitPerMint);
+    const total = safeBigInt(token.totalSupply);
+    const maxSupply = safeBigInt(token.maxSupply);
+    const remaining = maxSupply - total;
+    if (amount > limit) warnings.push({ blocking: true, message: `Mint ${amount} przekracza limitPerMint=${limit}. Indexer odrzuci taką wiadomość.` });
+    if (remaining <= 0n) warnings.push({ blocking: true, message: `Token ${tick} osiągnął już max supply. Dalszy mint nie będzie indeksowany.` });
+    else if (amount > remaining) warnings.push({ blocking: true, message: `Pozostało tylko ${remaining}. Mint ${amount} nie zmieści się w max supply.` });
+    return warnings;
+  }
+
+  function getTransferWarnings() {
+    const warnings = [];
+    const tick = normalizeTick(refs.transferTickInput?.value || "");
+    const amount = safeBigInt(refs.transferAmountInput?.value || "0");
+    const recipient = refs.transferRecipientInput?.value?.trim() || "";
+    if (!tick) warnings.push({ blocking: true, message: "Tick transferu jest pusty." });
+    if (amount <= 0n) warnings.push({ blocking: true, message: "Ilość transferu musi być większa od zera." });
+    if (!/^[0-9a-fA-F]{16}$/.test(recipient)) warnings.push({ blocking: true, message: "Recipient deviceId musi mieć dokładnie 16 znaków hex." });
+    if (!findToken(tick)) warnings.push({ blocking: true, message: `Ticker ${tick} nie istnieje w indexerze.` });
+    return warnings;
+  }
+
+  function enforceWarnings(warnings) {
+    const blocking = warnings.filter((warning) => warning.blocking);
+    if (blocking.length && !refs.allowRiskySendInput?.checked) {
+      throw new Error(blocking.map((warning) => warning.message).join(" "));
+    }
+  }
+
+  function findToken(tick) {
+    return state.tokenCatalog.find((token) => token.tick === normalizeTick(tick));
+  }
+
+  function upsertKnownDevice(entry) {
+    if (!entry?.deviceId) return;
+    const next = { deviceId: String(entry.deviceId).toLowerCase(), publicKeyHex: entry.publicKeyHex || "", updatedAt: new Date().toISOString() };
+    const index = state.knownDevices.findIndex((device) => device.deviceId === next.deviceId);
+    if (index >= 0) state.knownDevices.splice(index, 1, { ...state.knownDevices[index], ...next });
+    else state.knownDevices.unshift(next);
+    state.knownDevices = state.knownDevices.slice(0, 10);
+    saveJson(STORAGE.knownDevices, state.knownDevices);
+  }
+
+  function addLog(kind, message, payload) {
+    if (!refs.activityLog) return;
+    playSoundFor(kind);
+    const entry = document.createElement("article");
+    entry.className = "log-entry";
+    const head = document.createElement("div");
+    head.className = "log-entry__head";
+    const kindNode = document.createElement("strong");
+    kindNode.className = "log-entry__kind";
+    kindNode.textContent = kind;
+    const timeNode = document.createElement("span");
+    timeNode.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    head.appendChild(kindNode);
+    head.appendChild(timeNode);
+    entry.appendChild(head);
+    const messageNode = document.createElement("div");
+    messageNode.className = "log-entry__message";
+    messageNode.textContent = message;
+    entry.appendChild(messageNode);
+    if (payload !== undefined) {
+      const pre = document.createElement("pre");
+      pre.textContent = prettyJson(payload);
+      entry.appendChild(pre);
+    }
+    refs.activityLog.prepend(entry);
+    while (refs.activityLog.children.length > 120) {
+      refs.activityLog.removeChild(refs.activityLog.lastChild);
+    }
+  }
+
+  function playSoundFor(kind) {
+    if (!state.soundEnabled) return;
+    const presets = { error: [220, 0.18], warn: [320, 0.12], tx: [660, 0.08], rx: [560, 0.08], device: [480, 0.06], indexer: [520, 0.06] };
+    const [frequency, duration] = presets[kind] || [420, 0.05];
+    try {
+      if (!state.audioContext) state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const context = state.audioContext;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      gain.gain.value = 0.0001;
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      const now = context.currentTime;
+      gain.gain.exponentialRampToValueAtTime(0.025, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      oscillator.start(now);
+      oscillator.stop(now + duration + 0.02);
+    } catch (_error) {
+      // ignore
+    }
+  }
+
+  function setBadge(node, status, text) {
+    if (!node) return;
+    node.className = `badge badge--${status}`;
+    node.textContent = text;
+  }
+
+  function renderCallout(node, tone, text) {
+    if (!node) return;
+    node.className = `callout callout--${tone}`;
+    node.textContent = text;
+  }
+
+  function setText(node, value) {
+    if (node) node.textContent = value;
+  }
+
+  function readStorage(key, fallback) {
+    try {
+      return localStorage.getItem(key) ?? fallback;
+    } catch (_error) {
+      return fallback;
+    }
+  }
+
+  function writeStorage(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (_error) {
+      // ignore
+    }
+  }
+
+  function loadJson(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (_error) {
+      return fallback;
+    }
+  }
+
+  function saveJson(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (_error) {
+      // ignore
+    }
+  }
+
+  function normalizeUrl(value) {
+    return String(value || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeTick(value) {
+    return String(value || "").trim().toUpperCase().slice(0, 4);
+  }
+
+  function escapeHtml(value) {
+    return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+  }
+
+  function safeBigInt(value) {
+    try {
+      return BigInt(String(value || "0"));
+    } catch (_error) {
+      return 0n;
+    }
+  }
+
+  function estimateDc(bytes) {
+    return Math.max(1, Math.ceil(Number(bytes || 0) / 24));
+  }
+
+  function prettyJson(value) {
+    return JSON.stringify(redactSecrets(value), null, 2);
+  }
+
+  function redactSecrets(value) {
+    if (Array.isArray(value)) return value.map(redactSecrets);
+    if (value && typeof value === "object") {
+      const result = {};
+      for (const [key, nestedValue] of Object.entries(value)) {
+        result[key] = SECRET_KEYS.has(key) ? maskSecret(String(nestedValue || "")) : redactSecrets(nestedValue);
       }
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload?.error?.message || `health ${response.status}`);
+      return result;
     }
-    updateIndexerStatus(true, localeText("Health check OK.", "Health check OK."));
-    if (!silent) {
-      appendLog("indexer", localeText("Indexer odpowiada na /health.", "Indexer responded to /health."), sanitizeForLog(payload));
-    }
-    renderOverview();
-    return payload;
-  } catch (error) {
-    updateIndexerStatus(
-      false,
-      error instanceof Error ? error.message : String(error)
-    );
-    if (!silent) {
-      appendLog(
-        "error",
-        localeText("Nie udalo sie sprawdzic /health indexera.", "Could not check the indexer /health endpoint."),
-        error instanceof Error ? error.message : String(error)
-      );
-    }
-    renderOverview();
-    return null;
-  }
-}
-
-async function indexerRequest(path, { method = "GET", body } = {}) {
-  const baseUrl = normalizeBaseUrl(refs.indexerBaseUrlInput.value || state.indexerBaseUrl || DEFAULT_INDEXER_BASE_URL);
-  if (!baseUrl) {
-    updateIndexerStatus(false, localeText("Brak URL indexera.", "Indexer URL is empty."));
-    throw new Error("Indexer base URL is empty.");
+    return value;
   }
 
-  saveIndexerBaseUrl({ silent: true });
-
-  let response;
-  try {
-    response = await fetch(`${baseUrl}${path}`, {
-      method,
-      headers: {
-        "content-type": "application/json"
-      },
-      body: body ? JSON.stringify(body) : undefined
-    });
-  } catch (error) {
-    updateIndexerStatus(
-      false,
-      error instanceof Error ? error.message : String(error)
-    );
-    renderOverview();
-    throw new Error(
-      `${error.message}. If this dashboard runs on GitHub Pages, set CORS_ALLOWED_ORIGINS on the indexer.`
-    );
+  function maskSecret(value) {
+    const text = String(value || "");
+    if (!text) return "";
+    if (text.length <= 12) return `${text.slice(0, 2)}...${text.slice(-2)}`;
+    return `${text.slice(0, 4)}...${text.slice(-4)}`;
   }
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    updateIndexerStatus(false, payload?.error?.message || `HTTP ${response.status}`);
-    renderOverview();
-    throw new Error(payload?.error?.message || `Indexer request failed with ${response.status}`);
+  function formatDateTime(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString();
   }
 
-  updateIndexerStatus(true, localeText("Indexer online.", "Indexer online."));
-  renderOverview();
-  return payload;
-}
-
-function renderOperationWarnings() {
-  if (!refs.operationWarnings || !refs.selectedTokenSummary) {
-    return;
+  function formatLastSend(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return `${formatDateTime(value)} (${formatRelative(Date.now(), date.getTime())})`;
   }
 
-  const token = currentMintToken();
-  const mintAmount = parseBigIntOrNull(refs.mintAmountInput.value);
-  const warnings = [];
-  const deployTick = refs.deployTickInput.value.trim().toUpperCase();
-  const deployMaxSupply = parseBigIntOrNull(refs.deployMaxSupplyInput.value);
-  const deployLimitPerMint = parseBigIntOrNull(refs.deployLimitPerMintInput.value);
-  const transferTick = refs.transferTickInput.value.trim().toUpperCase();
-  const transferAmount = parseBigIntOrNull(refs.transferAmountInput.value);
-  const portfolioEntry = state.portfolio.find((entry) => entry.tick === transferTick);
-  const mintTick = refs.mintTickInput.value.trim().toUpperCase();
-  const runtime = state.lorawanInfo?.runtime;
+  function formatRelative(nowMs, thenMs) {
+    const deltaMs = Math.max(0, nowMs - thenMs);
+    const seconds = Math.round(deltaMs / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.round(minutes / 60);
+    return `${hours}h ago`;
+  }
 
-  if (token) {
-    refs.selectedTokenSummary.className = "callout callout--ok";
-    refs.selectedTokenSummary.innerHTML = `
-      <strong>${escapeHtml(token.tick)}</strong>
-      <p>${escapeHtml(token.totalSupply)} / ${escapeHtml(token.maxSupply)} ${escapeHtml(localeText("zindeksowane", "indexed"))} • ${escapeHtml(localeText("max", "max"))} ${escapeHtml(token.limitPerMint)} ${escapeHtml(localeText("na mint", "per mint"))}</p>
-    `;
+  function delay(ms) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
 
-    if (mintAmount !== null && mintAmount > BigInt(token.limitPerMint)) {
-      warnings.push({
-        level: "danger",
-        text: localeText(
-          `Mint ${mintAmount.toString()} przekracza limitPerMint ${token.limitPerMint}.`,
-          `Mint ${mintAmount.toString()} exceeds limitPerMint ${token.limitPerMint}.`
-        )
-      });
-    }
-
-    if (mintAmount !== null && BigInt(token.totalSupply) + mintAmount > BigInt(token.maxSupply)) {
-      warnings.push({
-        level: "danger",
-        text: localeText(
-          `Mint przekroczylby maxSupply ${token.maxSupply}.`,
-          `Mint would exceed maxSupply ${token.maxSupply}.`
-        )
-      });
-    }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
-    refs.selectedTokenSummary.className = "callout callout--neutral";
-    refs.selectedTokenSummary.innerHTML = `
-      <strong>${escapeHtml(t("operations.noTokenSelectedTitle"))}</strong>
-      <p>${escapeHtml(t("operations.noTokenSelectedBody"))}</p>
-    `;
-    if (mintTick) {
-      warnings.push({
-        level: "warn",
-        text: localeText(
-          `Token ${mintTick} nie jest jeszcze na liscie wdrozonych tickerow.`,
-          `Token ${mintTick} is not in the deployed token list yet.`
-        )
-      });
-    }
+    init();
   }
 
-  if (state.indexerStatus?.online === false) {
-    warnings.push({
-      level: "warn",
-      text: localeText(
-        "Indexer jest offline albo CORS blokuje odczyt. Wysylka radiowa moze przejsc, ale panel nie odswiezy balansu.",
-        "Indexer is offline or blocked by CORS. Radio send may work, but the panel will not refresh balances."
-      )
-    });
-  }
-
-  if (!state.lorawanInfo?.config?.hasAppKey || !state.lorawanInfo?.config?.hasJoinEui) {
-    warnings.push({
-      level: "danger",
-      text: localeText(
-        "Konfiguracja LoRaWAN jest niepelna. Najpierw ustaw JoinEUI i AppKey.",
-        "LoRaWAN config is incomplete. Set JoinEUI and AppKey first."
-      )
-    });
-  } else if (runtime && !radioReadyForSend(runtime)) {
-    warnings.push({
-      level: "warn",
-      text: localeText(
-        "Radio nie jest gotowe do bezpiecznej wysylki. Panel sprobuje odswiezyc stan i wykonac join przed send.",
-        "Radio is not ready for a safe send. The panel will refresh state and try to join before send."
-      )
-    });
-  }
-
-  if (deployTick && state.tokenCatalog.some((entry) => entry.tick === deployTick)) {
-    warnings.push({
-      level: "warn",
-      text: localeText(
-        `Deploy ${deployTick} juz istnieje i indexer go odrzuci.`,
-        `Deploy ${deployTick} already exists and will be rejected by the indexer.`
-      )
-    });
-  }
-
-  if (deployMaxSupply !== null && deployLimitPerMint !== null && deployLimitPerMint > deployMaxSupply) {
-    warnings.push({
-      level: "danger",
-      text: localeText(
-        "W deploy limitPerMint jest wiekszy niz maxSupply.",
-        "In deploy, limitPerMint is greater than maxSupply."
-      )
-    });
-  }
-
-  if (portfolioEntry && transferAmount !== null && transferAmount > BigInt(portfolioEntry.balance)) {
-    warnings.push({
-      level: "danger",
-      text: localeText(
-        `Transfer ${transferAmount.toString()} przekracza zindeksowany balans ${portfolioEntry.balance} dla ${transferTick}.`,
-        `Transfer ${transferAmount.toString()} exceeds indexed balance ${portfolioEntry.balance} for ${transferTick}.`
-      )
-    });
-  }
-
-  const estimatedBytes = estimatePayloadSize("prepare_mint");
-  const estimatedDc = estimateDataCredits(estimatedBytes);
-  refs.estimatedPayloadValue.textContent = `${estimatedBytes} B`;
-  refs.estimatedDcValue.textContent = `~${estimatedDc} DC (${localeText("koszyk 24 B", "24 B bucket")})`;
-  refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
-
-  const top = warnings[0];
-  const variant = top?.level === "danger" ? "danger" : top?.level === "warn" ? "warn" : "ok";
-  const text = warnings.length
-    ? warnings.map((entry) => `• ${entry.text}`).join("\n")
-    : localeText(
-        "Nie wykryto logicznych blokad dla aktualnego szkicu mintu.",
-        "No logical blockers were detected for the current mint draft."
-      );
-
-  refs.operationWarnings.className = `callout callout--${variant}`;
-  refs.operationWarnings.innerHTML = `
-    <strong>${escapeHtml(t("operations.preflightTitle"))}</strong>
-    <p>${escapeHtml(text)}</p>
-  `;
-  renderTransportStatusNote();
-}
-
-function renderOnboarding() {
-  if (!refs.onboardingChecklist) {
-    return;
-  }
-
-  const installGuide = "https://github.com/hattimon/lora20-firmware/blob/main/docs/install-platformio-vscode.md";
-  const flashGuide = "https://github.com/hattimon/lora20-firmware/blob/main/docs/flashing-windows.md";
-  const serialGuide = "https://github.com/hattimon/lora20-firmware/blob/main/docs/serial-api.md";
-
-  const steps = state.language === "pl"
-    ? [
-        {
-          title: "1. Host i sterowniki",
-          body: `Uzyj Chrome albo Edge na HTTPS. Dla nowych osob najpierw przejdz przez <a href="${installGuide}" target="_blank" rel="noreferrer">instalacje PlatformIO w VS Code</a>.`
-        },
-        {
-          title: "2. Zamknij blokery COM",
-          body: "Przed polaczeniem zamknij VS Code Serial Monitor, PlatformIO Monitor, MobaXterm, PuTTY i kazda aplikacje trzymajaca COM."
-        },
-        {
-          title: "3. Backup zanim wgrasz nowe firmware",
-          body: `Przed kazdym nowym flashowaniem zrob backup aktualnej wersji roboczej i dopiero potem korzystaj z <a href="${flashGuide}" target="_blank" rel="noreferrer">procedury flashowania Windows</a>.`
-        },
-        {
-          title: "4. Tozsamosc i backup kryptograficzny",
-          body: "Wygeneruj klucz tylko raz, odczytaj public key, wyeksportuj zaszyfrowany backup i nie rotuj tozsamosci bez potrzeby."
-        },
-        {
-          title: "5. LoRaWAN i join",
-          body: "Zapisz licencje Heltec, DevEUI, JoinEUI i AppKey. Po restarcie odswiez radio, sprawdz joined=true i dopiero potem wysylaj."
-        },
-        {
-          title: "6. Rejestracja i tokeny",
-          body: `Powiaz DevEUI z deviceId w indexerze, sprawdz limity wdrozonego tokena i dopiero wtedy wykonuj deploy, mint lub transfer. Surowe komendy opisuje <a href="${serialGuide}" target="_blank" rel="noreferrer">serial API</a>.`
-        }
-      ]
-    : [
-        {
-          title: "1. Host and drivers",
-          body: `Use Chrome or Edge over HTTPS. For new operators, start with the <a href="${installGuide}" target="_blank" rel="noreferrer">PlatformIO in VS Code guide</a>.`
-        },
-        {
-          title: "2. Close COM blockers",
-          body: "Before connecting, close VS Code Serial Monitor, PlatformIO Monitor, MobaXterm, PuTTY, and any app that may hold the COM port."
-        },
-        {
-          title: "3. Backup before flashing new firmware",
-          body: `Before any new flash, make a backup of the current working firmware and only then use the <a href="${flashGuide}" target="_blank" rel="noreferrer">Windows flashing procedure</a>.`
-        },
-        {
-          title: "4. Identity and encrypted backup",
-          body: "Generate the key once, read the public key, export an encrypted backup, and do not rotate the signing identity unless you intend to reset it."
-        },
-        {
-          title: "5. LoRaWAN and join",
-          body: "Store the Heltec license, DevEUI, JoinEUI, and AppKey. After reboot, refresh radio state, confirm joined=true, and only then send."
-        },
-        {
-          title: "6. Registration and token actions",
-          body: `Link DevEUI to deviceId in the indexer, review token limits, and only then use deploy, mint, or transfer. Raw commands are documented in the <a href="${serialGuide}" target="_blank" rel="noreferrer">serial API</a>.`
-        }
-      ];
-
-  refs.onboardingChecklist.innerHTML = steps
-    .map(
-      (step) => `
-        <article class="guide-card">
-          <strong>${escapeHtml(step.title)}</strong>
-          <p class="helper">${step.body}</p>
-        </article>
-      `
-    )
-    .join("");
-}
-
-function renderEducation() {
-  if (!refs.educationContent) {
-    return;
-  }
-
-  refs.educationContent.innerHTML = state.language === "pl"
-    ? `
-      <p><strong>Podpis i anti-replay.</strong> Kazda inskrypcja ma podpis Ed25519 i nonce. Indexer weryfikuje podpis, odrzuca replaye i starsze nonce.</p>
-      <p><strong>Co faktycznie jest gwarantowane.</strong> Jesli payload dotrze do indexera i przejdzie walidacje, wiadomosc pochodzi od zarejestrowanego urzadzenia i nie zostala podrobiona. Sam LoRaWAN nie gwarantuje, ze kazdy uplink zawsze dojdzie.</p>
-      <p><strong>Jak unikac duplikatow i bledow logicznych.</strong> Deploy robi sie raz na ticker. Mint jest ograniczony przez limitPerMint i maxSupply. Transfer wymaga zindeksowanego balansu nadawcy. Panel ostrzega przed tymi bledami, ale pozwala na swiadome obejscie.</p>
-      <p><strong>Koszt transmisji.</strong> Panel pokazuje heurystyke ceil(payloadBytes / 24). W praktyce 24 B to okolo 1 DC, 51 B to okolo 3 DC, a mint v1 o rozmiarze 81 B to okolo 4 DC.</p>
-      <p><strong>Kompresja.</strong> W v1 najwiekszy koszt daje 64-bajtowy podpis Ed25519. Prawdziwe dalsze odchudzenie wiadomosci wymaga nowego protocol v2 z krotszym kodowaniem pol i aliasami.</p>
-    `
-    : `
-      <p><strong>Signature and anti-replay.</strong> Every inscription carries an Ed25519 signature and a nonce. The indexer verifies the signature and rejects replays and stale nonces.</p>
-      <p><strong>What is actually guaranteed.</strong> If the payload reaches the indexer and validates, the message came from the registered device and was not forged. LoRaWAN itself does not guarantee that every uplink will always arrive.</p>
-      <p><strong>How to avoid duplicates and logical errors.</strong> Deploy is a one-time action per ticker. Mint is bounded by limitPerMint and maxSupply. Transfer requires indexed sender balance. The panel warns about these problems but still allows an expert override.</p>
-      <p><strong>Transmission cost.</strong> The panel shows the heuristic ceil(payloadBytes / 24). In practice 24 B is about 1 DC, 51 B is about 3 DC, and an 81 B v1 mint is about 4 DC.</p>
-      <p><strong>Compression.</strong> In v1 the biggest cost is the 64-byte Ed25519 signature. Real further savings require a protocol v2 with shorter field encoding and aliases.</p>
-    `;
-}
-
-function renderAll() {
-  ensureEnhancedRefs();
-  ensureEnhancedState();
-  applyTheme(state.theme);
-  applyLanguage(state.language);
-  if (refs.languageSelect) {
-    refs.languageSelect.value = state.language;
-  }
-  if (refs.themeSelect) {
-    refs.themeSelect.value = state.theme;
-  }
-  if (refs.indexerBaseUrlInput) {
-    refs.indexerBaseUrlInput.value = state.indexerBaseUrl || DEFAULT_INDEXER_BASE_URL;
-  }
-  if (refs.serialSupportNotice) {
-    refs.serialSupportNotice.textContent = ("serial" in navigator)
-      ? t("misc.browserHint")
-      : t("misc.browserUnsupported");
-  }
-  renderOverview();
-  renderDeviceReadiness();
-  renderKnownDevices();
-  renderProfiles();
-  renderQueuePreview();
-  renderPreparedOutput();
-  renderDeviceSummary();
-  renderLorawanSummary();
-  renderPortfolio();
-  renderRecentTransactions();
-  renderTokenLibrary();
-  renderOperationWarnings();
-  renderOnboarding();
-  renderEducation();
-  renderTransportStatusNote();
-  renderProfilesPersistenceNote();
-  renderIndexerBadge();
-  renderRadioBadge();
-  if (refs.soundEnabledInput) {
-    refs.soundEnabledInput.checked = state.soundEnabled;
-  }
-}
-
-function appendLog(kind, message, detail = null) {
-  const entry = document.createElement("article");
-  entry.className = "log-entry";
-
-  const head = document.createElement("div");
-  head.className = "log-entry__head";
-  head.innerHTML = `
-    <span class="log-entry__kind">${escapeHtml(kind)}</span>
-    <span class="mono">${new Date().toLocaleTimeString()}</span>
-  `;
-
-  const body = document.createElement("div");
-  body.className = "log-entry__message";
-  body.textContent = message;
-
-  entry.append(head, body);
-
-  if (detail !== null && detail !== undefined && detail !== "") {
-    const pre = document.createElement("pre");
-    pre.textContent = typeof detail === "string" ? detail : formatJson(detail);
-    entry.append(pre);
-  }
-
-  refs.activityLog.prepend(entry);
-  while (refs.activityLog.children.length > 40) {
-    refs.activityLog.lastElementChild?.remove();
-  }
-
-  maybePlayLogCue(kind, message);
-}
-
-function maybePlayLogCue(kind, message) {
-  const normalized = `${kind} ${message}`.toLowerCase();
-  if (kind === "error") {
-    void playUiCue("error");
-    return;
-  }
-  if (normalized.includes("serial port connected")) {
-    void playUiCue("connect");
-    return;
-  }
-  if (normalized.includes("serial port disconnected")) {
-    void playUiCue("disconnect");
-    return;
-  }
-  if (kind === "profile" && normalized.includes("synced")) {
-    void playUiCue("sync");
-  }
-}
-
-async function ensureAudioContext() {
-  ensureEnhancedState();
-  if (!state.audioContext) {
-    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextCtor) {
-      return null;
-    }
-    state.audioContext = new AudioContextCtor();
-  }
-  if (state.audioContext.state === "suspended") {
-    await state.audioContext.resume();
-  }
-  return state.audioContext;
-}
-
-async function playUiCue(name) {
-  ensureEnhancedState();
-  if (!state.soundEnabled) {
-    return;
-  }
-
-  const ctx = await ensureAudioContext();
-  if (!ctx) {
-    return;
-  }
-
-  const now = ctx.currentTime;
-  const patterns = {
-    dispatch: [
-      { f: 620, at: 0, len: 0.08, gain: 0.04, type: "triangle" },
-      { f: 880, at: 0.06, len: 0.12, gain: 0.03, type: "sine" }
-    ],
-    accepted: [
-      { f: 740, at: 0, len: 0.12, gain: 0.04, type: "sine" },
-      { f: 987, at: 0.1, len: 0.18, gain: 0.035, type: "sine" },
-      { f: 1318, at: 0.19, len: 0.22, gain: 0.025, type: "triangle" }
-    ],
-    connect: [
-      { f: 660, at: 0, len: 0.08, gain: 0.03, type: "triangle" },
-      { f: 990, at: 0.08, len: 0.12, gain: 0.024, type: "sine" }
-    ],
-    disconnect: [
-      { f: 560, at: 0, len: 0.08, gain: 0.025, type: "sine" },
-      { f: 390, at: 0.08, len: 0.14, gain: 0.02, type: "triangle" }
-    ],
-    error: [
-      { f: 240, at: 0, len: 0.12, gain: 0.035, type: "sawtooth" },
-      { f: 160, at: 0.08, len: 0.18, gain: 0.028, type: "triangle" }
-    ],
-    sync: [
-      { f: 520, at: 0, len: 0.07, gain: 0.02, type: "triangle" },
-      { f: 780, at: 0.06, len: 0.1, gain: 0.018, type: "sine" }
-    ]
-  };
-
-  for (const note of patterns[name] || []) {
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.type = note.type;
-    oscillator.frequency.setValueAtTime(note.f, now + note.at);
-    gain.gain.setValueAtTime(0.0001, now + note.at);
-    gain.gain.exponentialRampToValueAtTime(note.gain, now + note.at + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + note.at + note.len);
-    oscillator.connect(gain).connect(ctx.destination);
-    oscillator.start(now + note.at);
-    oscillator.stop(now + note.at + note.len + 0.03);
-  }
-}
-
-function postInitDashboardChrome() {
-  ensureEnhancedRefs();
-  ensureEnhancedState();
-
-  if (!state.chromeEnhancementsBound) {
-    refs.soundEnabledInput?.addEventListener("change", () => {
-      state.soundEnabled = Boolean(refs.soundEnabledInput.checked);
-      persistSoundPreference();
-      appendLog("ui", state.soundEnabled ? localeText("Dzwieki wlaczone.", "Sound enabled.") : localeText("Dzwieki wylaczone.", "Sound muted."));
-    });
-    state.chromeEnhancementsBound = true;
-  }
-
-  if (refs.soundEnabledInput) {
-    refs.soundEnabledInput.checked = state.soundEnabled;
-  }
-
-  renderIndexerBadge();
-  renderRadioBadge();
-  renderTransportStatusNote();
-  renderProfilesPersistenceNote();
-
-  if (!state.healthProbeTimer) {
-    state.healthProbeTimer = window.setInterval(() => {
-      void probeIndexerHealth({ silent: true });
-    }, 45_000);
-  }
-
-  if (!state.indexerStatus?.checkedAt) {
-    void probeIndexerHealth({ silent: true });
-  }
-}
-
-postInitDashboardChrome();
+})();
