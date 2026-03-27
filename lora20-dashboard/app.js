@@ -1,19 +1,24 @@
 const STORAGE_KEYS = {
   indexerBaseUrl: "lora20.dashboard.indexerBaseUrl",
-  profiles: "lora20.dashboard.profiles"
+  profiles: "lora20.dashboard.profiles",
+  scheduler: "lora20.dashboard.scheduler"
 };
 
 const DEFAULT_INDEXER_BASE_URL = "https://lora20.hattimon.pl";
 const DEFAULT_PROFILES = [
   {
-    id: "seed-lora-30",
-    name: "LORA / 100 / 30 min",
+    id: "seed-lora-100",
+    name: "LORA / 100",
     tick: "LORA",
     amount: "100",
     intervalMinutes: 30,
     enabled: true
   }
 ];
+const DEFAULT_SCHEDULER = {
+  enabled: true,
+  intervalMinutes: 30
+};
 
 const SENSITIVE_KEYS = new Set([
   "appKeyHex",
@@ -93,6 +98,12 @@ const refs = {
   profileEnabledInput: document.getElementById("profileEnabledInput"),
   saveProfileButton: document.getElementById("saveProfileButton"),
   clearProfileButton: document.getElementById("clearProfileButton"),
+  profileQueueEnabledInput: document.getElementById("profileQueueEnabledInput"),
+  profileQueueIntervalInput: document.getElementById("profileQueueIntervalInput"),
+  syncProfilesButton: document.getElementById("syncProfilesButton"),
+  syncProfilesBroadcastButton: document.getElementById("syncProfilesBroadcastButton"),
+  stopProfilesButton: document.getElementById("stopProfilesButton"),
+  profileQueuePreview: document.getElementById("profileQueuePreview"),
   profileList: document.getElementById("profileList"),
   healthButton: document.getElementById("healthButton"),
   healthOutput: document.getElementById("healthOutput"),
@@ -126,6 +137,7 @@ const state = {
   lorawanInfo: null,
   lastPrepared: null,
   profiles: loadProfiles(),
+  scheduler: loadScheduler(),
   editingProfileId: null,
   indexerBaseUrl: loadIndexerBaseUrl(),
   formsHydrated: false,
@@ -136,14 +148,19 @@ init();
 
 function init() {
   refs.indexerBaseUrlInput.value = state.indexerBaseUrl;
+  refs.profileQueueEnabledInput.checked = state.scheduler.enabled;
+  refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes);
   refs.serialSupportNotice.textContent = "Web Serial dziala w Chrome lub Edge z HTTPS lub localhost.";
   refs.disconnectButton.disabled = true;
 
+  syncConfigFormFromScheduler();
   bindEvents();
   renderProfiles();
+  renderQueuePreview();
   renderPreparedOutput();
   renderDeviceSummary();
   renderLorawanSummary();
+  clearProfileEditor();
 
   if (!("serial" in navigator)) {
     refs.serialSupportNotice.textContent =
@@ -191,7 +208,15 @@ function bindEvents() {
   refs.configSendButton.addEventListener("click", wrapUi(() => handleConfigInscription(true)));
   refs.saveProfileButton.addEventListener("click", wrapUi(saveProfileFromEditor));
   refs.clearProfileButton.addEventListener("click", clearProfileEditor);
+  refs.syncProfilesButton.addEventListener("click", wrapUi(() => syncProfilesToDevice({ broadcastConfig: false })));
+  refs.syncProfilesBroadcastButton.addEventListener(
+    "click",
+    wrapUi(() => syncProfilesToDevice({ broadcastConfig: true }))
+  );
+  refs.stopProfilesButton.addEventListener("click", wrapUi(stopProfileLoop));
   refs.profileList.addEventListener("click", wrapUi(handleProfileAction));
+  refs.profileQueueEnabledInput.addEventListener("change", handleSchedulerInputChange);
+  refs.profileQueueIntervalInput.addEventListener("input", handleSchedulerInputChange);
   refs.healthButton.addEventListener("click", wrapUi(loadHealth));
   refs.tokenLookupButton.addEventListener("click", wrapUi(loadToken));
   refs.balanceLookupButton.addEventListener("click", wrapUi(loadBalance));
@@ -233,18 +258,58 @@ function saveIndexerBaseUrl({ silent = false } = {}) {
 function loadProfiles() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.profiles);
-    if (!raw) {
-      return [...DEFAULT_PROFILES];
+    const parsed = raw ? JSON.parse(raw) : DEFAULT_PROFILES;
+    if (!Array.isArray(parsed) || !parsed.length) {
+      return DEFAULT_PROFILES.map((profile, index) => normalizeProfile(profile, index));
     }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length ? parsed : [...DEFAULT_PROFILES];
+    return parsed.map((profile, index) => normalizeProfile(profile, index));
   } catch {
-    return [...DEFAULT_PROFILES];
+    return DEFAULT_PROFILES.map((profile, index) => normalizeProfile(profile, index));
+  }
+}
+
+function loadScheduler() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.scheduler);
+    const parsed = raw ? JSON.parse(raw) : DEFAULT_SCHEDULER;
+    return normalizeScheduler(parsed);
+  } catch {
+    return { ...DEFAULT_SCHEDULER };
   }
 }
 
 function persistProfiles() {
   localStorage.setItem(STORAGE_KEYS.profiles, JSON.stringify(state.profiles));
+}
+
+function persistScheduler() {
+  localStorage.setItem(STORAGE_KEYS.scheduler, JSON.stringify(state.scheduler));
+}
+
+function normalizeScheduler(input) {
+  const intervalMinutes = Number(input?.intervalMinutes);
+  return {
+    enabled: input?.enabled !== false,
+    intervalMinutes: Number.isFinite(intervalMinutes) && intervalMinutes > 0 ? intervalMinutes : 30
+  };
+}
+
+function normalizeProfile(input, index = 0) {
+  const tick = String(input?.tick || "LORA").trim().toUpperCase().slice(0, 4) || "LORA";
+  const amount = String(input?.amount || "100").trim() || "100";
+  const intervalMinutes = Number(input?.intervalMinutes);
+  return {
+    id: input?.id || `profile-${Date.now()}-${index}`,
+    name: String(input?.name || `${tick} / ${amount}`).trim() || `${tick} / ${amount}`,
+    tick,
+    amount,
+    intervalMinutes: Number.isFinite(intervalMinutes) && intervalMinutes > 0 ? intervalMinutes : 30,
+    enabled: input?.enabled !== false
+  };
+}
+
+function profileFingerprint(profile) {
+  return `${profile.tick}:${profile.amount}`;
 }
 
 function normalizeBaseUrl(value) {
@@ -455,6 +520,8 @@ async function refreshDeviceState() {
   state.formsHydrated = true;
   renderDeviceSummary();
   renderLorawanSummary();
+  renderProfiles();
+  renderQueuePreview();
 }
 
 function hydrateFromDevice(force = false) {
@@ -463,19 +530,30 @@ function hydrateFromDevice(force = false) {
     return;
   }
 
+  const autoMintIntervalSeconds = device.config?.autoMintIntervalSeconds || 1800;
+  const queueIntervalMinutes = Math.max(1, Math.round(autoMintIntervalSeconds / 60));
+
   if (force) {
-    refs.configAutoMintEnabledInput.checked = Boolean(device.config?.autoMintEnabled);
-    refs.configAutoMintIntervalInput.value = String(device.config?.autoMintIntervalSeconds || 1800);
+    state.scheduler = {
+      enabled: Boolean(device.config?.autoMintEnabled),
+      intervalMinutes: queueIntervalMinutes
+    };
+    persistScheduler();
+    refs.profileQueueEnabledInput.checked = state.scheduler.enabled;
+    refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes);
+    syncConfigFormFromScheduler();
+
     refs.mintTickInput.value = device.config?.defaultTick || refs.mintTickInput.value;
     refs.mintAmountInput.value = String(device.config?.defaultMintAmount || refs.mintAmountInput.value);
     refs.balanceDeviceIdInput.value = device.deviceId || refs.balanceDeviceIdInput.value;
     refs.transactionsDeviceIdInput.value = device.deviceId || refs.transactionsDeviceIdInput.value;
+
+    reconcileProfilesWithDevice(device.config?.profiles);
   }
 }
 
 function hydrateFromLoRaWan(force = false) {
   const config = state.lorawanInfo?.config;
-  const heltec = state.lorawanInfo?.heltec;
   if (!config) {
     return;
   }
@@ -492,6 +570,60 @@ function hydrateFromLoRaWan(force = false) {
   }
 }
 
+function reconcileProfilesWithDevice(deviceProfiles) {
+  if (!Array.isArray(deviceProfiles)) {
+    return;
+  }
+
+  const localProfiles = state.profiles.map((profile, index) => normalizeProfile(profile, index));
+  const usedProfileIds = new Set();
+  const nextProfiles = [];
+
+  for (const deviceProfile of deviceProfiles) {
+    const normalized = normalizeProfile(
+      {
+        name: `${deviceProfile.tick} / ${deviceProfile.amount}`,
+        tick: deviceProfile.tick,
+        amount: String(deviceProfile.amount),
+        intervalMinutes: state.scheduler.intervalMinutes,
+        enabled: deviceProfile.enabled !== false
+      },
+      nextProfiles.length
+    );
+
+    const match = localProfiles.find((profile) => {
+      return !usedProfileIds.has(profile.id) && profileFingerprint(profile) === profileFingerprint(normalized);
+    });
+
+    if (match) {
+      usedProfileIds.add(match.id);
+      nextProfiles.push({
+        ...match,
+        enabled: true
+      });
+      continue;
+    }
+
+    nextProfiles.push({
+      ...normalized,
+      id: `device-${Date.now()}-${nextProfiles.length}`
+    });
+  }
+
+  for (const profile of localProfiles) {
+    if (usedProfileIds.has(profile.id)) {
+      continue;
+    }
+    nextProfiles.push({
+      ...profile,
+      enabled: false
+    });
+  }
+
+  state.profiles = nextProfiles;
+  persistProfiles();
+}
+
 function renderDeviceSummary() {
   const device = state.deviceInfo?.device;
   if (!device) {
@@ -503,11 +635,12 @@ function renderDeviceSummary() {
     return;
   }
 
+  const profileCount = Array.isArray(device.config?.profiles) ? device.config.profiles.length : 0;
   refs.deviceIdValue.textContent = device.deviceId || "-";
   refs.nextNonceValue.textContent = String(device.nextNonce ?? "-");
   refs.autoMintValue.textContent = device.config.autoMintEnabled
-    ? `Enabled / ${device.config.autoMintIntervalSeconds}s`
-    : "Disabled";
+    ? `Enabled / ${device.config.autoMintIntervalSeconds}s / ${profileCount} profile(s)`
+    : `Disabled / ${profileCount} profile(s) loaded`;
   refs.defaultMintValue.textContent = `${device.config.defaultTick} / ${device.config.defaultMintAmount}`;
   refs.deviceSummaryOutput.textContent = formatJson(device);
 }
@@ -756,14 +889,14 @@ async function prepareAndMaybeSend(label, prepareCommand, params, sendNow) {
 }
 
 function saveProfileFromEditor() {
-  const profile = {
+  const profile = normalizeProfile({
     id: state.editingProfileId || `profile-${Date.now()}`,
-    name: refs.profileNameInput.value.trim() || `${refs.profileTickInput.value.trim().toUpperCase()} / ${refs.profileAmountInput.value.trim()}`,
-    tick: refs.profileTickInput.value.trim().toUpperCase(),
+    name: refs.profileNameInput.value.trim(),
+    tick: refs.profileTickInput.value.trim(),
     amount: refs.profileAmountInput.value.trim(),
     intervalMinutes: Number(refs.profileIntervalInput.value),
     enabled: refs.profileEnabledInput.checked
-  };
+  });
 
   if (!profile.tick || profile.tick.length !== 4) {
     throw new Error("Profile tick must be exactly 4 characters.");
@@ -778,12 +911,15 @@ function saveProfileFromEditor() {
   const existingIndex = state.profiles.findIndex((entry) => entry.id === profile.id);
   if (existingIndex >= 0) {
     state.profiles.splice(existingIndex, 1, profile);
-  } else {
+  } else if (profile.enabled) {
     state.profiles.unshift(profile);
+  } else {
+    state.profiles.push(profile);
   }
 
   persistProfiles();
   renderProfiles();
+  renderQueuePreview();
   clearProfileEditor();
 }
 
@@ -792,7 +928,7 @@ function clearProfileEditor() {
   refs.profileNameInput.value = "";
   refs.profileTickInput.value = "LORA";
   refs.profileAmountInput.value = "100";
-  refs.profileIntervalInput.value = "30";
+  refs.profileIntervalInput.value = String(state.scheduler.intervalMinutes);
   refs.profileEnabledInput.checked = true;
 }
 
@@ -804,30 +940,60 @@ function renderProfiles() {
     return;
   }
 
-  for (const profile of state.profiles) {
+  let queuePosition = 0;
+  for (const [index, profile] of state.profiles.entries()) {
     const article = document.createElement("article");
-    article.className = "profile-card";
+    article.className = `profile-card${profile.enabled ? " profile-card--active" : ""}`;
+
+    if (profile.enabled) {
+      queuePosition += 1;
+    }
+    const queueBadge = profile.enabled
+      ? `<span class="profile-chip profile-chip--teal">queue #${queuePosition}</span>`
+      : `<span class="profile-chip">library only</span>`;
+    const toggleLabel = profile.enabled ? "Remove from queue" : "Add to queue";
+
     article.innerHTML = `
       <div>
         <div class="profile-card__meta">
           <span class="profile-chip">${escapeHtml(profile.tick)}</span>
           <span class="profile-chip profile-chip--teal">${escapeHtml(String(profile.amount))}</span>
-          <span class="profile-chip">${escapeHtml(String(profile.intervalMinutes))} min</span>
-          <span class="profile-chip profile-chip--teal">${profile.enabled ? "enabled" : "disabled"}</span>
+          <span class="profile-chip">${escapeHtml(String(profile.intervalMinutes))} min pref</span>
+          ${queueBadge}
         </div>
         <h3>${escapeHtml(profile.name)}</h3>
       </div>
       <div class="button-row">
         <button class="button button--ghost" type="button" data-profile-action="edit" data-profile-id="${profile.id}">Edit</button>
-        <button class="button button--secondary" type="button" data-profile-action="apply" data-profile-id="${profile.id}">Apply</button>
-        <button class="button button--primary" type="button" data-profile-action="broadcast" data-profile-id="${profile.id}">Apply + broadcast</button>
-        <button class="button button--ghost" type="button" data-profile-action="mint" data-profile-id="${profile.id}">Mint now</button>
-        <button class="button button--ghost" type="button" data-profile-action="stop" data-profile-id="${profile.id}">Stop auto-mint</button>
+        <button class="button button--ghost" type="button" data-profile-action="toggle" data-profile-id="${profile.id}">${toggleLabel}</button>
+        <button class="button button--ghost" type="button" data-profile-action="up" data-profile-id="${profile.id}">Up</button>
+        <button class="button button--ghost" type="button" data-profile-action="down" data-profile-id="${profile.id}">Down</button>
+        <button class="button button--secondary" type="button" data-profile-action="solo" data-profile-id="${profile.id}">Solo loop</button>
+        <button class="button button--primary" type="button" data-profile-action="mint" data-profile-id="${profile.id}">Mint now</button>
         <button class="button button--ghost" type="button" data-profile-action="delete" data-profile-id="${profile.id}">Delete</button>
       </div>
     `;
     refs.profileList.append(article);
   }
+}
+
+function renderQueuePreview() {
+  const queueProfiles = getQueueProfiles();
+  if (!queueProfiles.length) {
+    refs.profileQueuePreview.textContent = "No active queue yet. Save a profile and leave it included in the queue.";
+    return;
+  }
+
+  refs.profileQueuePreview.textContent = formatJson({
+    loopEnabled: refs.profileQueueEnabledInput.checked,
+    intervalMinutes: Number(refs.profileQueueIntervalInput.value || state.scheduler.intervalMinutes),
+    order: queueProfiles.map((profile, index) => ({
+      position: index + 1,
+      name: profile.name,
+      tick: profile.tick,
+      amount: profile.amount
+    }))
+  });
 }
 
 async function handleProfileAction(event) {
@@ -856,16 +1022,50 @@ async function handleProfileAction(event) {
     state.profiles = state.profiles.filter((entry) => entry.id !== profile.id);
     persistProfiles();
     renderProfiles();
+    renderQueuePreview();
     return;
   }
 
-  if (action === "apply") {
-    await applyProfileToDevice(profile, false);
+  if (action === "toggle") {
+    const nextEnabled = !profile.enabled;
+    state.profiles = state.profiles.filter((entry) => entry.id !== profile.id);
+    profile.enabled = nextEnabled;
+    if (nextEnabled) {
+      const enabledCount = state.profiles.filter((entry) => entry.enabled).length;
+      state.profiles.splice(enabledCount, 0, profile);
+    } else {
+      state.profiles.push(profile);
+    }
+    persistProfiles();
+    renderProfiles();
+    renderQueuePreview();
     return;
   }
 
-  if (action === "broadcast") {
-    await applyProfileToDevice(profile, true);
+  if (action === "up" || action === "down") {
+    const direction = action === "up" ? -1 : 1;
+    moveProfile(profile.id, direction);
+    return;
+  }
+
+  if (action === "solo") {
+    state.scheduler.enabled = true;
+    state.scheduler.intervalMinutes = profile.intervalMinutes;
+    persistScheduler();
+    refs.profileQueueEnabledInput.checked = true;
+    refs.profileQueueIntervalInput.value = String(profile.intervalMinutes);
+    syncConfigFormFromScheduler();
+    await syncProfilesToDevice({
+      broadcastConfig: false,
+      profiles: [
+        {
+          tick: profile.tick,
+          amount: profile.amount,
+          enabled: true
+        }
+      ]
+    });
+    appendLog("profile", `Device loop narrowed to solo profile ${profile.name}.`);
     return;
   }
 
@@ -875,45 +1075,113 @@ async function handleProfileAction(event) {
       amount: profile.amount,
       commit: false
     }, true);
-    return;
-  }
-
-  if (action === "stop") {
-    await sendCommand("set_config", {
-      autoMintEnabled: false,
-      autoMintIntervalSeconds: profile.intervalMinutes * 60,
-      defaultTick: profile.tick,
-      defaultMintAmount: profile.amount
-    });
-    refs.configAutoMintEnabledInput.checked = false;
-    appendLog("profile", `Auto-mint disabled for ${profile.name}.`);
-    await refreshDeviceState();
   }
 }
 
-async function applyProfileToDevice(profile, broadcastConfig) {
+function moveProfile(profileId, direction) {
+  const currentIndex = state.profiles.findIndex((entry) => entry.id === profileId);
+  if (currentIndex < 0) {
+    return;
+  }
+
+  const nextIndex = currentIndex + direction;
+  if (nextIndex < 0 || nextIndex >= state.profiles.length) {
+    return;
+  }
+
+  const swap = state.profiles[nextIndex];
+  state.profiles[nextIndex] = state.profiles[currentIndex];
+  state.profiles[currentIndex] = swap;
+  persistProfiles();
+  renderProfiles();
+  renderQueuePreview();
+}
+
+function handleSchedulerInputChange() {
+  updateSchedulerFromInputs();
+  syncConfigFormFromScheduler();
+  renderQueuePreview();
+}
+
+function updateSchedulerFromInputs() {
+  state.scheduler = {
+    enabled: refs.profileQueueEnabledInput.checked,
+    intervalMinutes: normalizeScheduler({
+      intervalMinutes: Number(refs.profileQueueIntervalInput.value)
+    }).intervalMinutes
+  };
+  refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes);
+  persistScheduler();
+}
+
+function syncConfigFormFromScheduler() {
+  refs.configAutoMintEnabledInput.checked = state.scheduler.enabled;
+  refs.configAutoMintIntervalInput.value = String(state.scheduler.intervalMinutes * 60);
+}
+
+function getQueueProfiles() {
+  return state.profiles
+    .filter((profile) => profile.enabled)
+    .map((profile) => ({
+      tick: profile.tick,
+      amount: profile.amount,
+      enabled: true,
+      name: profile.name,
+      intervalMinutes: profile.intervalMinutes
+    }));
+}
+
+async function syncProfilesToDevice({ broadcastConfig, profiles } = {}) {
+  updateSchedulerFromInputs();
+  const queueProfiles = Array.isArray(profiles) ? profiles : getQueueProfiles();
+  const queueEnabled = state.scheduler.enabled && queueProfiles.length > 0;
+
+  if (state.scheduler.enabled && queueProfiles.length === 0) {
+    throw new Error("Queue loop is enabled, but no profiles are selected.");
+  }
+
+  const intervalSeconds = state.scheduler.intervalMinutes * 60;
   await sendCommand("set_config", {
-    autoMintEnabled: Boolean(profile.enabled),
-    autoMintIntervalSeconds: profile.intervalMinutes * 60,
-    defaultTick: profile.tick,
-    defaultMintAmount: profile.amount
+    autoMintEnabled: queueEnabled,
+    autoMintIntervalSeconds: intervalSeconds,
+    profiles: queueProfiles.map((profile) => ({
+      tick: profile.tick,
+      amount: profile.amount,
+      enabled: true
+    }))
   });
 
-  refs.configAutoMintEnabledInput.checked = Boolean(profile.enabled);
-  refs.configAutoMintIntervalInput.value = String(profile.intervalMinutes * 60);
-  refs.mintTickInput.value = profile.tick;
-  refs.mintAmountInput.value = profile.amount;
-  appendLog("profile", `Applied profile ${profile.name} to device defaults.`);
+  refs.configAutoMintEnabledInput.checked = queueEnabled;
+  refs.configAutoMintIntervalInput.value = String(intervalSeconds);
+  appendLog(
+    "profile",
+    `Synced ${queueProfiles.length} profile(s) to the device queue.`,
+    queueProfiles.map((profile, index) => ({
+      position: index + 1,
+      tick: profile.tick,
+      amount: profile.amount
+    }))
+  );
 
   if (broadcastConfig) {
-    await prepareAndMaybeSend("Profile config", "prepare_config", {
-      autoMintEnabled: Boolean(profile.enabled),
-      autoMintIntervalSeconds: profile.intervalMinutes * 60,
+    await prepareAndMaybeSend("Queue config", "prepare_config", {
+      autoMintEnabled: queueEnabled,
+      autoMintIntervalSeconds: intervalSeconds,
       commit: false
     }, true);
   } else {
     await refreshDeviceState();
   }
+}
+
+async function stopProfileLoop() {
+  updateSchedulerFromInputs();
+  state.scheduler.enabled = false;
+  persistScheduler();
+  refs.profileQueueEnabledInput.checked = false;
+  syncConfigFormFromScheduler();
+  await syncProfilesToDevice({ broadcastConfig: false, profiles: getQueueProfiles() });
+  appendLog("profile", "Auto-mint loop stopped. Queue remains stored on the device.");
 }
 
 async function loadHealth() {

@@ -8,7 +8,8 @@ Statyczny dashboard do:
 - `config`
 - zarzadzania kluczem i backupem urzadzenia
 - konfiguracji `LoRaWAN`
-- lokalnych profili auto-mint typu `LORA mint 100 co 30 min`
+- lokalnej biblioteki profili mintu
+- kolejek `round-robin` typu `LORA 100 -> TEST 25 -> ABCD 5` co `30 min`
 - podgladu publicznego indexera
 
 ## Jak to dziala
@@ -16,9 +17,10 @@ Statyczny dashboard do:
 - Dashboard laczy sie z Helteciem lokalnie przez `Web Serial`.
 - Przygotowanie payloadu i podpis `Ed25519` dzieja sie na urzadzeniu.
 - Wysylka `LoRaWAN` dzieje sie z urzadzenia.
-- Profile auto-mint sa zapisywane lokalnie w `localStorage`.
-- Po kliknieciu `Apply` dashboard wgrywa profil do lokalnej konfiguracji firmware.
-- Po kliknieciu `Apply + broadcast` dashboard dodatkowo nadaje inscription `CONFIG`.
+- Profile mintu sa zapisywane lokalnie w `localStorage`.
+- Zaznaczone profile sa synchronizowane do firmware jako kolejka `round-robin`.
+- `Sync queue + broadcast` dodatkowo nadaje inscription `CONFIG` z flaga loop i interwalem.
+- `Deploy` pozostaje osobna, jednorazowa operacja per token.
 
 ## Hosting
 
@@ -52,4 +54,4 @@ Mozesz podac kilka originow po przecinku.
 3. Zrob `Refresh`.
 4. Ustaw `LoRaWAN`, jesli trzeba.
 5. Uzyj `Deploy`, `Mint`, `Transfer` albo `Config`.
-6. Zapisz profil auto-mint i kliknij `Apply` lub `Apply + broadcast`.
+6. Zapisz profile mintu, ustaw kolejnosc i kliknij `Sync queue to device` albo `Sync queue + broadcast`.

@@ -301,12 +301,12 @@
           <div class="section-head">
             <div>
               <p class="section-kicker">Profiles</p>
-              <h2>Repeatable auto-mint presets</h2>
+              <h2>Mint library and round-robin queue</h2>
             </div>
           </div>
           <p class="helper">
-            Tick i amount sa lokalnymi domyslnymi wartosciami urzadzenia. Protocol CONFIG inscription nadaje tylko
-            flage auto-mint i interwal.
+            Deploy robisz raz na token. Profile mintu to lokalna biblioteka, a zaznaczone profile synchronizujesz do
+            urzadzenia jako kolejke round-robin.
           </p>
           <div class="profile-editor">
             <div class="field-grid">
@@ -314,27 +314,49 @@
                 <span>Name</span>
                 <input id="profileNameInput" type="text" placeholder="LORA / 100 / 30 min" />
               </label>
-              <label class="field">
-                <span>Tick</span>
-                <input id="profileTickInput" type="text" maxlength="4" value="LORA" />
-              </label>
-              <label class="field">
-                <span>Mint amount</span>
-                <input id="profileAmountInput" type="text" value="100" />
-              </label>
-              <label class="field">
-                <span>Interval (minutes)</span>
-                <input id="profileIntervalInput" type="number" min="1" value="30" />
-              </label>
+                <label class="field">
+                  <span>Tick</span>
+                  <input id="profileTickInput" type="text" maxlength="4" value="LORA" />
+                </label>
+                <label class="field">
+                  <span>Mint amount</span>
+                  <input id="profileAmountInput" type="text" value="100" />
+                </label>
+                <label class="field">
+                  <span>Preferred interval (minutes)</span>
+                  <input id="profileIntervalInput" type="number" min="1" value="30" />
+                </label>
+                <label class="field field--checkbox">
+                  <input id="profileEnabledInput" type="checkbox" checked />
+                  <span>Include in active queue</span>
+                </label>
+              </div>
+              <div class="button-row">
+                <button id="saveProfileButton" class="button button--secondary" type="button">Save profile</button>
+                <button id="clearProfileButton" class="button button--ghost" type="button">Clear editor</button>
+              </div>
+            </div>
+          <div class="profile-queue">
+            <div class="field-grid">
               <label class="field field--checkbox">
-                <input id="profileEnabledInput" type="checkbox" checked />
-                <span>Auto-mint enabled</span>
+                <input id="profileQueueEnabledInput" type="checkbox" checked />
+                <span>Loop enabled</span>
+              </label>
+              <label class="field">
+                <span>Loop interval (minutes)</span>
+                <input id="profileQueueIntervalInput" type="number" min="1" value="30" />
               </label>
             </div>
             <div class="button-row">
-              <button id="saveProfileButton" class="button button--secondary" type="button">Save profile</button>
-              <button id="clearProfileButton" class="button button--ghost" type="button">Clear editor</button>
+              <button id="syncProfilesButton" class="button button--secondary" type="button">Sync queue to device</button>
+              <button id="syncProfilesBroadcastButton" class="button button--primary" type="button">Sync queue + broadcast</button>
+              <button id="stopProfilesButton" class="button button--ghost" type="button">Stop queue</button>
             </div>
+            <p class="helper">
+              Broadcast wysyla inscription <code>CONFIG</code> z flaga loop i interwalem. Sama kolejka profili jest
+              przechowywana lokalnie na urzadzeniu.
+            </p>
+            <pre id="profileQueuePreview" class="output output--compact">No active queue yet.</pre>
           </div>
           <div id="profileList" class="profile-list"></div>
         </section>
