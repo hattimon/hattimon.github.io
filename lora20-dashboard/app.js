@@ -239,6 +239,7 @@
     mintMatrixLastUserScrollAt: 0,
     mintMatrixResumeTimer: null,
     mintMatrixAutoPaused: false,
+    mintMatrixHoverPaused: false,
     mintMatrixProgrammaticScroll: false,
     activeWitnessEventId: null
   };
@@ -321,6 +322,8 @@
     refs.knownDevicesList?.addEventListener("click", handleKnownDevicesClick);
     refs.mintMatrixFeed?.addEventListener("click", handleMintMatrixClick);
     refs.mintMatrixFeed?.addEventListener("scroll", handleMintMatrixScroll);
+    refs.mintMatrixFeed?.addEventListener("mouseenter", handleMintMatrixHoverStart);
+    refs.mintMatrixFeed?.addEventListener("mouseleave", handleMintMatrixHoverEnd);
     refs.closeWitnessModalButton?.addEventListener("click", closeWitnessModal);
     refs.witnessModal?.addEventListener("click", (event) => {
       const target = event.target;
@@ -680,34 +683,45 @@
     return Number.isNaN(parsed) ? 0 : parsed;
   }
 
-  function restartMintMatrixAutoScroll() {
-    stopMintMatrixAutoScroll();
-    const container = refs.mintMatrixFeed;
-    if (!container) return;
-    window.setTimeout(() => {
-      if (!refs.mintMatrixFeed) return;
-      if (container.scrollHeight <= container.clientHeight + 8) return;
-      state.mintMatrixScrollTimer = window.setInterval(() => {
+    function restartMintMatrixAutoScroll() {
+      stopMintMatrixAutoScroll();
+      const container = refs.mintMatrixFeed;
+      if (!container) return;
+      window.setTimeout(() => {
         if (!refs.mintMatrixFeed) return;
-        if (refs.witnessModal?.classList.contains("is-open")) return;
-        if (state.mintMatrixAutoPaused && Date.now() - state.mintMatrixLastUserScrollAt < 10000) return;
-        state.mintMatrixAutoPaused = false;
-        state.mintMatrixProgrammaticScroll = true;
-        container.scrollTop += 1;
-        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 2) {
+        if (container.scrollHeight <= container.clientHeight + 8) return;
+        state.mintMatrixScrollTimer = window.setInterval(() => {
+          if (!refs.mintMatrixFeed) return;
+          if (refs.witnessModal?.classList.contains("is-open")) return;
+          if (state.mintMatrixHoverPaused) return;
+          if (state.mintMatrixAutoPaused && Date.now() - state.mintMatrixLastUserScrollAt < 10000) return;
+          state.mintMatrixAutoPaused = false;
           state.mintMatrixProgrammaticScroll = true;
-          container.scrollTop = 0;
-        }
-      }, 70);
-    }, 120);
-  }
-
-  function stopMintMatrixAutoScroll() {
-    if (state.mintMatrixScrollTimer) {
-      window.clearInterval(state.mintMatrixScrollTimer);
-      state.mintMatrixScrollTimer = null;
+          container.scrollTop += 1;
+          if (container.scrollTop + container.clientHeight >= container.scrollHeight - 2) {
+            state.mintMatrixProgrammaticScroll = true;
+            container.scrollTop = 0;
+          }
+        }, 140);
+      }, 120);
     }
-  }
+
+    function stopMintMatrixAutoScroll() {
+      if (state.mintMatrixScrollTimer) {
+        window.clearInterval(state.mintMatrixScrollTimer);
+        state.mintMatrixScrollTimer = null;
+      }
+    }
+
+    function handleMintMatrixHoverStart() {
+      state.mintMatrixHoverPaused = true;
+      state.mintMatrixLastUserScrollAt = Date.now();
+    }
+
+    function handleMintMatrixHoverEnd() {
+      state.mintMatrixHoverPaused = false;
+      state.mintMatrixLastUserScrollAt = Date.now();
+    }
 
   function handleMintMatrixScroll() {
     if (state.mintMatrixProgrammaticScroll) {
