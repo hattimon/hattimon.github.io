@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260327-3" />
+    <link rel="stylesheet" href="./styles.css?v=20260327-4" />
   </head>
   <body data-theme="medium">
     <div class="backdrop backdrop--left"></div>
@@ -108,6 +108,7 @@
             </article>
           </div>
           <div id="overviewStatusNote" class="callout callout--neutral"></div>
+          <div id="quickMintChecklist" class="quick-steps"></div>
         </section>
 
         <section class="surface surface--full" data-panel="device">
@@ -194,11 +195,9 @@
             <input id="balanceDeviceIdInput" type="text" />
             <input id="balanceTickInput" type="text" value="LORA" />
             <button id="balanceLookupButton" type="button">Hidden balance lookup</button>
-            <pre id="balanceOutput" class="output output--compact">No balance data yet.</pre>
             <input id="transactionsDeviceIdInput" type="text" />
             <input id="transactionsTickInput" type="text" value="LORA" />
             <input id="transactionsLimitInput" type="number" value="10" />
-            <pre id="transactionsOutput" class="output output--compact">No transaction data yet.</pre>
           </div>
         </section>
 
@@ -217,12 +216,11 @@
             <label class="field"><span data-i18n="tokens.search">Szukaj tickera</span><input id="tokenSearchInput" type="search" placeholder="LORA" /></label>
             <label class="field"><span data-i18n="tokens.quickPick">Wybierz do formularzy</span><select id="tokenQuickPick"><option value="">-</option></select></label>
           </div>
+          <div id="tokenLibraryStatus" class="callout callout--neutral"></div>
           <div id="tokenLibraryList" class="token-grid"></div>
           <div class="visually-hidden">
             <input id="tokenTickInput" type="text" value="LORA" />
             <button id="tokenLookupButton" type="button">Hidden token lookup</button>
-            <pre id="tokenOutput" class="output output--compact">No token data yet.</pre>
-            <pre id="healthOutput" class="output output--compact">No health check yet.</pre>
           </div>
         </section>
 
@@ -422,16 +420,17 @@
       </main>
     </div>
 
-    <aside class="log-dock">
+    <aside id="logDock" class="log-dock">
       <div class="log-dock__head">
         <div>
           <p class="section-kicker" data-i18n="logs.kicker">Raport zdarzeń</p>
           <h2 data-i18n="logs.title">Activity log</h2>
         </div>
+        <button id="toggleLogDockButton" class="button button--ghost button--tiny" type="button">Zwiń log</button>
       </div>
       <div id="activityLog" class="log"></div>
     </aside>
 
-    <script defer src="./app.js?v=20260327-3"></script>
+    <script defer src="./app.js?v=20260327-4"></script>
   </body>
 </html>

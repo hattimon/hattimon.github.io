@@ -5,6 +5,7 @@
     language: "lora20.dashboard.language",
     theme: "lora20.dashboard.theme",
     sound: "lora20.dashboard.soundEnabled",
+    logDockCollapsed: "lora20.dashboard.logDockCollapsed",
     indexerUrl: "lora20.dashboard.indexerBaseUrl",
     profiles: "lora20.dashboard.profiles",
     scheduler: "lora20.dashboard.scheduler",
@@ -73,6 +74,7 @@
     "connectButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
     "serialSupportNotice", "overviewTokensValue", "overviewBalancesValue", "overviewEventsValue",
     "overviewProfilesValue", "overviewLastSendValue", "overviewStatusNote", "getInfoButton",
+    "quickMintChecklist", "tokenLibraryStatus", "logDock", "toggleLogDockButton",
     "getLorawanButton", "generateKeyButton", "getPublicKeyButton", "registerDeviceButton",
     "joinLorawanButton", "heltecLicenseInput", "setLicenseButton", "lorawanAutoDevEuiInput",
     "lorawanAdrInput", "lorawanConfirmedInput", "lorawanDevEuiInput", "lorawanJoinEuiInput",
@@ -111,11 +113,13 @@
     tokenCatalog: [],
     portfolio: [],
     recentTransactions: [],
+    tokenCatalogError: "",
     deviceInfo: null,
     lorawanInfo: null,
     publicKeyInfo: null,
     lastPrepared: null,
     indexerOnline: null,
+    logDockCollapsed: readStorage(STORAGE.logDockCollapsed, "0") === "1",
     port: null,
     reader: null,
     disconnecting: false,
@@ -156,6 +160,7 @@
     refs.languageSelect?.addEventListener("change", handleLanguageChange);
     refs.themeSelect?.addEventListener("change", handleThemeChange);
     refs.soundEnabledInput?.addEventListener("change", handleSoundToggle);
+    refs.toggleLogDockButton?.addEventListener("click", toggleLogDock);
     wireAction(refs.saveIndexerButton, handleSaveIndexerUrl);
     wireAction(refs.connectButton, () => connectDevice());
     wireAction(refs.disconnectButton, () => disconnectDevice(true));
@@ -220,6 +225,7 @@
     if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
     if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes || 30);
     if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
+    applyLogDockState();
   }
 
   function handleLanguageChange() {
@@ -239,6 +245,12 @@
   function handleSoundToggle() {
     state.soundEnabled = Boolean(refs.soundEnabledInput?.checked);
     writeStorage(STORAGE.sound, state.soundEnabled ? "1" : "0");
+  }
+
+  function toggleLogDock() {
+    state.logDockCollapsed = !state.logDockCollapsed;
+    writeStorage(STORAGE.logDockCollapsed, state.logDockCollapsed ? "1" : "0");
+    applyLogDockState();
   }
 
   function handleSaveIndexerUrl() {
@@ -271,6 +283,16 @@
     document.body.dataset.theme = state.theme;
   }
 
+  function applyLogDockState() {
+    document.body.dataset.logDock = state.logDockCollapsed ? "collapsed" : "expanded";
+    if (refs.logDock) refs.logDock.classList.toggle("log-dock--collapsed", state.logDockCollapsed);
+    if (refs.toggleLogDockButton) {
+      refs.toggleLogDockButton.textContent = state.logDockCollapsed
+        ? (state.language === "en" ? "Show log" : "Pokaż log")
+        : (state.language === "en" ? "Minimize log" : "Zwiń log");
+    }
+  }
+
   function setSelectLabels(select, labels) {
     if (!select) return;
     Array.from(select.options).forEach((option, index) => {
@@ -288,6 +310,7 @@
   function renderAll() {
     renderBadges();
     renderOverview();
+    renderQuickMintChecklist();
     renderDevice();
     renderRadio();
     renderTokenLibrary();
@@ -296,6 +319,7 @@
     renderProfiles();
     renderOperations();
     syncIndexerLookupFields();
+    applyLogDockState();
   }
 
   function renderBadges() {
@@ -312,7 +336,7 @@
   }
 
   function renderOverview() {
-    setText(refs.overviewTokensValue, String(state.tokenCatalog.length));
+    setText(refs.overviewTokensValue, String(getKnownTokens().length));
     setText(refs.overviewBalancesValue, String(state.portfolio.length));
     setText(refs.overviewEventsValue, String(state.recentTransactions.length));
     setText(refs.overviewProfilesValue, String(state.profiles.filter((profile) => profile.enabled).length));
@@ -321,10 +345,45 @@
     const notes = [];
     if (!state.port) notes.push("Urządzenie nie jest jeszcze podłączone przez Web Serial.");
     if (state.indexerOnline !== true) notes.push("Indexer nie odpowiada lub dashboard nie może go odczytać.");
+    if (state.tokenCatalogError) notes.push(`Lista tickerów nie odświeżyła się: ${state.tokenCatalogError}.`);
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
     if (runtime && !runtime.joined) notes.push("Radio nie jest joined, więc próba wysyłki skończy się timeoutem albo odrzuceniem.");
     if (state.lastSendAt) notes.push(`Ostatnia wysyłka: ${formatDateTime(state.lastSendAt)}.`);
     renderCallout(refs.overviewStatusNote, notes.length ? "warn" : "ok", notes.length ? notes.join(" ") : "Panel wygląda na gotowy do pracy.");
+  }
+
+  function renderQuickMintChecklist() {
+    if (!refs.quickMintChecklist) return;
+    const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
+    const currentTick = normalizeTick(refs.mintTickInput?.value || "");
+    const token = findToken(currentTick);
+    const title = state.language === "en"
+      ? "Quick path for an already configured device"
+      : "Szybka ścieżka dla już skonfigurowanego urządzenia";
+    const steps = state.language === "en"
+      ? [
+          state.port ? "Device is already connected by USB." : "Connect the device by USB.",
+          state.deviceInfo?.hasKey ? "Device info and key are already available." : "Click Fetch info and confirm the device has a key.",
+          runtime?.joined ? "LoRaWAN is already joined." : "Click Fetch radio and run Join LoRaWAN if joined=false.",
+          token ? `Ticker ${currentTick} is visible in the indexer.` : "Refresh tokens or portfolio until the ticker appears.",
+          "Open the mint card and click Prepare and send. For a brand new Heltec, use the onboarding section below."
+        ]
+      : [
+          state.port ? "Urządzenie jest już podłączone przez USB." : "Podłącz urządzenie przez USB.",
+          state.deviceInfo?.hasKey ? "Info i klucz urządzenia są już dostępne." : "Kliknij „Pobierz info” i upewnij się, że urządzenie ma klucz.",
+          runtime?.joined ? "LoRaWAN jest już joined." : "Kliknij „Pobierz radio”, a jeśli trzeba także „Join LoRaWAN”.",
+          token ? `Ticker ${currentTick} jest widoczny w indexerze.` : "Odśwież tokeny albo portfolio, aż ticker pojawi się w indexerze.",
+          "W karcie mintu kliknij „Przygotuj i wyślij”. Jeśli to nowy Heltec, niżej masz pełny onboarding."
+        ];
+
+    refs.quickMintChecklist.innerHTML = `
+      <div class="callout callout--neutral">
+        <strong>${escapeHtml(title)}</strong>
+        <ol class="quick-steps__list">
+          ${steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+        </ol>
+      </div>
+    `;
   }
 
   function renderDevice() {
@@ -428,12 +487,23 @@
 
   function renderTokenLibrary() {
     const search = normalizeTick(refs.tokenSearchInput?.value || "");
-    const filtered = state.tokenCatalog.filter((token) => !search || token.tick.includes(search));
+    const knownTokens = getKnownTokens();
+    const filtered = knownTokens.filter((token) => !search || token.tick.includes(search));
 
     if (refs.tokenQuickPick) {
       const current = refs.tokenQuickPick.value;
-      refs.tokenQuickPick.innerHTML = `<option value="">-</option>${state.tokenCatalog.map((token) => `<option value="${escapeHtml(token.tick)}">${escapeHtml(token.tick)}</option>`).join("")}`;
-      if (current && state.tokenCatalog.some((token) => token.tick === current)) refs.tokenQuickPick.value = current;
+      refs.tokenQuickPick.innerHTML = `<option value="">-</option>${knownTokens.map((token) => `<option value="${escapeHtml(token.tick)}">${escapeHtml(token.tick)}</option>`).join("")}`;
+      if (current && knownTokens.some((token) => token.tick === current)) refs.tokenQuickPick.value = current;
+    }
+
+    if (refs.tokenLibraryStatus) {
+      if (state.tokenCatalogError && knownTokens.length) {
+        renderCallout(refs.tokenLibraryStatus, "warn", `Lista tokenów z indexera nie odświeżyła się, więc panel pokazuje dane z portfela urządzenia. ${state.tokenCatalogError}`);
+      } else if (state.tokenCatalogError) {
+        renderCallout(refs.tokenLibraryStatus, "danger", `Nie udało się pobrać listy tokenów z indexera. ${state.tokenCatalogError}`);
+      } else {
+        renderCallout(refs.tokenLibraryStatus, "ok", "Wybierz ticker z listy, aby automatycznie wypełnić pola deploy, mint i transfer.");
+      }
     }
 
     if (!refs.tokenLibraryList) return;
@@ -643,18 +713,30 @@
   }
 
   async function refreshIndexer(loadMore) {
+    let healthOk = false;
     try {
       const health = await fetchJson("/health");
-      state.indexerOnline = health?.status === "ok";
+      healthOk = health?.status === "ok";
+      state.indexerOnline = healthOk;
       setText(refs.healthOutput, prettyJson(health));
-      if (loadMore || !state.tokenCatalog.length) await loadTokens();
-      if (loadMore && getCurrentDeviceId()) await loadPortfolioAndHistory();
     } catch (error) {
       state.indexerOnline = false;
       addLog("error", error.message);
-    } finally {
-      renderAll();
     }
+
+    if (healthOk && (loadMore || !state.tokenCatalog.length)) {
+      await loadTokens().catch((error) => {
+        addLog("error", error.message);
+      });
+    }
+
+    if (healthOk && loadMore && getCurrentDeviceId()) {
+      await loadPortfolioAndHistory().catch((error) => {
+        addLog("error", error.message);
+      });
+    }
+
+    renderAll();
   }
 
   async function loadTokens() {
@@ -662,10 +744,19 @@
     const query = new URLSearchParams();
     query.set("limit", "100");
     if (search) query.set("search", search);
-    const response = await fetchJson(`/tokens?${query.toString()}`);
-    state.tokenCatalog = Array.isArray(response.tokens) ? response.tokens : [];
-    setText(refs.tokenOutput, prettyJson(response));
-    renderAll();
+    try {
+      const response = await fetchJson(`/tokens?${query.toString()}`);
+      state.tokenCatalog = Array.isArray(response.tokens) ? response.tokens : [];
+      state.tokenCatalogError = "";
+      setText(refs.tokenOutput, prettyJson(response));
+      renderAll();
+      return response;
+    } catch (error) {
+      state.tokenCatalogError = error instanceof Error ? error.message : String(error);
+      setText(refs.tokenOutput, prettyJson({ error: state.tokenCatalogError }));
+      renderAll();
+      throw error;
+    }
   }
 
   async function lookupToken() {
@@ -947,10 +1038,17 @@
     state.scheduler.enabled = Boolean(refs.profileQueueEnabledInput?.checked);
     state.scheduler.intervalMinutes = Number(refs.profileQueueIntervalInput?.value || 30);
     saveJson(STORAGE.scheduler, state.scheduler);
+    const firstActiveProfile = state.profiles.find((profile) => profile.enabled) || state.profiles[0] || null;
+    if (refs.configAutoMintEnabledInput) refs.configAutoMintEnabledInput.checked = state.scheduler.enabled && state.profiles.some((profile) => profile.enabled);
+    if (refs.configAutoMintIntervalInput) refs.configAutoMintIntervalInput.value = String(Math.max(30, Number(state.scheduler.intervalMinutes || 30) * 60));
 
     const response = await requestDevice("set_config", {
       autoMintEnabled: state.scheduler.enabled && state.profiles.some((profile) => profile.enabled),
       autoMintIntervalSeconds: Math.max(30, Number(state.scheduler.intervalMinutes || 30) * 60),
+      ...(firstActiveProfile ? {
+        defaultTick: firstActiveProfile.tick,
+        defaultMintAmount: firstActiveProfile.amount
+      } : {}),
       profiles: state.profiles.map((profile) => ({
         tick: profile.tick,
         amount: profile.amount,
@@ -959,6 +1057,7 @@
     }, 30000);
 
     if (response) state.deviceInfo = { ...(state.deviceInfo || {}), config: response };
+    await refreshDeviceInfo().catch(() => {});
     if (broadcast) await sendConfig();
     else addLog("device", "Profiles synced to device", response);
     renderAll();
@@ -1303,8 +1402,24 @@
     }
   }
 
+  function getKnownTokens() {
+    const byTick = new Map();
+
+    for (const token of state.tokenCatalog) {
+      if (token?.tick) byTick.set(token.tick, token);
+    }
+
+    for (const entry of state.portfolio) {
+      if (entry?.tick && entry?.token && !byTick.has(entry.tick)) {
+        byTick.set(entry.tick, { ...entry.token, tick: entry.tick });
+      }
+    }
+
+    return Array.from(byTick.values()).sort((left, right) => left.tick.localeCompare(right.tick));
+  }
+
   function findToken(tick) {
-    return state.tokenCatalog.find((token) => token.tick === normalizeTick(tick));
+    return getKnownTokens().find((token) => token.tick === normalizeTick(tick));
   }
 
   function upsertKnownDevice(entry) {
