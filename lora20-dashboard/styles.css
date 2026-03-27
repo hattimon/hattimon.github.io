@@ -1009,6 +1009,35 @@ body[data-theme="dark"] .log-dock {
   stroke-width: 1.8;
 }
 
+.signal-node-fo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-sans);
+  color: #f2f7ff;
+}
+
+.signal-node-fo--source {
+  color: #e7fbf7;
+}
+
+.signal-node-name {
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.signal-node-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.2;
+  color: rgba(186, 204, 225, 0.95);
+  word-break: break-all;
+}
+
 .signal-title {
   fill: #f2f7ff;
   font-weight: 800;
@@ -1042,8 +1071,9 @@ body[data-theme="dark"] .log-dock {
   margin-top: 4px;
   color: rgba(176, 195, 216, 0.9);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  word-break: break-all;
+  font-size: 0.74rem;
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 @keyframes ambientFloat {

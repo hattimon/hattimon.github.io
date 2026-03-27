@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   "use strict";
 
   const STORAGE = {
@@ -236,6 +236,10 @@
     audioContext: null,
     deviceRequestChain: Promise.resolve(),
     mintMatrixScrollTimer: null,
+    mintMatrixLastUserScrollAt: 0,
+    mintMatrixResumeTimer: null,
+    mintMatrixAutoPaused: false,
+    mintMatrixProgrammaticScroll: false,
     activeWitnessEventId: null
   };
 
@@ -316,6 +320,7 @@
     refs.tokenLibraryList?.addEventListener("click", handleTokenLibraryClick);
     refs.knownDevicesList?.addEventListener("click", handleKnownDevicesClick);
     refs.mintMatrixFeed?.addEventListener("click", handleMintMatrixClick);
+    refs.mintMatrixFeed?.addEventListener("scroll", handleMintMatrixScroll);
     refs.closeWitnessModalButton?.addEventListener("click", closeWitnessModal);
     refs.witnessModal?.addEventListener("click", (event) => {
       const target = event.target;
@@ -396,11 +401,11 @@
     });
 
     setSelectLabels(refs.languageSelect, state.language === "en" ? ["Polish", "English"] : ["Polski", "English"]);
-    setSelectLabels(refs.themeSelect, state.language === "en" ? ["Dark", "Medium", "Light"] : ["Ciemny", "Ĺšredni", "Jasny"]);
+    setSelectLabels(refs.themeSelect, state.language === "en" ? ["Dark", "Medium", "Light"] : ["Ciemny", "Średni", "Jasny"]);
 
     const soundLabel = refs.soundEnabledInput?.parentElement?.querySelector("span");
     if (soundLabel) {
-      soundLabel.textContent = state.language === "en" ? "Sound" : "DĹşwiÄ™ki";
+      soundLabel.textContent = state.language === "en" ? "Sound" : "Dźwięki";
     }
   }
 
@@ -413,8 +418,8 @@
     if (refs.logDock) refs.logDock.classList.toggle("log-dock--collapsed", state.logDockCollapsed);
     if (refs.toggleLogDockButton) {
       refs.toggleLogDockButton.textContent = state.logDockCollapsed
-        ? (state.language === "en" ? "Show log" : "PokaĹĽ log")
-        : (state.language === "en" ? "Minimize log" : "ZwiĹ„ log");
+        ? (state.language === "en" ? "Show log" : "Pokaż log")
+        : (state.language === "en" ? "Minimize log" : "Zwiń log");
     }
   }
 
@@ -438,10 +443,10 @@
     refs.serialSupportNotice.textContent = "serial" in navigator
       ? (state.language === "en"
           ? "Before connecting, close VS Code Serial Monitor, PlatformIO, MobaXterm and any app holding the COM port."
-          : "Przed poĹ‚Ä…czeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujÄ…ce COM.")
+          : "Przed połączeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM.")
       : (state.language === "en"
           ? "Web Serial works only in Chrome or Edge on HTTPS or localhost."
-          : "Web Serial dziaĹ‚a tylko w Chrome lub Edge na HTTPS albo localhost.");
+          : "Web Serial działa tylko w Chrome lub Edge na HTTPS albo localhost.");
   }
 
   function renderAll() {
@@ -498,7 +503,7 @@
   function renderMintMatrix() {
     if (refs.mintMatrixHeading) refs.mintMatrixHeading.textContent = txt("Ostatnie operacje mint", "Latest mint operations");
     if (refs.mintMatrixHint) refs.mintMatrixHint.textContent = txt(
-      "Kliknij wpis, aby otworzyc szczegoly witness i diagram przeplywu sygnalu.",
+      "Kliknij wpis, aby otworzyć szczegóły witness i diagram przepływu sygnału.",
       "Click an entry to open witness details and the signal-flow diagram."
     );
 
@@ -518,12 +523,18 @@
     refs.mintMatrixFeed.innerHTML = mintEvents.map((event, index) => {
       const firstWitness = getFirstWitness(event);
       const operationLabel = formatMintOperation(event);
+      const nonce = getEventNonce(event);
+      const operationWithNonce = nonce != null ? `${operationLabel} · nonce ${nonce}` : operationLabel;
       const timestamp = formatMatrixDateTime(event.receivedAt || event.createdAt);
+      const witnessLine = txt(
+        `Pierwszy świadek: "${firstWitness.name}"`,
+        `First Witness by "${firstWitness.name}"`
+      );
       const eventId = event.id || `mint-row-${index}`;
       return `
         <button class="mint-matrix__item" type="button" data-event-id="${escapeHtml(eventId)}" data-event-index="${index}">
-          <span class="mint-matrix__op">${escapeHtml(operationLabel)}</span>
-          <span class="mint-matrix__witness">First Witness by "${escapeHtml(firstWitness.name)}"</span>
+          <span class="mint-matrix__op">${escapeHtml(operationWithNonce)}</span>
+          <span class="mint-matrix__witness">${escapeHtml(witnessLine)}</span>
           <span class="mint-matrix__time">${escapeHtml(timestamp)}</span>
         </button>
       `;
@@ -539,33 +550,84 @@
         const opCode = Number(event?.op);
         return opName === "MINT" || opCode === 2;
       })
-      .slice(0, 80);
+      .sort((left, right) => getEventTimestamp(right) - getEventTimestamp(left))
+      .slice(0, 30);
   }
 
   function getWitnesses(event) {
-    const rxInfo = Array.isArray(event?.networkMetadata?.rxInfo) ? event.networkMetadata.rxInfo : [];
-    const normalized = rxInfo.map((entry, index) => {
-      const metadata = entry && typeof entry === "object" && entry.metadata && typeof entry.metadata === "object"
-        ? entry.metadata
+    const metadataCandidates = [
+      event?.networkMetadata,
+      event?.network_metadata,
+      event?.networkmetadata,
+      event?.metadata,
+      event?.meta
+    ];
+    const parsedCandidates = metadataCandidates.map((candidate) => {
+      if (!candidate) return null;
+      if (typeof candidate === "string") {
+        try {
+          return JSON.parse(candidate);
+        } catch (_error) {
+          return null;
+        }
+      }
+      if (typeof candidate === "object") return candidate;
+      return null;
+    }).filter(Boolean);
+
+    const sources = [];
+    for (const meta of parsedCandidates) {
+      sources.push(meta?.rxInfo, meta?.rx_info);
+      const uplinkMeta = meta?.uplink || meta?.uplinkMessage || meta?.uplink_message;
+      if (uplinkMeta) sources.push(uplinkMeta?.rxInfo, uplinkMeta?.rx_info);
+    }
+    sources.push(event?.rxInfo, event?.rx_info, event?.uplink?.rxInfo, event?.uplink?.rx_info);
+    sources.push(event?.gateways, event?.gatewayInfo, event?.witnesses);
+
+    const flattened = sources.filter(Array.isArray).flatMap((list) => list || []);
+    const normalized = flattened.map((entry, index) => {
+      const entryMeta = entry && typeof entry === "object"
+        ? (entry.metadata && typeof entry.metadata === "object" ? entry.metadata : (entry.meta && typeof entry.meta === "object" ? entry.meta : {}))
         : {};
-      const name = typeof metadata.gateway_name === "string" && metadata.gateway_name.trim()
-        ? metadata.gateway_name.trim()
-        : (typeof entry?.gatewayId === "string" && entry.gatewayId.trim() ? entry.gatewayId.trim() : `hotspot-${index + 1}`);
-      const hotspotId = typeof metadata.gateway_id === "string" && metadata.gateway_id.trim()
-        ? metadata.gateway_id.trim()
-        : (typeof entry?.gatewayId === "string" && entry.gatewayId.trim() ? entry.gatewayId.trim() : "unknown");
-      const gwTime = typeof entry?.gwTime === "string" ? entry.gwTime : null;
+      const name = [
+        entryMeta.gateway_name,
+        entryMeta.gatewayName,
+        entry?.gatewayName,
+        entry?.gateway_name,
+        entry?.gatewayId,
+        entry?.gateway_id,
+        entryMeta.gateway_id
+      ].find((value) => typeof value === "string" && value.trim()) || `hotspot-${index + 1}`;
+      const hotspotId = [
+        entryMeta.gateway_id,
+        entryMeta.gatewayId,
+        entry?.gatewayId,
+        entry?.gateway_id,
+        entry?.gatewayAddress
+      ].find((value) => typeof value === "string" && value.trim()) || "unknown";
+      const gwTime = typeof entry?.gwTime === "string"
+        ? entry.gwTime
+        : (typeof entry?.gw_time === "string" ? entry.gw_time : (typeof entry?.time === "string" ? entry.time : (typeof entry?.timestamp === "string" ? entry.timestamp : null)));
       const parsedTime = gwTime ? Date.parse(gwTime) : Number.NaN;
       return {
-        name,
-        hotspotId,
+        name: String(name).trim(),
+        hotspotId: String(hotspotId).trim(),
         gwTime,
         orderIndex: index,
         sortTime: Number.isNaN(parsedTime) ? Number.POSITIVE_INFINITY : parsedTime
       };
     });
 
-    return normalized.sort((left, right) => {
+    const deduped = [];
+    const seen = new Set();
+    for (const witness of normalized) {
+      const key = `${witness.hotspotId}|${witness.name}`.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push(witness);
+    }
+
+    return deduped.sort((left, right) => {
       if (left.sortTime !== right.sortTime) return left.sortTime - right.sortTime;
       return left.orderIndex - right.orderIndex;
     });
@@ -582,12 +644,38 @@
     return `MINT ${tick || "----"} ${amount}`;
   }
 
+  function getEventNonce(event) {
+    const candidates = [
+      event?.nonce,
+      event?.nonceToCommit,
+      event?.commitNonce,
+      event?.params?.nonce,
+      event?.payload?.nonce,
+      event?.data?.nonce,
+      event?.meta?.nonce
+    ];
+    for (const value of candidates) {
+      if (value == null) continue;
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) return parsed;
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+    return null;
+  }
+
   function formatMatrixDateTime(value) {
     if (!value) return "-";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value);
     const pad = (number) => String(number).padStart(2, "0");
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  }
+
+  function getEventTimestamp(event) {
+    const value = event?.receivedAt || event?.createdAt || event?.time || event?.gwTime || event?.timestamp;
+    if (!value) return 0;
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
   }
 
   function restartMintMatrixAutoScroll() {
@@ -600,9 +688,12 @@
       state.mintMatrixScrollTimer = window.setInterval(() => {
         if (!refs.mintMatrixFeed) return;
         if (refs.witnessModal?.classList.contains("is-open")) return;
-        if (container.matches(":hover")) return;
+        if (state.mintMatrixAutoPaused && Date.now() - state.mintMatrixLastUserScrollAt < 10000) return;
+        state.mintMatrixAutoPaused = false;
+        state.mintMatrixProgrammaticScroll = true;
         container.scrollTop += 1;
         if (container.scrollTop + container.clientHeight >= container.scrollHeight - 2) {
+          state.mintMatrixProgrammaticScroll = true;
           container.scrollTop = 0;
         }
       }, 70);
@@ -614,6 +705,23 @@
       window.clearInterval(state.mintMatrixScrollTimer);
       state.mintMatrixScrollTimer = null;
     }
+  }
+
+  function handleMintMatrixScroll() {
+    if (state.mintMatrixProgrammaticScroll) {
+      state.mintMatrixProgrammaticScroll = false;
+      return;
+    }
+    state.mintMatrixLastUserScrollAt = Date.now();
+    state.mintMatrixAutoPaused = true;
+    if (state.mintMatrixResumeTimer) window.clearTimeout(state.mintMatrixResumeTimer);
+    state.mintMatrixResumeTimer = window.setTimeout(() => {
+      state.mintMatrixAutoPaused = false;
+      if (refs.mintMatrixFeed) {
+        state.mintMatrixProgrammaticScroll = true;
+        refs.mintMatrixFeed.scrollTop = 0;
+      }
+    }, 10000);
   }
 
   function handleMintMatrixClick(event) {
@@ -650,7 +758,13 @@
     const firstWitness = witnesses[0] || { name: "unknown-hotspot" };
     if (refs.witnessModalTitle) refs.witnessModalTitle.textContent = formatMintOperation(event);
     if (refs.witnessModalSubtitle) {
-      refs.witnessModalSubtitle.textContent = `First Witness by "${firstWitness.name}" · ${formatMatrixDateTime(event.receivedAt || event.createdAt)}`;
+      const nonce = getEventNonce(event);
+      const nonceLabel = nonce != null ? ` · nonce ${nonce}` : "";
+      const subtitle = txt(
+        `Pierwszy świadek: \"${firstWitness.name}\" - ${formatMatrixDateTime(event.receivedAt || event.createdAt)}${nonceLabel}`,
+        `First Witness by \"${firstWitness.name}\" - ${formatMatrixDateTime(event.receivedAt || event.createdAt)}${nonceLabel}`
+      );
+      refs.witnessModalSubtitle.textContent = subtitle;
     }
 
     renderWitnessGraph(event, witnesses);
@@ -660,7 +774,7 @@
         ? witnesses.map((witness, index) => `
             <article class="witness-meta-card">
               <div class="witness-meta-card__name">${escapeHtml(`${index + 1}. ${witness.name}`)}</div>
-              <div class="witness-meta-card__id">${escapeHtml(`Hotspot ID: ${witness.hotspotId}`)}</div>
+              <div class="witness-meta-card__id">${escapeHtml(`${txt("Hotspot ID", "Hotspot ID")}: ${witness.hotspotId}`)}</div>
             </article>
           `).join("")
         : `<div class="witness-meta-card">${escapeHtml(txt("Brak danych witness dla tego uplinku.", "No witness data available for this uplink."))}</div>`;
@@ -679,11 +793,11 @@
     }
 
     const width = 1060;
-    const sourceWidth = 260;
-    const sourceHeight = 92;
+    const sourceWidth = 280;
+    const sourceHeight = 106;
     const sourceX = 70;
-    const targetWidth = 350;
-    const targetHeight = 86;
+    const targetWidth = 360;
+    const targetHeight = 110;
     const targetX = 640;
     const gap = 24;
     const totalTargetsHeight = witnesses.length * targetHeight + Math.max(0, witnesses.length - 1) * gap;
@@ -704,8 +818,12 @@
       return `
         <g>
           <rect class="signal-node-hotspot" x="${targetX}" y="${y}" rx="14" ry="14" width="${targetWidth}" height="${targetHeight}" />
-          <text class="signal-title" x="${targetX + 16}" y="${y + 32}">${escapeHtml(witness.name)}</text>
-          <text class="signal-subtitle" x="${targetX + 16}" y="${y + 58}">${escapeHtml(`Hotspot ID: ${witness.hotspotId}`)}</text>
+          <foreignObject x="${targetX + 12}" y="${y + 12}" width="${targetWidth - 24}" height="${targetHeight - 24}">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="signal-node-fo">
+              <div class="signal-node-name">${escapeHtml(witness.name)}</div>
+              <div class="signal-node-id">${escapeHtml(`${txt("Hotspot ID", "Hotspot ID")}: ${witness.hotspotId}`)}</div>
+            </div>
+          </foreignObject>
         </g>
       `;
     }).join("");
@@ -720,8 +838,12 @@
         ${lines}
         <g>
           <rect class="signal-node-source" x="${sourceX}" y="${sourceY}" rx="16" ry="16" width="${sourceWidth}" height="${sourceHeight}" />
-          <text class="signal-title" x="${sourceX + 16}" y="${sourceY + 36}">${escapeHtml("Heltec V4")}</text>
-          <text class="signal-subtitle" x="${sourceX + 16}" y="${sourceY + 62}">${escapeHtml(`Device ID: ${shortenMiddle(sourceDeviceId, 36)}`)}</text>
+          <foreignObject x="${sourceX + 12}" y="${sourceY + 12}" width="${sourceWidth - 24}" height="${sourceHeight - 24}">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="signal-node-fo signal-node-fo--source">
+              <div class="signal-node-name">Heltec V4</div>
+              <div class="signal-node-id">${escapeHtml(`Device ID: ${shortenMiddle(sourceDeviceId, 36)}`)}</div>
+            </div>
+          </foreignObject>
         </g>
         ${nodes}
       </svg>
@@ -735,7 +857,7 @@
     const token = findToken(currentTick);
     const title = state.language === "en"
       ? "Quick path for an already configured device"
-      : "Szybka Ĺ›cieĹĽka dla juĹĽ skonfigurowanego urzÄ…dzenia";
+      : "Szybka ścieżka dla już skonfigurowanego urządzenia";
     const steps = state.language === "en"
       ? [
           state.port ? "Device is already connected by USB." : "Connect the device by USB.",
@@ -745,11 +867,11 @@
           "Open the mint card and click Prepare and send. For a brand new Heltec, use the onboarding section below."
         ]
       : [
-          state.port ? "UrzÄ…dzenie jest juĹĽ podĹ‚Ä…czone przez USB." : "PodĹ‚Ä…cz urzÄ…dzenie przez USB.",
-          state.deviceInfo?.hasKey ? "Info i klucz urzÄ…dzenia sÄ… juĹĽ dostÄ™pne." : "Kliknij â€žPobierz infoâ€ť i upewnij siÄ™, ĹĽe urzÄ…dzenie ma klucz.",
-          runtime?.joined ? "LoRaWAN jest juĹĽ joined." : "Kliknij â€žPobierz radioâ€ť, a jeĹ›li trzeba takĹĽe â€žJoin LoRaWANâ€ť.",
-          token ? `Ticker ${currentTick} jest widoczny w indexerze.` : "OdĹ›wieĹĽ tokeny albo portfolio, aĹĽ ticker pojawi siÄ™ w indexerze.",
-          "W karcie mintu kliknij â€žPrzygotuj i wyĹ›lijâ€ť. JeĹ›li to nowy Heltec, niĹĽej masz peĹ‚ny onboarding."
+          state.port ? "Urządzenie jest już podłączone przez USB." : "Podłącz urządzenie przez USB.",
+          state.deviceInfo?.hasKey ? "Info i klucz urządzenia są już dostępne." : "Kliknij „Pobierz info” i upewnij się, że urządzenie ma klucz.",
+          runtime?.joined ? "LoRaWAN jest już joined." : "Kliknij „Pobierz radio”, a jeśli trzeba także „Join LoRaWAN”.",
+          token ? `Ticker ${currentTick} jest widoczny w indexerze.` : "Odśwież tokeny albo portfolio, aż ticker pojawi się w indexerze.",
+          "W karcie mintu kliknij „Przygotuj i wyślij”. Jeśli to nowy Heltec, niżej masz pełny onboarding."
         ];
 
     refs.quickMintChecklist.innerHTML = `
@@ -1030,10 +1152,10 @@
           { title: "4. Indexer and webhook", body: "Check indexer health, link DevEUI to deviceId and confirm ChirpStack sends the webhook to /integrations/chirpstack with the current token." }
         ]
       : [
-          { title: "1. Sterowniki i port", body: "UĹĽyj Chrome albo Edge. Zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i kaĹĽdÄ… aplikacjÄ™ trzymajÄ…cÄ… COM przed klikniÄ™ciem â€žPoĹ‚Ä…cz urzÄ…dzenieâ€ť." },
-          { title: "2. Firmware i klucz", body: "Po poĹ‚Ä…czeniu pobierz info, wygeneruj klucz, odczytaj public key i zarejestruj urzÄ…dzenie w indexerze. JeĹ›li firmware byĹ‚ aktualizowany, sprawdĹş radio i join." },
-          { title: "3. LoRaWAN", body: "WypeĹ‚nij DevEUI, JoinEUI, AppKey i zapisz radio. Potem wykonaj join. Nie prĂłbuj mintu, gdy runtime pokazuje joined=false albo hardwareReady=false." },
-          { title: "4. Indexer i webhook", body: "SprawdĹş health indexera, podepnij DevEUI do deviceId i upewnij siÄ™, ĹĽe ChirpStack wysyĹ‚a webhook na /integrations/chirpstack z aktualnym tokenem." }
+          { title: "1. Sterowniki i port", body: "Użyj Chrome albo Edge. Zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i każdą aplikację trzymającą COM przed kliknięciem „Połącz urządzenie”." },
+          { title: "2. Firmware i klucz", body: "Po połączeniu pobierz info, wygeneruj klucz, odczytaj public key i zarejestruj urządzenie w indexerze. Jeśli firmware był aktualizowany, sprawdź radio i join." },
+          { title: "3. LoRaWAN", body: "Wypełnij DevEUI, JoinEUI, AppKey i zapisz radio. Potem wykonaj join. Nie próbuj mintu, gdy runtime pokazuje joined=false albo hardwareReady=false." },
+          { title: "4. Indexer i webhook", body: "Sprawdź health indexera, podepnij DevEUI do deviceId i upewnij się, że ChirpStack wysyła webhook na /integrations/chirpstack z aktualnym tokenem." }
         ];
     refs.onboardingChecklist.innerHTML = items.map((item) => `
       <article class="guide-card">
@@ -1058,12 +1180,12 @@
         </ul>
       `
       : `
-        <p>KaĹĽda wiadomoĹ›Ä‡ jest podpisywana Ed25519. Indexer uĹĽywa nonce, ĹĽeby odrzuciÄ‡ replay i duplikaty. Deploy liczy siÄ™ tylko pierwszy dla tickera, a mint przestaje byÄ‡ indeksowany po osiÄ…gniÄ™ciu max supply.</p>
+        <p>Każda wiadomość jest podpisywana Ed25519. Indexer używa nonce, żeby odrzucić replay i duplikaty. Deploy liczy się tylko pierwszy dla tickera, a mint przestaje być indeksowany po osiągnięciu max supply.</p>
         <ul>
-          <li><strong>Mint</strong>: obecnie okoĹ‚o 81 B payloadu, czyli okoĹ‚o ${mintBaseDc} DC bazowego kosztu przy porcjach 24 B. Przy aktualnym ustawieniu tenantu Max copy = ${PLATFORM_COPY_COUNT} daje to okoĹ‚o ${mintEffectiveDc} DC kosztu efektywnego.</li>
+          <li><strong>Mint</strong>: obecnie około 81 B payloadu, czyli około ${mintBaseDc} DC bazowego kosztu przy porcjach 24 B. Przy aktualnym ustawieniu tenantu Max copy = ${PLATFORM_COPY_COUNT} daje to około ${mintEffectiveDc} DC kosztu efektywnego.</li>
           <li><strong>Prepare vs send</strong>: prepare tylko tworzy i podpisuje payload lokalnie, a send dodatkowo zleca faktyczny uplink LoRaWAN.</li>
-          <li><strong>Config</strong>: zapis ustawieĹ„ auto-mintu i interwaĹ‚u; profile round-robin sÄ… utrzymywane lokalnie w Heltecu po synchronizacji.</li>
-          <li><strong>BezpieczeĹ„stwo</strong>: podpis udowadnia autora, nonce pilnuje kolejnoĹ›ci, a webhook do indexera powinien byÄ‡ chroniony osobnym tokenem.</li>
+          <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; profile round-robin są utrzymywane lokalnie w Heltecu po synchronizacji.</li>
+          <li><strong>Bezpieczeństwo</strong>: podpis udowadnia autora, nonce pilnuje kolejności, a webhook do indexera powinien być chroniony osobnym tokenem.</li>
         </ul>
       `;
   }
@@ -2242,6 +2364,7 @@
   }
 
 })();
+
 
 
 
