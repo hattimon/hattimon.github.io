@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260327-9" />
+    <link rel="stylesheet" href="./styles.css?v=20260327-10" />
   </head>
   <body data-theme="medium">
     <div class="backdrop backdrop--left"></div>
@@ -32,6 +32,17 @@
             <span class="hero-chip" data-i18n="hero.chipTwo">Onboarding Heltec V4</span>
             <span class="hero-chip" data-i18n="hero.chipThree">Sticky log dock</span>
           </div>
+        </div>
+
+        <div class="hero__mint-stream">
+          <div class="section-head section-head--compact">
+            <div>
+              <p class="section-kicker">Mint Stream</p>
+              <h2 id="mintMatrixHeading">Ostatnie operacje mint</h2>
+            </div>
+          </div>
+          <p id="mintMatrixHint" class="helper">Kliknij wpis, aby zobaczyć witnessy i przepływ sygnału LoRa.</p>
+          <div id="mintMatrixFeed" class="mint-matrix"></div>
         </div>
 
         <div class="hero__controls">
@@ -432,6 +443,22 @@
       <div id="activityLog" class="log"></div>
     </aside>
 
-    <script defer src="./app.js?v=20260327-9"></script>
+    <div id="witnessModal" class="witness-modal" aria-hidden="true">
+      <div class="witness-modal__backdrop" data-action="close-witness-modal"></div>
+      <div class="witness-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="witnessModalTitle">
+        <div class="section-head section-head--compact">
+          <div>
+            <p class="section-kicker">Signal Diagram</p>
+            <h2 id="witnessModalTitle">MINT LORA 100</h2>
+          </div>
+          <button id="closeWitnessModalButton" class="button button--ghost button--tiny" type="button">Zamknij</button>
+        </div>
+        <p id="witnessModalSubtitle" class="helper">First Witness by "odd-bamboo-robin"</p>
+        <div id="witnessGraph" class="witness-graph"></div>
+        <div id="witnessMetaList" class="witness-meta-list"></div>
+      </div>
+    </div>
+
+    <script defer src="./app.js?v=20260327-10"></script>
   </body>
 </html>

@@ -176,6 +176,7 @@
   const refNames = [
     "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "saveIndexerButton",
     "connectButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
+    "mintMatrixHeading", "mintMatrixHint", "mintMatrixFeed",
     "serialSupportNotice", "overviewTokensValue", "overviewBalancesValue", "overviewEventsValue",
     "overviewProfilesValue", "overviewLastSendValue", "overviewStatusNote", "getInfoButton",
     "quickMintChecklist", "tokenLibraryStatus", "logDock", "toggleLogDockButton", "operationActionNote",
@@ -203,7 +204,9 @@
     "healthOutput", "tokenTickInput", "tokenLookupButton", "tokenOutput", "balanceDeviceIdInput",
     "balanceTickInput", "balanceLookupButton", "balanceOutput", "transactionsDeviceIdInput",
     "transactionsTickInput", "transactionsLimitInput", "transactionsButton", "transactionsOutput",
-    "rawCommandTextarea", "sendRawCommandButton", "activityLog"
+    "rawCommandTextarea", "sendRawCommandButton", "activityLog",
+    "witnessModal", "closeWitnessModalButton", "witnessModalTitle", "witnessModalSubtitle",
+    "witnessGraph", "witnessMetaList"
   ];
   const state = {
     language: readStorage(STORAGE.language, DEFAULTS.language),
@@ -231,7 +234,9 @@
     pending: new Map(),
     requestId: 1,
     audioContext: null,
-    deviceRequestChain: Promise.resolve()
+    deviceRequestChain: Promise.resolve(),
+    mintMatrixScrollTimer: null,
+    activeWitnessEventId: null
   };
 
   function init() {
@@ -310,6 +315,19 @@
     refs.profileList?.addEventListener("click", handleProfileListClick);
     refs.tokenLibraryList?.addEventListener("click", handleTokenLibraryClick);
     refs.knownDevicesList?.addEventListener("click", handleKnownDevicesClick);
+    refs.mintMatrixFeed?.addEventListener("click", handleMintMatrixClick);
+    refs.closeWitnessModalButton?.addEventListener("click", closeWitnessModal);
+    refs.witnessModal?.addEventListener("click", (event) => {
+      const target = event.target;
+      if (target instanceof HTMLElement && target.dataset.action === "close-witness-modal") {
+        closeWitnessModal();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && refs.witnessModal?.classList.contains("is-open")) {
+        closeWitnessModal();
+      }
+    });
   }
 
   function wireAction(node, task) {
@@ -429,6 +447,7 @@
   function renderAll() {
     renderBadges();
     renderOverview();
+    renderMintMatrix();
     renderQuickMintChecklist();
     renderDevice();
     renderRadio();
@@ -474,6 +493,239 @@
     if (runtime && !runtime.joined) notes.push(txt("Radio nie jest joined, wiec proba wysylki skonczy sie timeoutem albo odrzuceniem.", "Radio is not joined, so sending will likely timeout or be rejected."));
     if (state.lastSendAt) notes.push(txt(`Ostatnia wysylka: ${formatDateTime(state.lastSendAt)}.`, `Last send: ${formatDateTime(state.lastSendAt)}.`));
     renderCallout(refs.overviewStatusNote, notes.length ? "warn" : "ok", notes.length ? notes.join(" ") : txt("Panel wyglada na gotowy do pracy.", "Dashboard looks ready."));
+  }
+
+  function renderMintMatrix() {
+    if (refs.mintMatrixHeading) refs.mintMatrixHeading.textContent = txt("Ostatnie operacje mint", "Latest mint operations");
+    if (refs.mintMatrixHint) refs.mintMatrixHint.textContent = txt(
+      "Kliknij wpis, aby otworzyc szczegoly witness i diagram przeplywu sygnalu.",
+      "Click an entry to open witness details and the signal-flow diagram."
+    );
+
+    if (!refs.mintMatrixFeed) return;
+    const mintEvents = getMintEvents();
+
+    if (!mintEvents.length) {
+      refs.mintMatrixFeed.innerHTML = `
+        <div class="mint-matrix__empty">
+          ${escapeHtml(txt("Brak operacji mint w historii indexera.", "No mint operations in indexer history yet."))}
+        </div>
+      `;
+      stopMintMatrixAutoScroll();
+      return;
+    }
+
+    refs.mintMatrixFeed.innerHTML = mintEvents.map((event, index) => {
+      const firstWitness = getFirstWitness(event);
+      const operationLabel = formatMintOperation(event);
+      const timestamp = formatMatrixDateTime(event.receivedAt || event.createdAt);
+      const eventId = event.id || `mint-row-${index}`;
+      return `
+        <button class="mint-matrix__item" type="button" data-event-id="${escapeHtml(eventId)}" data-event-index="${index}">
+          <span class="mint-matrix__op">${escapeHtml(operationLabel)}</span>
+          <span class="mint-matrix__witness">First Witness by "${escapeHtml(firstWitness.name)}"</span>
+          <span class="mint-matrix__time">${escapeHtml(timestamp)}</span>
+        </button>
+      `;
+    }).join("");
+
+    restartMintMatrixAutoScroll();
+  }
+
+  function getMintEvents() {
+    return state.recentTransactions
+      .filter((event) => {
+        const opName = String(event?.opName || "").toUpperCase();
+        const opCode = Number(event?.op);
+        return opName === "MINT" || opCode === 2;
+      })
+      .slice(0, 80);
+  }
+
+  function getWitnesses(event) {
+    const rxInfo = Array.isArray(event?.networkMetadata?.rxInfo) ? event.networkMetadata.rxInfo : [];
+    const normalized = rxInfo.map((entry, index) => {
+      const metadata = entry && typeof entry === "object" && entry.metadata && typeof entry.metadata === "object"
+        ? entry.metadata
+        : {};
+      const name = typeof metadata.gateway_name === "string" && metadata.gateway_name.trim()
+        ? metadata.gateway_name.trim()
+        : (typeof entry?.gatewayId === "string" && entry.gatewayId.trim() ? entry.gatewayId.trim() : `hotspot-${index + 1}`);
+      const hotspotId = typeof metadata.gateway_id === "string" && metadata.gateway_id.trim()
+        ? metadata.gateway_id.trim()
+        : (typeof entry?.gatewayId === "string" && entry.gatewayId.trim() ? entry.gatewayId.trim() : "unknown");
+      const gwTime = typeof entry?.gwTime === "string" ? entry.gwTime : null;
+      const parsedTime = gwTime ? Date.parse(gwTime) : Number.NaN;
+      return {
+        name,
+        hotspotId,
+        gwTime,
+        orderIndex: index,
+        sortTime: Number.isNaN(parsedTime) ? Number.POSITIVE_INFINITY : parsedTime
+      };
+    });
+
+    return normalized.sort((left, right) => {
+      if (left.sortTime !== right.sortTime) return left.sortTime - right.sortTime;
+      return left.orderIndex - right.orderIndex;
+    });
+  }
+
+  function getFirstWitness(event) {
+    const witnesses = getWitnesses(event);
+    return witnesses[0] || { name: "unknown-hotspot", hotspotId: "unknown", gwTime: null };
+  }
+
+  function formatMintOperation(event) {
+    const tick = normalizeTick(event?.tick || "");
+    const amount = event?.amount == null ? "?" : String(event.amount);
+    return `MINT ${tick || "----"} ${amount}`;
+  }
+
+  function formatMatrixDateTime(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    const pad = (number) => String(number).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  }
+
+  function restartMintMatrixAutoScroll() {
+    stopMintMatrixAutoScroll();
+    const container = refs.mintMatrixFeed;
+    if (!container) return;
+    window.setTimeout(() => {
+      if (!refs.mintMatrixFeed) return;
+      if (container.scrollHeight <= container.clientHeight + 8) return;
+      state.mintMatrixScrollTimer = window.setInterval(() => {
+        if (!refs.mintMatrixFeed) return;
+        if (refs.witnessModal?.classList.contains("is-open")) return;
+        if (container.matches(":hover")) return;
+        container.scrollTop += 1;
+        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 2) {
+          container.scrollTop = 0;
+        }
+      }, 70);
+    }, 120);
+  }
+
+  function stopMintMatrixAutoScroll() {
+    if (state.mintMatrixScrollTimer) {
+      window.clearInterval(state.mintMatrixScrollTimer);
+      state.mintMatrixScrollTimer = null;
+    }
+  }
+
+  function handleMintMatrixClick(event) {
+    const trigger = event.target instanceof HTMLElement ? event.target.closest("[data-event-id]") : null;
+    if (!trigger) return;
+    const eventId = trigger.dataset.eventId;
+    const eventIndex = Number(trigger.dataset.eventIndex);
+    if (!eventId) return;
+    openWitnessModal(eventId, Number.isFinite(eventIndex) ? eventIndex : null);
+  }
+
+  function openWitnessModal(eventId, eventIndex = null) {
+    let event = state.recentTransactions.find((entry) => String(entry.id) === String(eventId));
+    if (!event && Number.isInteger(eventIndex) && eventIndex >= 0) {
+      const mintEvents = getMintEvents();
+      event = mintEvents[eventIndex] || null;
+    }
+    if (!event || !refs.witnessModal) return;
+    state.activeWitnessEventId = eventId;
+    renderWitnessModal(event);
+    refs.witnessModal.classList.add("is-open");
+    refs.witnessModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeWitnessModal() {
+    state.activeWitnessEventId = null;
+    if (!refs.witnessModal) return;
+    refs.witnessModal.classList.remove("is-open");
+    refs.witnessModal.setAttribute("aria-hidden", "true");
+  }
+
+  function renderWitnessModal(event) {
+    const witnesses = getWitnesses(event);
+    const firstWitness = witnesses[0] || { name: "unknown-hotspot" };
+    if (refs.witnessModalTitle) refs.witnessModalTitle.textContent = formatMintOperation(event);
+    if (refs.witnessModalSubtitle) {
+      refs.witnessModalSubtitle.textContent = `First Witness by "${firstWitness.name}" · ${formatMatrixDateTime(event.receivedAt || event.createdAt)}`;
+    }
+
+    renderWitnessGraph(event, witnesses);
+
+    if (refs.witnessMetaList) {
+      refs.witnessMetaList.innerHTML = witnesses.length
+        ? witnesses.map((witness, index) => `
+            <article class="witness-meta-card">
+              <div class="witness-meta-card__name">${escapeHtml(`${index + 1}. ${witness.name}`)}</div>
+              <div class="witness-meta-card__id">${escapeHtml(`Hotspot ID: ${witness.hotspotId}`)}</div>
+            </article>
+          `).join("")
+        : `<div class="witness-meta-card">${escapeHtml(txt("Brak danych witness dla tego uplinku.", "No witness data available for this uplink."))}</div>`;
+    }
+  }
+
+  function renderWitnessGraph(event, witnesses) {
+    if (!refs.witnessGraph) return;
+    if (!witnesses.length) {
+      refs.witnessGraph.innerHTML = `
+        <div class="callout callout--warn">
+          ${escapeHtml(txt("Brak rxInfo w networkMetadata dla tej operacji.", "No rxInfo in networkMetadata for this operation."))}
+        </div>
+      `;
+      return;
+    }
+
+    const width = 1060;
+    const sourceWidth = 260;
+    const sourceHeight = 92;
+    const sourceX = 70;
+    const targetWidth = 350;
+    const targetHeight = 86;
+    const targetX = 640;
+    const gap = 24;
+    const totalTargetsHeight = witnesses.length * targetHeight + Math.max(0, witnesses.length - 1) * gap;
+    const height = Math.max(340, totalTargetsHeight + 120);
+    const sourceY = Math.round((height - sourceHeight) / 2);
+    const targetsStartY = Math.round((height - totalTargetsHeight) / 2);
+    const sourceCenterX = sourceX + sourceWidth;
+    const sourceCenterY = sourceY + sourceHeight / 2;
+    const sourceDeviceId = event?.deviceId ? String(event.deviceId) : "unknown";
+
+    const lines = witnesses.map((witness, index) => {
+      const y = targetsStartY + index * (targetHeight + gap) + targetHeight / 2;
+      return `<line class="signal-line" x1="${sourceCenterX}" y1="${sourceCenterY}" x2="${targetX}" y2="${y}" marker-end="url(#signalArrow)" />`;
+    }).join("");
+
+    const nodes = witnesses.map((witness, index) => {
+      const y = targetsStartY + index * (targetHeight + gap);
+      return `
+        <g>
+          <rect class="signal-node-hotspot" x="${targetX}" y="${y}" rx="14" ry="14" width="${targetWidth}" height="${targetHeight}" />
+          <text class="signal-title" x="${targetX + 16}" y="${y + 32}">${escapeHtml(witness.name)}</text>
+          <text class="signal-subtitle" x="${targetX + 16}" y="${y + 58}">${escapeHtml(`Hotspot ID: ${witness.hotspotId}`)}</text>
+        </g>
+      `;
+    }).join("");
+
+    refs.witnessGraph.innerHTML = `
+      <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="LoRa signal witness graph">
+        <defs>
+          <marker id="signalArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 z" fill="rgba(62, 192, 255, 0.9)" />
+          </marker>
+        </defs>
+        ${lines}
+        <g>
+          <rect class="signal-node-source" x="${sourceX}" y="${sourceY}" rx="16" ry="16" width="${sourceWidth}" height="${sourceHeight}" />
+          <text class="signal-title" x="${sourceX + 16}" y="${sourceY + 36}">${escapeHtml("Heltec V4")}</text>
+          <text class="signal-subtitle" x="${sourceX + 16}" y="${sourceY + 62}">${escapeHtml(`Device ID: ${shortenMiddle(sourceDeviceId, 36)}`)}</text>
+        </g>
+        ${nodes}
+      </svg>
+    `;
   }
 
   function renderQuickMintChecklist() {
@@ -1824,6 +2076,15 @@
     return `${text.slice(0, 4)}...${text.slice(-4)}`;
   }
 
+  function shortenMiddle(value, maxLength = 28) {
+    const text = String(value || "");
+    if (!text || text.length <= maxLength) return text;
+    const safeMax = Math.max(11, Number(maxLength) || 28);
+    const left = Math.max(4, Math.floor((safeMax - 3) / 2));
+    const right = Math.max(4, safeMax - 3 - left);
+    return `${text.slice(0, left)}...${text.slice(-right)}`;
+  }
+
   function formatDateTime(value) {
     if (!value) return "-";
     const date = new Date(value);
@@ -1852,8 +2113,8 @@
     return new Promise((resolve) => window.setTimeout(resolve, ms));
   }
 
-  // Text override block: fixes mojibake in Polish UI copy.
-  function applyLanguage() {
+  // Legacy override block kept only for reference; functions below are not used.
+  function _legacy_applyLanguageOverride() {
     document.documentElement.lang = state.language;
     document.querySelectorAll("[data-i18n]").forEach((node) => {
       const key = node.dataset.i18n;
@@ -1871,7 +2132,7 @@
     }
   }
 
-  function applyLogDockState() {
+  function _legacy_applyLogDockStateOverride() {
     document.body.dataset.logDock = state.logDockCollapsed ? "collapsed" : "expanded";
     if (refs.logDock) refs.logDock.classList.toggle("log-dock--collapsed", state.logDockCollapsed);
     if (refs.toggleLogDockButton) {
@@ -1881,7 +2142,7 @@
     }
   }
 
-  function updateSerialSupport() {
+  function _legacy_updateSerialSupportOverride() {
     if (!refs.serialSupportNotice) return;
     refs.serialSupportNotice.textContent = "serial" in navigator
       ? (state.language === "en"
@@ -1892,7 +2153,7 @@
           : "Web Serial działa tylko w Chrome lub Edge na HTTPS albo localhost.");
   }
 
-  function renderQuickMintChecklist() {
+  function _legacy_renderQuickMintChecklistOverride() {
     if (!refs.quickMintChecklist) return;
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
     const currentTick = normalizeTick(refs.mintTickInput?.value || "");
@@ -1926,7 +2187,7 @@
     `;
   }
 
-  function renderOnboarding() {
+  function _legacy_renderOnboardingOverride() {
     if (!refs.onboardingChecklist) return;
     const items = state.language === "en"
       ? [
@@ -1949,7 +2210,7 @@
     `).join("");
   }
 
-  function renderEducation() {
+  function _legacy_renderEducationOverride() {
     if (!refs.educationContent) return;
     const mintBaseDc = estimateDcBase(81);
     const mintEffectiveDc = estimateDcTotal(81);
