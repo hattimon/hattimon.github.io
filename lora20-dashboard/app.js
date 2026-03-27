@@ -27,8 +27,13 @@
     default: 15000,
     get_info: 20000,
     get_lorawan: 20000,
+    set_config: 60000,
+    prepare_deploy: 30000,
+    prepare_mint: 30000,
+    prepare_transfer: 30000,
+    prepare_config: 30000,
     join_lorawan: 70000,
-    lorawan_send: 50000
+    lorawan_send: 90000
   };
 
   const SECRET_KEYS = new Set([
@@ -225,7 +230,8 @@
     disconnecting: false,
     pending: new Map(),
     requestId: 1,
-    audioContext: null
+    audioContext: null,
+    deviceRequestChain: Promise.resolve()
   };
 
   function init() {
@@ -598,6 +604,7 @@
           ${event.amount ? `<span class="hero-chip">${escapeHtml(event.amount)}</span>` : ""}
           ${event.nonce != null ? `<span class="hero-chip">nonce ${escapeHtml(String(event.nonce))}</span>` : ""}
         </div>
+        ${event.rejectionReason ? `<p class="helper">${escapeHtml(txt("Powod odrzucenia", "Rejection reason"))}: ${escapeHtml(event.rejectionReason)}</p>` : ""}
         <p class="helper">${escapeHtml(formatDateTime(event.receivedAt || event.createdAt))}</p>
       </article>
     `).join("");
@@ -925,19 +932,27 @@
     } catch (error) {
       const rawError = error instanceof Error ? error.message : String(error);
       state.tokenCatalogErrorRaw = rawError;
-      state.tokenCatalogError = humanizeTokenCatalogError(rawError, getKnownTokens().length > 0);
+      const hasFallbackTokens = getKnownTokens().length > 0;
+      state.tokenCatalogError = humanizeTokenCatalogError(rawError, hasFallbackTokens);
       setText(refs.tokenOutput, prettyJson({
         error: state.tokenCatalogError,
         rawError: state.tokenCatalogErrorRaw
       }));
       renderAll();
-      throw error;
+      if (hasFallbackTokens && isIndexerParameterTypeError(rawError)) {
+        return { tokens: getKnownTokens(), fallback: true };
+      }
+      throw new Error(state.tokenCatalogError);
     }
+  }
+
+  function isIndexerParameterTypeError(rawError) {
+    return /could not determine data type of parameter \$\d+/i.test(String(rawError || "").trim());
   }
 
   function humanizeTokenCatalogError(rawError, hasFallbackTokens) {
     const normalized = String(rawError || "").trim();
-    if (/could not determine data type of parameter \$\d+/i.test(normalized)) {
+    if (isIndexerParameterTypeError(normalized)) {
       return hasFallbackTokens
         ? txt(
             "Lista tokenow z indexera nie odswiezyla sie (blad zapytania po stronie indexera). Panel pokazuje dane z portfela urzadzenia.",
@@ -1454,14 +1469,20 @@
   }
 
   async function requestDevice(command, params, timeout) {
-    const payload = { id: `req-${state.requestId++}`, command, params: params || {} };
-    const response = await sendDevicePayload(payload, timeout || TIMEOUTS[command] || TIMEOUTS.default, command);
-    if (response.ok === false) {
-      const error = new Error(response.error?.message || `Command ${command} failed`);
-      error.code = response.error?.code || "device_command_failed";
-      throw error;
-    }
-    return response.result || {};
+    const run = async () => {
+      const payload = { id: `req-${state.requestId++}`, command, params: params || {} };
+      const response = await sendDevicePayload(payload, timeout || TIMEOUTS[command] || TIMEOUTS.default, command);
+      if (response.ok === false) {
+        const error = new Error(response.error?.message || `Command ${command} failed`);
+        error.code = response.error?.code || "device_command_failed";
+        throw error;
+      }
+      return response.result || {};
+    };
+
+    const next = state.deviceRequestChain.then(run, run);
+    state.deviceRequestChain = next.catch(() => {});
+    return next;
   }
 
   async function sendDevicePayload(payload, timeout, label) {
@@ -1591,6 +1612,16 @@
     if (amount <= 0n) warnings.push({ blocking: true, message: txt("Ilosc transferu musi byc wieksza od zera.", "Transfer amount must be greater than zero.") });
     if (!/^[0-9a-fA-F]{16}$/.test(recipient)) warnings.push({ blocking: true, message: txt("Recipient deviceId musi miec dokladnie 16 znakow hex.", "Recipient deviceId must be exactly 16 hex characters.") });
     if (!findToken(tick)) warnings.push({ blocking: true, message: txt(`Ticker ${tick} nie istnieje w indexerze.`, `Ticker ${tick} does not exist in indexer.`) });
+    const currentDeviceId = getCurrentDeviceId();
+    if (currentDeviceId && recipient.toLowerCase() === currentDeviceId.toLowerCase()) {
+      warnings.push({
+        blocking: false,
+        message: txt(
+          "Transfer na wlasny deviceId zwykle nie ma sensu biznesowego. Jesli pojawia sie rejected, sprawdz rejectionReason w historii zdarzen.",
+          "Transfer to your own deviceId usually has no business effect. If you get rejected, check rejectionReason in event history."
+        )
+      });
+    }
     return warnings;
   }
   function enforceWarnings(warnings) {
@@ -1819,6 +1850,128 @@
 
   function delay(ms) {
     return new Promise((resolve) => window.setTimeout(resolve, ms));
+  }
+
+  // Text override block: fixes mojibake in Polish UI copy.
+  function applyLanguage() {
+    document.documentElement.lang = state.language;
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      const key = node.dataset.i18n;
+      node.textContent = state.language === "en" && I18N_EN[key]
+        ? I18N_EN[key]
+        : (node.dataset.defaultText || node.textContent);
+    });
+
+    setSelectLabels(refs.languageSelect, state.language === "en" ? ["Polish", "English"] : ["Polski", "English"]);
+    setSelectLabels(refs.themeSelect, state.language === "en" ? ["Dark", "Medium", "Light"] : ["Ciemny", "Średni", "Jasny"]);
+
+    const soundLabel = refs.soundEnabledInput?.parentElement?.querySelector("span");
+    if (soundLabel) {
+      soundLabel.textContent = state.language === "en" ? "Sound" : "Dźwięki";
+    }
+  }
+
+  function applyLogDockState() {
+    document.body.dataset.logDock = state.logDockCollapsed ? "collapsed" : "expanded";
+    if (refs.logDock) refs.logDock.classList.toggle("log-dock--collapsed", state.logDockCollapsed);
+    if (refs.toggleLogDockButton) {
+      refs.toggleLogDockButton.textContent = state.logDockCollapsed
+        ? (state.language === "en" ? "Show log" : "Pokaż log")
+        : (state.language === "en" ? "Minimize log" : "Zwiń log");
+    }
+  }
+
+  function updateSerialSupport() {
+    if (!refs.serialSupportNotice) return;
+    refs.serialSupportNotice.textContent = "serial" in navigator
+      ? (state.language === "en"
+          ? "Before connecting, close VS Code Serial Monitor, PlatformIO, MobaXterm and any app holding the COM port."
+          : "Przed połączeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM.")
+      : (state.language === "en"
+          ? "Web Serial works only in Chrome or Edge on HTTPS or localhost."
+          : "Web Serial działa tylko w Chrome lub Edge na HTTPS albo localhost.");
+  }
+
+  function renderQuickMintChecklist() {
+    if (!refs.quickMintChecklist) return;
+    const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
+    const currentTick = normalizeTick(refs.mintTickInput?.value || "");
+    const token = findToken(currentTick);
+    const title = state.language === "en"
+      ? "Quick path for an already configured device"
+      : "Szybka ścieżka dla już skonfigurowanego urządzenia";
+    const steps = state.language === "en"
+      ? [
+          state.port ? "Device is already connected by USB." : "Connect the device by USB.",
+          state.deviceInfo?.hasKey ? "Device info and key are already available." : "Click Fetch info and confirm the device has a key.",
+          runtime?.joined ? "LoRaWAN is already joined." : "Click Fetch radio and run Join LoRaWAN if joined=false.",
+          token ? `Ticker ${currentTick} is visible in the indexer.` : "Refresh tokens or portfolio until the ticker appears.",
+          "Open the mint card and click Prepare and send. For a brand new Heltec, use the onboarding section below."
+        ]
+      : [
+          state.port ? "Urządzenie jest już podłączone przez USB." : "Podłącz urządzenie przez USB.",
+          state.deviceInfo?.hasKey ? "Info i klucz urządzenia są już dostępne." : "Kliknij \"Pobierz info\" i upewnij się, że urządzenie ma klucz.",
+          runtime?.joined ? "LoRaWAN jest już joined." : "Kliknij \"Pobierz radio\", a jeśli trzeba także \"Join LoRaWAN\".",
+          token ? `Ticker ${currentTick} jest widoczny w indexerze.` : "Odśwież tokeny albo portfolio, aż ticker pojawi się w indexerze.",
+          "W karcie mintu kliknij \"Przygotuj i wyślij\". Jeśli to nowy Heltec, niżej masz pełny onboarding."
+        ];
+
+    refs.quickMintChecklist.innerHTML = `
+      <div class="callout callout--neutral">
+        <strong>${escapeHtml(title)}</strong>
+        <ol class="quick-steps__list">
+          ${steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("")}
+        </ol>
+      </div>
+    `;
+  }
+
+  function renderOnboarding() {
+    if (!refs.onboardingChecklist) return;
+    const items = state.language === "en"
+      ? [
+          { title: "1. Drivers and port", body: "Use Chrome or Edge. Close VS Code Serial Monitor, PlatformIO, MobaXterm and every app holding the COM port before clicking Connect device." },
+          { title: "2. Firmware and key", body: "After connecting, fetch info, generate the key, read the public key and register the device in the indexer. If firmware changed, verify radio state and join." },
+          { title: "3. LoRaWAN", body: "Fill DevEUI, JoinEUI and AppKey, save radio settings and then run join. Do not try mint when runtime shows joined=false or hardwareReady=false." },
+          { title: "4. Indexer and webhook", body: "Check indexer health, link DevEUI to deviceId and confirm ChirpStack sends the webhook to /integrations/chirpstack with the current token." }
+        ]
+      : [
+          { title: "1. Sterowniki i port", body: "Użyj Chrome albo Edge. Zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i każdą aplikację trzymającą COM przed kliknięciem \"Połącz urządzenie\"." },
+          { title: "2. Firmware i klucz", body: "Po połączeniu pobierz info, wygeneruj klucz, odczytaj public key i zarejestruj urządzenie w indexerze. Jeśli firmware był aktualizowany, sprawdź radio i join." },
+          { title: "3. LoRaWAN", body: "Wypełnij DevEUI, JoinEUI, AppKey i zapisz radio. Potem wykonaj join. Nie próbuj mintu, gdy runtime pokazuje joined=false albo hardwareReady=false." },
+          { title: "4. Indexer i webhook", body: "Sprawdź health indexera, podepnij DevEUI do deviceId i upewnij się, że ChirpStack wysyła webhook na /integrations/chirpstack z aktualnym tokenem." }
+        ];
+    refs.onboardingChecklist.innerHTML = items.map((item) => `
+      <article class="guide-card">
+        <h3>${escapeHtml(item.title)}</h3>
+        <p>${escapeHtml(item.body)}</p>
+      </article>
+    `).join("");
+  }
+
+  function renderEducation() {
+    if (!refs.educationContent) return;
+    const mintBaseDc = estimateDcBase(81);
+    const mintEffectiveDc = estimateDcTotal(81);
+    refs.educationContent.innerHTML = state.language === "en"
+      ? `
+        <p>Every message is signed with Ed25519. The indexer uses the nonce to reject replay and duplicates. Only the first deploy counts for a ticker, and mint stops being indexed after max supply is reached.</p>
+        <ul>
+          <li><strong>Mint</strong>: currently about 81 B of payload, which is about ${mintBaseDc} DC of base cost in 24 B chunks. With the current tenant setting Max copy = ${PLATFORM_COPY_COUNT}, this becomes about ${mintEffectiveDc} DC of effective cost.</li>
+          <li><strong>Prepare vs send</strong>: prepare only creates and signs the payload locally, while send also asks the radio to transmit a real LoRaWAN uplink.</li>
+          <li><strong>Config</strong>: stores auto-mint settings and interval; round-robin profiles stay locally in Heltec after synchronization.</li>
+          <li><strong>Security</strong>: the signature proves the author, nonce preserves order, and the webhook to the indexer should be protected by a separate token.</li>
+        </ul>
+      `
+      : `
+        <p>Każda wiadomość jest podpisywana Ed25519. Indexer używa nonce, żeby odrzucić replay i duplikaty. Deploy liczy się tylko pierwszy dla tickera, a mint przestaje być indeksowany po osiągnięciu max supply.</p>
+        <ul>
+          <li><strong>Mint</strong>: obecnie około 81 B payloadu, czyli około ${mintBaseDc} DC bazowego kosztu przy porcjach 24 B. Przy aktualnym ustawieniu tenantu Max copy = ${PLATFORM_COPY_COUNT} daje to około ${mintEffectiveDc} DC kosztu efektywnego.</li>
+          <li><strong>Prepare vs send</strong>: prepare tylko tworzy i podpisuje payload lokalnie, a send dodatkowo zleca faktyczny uplink LoRaWAN.</li>
+          <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; profile round-robin są utrzymywane lokalnie w Heltecu po synchronizacji.</li>
+          <li><strong>Bezpieczeństwo</strong>: podpis udowadnia autora, nonce pilnuje kolejności, a webhook do indexera powinien być chroniony osobnym tokenem.</li>
+        </ul>
+      `;
   }
 
   if (document.readyState === "loading") {

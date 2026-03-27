@@ -644,7 +644,9 @@ body[data-theme="dark"] .surface {
 }
 
 #recentTransactionsList.timeline {
-  max-height: min(74vh, 760px);
+  min-height: 520px;
+  max-height: min(80vh, 860px);
+  height: min(68vh, 760px);
   overflow-y: auto;
   align-content: start;
   padding-right: 4px;
@@ -910,6 +912,8 @@ body[data-theme="dark"] .log-dock {
   }
 
   #recentTransactionsList.timeline {
+    min-height: 280px;
+    height: 420px;
     max-height: 420px;
   }
 }
