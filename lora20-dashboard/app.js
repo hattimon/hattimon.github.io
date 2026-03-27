@@ -371,11 +371,11 @@
     });
 
     setSelectLabels(refs.languageSelect, state.language === "en" ? ["Polish", "English"] : ["Polski", "English"]);
-    setSelectLabels(refs.themeSelect, state.language === "en" ? ["Dark", "Medium", "Light"] : ["Ciemny", "Średni", "Jasny"]);
+    setSelectLabels(refs.themeSelect, state.language === "en" ? ["Dark", "Medium", "Light"] : ["Ciemny", "Ĺšredni", "Jasny"]);
 
     const soundLabel = refs.soundEnabledInput?.parentElement?.querySelector("span");
     if (soundLabel) {
-      soundLabel.textContent = state.language === "en" ? "Sound" : "Dźwięki";
+      soundLabel.textContent = state.language === "en" ? "Sound" : "DĹşwiÄ™ki";
     }
   }
 
@@ -388,8 +388,8 @@
     if (refs.logDock) refs.logDock.classList.toggle("log-dock--collapsed", state.logDockCollapsed);
     if (refs.toggleLogDockButton) {
       refs.toggleLogDockButton.textContent = state.logDockCollapsed
-        ? (state.language === "en" ? "Show log" : "Pokaż log")
-        : (state.language === "en" ? "Minimize log" : "Zwiń log");
+        ? (state.language === "en" ? "Show log" : "PokaĹĽ log")
+        : (state.language === "en" ? "Minimize log" : "ZwiĹ„ log");
     }
   }
 
@@ -400,15 +400,23 @@
     });
   }
 
+  function isEnglish() {
+    return state.language === "en";
+  }
+
+  function txt(pl, en) {
+    return isEnglish() ? en : pl;
+  }
+
   function updateSerialSupport() {
     if (!refs.serialSupportNotice) return;
     refs.serialSupportNotice.textContent = "serial" in navigator
       ? (state.language === "en"
           ? "Before connecting, close VS Code Serial Monitor, PlatformIO, MobaXterm and any app holding the COM port."
-          : "Przed połączeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM.")
+          : "Przed poĹ‚Ä…czeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujÄ…ce COM.")
       : (state.language === "en"
           ? "Web Serial works only in Chrome or Edge on HTTPS or localhost."
-          : "Web Serial działa tylko w Chrome lub Edge na HTTPS albo localhost.");
+          : "Web Serial dziaĹ‚a tylko w Chrome lub Edge na HTTPS albo localhost.");
   }
 
   function renderAll() {
@@ -427,16 +435,21 @@
   }
 
   function renderBadges() {
-    setBadge(refs.connectionBadge, state.port ? "connected" : "danger", state.port ? "USB connected" : "USB offline");
-    if (state.indexerOnline === true) setBadge(refs.indexerBadge, "ok", "Indexer online");
-    else if (state.indexerOnline === false) setBadge(refs.indexerBadge, "danger", "Indexer offline");
-    else setBadge(refs.indexerBadge, "warn", "Indexer probing");
+    setBadge(
+      refs.connectionBadge,
+      state.port ? "connected" : "danger",
+      state.port ? txt("USB podlaczony", "USB connected") : txt("USB offline", "USB offline")
+    );
+    if (state.indexerOnline === true) setBadge(refs.indexerBadge, "ok", txt("Indexer online", "Indexer online"));
+    else if (state.indexerOnline === false) setBadge(refs.indexerBadge, "danger", txt("Indexer offline", "Indexer offline"));
+    else setBadge(refs.indexerBadge, "warn", txt("Indexer sprawdzanie", "Indexer probing"));
 
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
-    if (!runtime) setBadge(refs.radioBadge, "warn", "LoRa idle");
-    else if (runtime.joined) setBadge(refs.radioBadge, "ok", "LoRa joined");
-    else if (runtime.configured || runtime.initialized || runtime.hardwareReady) setBadge(refs.radioBadge, "warn", "LoRa configured");
-    else setBadge(refs.radioBadge, "danger", "LoRa not ready");
+    if (!runtime) setBadge(refs.radioBadge, "warn", txt("LoRa bezczynna", "LoRa idle"));
+    else if (runtime.joined) setBadge(refs.radioBadge, "ok", txt("LoRa dolaczona", "LoRa joined"));
+    else if (runtime.configured || runtime.initialized || runtime.hardwareReady) {
+      setBadge(refs.radioBadge, "warn", txt("LoRa skonfigurowana", "LoRa configured"));
+    } else setBadge(refs.radioBadge, "danger", txt("LoRa niegotowa", "LoRa not ready"));
   }
 
   function renderOverview() {
@@ -447,13 +460,13 @@
     setText(refs.overviewLastSendValue, formatLastSend(state.lastSendAt));
 
     const notes = [];
-    if (!state.port) notes.push("Urządzenie nie jest jeszcze podłączone przez Web Serial.");
-    if (state.indexerOnline !== true) notes.push("Indexer nie odpowiada lub dashboard nie może go odczytać.");
-    if (state.tokenCatalogError) notes.push(`Lista tickerów nie odświeżyła się: ${state.tokenCatalogError}.`);
+    if (!state.port) notes.push(txt("Urzadzenie nie jest jeszcze podlaczone przez Web Serial.", "The device is not connected via Web Serial yet."));
+    if (state.indexerOnline !== true) notes.push(txt("Indexer nie odpowiada lub dashboard nie moze go odczytac.", "Indexer is not responding or dashboard cannot read it."));
+    if (state.tokenCatalogError) notes.push(txt(`Lista tickerow nie odswiezyla sie: ${state.tokenCatalogError}.`, `Token list refresh failed: ${state.tokenCatalogError}.`));
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
-    if (runtime && !runtime.joined) notes.push("Radio nie jest joined, więc próba wysyłki skończy się timeoutem albo odrzuceniem.");
-    if (state.lastSendAt) notes.push(`Ostatnia wysyłka: ${formatDateTime(state.lastSendAt)}.`);
-    renderCallout(refs.overviewStatusNote, notes.length ? "warn" : "ok", notes.length ? notes.join(" ") : "Panel wygląda na gotowy do pracy.");
+    if (runtime && !runtime.joined) notes.push(txt("Radio nie jest joined, wiec proba wysylki skonczy sie timeoutem albo odrzuceniem.", "Radio is not joined, so sending will likely timeout or be rejected."));
+    if (state.lastSendAt) notes.push(txt(`Ostatnia wysylka: ${formatDateTime(state.lastSendAt)}.`, `Last send: ${formatDateTime(state.lastSendAt)}.`));
+    renderCallout(refs.overviewStatusNote, notes.length ? "warn" : "ok", notes.length ? notes.join(" ") : txt("Panel wyglada na gotowy do pracy.", "Dashboard looks ready."));
   }
 
   function renderQuickMintChecklist() {
@@ -463,7 +476,7 @@
     const token = findToken(currentTick);
     const title = state.language === "en"
       ? "Quick path for an already configured device"
-      : "Szybka ścieżka dla już skonfigurowanego urządzenia";
+      : "Szybka Ĺ›cieĹĽka dla juĹĽ skonfigurowanego urzÄ…dzenia";
     const steps = state.language === "en"
       ? [
           state.port ? "Device is already connected by USB." : "Connect the device by USB.",
@@ -473,11 +486,11 @@
           "Open the mint card and click Prepare and send. For a brand new Heltec, use the onboarding section below."
         ]
       : [
-          state.port ? "Urządzenie jest już podłączone przez USB." : "Podłącz urządzenie przez USB.",
-          state.deviceInfo?.hasKey ? "Info i klucz urządzenia są już dostępne." : "Kliknij „Pobierz info” i upewnij się, że urządzenie ma klucz.",
-          runtime?.joined ? "LoRaWAN jest już joined." : "Kliknij „Pobierz radio”, a jeśli trzeba także „Join LoRaWAN”.",
-          token ? `Ticker ${currentTick} jest widoczny w indexerze.` : "Odśwież tokeny albo portfolio, aż ticker pojawi się w indexerze.",
-          "W karcie mintu kliknij „Przygotuj i wyślij”. Jeśli to nowy Heltec, niżej masz pełny onboarding."
+          state.port ? "UrzÄ…dzenie jest juĹĽ podĹ‚Ä…czone przez USB." : "PodĹ‚Ä…cz urzÄ…dzenie przez USB.",
+          state.deviceInfo?.hasKey ? "Info i klucz urzÄ…dzenia sÄ… juĹĽ dostÄ™pne." : "Kliknij â€žPobierz infoâ€ť i upewnij siÄ™, ĹĽe urzÄ…dzenie ma klucz.",
+          runtime?.joined ? "LoRaWAN jest juĹĽ joined." : "Kliknij â€žPobierz radioâ€ť, a jeĹ›li trzeba takĹĽe â€žJoin LoRaWANâ€ť.",
+          token ? `Ticker ${currentTick} jest widoczny w indexerze.` : "OdĹ›wieĹĽ tokeny albo portfolio, aĹĽ ticker pojawi siÄ™ w indexerze.",
+          "W karcie mintu kliknij â€žPrzygotuj i wyĹ›lijâ€ť. JeĹ›li to nowy Heltec, niĹĽej masz peĹ‚ny onboarding."
         ];
 
     refs.quickMintChecklist.innerHTML = `
@@ -499,16 +512,16 @@
     setText(refs.deviceSummaryOutput, device ? prettyJson(device) : "No device data yet.");
 
     const hints = [];
-    if (!device) hints.push("Po połączeniu kliknij „Pobierz info”.");
+    if (!device) hints.push(txt("Po polaczeniu kliknij 'Pobierz info'.", "After connecting, click 'Fetch info'."));
     else {
-      hints.push(`Aktywny deviceId: ${device.deviceId}.`);
-      if (!device.hasKey) hints.push("Klucz urządzenia nie został jeszcze wygenerowany.");
+      hints.push(txt(`Aktywny deviceId: ${device.deviceId}.`, `Active deviceId: ${device.deviceId}.`));
+      if (!device.hasKey) hints.push(txt("Klucz urzadzenia nie zostal jeszcze wygenerowany.", "Device key has not been generated yet."));
     }
     renderCallout(refs.deviceReadinessBanner, device?.hasKey ? "ok" : "warn", hints.join(" "));
 
     if (!refs.knownDevicesList) return;
     if (!state.knownDevices.length) {
-      refs.knownDevicesList.innerHTML = `<div class="known-device"><h3>Brak zapisanych urządzeń</h3><p class="helper">Po udanym odczycie info lub rejestracji w indexerze urządzenie pojawi się tutaj.</p></div>`;
+      refs.knownDevicesList.innerHTML = `<div class="known-device"><h3>${escapeHtml(txt("Brak zapisanych urzadzen", "No saved devices"))}</h3><p class="helper">${escapeHtml(txt("Po udanym odczycie info lub rejestracji w indexerze urzadzenie pojawi sie tutaj.", "After successful info read or indexer registration, the device will appear here."))}</p></div>`;
       return;
     }
 
@@ -520,8 +533,8 @@
             <p class="helper">${escapeHtml(maskSecret(deviceEntry.publicKeyHex || ""))}</p>
           </div>
           <div class="button-row">
-            <button class="button button--ghost" type="button" data-action="use-device" data-id="${escapeHtml(deviceEntry.deviceId)}">Use</button>
-            <button class="button button--ghost" type="button" data-action="remove-device" data-id="${escapeHtml(deviceEntry.deviceId)}">Remove</button>
+            <button class="button button--ghost" type="button" data-action="use-device" data-id="${escapeHtml(deviceEntry.deviceId)}">${escapeHtml(txt("Uzyj", "Use"))}</button>
+            <button class="button button--ghost" type="button" data-action="remove-device" data-id="${escapeHtml(deviceEntry.deviceId)}">${escapeHtml(txt("Usun", "Remove"))}</button>
           </div>
         </div>
       </article>
@@ -540,17 +553,17 @@
     setText(refs.lorawanSummaryOutput, info ? prettyJson(info) : "No LoRaWAN status yet.");
 
     const messages = [];
-    if (!config?.hasAppKey || !config?.hasJoinEui) messages.push("Brakuje pełnej konfiguracji OTAA.");
-    if (runtime && !runtime.hardwareReady) messages.push("hardwareReady=false. Po restarcie Helteca odczekaj chwilę i dopiero odczytaj radio lub wykonaj join.");
-    if (runtime && !runtime.initialized) messages.push("initialized=false. Radio nie jest gotowe do wysyłki.");
-    if (runtime && !runtime.joined) messages.push("joined=false. Wykonaj join przed wysyłką.");
-    renderCallout(refs.radioActionHint, messages.length ? "warn" : "ok", messages.length ? messages.join(" ") : "Radio wygląda na gotowe do wysyłki.");
+    if (!config?.hasAppKey || !config?.hasJoinEui) messages.push(txt("Brakuje pelnej konfiguracji OTAA.", "Full OTAA configuration is missing."));
+    if (runtime && !runtime.hardwareReady) messages.push(txt("hardwareReady=false. Po restarcie Helteca odczekaj chwile i dopiero odczytaj radio lub wykonaj join.", "hardwareReady=false. After Heltec restart, wait a moment, then refresh radio state or run join."));
+    if (runtime && !runtime.initialized) messages.push(txt("initialized=false. Radio nie jest gotowe do wysylki.", "initialized=false. Radio is not ready to send yet."));
+    if (runtime && !runtime.joined) messages.push(txt("joined=false. Wykonaj join przed wysylka.", "joined=false. Run join before sending."));
+    renderCallout(refs.radioActionHint, messages.length ? "warn" : "ok", messages.length ? messages.join(" ") : txt("Radio wyglada na gotowe do wysylki.", "Radio looks ready to send."));
   }
 
   function renderPortfolio() {
     if (refs.portfolioList) {
       if (!state.portfolio.length) {
-        refs.portfolioList.innerHTML = `<div class="token-card"><h3>Brak balansu</h3><p class="helper">Po pobraniu portfela zobaczysz tu tokeny przypisane do aktywnego deviceId.</p></div>`;
+        refs.portfolioList.innerHTML = `<div class="token-card"><h3>${escapeHtml(txt("Brak balansu", "No balances yet"))}</h3><p class="helper">${escapeHtml(txt("Po pobraniu portfela zobaczysz tu tokeny przypisane do aktywnego deviceId.", "After loading portfolio, tokens for the active deviceId will appear here."))}</p></div>`;
       } else {
         refs.portfolioList.innerHTML = state.portfolio.map((entry) => `
           <article class="token-card">
@@ -569,7 +582,7 @@
 
     if (!refs.recentTransactionsList) return;
     if (!state.recentTransactions.length) {
-      refs.recentTransactionsList.innerHTML = `<div class="timeline-card"><h3>Brak historii</h3><p class="helper">Po synchronizacji webhooka i wysłaniu nowego uplinku zobaczysz tu zdarzenia z indexera.</p></div>`;
+      refs.recentTransactionsList.innerHTML = `<div class="timeline-card"><h3>${escapeHtml(txt("Brak historii", "No history yet"))}</h3><p class="helper">${escapeHtml(txt("Po synchronizacji webhooka i wyslaniu nowego uplinku zobaczysz tu zdarzenia z indexera.", "After webhook sync and sending a new uplink, indexer events will appear here."))}</p></div>`;
       return;
     }
 
@@ -602,17 +615,26 @@
 
     if (refs.tokenLibraryStatus) {
       if (state.tokenCatalogError && knownTokens.length) {
-        renderCallout(refs.tokenLibraryStatus, "warn", `Lista tokenów z indexera nie odświeżyła się, więc panel pokazuje dane z portfela urządzenia. ${state.tokenCatalogError}`);
+        renderCallout(refs.tokenLibraryStatus, "warn", txt(
+          `Lista tokenow z indexera nie odswiezyla sie, wiec panel pokazuje dane z portfela urzadzenia. ${state.tokenCatalogError}`,
+          `Indexer token list refresh failed, so dashboard is showing portfolio-derived token data. ${state.tokenCatalogError}`
+        ));
       } else if (state.tokenCatalogError) {
-        renderCallout(refs.tokenLibraryStatus, "danger", `Nie udało się pobrać listy tokenów z indexera. ${state.tokenCatalogError}`);
+        renderCallout(refs.tokenLibraryStatus, "danger", txt(
+          `Nie udalo sie pobrac listy tokenow z indexera. ${state.tokenCatalogError}`,
+          `Failed to fetch token list from indexer. ${state.tokenCatalogError}`
+        ));
       } else {
-        renderCallout(refs.tokenLibraryStatus, "ok", "Wybierz ticker z listy, aby automatycznie wypełnić pola deploy, mint i transfer.");
+        renderCallout(refs.tokenLibraryStatus, "ok", txt(
+          "Wybierz ticker z listy, aby automatycznie wypelnic pola deploy, mint i transfer.",
+          "Choose a ticker from the list to autofill deploy, mint and transfer forms."
+        ));
       }
     }
 
     if (!refs.tokenLibraryList) return;
     if (!filtered.length) {
-      refs.tokenLibraryList.innerHTML = `<div class="token-card"><h3>Brak tokenów</h3><p class="helper">Indexer nie zwrócił jeszcze żadnych wdrożonych tickerów.</p></div>`;
+      refs.tokenLibraryList.innerHTML = `<div class="token-card"><h3>${escapeHtml(txt("Brak tokenow", "No tokens found"))}</h3><p class="helper">${escapeHtml(txt("Indexer nie zwrocil jeszcze zadnych wdrozonych tickerow.", "Indexer has not returned any deployed tickers yet."))}</p></div>`;
       return;
     }
 
@@ -622,7 +644,7 @@
         <article class="token-card">
           <div class="token-card__head">
             <h3>${escapeHtml(token.tick)}</h3>
-            <button class="button button--ghost" type="button" data-action="use-token" data-tick="${escapeHtml(token.tick)}">Use</button>
+            <button class="button button--ghost" type="button" data-action="use-token" data-tick="${escapeHtml(token.tick)}">${escapeHtml(txt("Uzyj", "Use"))}</button>
           </div>
           <div class="token-meta">
             <span class="hero-chip">mint ${escapeHtml(token.limitPerMint)}</span>
@@ -635,7 +657,7 @@
   }
 
   function renderPrepared() {
-    setText(refs.preparedOutput, state.lastPrepared ? prettyJson(state.lastPrepared) : "No prepared payload yet.");
+    setText(refs.preparedOutput, state.lastPrepared ? prettyJson(state.lastPrepared) : txt("Brak przygotowanego payloadu.", "No prepared payload yet."));
     const payloadSize = state.lastPrepared?.payloadSize || 81;
     setText(refs.estimatedPayloadValue, `${payloadSize} B`);
     setText(refs.estimatedDcValue, formatDcEstimate(payloadSize));
@@ -646,7 +668,10 @@
     saveJson(STORAGE.scheduler, state.scheduler);
 
     if (refs.profilesPersistenceNote) {
-      refs.profilesPersistenceNote.textContent = "Profile są zapamiętywane lokalnie w przeglądarce. „Synchronizuj kolejkę” zapisuje je do Helteca, więc urządzenie może mintować także bez podłączonego panelu.";
+      refs.profilesPersistenceNote.textContent = txt(
+        "Profile sa zapamietywane lokalnie w przegladarce. 'Synchronizuj kolejke' zapisuje je do Helteca, wiec urzadzenie moze mintowac takze bez podlaczonego panelu.",
+        "Profiles are stored locally in the browser. 'Sync queue' writes them to Heltec, so the device can keep minting without an attached dashboard."
+      );
     }
 
     if (refs.profileQueuePreview) {
@@ -660,7 +685,7 @@
 
     if (!refs.profileList) return;
     if (!state.profiles.length) {
-      refs.profileList.innerHTML = `<div class="profile-card"><h3>Brak profili</h3><p class="helper">Dodaj profil mintu, a potem zsynchronizuj kolejkę z urządzeniem.</p></div>`;
+      refs.profileList.innerHTML = `<div class="profile-card"><h3>${escapeHtml(txt("Brak profili", "No profiles yet"))}</h3><p class="helper">${escapeHtml(txt("Dodaj profil mintu, a potem zsynchronizuj kolejke z urzadzeniem.", "Add a mint profile, then sync queue with the device."))}</p></div>`;
       return;
     }
 
@@ -674,11 +699,11 @@
           <span class="badge ${profile.enabled ? "badge--ok" : "badge--warn"}">${profile.enabled ? "active" : "paused"}</span>
         </div>
         <div class="button-row">
-          <button class="button button--ghost" type="button" data-action="use-profile" data-id="${escapeHtml(profile.id)}">Use</button>
-          <button class="button button--ghost" type="button" data-action="toggle-profile" data-id="${escapeHtml(profile.id)}">${profile.enabled ? "Pause" : "Enable"}</button>
-          <button class="button button--ghost" type="button" data-action="move-up" data-id="${escapeHtml(profile.id)}" ${index === 0 ? "disabled" : ""}>Up</button>
-          <button class="button button--ghost" type="button" data-action="move-down" data-id="${escapeHtml(profile.id)}" ${index === state.profiles.length - 1 ? "disabled" : ""}>Down</button>
-          <button class="button button--ghost" type="button" data-action="remove-profile" data-id="${escapeHtml(profile.id)}">Remove</button>
+          <button class="button button--ghost" type="button" data-action="use-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(txt("Uzyj", "Use"))}</button>
+          <button class="button button--ghost" type="button" data-action="toggle-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(profile.enabled ? txt("Pauza", "Pause") : txt("Wlacz", "Enable"))}</button>
+          <button class="button button--ghost" type="button" data-action="move-up" data-id="${escapeHtml(profile.id)}" ${index === 0 ? "disabled" : ""}>${escapeHtml(txt("Gora", "Up"))}</button>
+          <button class="button button--ghost" type="button" data-action="move-down" data-id="${escapeHtml(profile.id)}" ${index === state.profiles.length - 1 ? "disabled" : ""}>${escapeHtml(txt("Dol", "Down"))}</button>
+          <button class="button button--ghost" type="button" data-action="remove-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(txt("Usun", "Remove"))}</button>
         </div>
       </article>
     `).join("");
@@ -692,30 +717,52 @@
 
     if (refs.selectedTokenSummary) {
       if (!selectedToken) {
-        renderCallout(refs.selectedTokenSummary, "warn", mintTick ? `Ticker ${mintTick} nie jest jeszcze widoczny w indexerze. Mint bez wcześniejszego deploy prawdopodobnie nie zostanie zaindeksowany.` : "Wybierz ticker albo kliknij token z biblioteki.");
+        renderCallout(
+          refs.selectedTokenSummary,
+          "warn",
+          mintTick
+            ? txt(
+              `Ticker ${mintTick} nie jest jeszcze widoczny w indexerze. Mint bez wczesniejszego deploy prawdopodobnie nie zostanie zaindeksowany.`,
+              `Ticker ${mintTick} is not visible in indexer yet. Mint without prior deploy is likely to be rejected.`
+            )
+            : txt("Wybierz ticker albo kliknij token z biblioteki.", "Choose a ticker or click a token from the library.")
+        );
       } else {
         const remaining = safeBigInt(selectedToken.maxSupply) - safeBigInt(selectedToken.totalSupply);
-        renderCallout(refs.selectedTokenSummary, "ok", `${selectedToken.tick}: minted ${selectedToken.totalSupply}/${selectedToken.maxSupply}, limit per mint ${selectedToken.limitPerMint}, remaining ${remaining}.`);
+        renderCallout(
+          refs.selectedTokenSummary,
+          "ok",
+          txt(
+            `${selectedToken.tick}: wybite ${selectedToken.totalSupply}/${selectedToken.maxSupply}, limit na mint ${selectedToken.limitPerMint}, pozostalo ${remaining}.`,
+            `${selectedToken.tick}: minted ${selectedToken.totalSupply}/${selectedToken.maxSupply}, limit per mint ${selectedToken.limitPerMint}, remaining ${remaining}.`
+          )
+        );
       }
     }
 
     if (refs.operationWarnings) {
-      if (!warnings.length) renderCallout(refs.operationWarnings, "ok", "Brak oczywistych błędów logicznych dla aktualnego mintu.");
+      if (!warnings.length) renderCallout(refs.operationWarnings, "ok", txt("Brak oczywistych bledow logicznych dla aktualnego mintu.", "No obvious logical issues for this mint."));
       else renderCallout(refs.operationWarnings, warnings.some((warning) => warning.blocking) ? "danger" : "warn", warnings.map((warning) => warning.message).join(" "));
     }
 
     const lastSendMs = state.lastSendAt ? Date.now() - Date.parse(state.lastSendAt) : Number.POSITIVE_INFINITY;
     const transportNotes = [];
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
-    if (!state.port) transportNotes.push("Brak połączenia USB.");
-    if (runtime && !runtime.joined) transportNotes.push("Radio nie jest joined.");
-    if (runtime && (!runtime.hardwareReady || !runtime.initialized)) transportNotes.push("Radio po restarcie nie jest jeszcze gotowe do kolejnej wysyłki.");
-    if (Number.isFinite(lastSendMs) && lastSendMs < 15000) transportNotes.push(`Ostatnia wysyłka była ${formatRelative(Date.now(), Date.parse(state.lastSendAt))}. Daj urządzeniu chwilę przed następną próbą.`);
-    renderCallout(refs.transportStatusNote, transportNotes.length ? "warn" : "ok", transportNotes.length ? transportNotes.join(" ") : "Transport wygląda poprawnie.");
+    if (!state.port) transportNotes.push(txt("Brak polaczenia USB.", "No USB connection."));
+    if (runtime && !runtime.joined) transportNotes.push(txt("Radio nie jest joined.", "Radio is not joined."));
+    if (runtime && (!runtime.hardwareReady || !runtime.initialized)) transportNotes.push(txt("Radio po restarcie nie jest jeszcze gotowe do kolejnej wysylki.", "After restart the radio is not ready for the next send yet."));
+    if (Number.isFinite(lastSendMs) && lastSendMs < 15000) {
+      transportNotes.push(txt(
+        `Ostatnia wysylka byla ${formatRelative(Date.now(), Date.parse(state.lastSendAt))}. Daj urzadzeniu chwile przed nastepna proba.`,
+        `Last send was ${formatRelative(Date.now(), Date.parse(state.lastSendAt))}. Give the device a short pause before trying again.`
+      ));
+    }
+    renderCallout(refs.transportStatusNote, transportNotes.length ? "warn" : "ok", transportNotes.length ? transportNotes.join(" ") : txt("Transport wyglada poprawnie.", "Transport looks healthy."));
 
-    const actionNote = state.language === "en"
-      ? "Prepare only runs the local prepare_* command on Heltec, signs the payload and shows a preview. It does not transmit over LoRaWAN and does not commit the nonce. Prepare and send first prepares the payload, then calls lorawan_send, queues the uplink in the radio and commits the nonce after the device accepts the queue request. The indexer changes state only after ChirpStack forwards that uplink to the webhook."
-      : "Przygotuj uruchamia na Heltecu tylko lokalne polecenie prepare_*, podpisuje payload i pokazuje podgląd. Nie wysyła nic przez LoRaWAN i nie commit-uje nonce. Przygotuj i wyślij najpierw robi prepare, potem wywołuje lorawan_send, kolejkuje uplink w radiu i commit-uje nonce po zaakceptowaniu przez urządzenie. Stan indexera zmienia się dopiero po tym, jak ChirpStack prześle uplink do webhooka.";
+    const actionNote = txt(
+      "Przygotuj uruchamia na Heltecu tylko lokalne polecenie prepare_*, podpisuje payload i pokazuje podglad. Nie wysyla nic przez LoRaWAN i nie zapisuje nonce. Przygotuj i wyslij najpierw robi prepare, potem wywoluje lorawan_send, kolejkuje uplink w radiu i zapisuje nonce po akceptacji przez urzadzenie. Stan indexera zmienia sie dopiero po przekazaniu uplinku przez webhook ChirpStack.",
+      "Prepare only runs local prepare_* on Heltec, signs payload and shows preview. It does not transmit over LoRaWAN and does not commit nonce. Prepare and send first prepares, then calls lorawan_send, queues uplink in radio and commits nonce after device accepts queueing. Indexer state changes only after ChirpStack forwards the uplink to webhook."
+    );
     renderCallout(refs.operationActionNote, "ok", actionNote);
   }
 
@@ -729,10 +776,10 @@
           { title: "4. Indexer and webhook", body: "Check indexer health, link DevEUI to deviceId and confirm ChirpStack sends the webhook to /integrations/chirpstack with the current token." }
         ]
       : [
-          { title: "1. Sterowniki i port", body: "Użyj Chrome albo Edge. Zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i każdą aplikację trzymającą COM przed kliknięciem „Połącz urządzenie”." },
-          { title: "2. Firmware i klucz", body: "Po połączeniu pobierz info, wygeneruj klucz, odczytaj public key i zarejestruj urządzenie w indexerze. Jeśli firmware był aktualizowany, sprawdź radio i join." },
-          { title: "3. LoRaWAN", body: "Wypełnij DevEUI, JoinEUI, AppKey i zapisz radio. Potem wykonaj join. Nie próbuj mintu, gdy runtime pokazuje joined=false albo hardwareReady=false." },
-          { title: "4. Indexer i webhook", body: "Sprawdź health indexera, podepnij DevEUI do deviceId i upewnij się, że ChirpStack wysyła webhook na /integrations/chirpstack z aktualnym tokenem." }
+          { title: "1. Sterowniki i port", body: "UĹĽyj Chrome albo Edge. Zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i kaĹĽdÄ… aplikacjÄ™ trzymajÄ…cÄ… COM przed klikniÄ™ciem â€žPoĹ‚Ä…cz urzÄ…dzenieâ€ť." },
+          { title: "2. Firmware i klucz", body: "Po poĹ‚Ä…czeniu pobierz info, wygeneruj klucz, odczytaj public key i zarejestruj urzÄ…dzenie w indexerze. JeĹ›li firmware byĹ‚ aktualizowany, sprawdĹş radio i join." },
+          { title: "3. LoRaWAN", body: "WypeĹ‚nij DevEUI, JoinEUI, AppKey i zapisz radio. Potem wykonaj join. Nie prĂłbuj mintu, gdy runtime pokazuje joined=false albo hardwareReady=false." },
+          { title: "4. Indexer i webhook", body: "SprawdĹş health indexera, podepnij DevEUI do deviceId i upewnij siÄ™, ĹĽe ChirpStack wysyĹ‚a webhook na /integrations/chirpstack z aktualnym tokenem." }
         ];
     refs.onboardingChecklist.innerHTML = items.map((item) => `
       <article class="guide-card">
@@ -757,12 +804,12 @@
         </ul>
       `
       : `
-        <p>Każda wiadomość jest podpisywana Ed25519. Indexer używa nonce, żeby odrzucić replay i duplikaty. Deploy liczy się tylko pierwszy dla tickera, a mint przestaje być indeksowany po osiągnięciu max supply.</p>
+        <p>KaĹĽda wiadomoĹ›Ä‡ jest podpisywana Ed25519. Indexer uĹĽywa nonce, ĹĽeby odrzuciÄ‡ replay i duplikaty. Deploy liczy siÄ™ tylko pierwszy dla tickera, a mint przestaje byÄ‡ indeksowany po osiÄ…gniÄ™ciu max supply.</p>
         <ul>
-          <li><strong>Mint</strong>: obecnie około 81 B payloadu, czyli około ${mintBaseDc} DC bazowego kosztu przy porcjach 24 B. Przy aktualnym ustawieniu tenantu Max copy = ${PLATFORM_COPY_COUNT} daje to około ${mintEffectiveDc} DC kosztu efektywnego.</li>
+          <li><strong>Mint</strong>: obecnie okoĹ‚o 81 B payloadu, czyli okoĹ‚o ${mintBaseDc} DC bazowego kosztu przy porcjach 24 B. Przy aktualnym ustawieniu tenantu Max copy = ${PLATFORM_COPY_COUNT} daje to okoĹ‚o ${mintEffectiveDc} DC kosztu efektywnego.</li>
           <li><strong>Prepare vs send</strong>: prepare tylko tworzy i podpisuje payload lokalnie, a send dodatkowo zleca faktyczny uplink LoRaWAN.</li>
-          <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; profile round-robin są utrzymywane lokalnie w Heltecu po synchronizacji.</li>
-          <li><strong>Bezpieczeństwo</strong>: podpis udowadnia autora, nonce pilnuje kolejności, a webhook do indexera powinien być chroniony osobnym tokenem.</li>
+          <li><strong>Config</strong>: zapis ustawieĹ„ auto-mintu i interwaĹ‚u; profile round-robin sÄ… utrzymywane lokalnie w Heltecu po synchronizacji.</li>
+          <li><strong>BezpieczeĹ„stwo</strong>: podpis udowadnia autora, nonce pilnuje kolejnoĹ›ci, a webhook do indexera powinien byÄ‡ chroniony osobnym tokenem.</li>
         </ul>
       `;
   }
@@ -817,7 +864,7 @@
       state.deviceInfo.deviceId = result.deviceId;
       upsertKnownDevice(result);
     }
-    addLog("device", "Public key loaded", result);
+    addLog("device", txt("Public key odczytany", "Public key loaded"), result);
     renderAll();
     return result;
   }
@@ -837,7 +884,7 @@
 
     if (response.device) {
       upsertKnownDevice({ deviceId: response.device.deviceId, publicKeyHex: response.device.publicKeyRaw });
-      addLog("indexer", "Device registered in indexer", response.device);
+      addLog("indexer", txt("Urzadzenie zarejestrowane w indexerze", "Device registered in indexer"), response.device);
       await loadPortfolioAndHistory();
     }
   }
@@ -891,7 +938,7 @@
 
   async function lookupToken() {
     const tick = normalizeTick(refs.tokenTickInput?.value || refs.mintTickInput?.value || "");
-    if (!tick) throw new Error("Podaj tick do sprawdzenia tokena.");
+    if (!tick) throw new Error(txt("Podaj tick do sprawdzenia tokena.", "Provide ticker to check token."));
     const response = await fetchJson(`/tokens/${encodeURIComponent(tick)}`);
     setText(refs.tokenOutput, prettyJson(response));
   }
@@ -902,7 +949,7 @@
 
   async function loadPortfolio() {
     const deviceId = getCurrentDeviceId();
-    if (!deviceId) throw new Error("Brak aktywnego deviceId. Najpierw odczytaj info urządzenia albo wybierz zapisany node.");
+    if (!deviceId) throw new Error(txt("Brak aktywnego deviceId. Najpierw odczytaj info urzadzenia albo wybierz zapisany node.", "No active deviceId. Fetch device info first or choose a saved node."));
     const response = await fetchJson(`/devices/${encodeURIComponent(deviceId)}/balances?limit=100`);
     state.portfolio = Array.isArray(response.balances) ? response.balances : [];
     setText(refs.balanceOutput, prettyJson(response));
@@ -912,14 +959,14 @@
   async function lookupBalance() {
     const deviceId = (refs.balanceDeviceIdInput?.value || getCurrentDeviceId() || "").trim().toLowerCase();
     const tick = normalizeTick(refs.balanceTickInput?.value || refs.mintTickInput?.value || "");
-    if (!deviceId || !tick) throw new Error("Do sprawdzenia balansu potrzebny jest deviceId i tick.");
+    if (!deviceId || !tick) throw new Error(txt("Do sprawdzenia balansu potrzebny jest deviceId i tick.", "Balance lookup requires deviceId and ticker."));
     const response = await fetchJson(`/balances/${encodeURIComponent(deviceId)}/${encodeURIComponent(tick)}`);
     setText(refs.balanceOutput, prettyJson(response));
   }
 
   async function loadTransactions() {
     const deviceId = getCurrentDeviceId();
-    if (!deviceId) throw new Error("Brak aktywnego deviceId do pobrania historii.");
+    if (!deviceId) throw new Error(txt("Brak aktywnego deviceId do pobrania historii.", "No active deviceId to load history."));
     const query = new URLSearchParams({ deviceId, limit: String(Number(refs.transactionsLimitInput?.value || 20)) });
     const response = await fetchJson(`/transactions?${query.toString()}`);
     state.recentTransactions = Array.isArray(response.transactions) ? response.transactions : [];
@@ -929,7 +976,7 @@
 
   async function saveHeltecLicense() {
     const licenseHex = refs.heltecLicenseInput?.value?.trim() || "";
-    if (!licenseHex) throw new Error("Wpisz licencję Heltec przed zapisaniem.");
+    if (!licenseHex) throw new Error(txt("Wpisz licencje Heltec przed zapisaniem.", "Enter Heltec license before saving."));
     await requestDevice("set_heltec_license", { licenseHex }, 30000);
     await refreshLorawanInfo();
   }
@@ -955,26 +1002,26 @@
   async function linkDevEui() {
     const deviceId = getCurrentDeviceId();
     const devEui = (refs.linkDevEuiInput?.value || state.lorawanInfo?.config?.devEuiHex || "").trim();
-    if (!deviceId) throw new Error("Brak aktywnego deviceId.");
-    if (!devEui) throw new Error("Podaj DevEUI do powiązania.");
+    if (!deviceId) throw new Error(txt("Brak aktywnego deviceId.", "No active deviceId."));
+    if (!devEui) throw new Error(txt("Podaj DevEUI do powiazania.", "Provide DevEUI to link."));
     const response = await fetchJson(`/devices/${encodeURIComponent(deviceId)}/lorawan`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ devEui })
     });
-    addLog("indexer", "DevEUI linked in indexer", response);
+    addLog("indexer", txt("DevEUI powiazane w indexerze", "DevEUI linked in indexer"), response);
   }
 
   async function exportBackup() {
     const passphrase = refs.backupPassphraseInput?.value || "";
-    if (!passphrase) throw new Error("Podaj hasło backupu przed eksportem.");
+    if (!passphrase) throw new Error(txt("Podaj haslo backupu przed eksportem.", "Enter backup passphrase before export."));
     const response = await requestDevice("export_backup", { passphrase }, 30000);
     if (refs.backupJsonTextarea) refs.backupJsonTextarea.value = prettyJson(response);
   }
 
   async function importBackup() {
     const passphrase = refs.backupImportPassphraseInput?.value || "";
-    if (!passphrase) throw new Error("Podaj hasło importu backupu.");
+    if (!passphrase) throw new Error(txt("Podaj haslo importu backupu.", "Enter import backup passphrase."));
     const backup = JSON.parse(refs.backupJsonTextarea?.value || "{}");
     const response = await requestDevice("import_backup", { passphrase, backup, overwrite: true }, 30000);
     state.deviceInfo = response.device || state.deviceInfo;
@@ -987,11 +1034,11 @@
       await delay(4000);
       const info = await refreshLorawanInfo();
       if (info.runtime?.joined) {
-        addLog("device", "LoRaWAN join completed");
+        addLog("device", txt("Dolaczenie LoRaWAN zakonczone.", "LoRaWAN join completed."));
         return;
       }
     }
-    addLog("warn", "Join started, but joined=true did not appear yet. Check ChirpStack and radio status.");
+    addLog("warn", txt("Join uruchomiony, ale joined=true jeszcze sie nie pojawilo. Sprawdz ChirpStack i stan radia.", "Join started, but joined=true did not appear yet. Check ChirpStack and radio status."));
   }
 
   async function prepareDeploy() {
@@ -1098,9 +1145,9 @@
     const radio = await refreshLorawanInfo();
     const runtime = radio.runtime || radio.lorawanRuntime;
     const config = radio.config || state.deviceInfo?.lorawan;
-    if (!runtime?.configured) throw new Error("Radio nie jest skonfigurowane. Najpierw zapisz LoRaWAN.");
-    if (!runtime.hardwareReady || !runtime.initialized) throw new Error("Radio nie jest gotowe po restarcie. Odczekaj chwilę, pobierz stan radia i w razie potrzeby zrób join.");
-    if (!runtime.joined) throw new Error("Radio nie jest joined. Zrób join przed wysyłką.");
+    if (!runtime?.configured) throw new Error(txt("Radio nie jest skonfigurowane. Najpierw zapisz LoRaWAN.", "Radio is not configured. Save LoRaWAN first."));
+    if (!runtime.hardwareReady || !runtime.initialized) throw new Error(txt("Radio nie jest gotowe po restarcie. Odczekaj chwile, pobierz stan radia i w razie potrzeby zrob join.", "Radio is not ready after restart. Wait a moment, refresh radio status, and run join if needed."));
+    if (!runtime.joined) throw new Error(txt("Radio nie jest joined. Zrob join przed wysylka.", "Radio is not joined. Run join before sending."));
 
     const response = await requestDevice("lorawan_send", {
       payloadHex: prepared.payloadHex,
@@ -1130,7 +1177,7 @@
     const tick = normalizeTick(refs.profileTickInput?.value || "");
     const amount = refs.profileAmountInput?.value?.trim() || "";
     if (!tick || !amount) {
-      addLog("error", "Profil wymaga tick i amount.");
+      addLog("error", txt("Profil wymaga tick i amount.", "Profile requires tick and amount."));
       return;
     }
 
@@ -1149,7 +1196,7 @@
     else state.profiles.push(profile);
     clearProfileEditor(false);
     renderAll();
-    addLog("device", "Profile saved", profile);
+    addLog("device", txt("Profil zapisany", "Profile saved"), profile);
   }
 
   function clearProfileEditor(render = true) {
@@ -1303,16 +1350,16 @@
   }
 
   async function connectDevice() {
-    if (!("serial" in navigator)) throw new Error("Ta przeglądarka nie wspiera Web Serial.");
+    if (!("serial" in navigator)) throw new Error(txt("Ta przegladarka nie wspiera Web Serial.", "This browser does not support Web Serial."));
     if (state.port) {
-      addLog("device", "Urządzenie jest już podłączone.");
+      addLog("device", txt("Urzadzenie jest juz podlaczone.", "Device is already connected."));
       return;
     }
     const port = await navigator.serial.requestPort();
     await port.open({ baudRate: 115200, bufferSize: 4096 });
     state.port = port;
     state.disconnecting = false;
-    addLog("device", "Serial port connected.");
+    addLog("device", txt("Port szeregowy podlaczony.", "Serial port connected."));
     renderAll();
     void startReadLoop();
     await delay(1200);
@@ -1324,7 +1371,7 @@
     state.disconnecting = true;
     for (const pending of state.pending.values()) {
       clearTimeout(pending.timer);
-      pending.reject(new Error("Serial port disconnected."));
+      pending.reject(new Error(txt("Port szeregowy rozlaczony.", "Serial port disconnected.")));
     }
     state.pending.clear();
     try {
@@ -1338,7 +1385,7 @@
       // ignore
     }
     cleanupPortState();
-    if (logIt) addLog("device", "Serial port disconnected.");
+    if (logIt) addLog("device", txt("Port szeregowy rozlaczony.", "Serial port disconnected."));
   }
 
   async function startReadLoop() {
@@ -1360,7 +1407,7 @@
         }
       }
     } catch (error) {
-      if (!state.disconnecting) addLog("error", `Serial read failed: ${error instanceof Error ? error.message : String(error)}`);
+      if (!state.disconnecting) addLog("error", txt(`Blad odczytu serial: ${error instanceof Error ? error.message : String(error)}`, `Serial read failed: ${error instanceof Error ? error.message : String(error)}`));
     } finally {
       try {
         state.reader?.releaseLock();
@@ -1370,7 +1417,7 @@
       state.reader = null;
       if (!state.disconnecting) {
         cleanupPortState();
-        addLog("device", "Serial port disconnected.");
+        addLog("device", txt("Port szeregowy rozlaczony.", "Serial port disconnected."));
       }
       renderAll();
     }
@@ -1394,7 +1441,7 @@
   }
 
   async function sendDevicePayload(payload, timeout, label) {
-    if (!state.port?.writable) throw new Error("Urządzenie nie jest podłączone.");
+    if (!state.port?.writable) throw new Error(txt("Urzadzenie nie jest podlaczone.", "Device is not connected."));
     const writer = state.port.writable.getWriter();
     const encoder = new TextEncoder();
     const serialized = JSON.stringify(payload);
@@ -1438,14 +1485,14 @@
     }
 
     if (parsed.type === "boot") {
-      addLog("device", "Boot event", parsed);
+      addLog("device", txt("Zdarzenie boot", "Boot event"), parsed);
       return;
     }
     if (parsed.ok === false) {
-      addLog("error", parsed.error?.message || "Device returned an error", parsed.error);
+      addLog("error", parsed.error?.message || txt("Urzadzenie zwrocilo blad", "Device returned an error"), parsed.error);
       return;
     }
-    addLog("event", "Device event", parsed);
+    addLog("event", txt("Zdarzenie urzadzenia", "Device event"), parsed);
   }
 
   async function fetchJson(path, options = {}) {
@@ -1483,48 +1530,45 @@
     const limitPerMint = safeBigInt(refs.deployLimitPerMintInput?.value || "0");
     const existing = findToken(tick);
     const warnings = [];
-    if (!tick) warnings.push({ blocking: true, message: "Tick deploy musi być ustawiony." });
-    if (maxSupply <= 0n) warnings.push({ blocking: true, message: "maxSupply musi być większe od zera." });
-    if (limitPerMint <= 0n) warnings.push({ blocking: true, message: "limitPerMint musi być większe od zera." });
-    if (limitPerMint > maxSupply) warnings.push({ blocking: true, message: "limitPerMint nie może przekraczać maxSupply." });
-    if (existing) warnings.push({ blocking: true, message: `Ticker ${tick} jest już wdrożony. Duplikat deploy nie zostanie uznany przez indexer.` });
+    if (!tick) warnings.push({ blocking: true, message: txt("Tick deploy musi byc ustawiony.", "Deploy tick must be set.") });
+    if (maxSupply <= 0n) warnings.push({ blocking: true, message: txt("maxSupply musi byc wieksze od zera.", "maxSupply must be greater than zero.") });
+    if (limitPerMint <= 0n) warnings.push({ blocking: true, message: txt("limitPerMint musi byc wieksze od zera.", "limitPerMint must be greater than zero.") });
+    if (limitPerMint > maxSupply) warnings.push({ blocking: true, message: txt("limitPerMint nie moze przekraczac maxSupply.", "limitPerMint cannot exceed maxSupply.") });
+    if (existing) warnings.push({ blocking: true, message: txt(`Ticker ${tick} jest juz wdrozony. Duplikat deploy nie zostanie uznany przez indexer.`, `Ticker ${tick} is already deployed. Duplicate deploy will be rejected by indexer.`) });
     return warnings;
   }
-
   function getMintWarnings(tick, amountText, token) {
     const amount = safeBigInt(amountText || "0");
     const warnings = [];
     if (!tick) {
-      warnings.push({ blocking: true, message: "Tick mintu jest pusty." });
+      warnings.push({ blocking: true, message: txt("Tick mintu jest pusty.", "Mint ticker is empty.") });
       return warnings;
     }
-    if (amount <= 0n) warnings.push({ blocking: true, message: "Ilość mintu musi być większa od zera." });
+    if (amount <= 0n) warnings.push({ blocking: true, message: txt("Ilosc mintu musi byc wieksza od zera.", "Mint amount must be greater than zero.") });
     if (!token) {
-      warnings.push({ blocking: true, message: `Ticker ${tick} nie jest wdrożony w indexerze. Taki mint najpewniej nie zostanie zaindeksowany.` });
+      warnings.push({ blocking: true, message: txt(`Ticker ${tick} nie jest wdrozony w indexerze. Taki mint najpewniej nie zostanie zaindeksowany.`, `Ticker ${tick} is not deployed in indexer. This mint will likely not be indexed.`) });
       return warnings;
     }
     const limit = safeBigInt(token.limitPerMint);
     const total = safeBigInt(token.totalSupply);
     const maxSupply = safeBigInt(token.maxSupply);
     const remaining = maxSupply - total;
-    if (amount > limit) warnings.push({ blocking: true, message: `Mint ${amount} przekracza limitPerMint=${limit}. Indexer odrzuci taką wiadomość.` });
-    if (remaining <= 0n) warnings.push({ blocking: true, message: `Token ${tick} osiągnął już max supply. Dalszy mint nie będzie indeksowany.` });
-    else if (amount > remaining) warnings.push({ blocking: true, message: `Pozostało tylko ${remaining}. Mint ${amount} nie zmieści się w max supply.` });
+    if (amount > limit) warnings.push({ blocking: true, message: txt(`Mint ${amount} przekracza limitPerMint=${limit}. Indexer odrzuci taka wiadomosc.`, `Mint ${amount} exceeds limitPerMint=${limit}. Indexer will reject this message.`) });
+    if (remaining <= 0n) warnings.push({ blocking: true, message: txt(`Token ${tick} osiagnal juz max supply. Dalszy mint nie bedzie indeksowany.`, `Token ${tick} has already reached max supply. Further mint will not be indexed.`) });
+    else if (amount > remaining) warnings.push({ blocking: true, message: txt(`Pozostalo tylko ${remaining}. Mint ${amount} nie zmiesci sie w max supply.`, `Only ${remaining} remains. Mint ${amount} does not fit max supply.`) });
     return warnings;
   }
-
   function getTransferWarnings() {
     const warnings = [];
     const tick = normalizeTick(refs.transferTickInput?.value || "");
     const amount = safeBigInt(refs.transferAmountInput?.value || "0");
     const recipient = refs.transferRecipientInput?.value?.trim() || "";
-    if (!tick) warnings.push({ blocking: true, message: "Tick transferu jest pusty." });
-    if (amount <= 0n) warnings.push({ blocking: true, message: "Ilość transferu musi być większa od zera." });
-    if (!/^[0-9a-fA-F]{16}$/.test(recipient)) warnings.push({ blocking: true, message: "Recipient deviceId musi mieć dokładnie 16 znaków hex." });
-    if (!findToken(tick)) warnings.push({ blocking: true, message: `Ticker ${tick} nie istnieje w indexerze.` });
+    if (!tick) warnings.push({ blocking: true, message: txt("Tick transferu jest pusty.", "Transfer ticker is empty.") });
+    if (amount <= 0n) warnings.push({ blocking: true, message: txt("Ilosc transferu musi byc wieksza od zera.", "Transfer amount must be greater than zero.") });
+    if (!/^[0-9a-fA-F]{16}$/.test(recipient)) warnings.push({ blocking: true, message: txt("Recipient deviceId musi miec dokladnie 16 znakow hex.", "Recipient deviceId must be exactly 16 hex characters.") });
+    if (!findToken(tick)) warnings.push({ blocking: true, message: txt(`Ticker ${tick} nie istnieje w indexerze.`, `Ticker ${tick} does not exist in indexer.`) });
     return warnings;
   }
-
   function enforceWarnings(warnings) {
     const blocking = warnings.filter((warning) => warning.blocking);
     if (blocking.length && !refs.allowRiskySendInput?.checked) {
@@ -1760,3 +1804,6 @@
   }
 
 })();
+
+
+
