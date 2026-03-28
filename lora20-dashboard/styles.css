@@ -576,6 +576,21 @@ body[data-theme="dark"] .surface {
   font-family: var(--font-mono);
 }
 
+.field-inline {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.field-inline > input {
+  flex: 1 1 auto;
+}
+
+.field-inline > .button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .field--checkbox {
   display: flex;
   align-items: center;

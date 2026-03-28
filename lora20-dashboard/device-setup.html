@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260328-03" />
+    <link rel="stylesheet" href="./styles.css?v=20260328-04" />
   </head>
   <body data-theme="medium" data-page="setup">
     <div class="backdrop backdrop--left"></div>
@@ -76,11 +76,30 @@
             </label>
             <label class="field">
               <span data-i18n="settings.deviceAuthToken">Token autoryzacji urządzenia</span>
-              <input id="deviceAuthTokenInput" type="password" placeholder="••••••••" />
+              <div class="field-inline">
+                <input id="deviceAuthTokenInput" type="password" placeholder="••••••••" />
+                <button id="generateAuthTokenButton" class="button button--ghost button--tiny" type="button" data-i18n="actions.generateAuthToken">Wygeneruj token</button>
+              </div>
             </label>
             <label class="field field--checkbox">
               <input id="deviceWifiApFallbackInput" type="checkbox" />
               <span data-i18n="settings.deviceWifiApFallback">Pozwól na fallback AP</span>
+            </label>
+            <label class="field">
+              <span data-i18n="settings.displaySleepSeconds">Uśpienie ekranu (sekundy)</span>
+              <input id="displaySleepSecondsInput" type="number" min="0" max="3600" step="30" value="60" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.bridgeWindowSeconds">Okno łączności po restarcie (sekundy)</span>
+              <input id="bridgeWindowSecondsInput" type="number" min="30" max="3600" step="30" value="300" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.powerSaveLevel">Poziom oszczędzania energii</span>
+              <select id="powerSaveLevelInput">
+                <option value="0" data-i18n="settings.powerSaveLevel0">Poziom 0 - wydajność</option>
+                <option value="1" data-i18n="settings.powerSaveLevel1">Poziom 1 - balans</option>
+                <option value="2" data-i18n="settings.powerSaveLevel2">Poziom 2 - max oszczędzanie</option>
+              </select>
             </label>
           </div>
 
@@ -132,6 +151,6 @@
       <div id="activityLog" class="log"></div>
     </aside>
 
-    <script defer src="./app.js?v=20260328-03" charset="utf-8"></script>
+    <script defer src="./app.js?v=20260328-04" charset="utf-8"></script>
   </body>
 </html>
