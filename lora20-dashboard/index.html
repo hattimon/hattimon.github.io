@@ -14,9 +14,9 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260328-02" />
+    <link rel="stylesheet" href="./styles.css?v=20260328-03" />
   </head>
-  <body data-theme="medium">
+  <body data-theme="medium" data-page="dashboard">
     <div class="backdrop backdrop--left"></div>
     <div class="backdrop backdrop--right"></div>
     <div class="app-shell">
@@ -73,9 +73,10 @@
           </label>
           <label class="field">
             <span data-i18n="settings.deviceBridgeUrl">Adres mostka urządzenia (Wi‑Fi)</span>
-            <input id="deviceBridgeUrlInput" type="url" placeholder="http://192.168.4.1" />
+            <input id="deviceBridgeUrlInput" type="url" placeholder="http://192.168.0.50" />
+            <p id="deviceBridgeHint" class="helper"></p>
           </label>
-          <div class="field-grid">
+          <div class="field-grid device-wifi-fields">
             <label class="field">
               <span data-i18n="settings.deviceWifiSsid">SSID Wi‑Fi urządzenia</span>
               <input id="deviceWifiSsidInput" type="text" placeholder="Twoja sieć Wi‑Fi" />
@@ -91,6 +92,7 @@
           </div>
           <div class="button-row">
             <button id="saveIndexerButton" class="button button--ghost" type="button" data-i18n="actions.saveUrl">Zapisz URL</button>
+            <a id="openSetupLink" class="button button--ghost" href="./device-setup.html" data-i18n="actions.openSetup">Konfiguracja urządzenia</a>
             <button id="saveConnectivityButton" class="button button--ghost" type="button" data-i18n="actions.saveConnectivity">Zastosuj łączność</button>
             <button id="connectUsbButton" class="button button--ghost" type="button" data-i18n="actions.connectUsb">Połącz USB</button>
             <button id="connectBleButton" class="button button--ghost" type="button" data-i18n="actions.connectBle">Połącz Bluetooth</button>
@@ -480,6 +482,6 @@
       </div>
     </div>
 
-    <script defer src="./app.js?v=20260328-02"></script>
+    <script defer src="./app.js?v=20260328-03" charset="utf-8"></script>
   </body>
 </html>

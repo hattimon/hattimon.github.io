@@ -98,6 +98,11 @@ body {
   font-family: var(--font-ui);
 }
 
+body[data-page="dashboard"] .device-wifi-fields,
+body[data-page="dashboard"] #saveConnectivityButton {
+  display: none;
+}
+
 body[data-log-dock="collapsed"] {
   padding-bottom: 108px;
 }

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>lora20 Device Setup</title>
+    <meta
+      name="description"
+      content="Konfiguracja łączności Heltec V4: USB, Bluetooth i Wi-Fi."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260328-03" />
+  </head>
+  <body data-theme="medium" data-page="setup">
+    <div class="backdrop backdrop--left"></div>
+    <div class="backdrop backdrop--right"></div>
+    <div class="app-shell">
+      <header class="hero hero--compact">
+        <div class="hero__copy">
+          <p class="eyebrow" data-i18n="setup.eyebrow">Konfiguracja urządzenia</p>
+          <h1 data-i18n="setup.title">Konfiguracja łączności Heltec V4</h1>
+          <p class="lead" data-i18n="setup.lead">
+            Skonfiguruj Wi‑Fi przez USB lub Bluetooth, potem łącz się z urządzeniem po lokalnym adresie IP z DHCP.
+          </p>
+          <div class="hero__chips">
+            <span class="hero-chip">USB / BLE provisioning</span>
+            <span class="hero-chip">STA Wi‑Fi only</span>
+          </div>
+          <div class="button-row">
+            <a class="button button--ghost" href="./index.html" data-i18n="setup.back">Powrót do panelu</a>
+          </div>
+        </div>
+
+        <div class="hero__controls">
+          <div class="toolbar">
+            <label class="field field--mini">
+              <span data-i18n="settings.language">Język</span>
+              <select id="languageSelect">
+                <option value="pl">Polski</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            <label class="field field--mini">
+              <span data-i18n="settings.theme">Motyw</span>
+              <select id="themeSelect">
+                <option value="dark">Ciemny</option>
+                <option value="medium">Średni</option>
+                <option value="light">Jasny</option>
+              </select>
+            </label>
+            <label class="field field--mini field--toggle">
+              <span data-i18n="settings.sound">Dźwięki</span>
+              <input id="soundEnabledInput" type="checkbox" checked />
+            </label>
+          </div>
+
+          <label class="field">
+            <span data-i18n="settings.deviceBridgeUrl">Adres urządzenia w sieci lokalnej</span>
+            <input id="deviceBridgeUrlInput" type="url" placeholder="http://192.168.0.50" />
+            <p id="deviceBridgeHint" class="helper"></p>
+          </label>
+
+          <div class="field-grid device-wifi-fields">
+            <label class="field">
+              <span data-i18n="settings.deviceWifiSsid">SSID Wi‑Fi urządzenia</span>
+              <input id="deviceWifiSsidInput" type="text" placeholder="Twoja sieć Wi‑Fi" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.deviceWifiPassword">Hasło Wi‑Fi urządzenia</span>
+              <input id="deviceWifiPasswordInput" type="password" placeholder="••••••••" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.deviceAuthToken">Token autoryzacji urządzenia</span>
+              <input id="deviceAuthTokenInput" type="password" placeholder="••••••••" />
+            </label>
+            <label class="field field--checkbox">
+              <input id="deviceWifiApFallbackInput" type="checkbox" />
+              <span data-i18n="settings.deviceWifiApFallback">Pozwól na fallback AP</span>
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="saveConnectivityButton" class="button button--ghost" type="button" data-i18n="actions.saveConnectivity">Zastosuj łączność</button>
+            <button id="connectUsbButton" class="button button--ghost" type="button" data-i18n="actions.connectUsb">Połącz USB</button>
+            <button id="connectBleButton" class="button button--ghost" type="button" data-i18n="actions.connectBle">Połącz Bluetooth</button>
+            <button id="connectWifiButton" class="button button--secondary" type="button" data-i18n="actions.connectWifi">Połącz Wi‑Fi</button>
+            <button id="disconnectButton" class="button button--ghost" type="button" data-i18n="actions.disconnect">Rozłącz</button>
+            <button id="refreshButton" class="button button--secondary" type="button" data-i18n="actions.refresh">Odśwież stan</button>
+          </div>
+
+          <div class="status-stack">
+            <div class="status-row">
+              <span id="connectionBadge" class="badge badge--warn">USB offline</span>
+              <span id="radioBadge" class="badge badge--warn">LoRa idle</span>
+            </div>
+            <p id="serialSupportNotice" class="helper"></p>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="surface surface--full">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker" data-i18n="sections.deviceKicker">Urządzenie</p>
+              <h2 data-i18n="sections.deviceTitle">Aktualny node i znane urządzenia</h2>
+            </div>
+            <div class="button-row">
+              <button id="getInfoButton" class="button button--ghost" type="button" data-i18n="actions.pullInfo">Pobierz info</button>
+              <button id="getPublicKeyButton" class="button button--ghost" type="button" data-i18n="actions.publicKey">Odczytaj klucz</button>
+            </div>
+          </div>
+          <div id="deviceReadinessBanner" class="callout callout--neutral"></div>
+          <pre id="deviceSummaryOutput" class="output output--compact">No device data yet.</pre>
+        </section>
+      </main>
+    </div>
+
+    <aside id="logDock" class="log-dock">
+      <div class="log-dock__head">
+        <div>
+          <p class="section-kicker" data-i18n="logs.kicker">Raport zdarzeń</p>
+          <h2 data-i18n="logs.title">Activity log</h2>
+        </div>
+        <button id="toggleLogDockButton" class="button button--ghost button--tiny" type="button">Zwiń log</button>
+      </div>
+      <div id="activityLog" class="log"></div>
+    </aside>
+
+    <script defer src="./app.js?v=20260328-03" charset="utf-8"></script>
+  </body>
+</html>

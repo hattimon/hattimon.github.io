@@ -11,6 +11,7 @@
     deviceWifiSsid: "lora20.dashboard.deviceWifiSsid",
     deviceWifiPassword: "lora20.dashboard.deviceWifiPassword",
     deviceAuthToken: "lora20.dashboard.deviceAuthToken",
+    deviceWifiApFallback: "lora20.dashboard.deviceWifiApFallback",
     profiles: "lora20.dashboard.profiles",
     scheduler: "lora20.dashboard.scheduler",
     knownDevices: "lora20.dashboard.knownDevices",
@@ -21,10 +22,11 @@
     language: "pl",
     theme: "dark",
     indexerUrl: "https://lora20.hattimon.pl",
-    deviceBridgeUrl: "http://192.168.4.1",
+    deviceBridgeUrl: "",
     deviceWifiSsid: "",
     deviceWifiPassword: "",
     deviceAuthToken: "",
+    deviceWifiApFallback: false,
     profiles: [],
     scheduler: { enabled: false, intervalMinutes: 30 }
   };
@@ -64,6 +66,10 @@
     "hero.chipOne": "Web Serial + HTTPS",
     "hero.chipTwo": "Heltec V4 onboarding",
     "hero.chipThree": "Sticky log dock",
+    "setup.eyebrow": "Device setup",
+    "setup.title": "Heltec V4 connectivity setup",
+    "setup.lead": "Provision Wi‑Fi over USB or Bluetooth, then connect using the local DHCP address.",
+    "setup.back": "Back to dashboard",
     "mintStream.kicker": "Mint stream",
     "mintStream.title": "Latest mint operations",
     "mintStream.hint": "Click an entry to open witness details and the signal-flow diagram.",
@@ -71,12 +77,14 @@
     "settings.theme": "Theme",
     "settings.sound": "Sounds",
     "settings.indexerUrl": "Public indexer URL",
-    "settings.deviceBridgeUrl": "Device bridge URL (Wi-Fi)",
+    "settings.deviceBridgeUrl": "Device URL on your local network",
     "settings.deviceWifiSsid": "Device Wi-Fi SSID",
     "settings.deviceWifiPassword": "Device Wi-Fi password",
     "settings.deviceAuthToken": "Device auth token",
+    "settings.deviceWifiApFallback": "Allow AP fallback",
     "actions.saveUrl": "Save URL",
     "actions.saveConnectivity": "Apply connectivity",
+    "actions.openSetup": "Device setup",
     "actions.connectUsb": "Connect USB",
     "actions.connectBle": "Connect Bluetooth",
     "actions.connectWifi": "Connect Wi-Fi",
@@ -202,6 +210,10 @@
     "hero.chipOne": "Web Serial + HTTPS",
     "hero.chipTwo": "Onboarding Heltec V4",
     "hero.chipThree": "Sticky log dock",
+    "setup.eyebrow": "Konfiguracja urządzenia",
+    "setup.title": "Konfiguracja łączności Heltec V4",
+    "setup.lead": "Skonfiguruj Wi‑Fi przez USB lub Bluetooth, potem łącz się po lokalnym adresie IP z DHCP.",
+    "setup.back": "Powrót do panelu",
     "mintStream.kicker": "Mint stream",
     "mintStream.title": "Ostatnie operacje mint",
     "mintStream.hint": "Kliknij wpis, aby otworzyć szczegóły witness i diagram przepływu sygnału.",
@@ -209,12 +221,14 @@
     "settings.theme": "Motyw",
     "settings.sound": "Dźwięki",
     "settings.indexerUrl": "Publiczny adres indexera",
-    "settings.deviceBridgeUrl": "Adres mostka urządzenia (Wi‑Fi)",
+    "settings.deviceBridgeUrl": "Adres urządzenia w sieci lokalnej",
     "settings.deviceWifiSsid": "SSID Wi‑Fi urządzenia",
     "settings.deviceWifiPassword": "Hasło Wi‑Fi urządzenia",
     "settings.deviceAuthToken": "Token autoryzacji urządzenia",
+    "settings.deviceWifiApFallback": "Pozwól na fallback AP",
     "actions.saveUrl": "Zapisz URL",
     "actions.saveConnectivity": "Zastosuj łączność",
+    "actions.openSetup": "Konfiguracja urządzenia",
     "actions.connectUsb": "Połącz USB",
     "actions.connectBle": "Połącz Bluetooth",
     "actions.connectWifi": "Połącz Wi‑Fi",
@@ -335,8 +349,9 @@
 
   const refs = {};
   const refNames = [
-    "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput",
-    "deviceWifiSsidInput", "deviceWifiPasswordInput", "deviceAuthTokenInput", "saveConnectivityButton", "saveIndexerButton",
+    "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput", "deviceBridgeHint",
+    "deviceWifiSsidInput", "deviceWifiPasswordInput", "deviceAuthTokenInput", "deviceWifiApFallbackInput",
+    "saveConnectivityButton", "saveIndexerButton",
     "connectUsbButton", "connectBleButton", "connectWifiButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
     "mintMatrixHeading", "mintMatrixHint", "mintMatrixFeed",
     "serialSupportNotice", "overviewTokensValue", "overviewBalancesValue", "overviewEventsValue",
@@ -379,6 +394,7 @@
       deviceWifiSsid: readStorage(STORAGE.deviceWifiSsid, DEFAULTS.deviceWifiSsid),
       deviceWifiPassword: readStorage(STORAGE.deviceWifiPassword, DEFAULTS.deviceWifiPassword),
       deviceAuthToken: readStorage(STORAGE.deviceAuthToken, DEFAULTS.deviceAuthToken),
+      deviceWifiApFallback: readStorage(STORAGE.deviceWifiApFallback, DEFAULTS.deviceWifiApFallback ? "1" : "0") === "1",
       profiles: loadJson(STORAGE.profiles, DEFAULTS.profiles),
       scheduler: loadJson(STORAGE.scheduler, DEFAULTS.scheduler),
       knownDevices: loadJson(STORAGE.knownDevices, []),
@@ -392,6 +408,7 @@
     tokenCatalogError: "",
     tokenCatalogErrorRaw: "",
     deviceInfo: null,
+    connectivityInfo: null,
     lorawanInfo: null,
     publicKeyInfo: null,
     lastPrepared: null,
@@ -529,6 +546,7 @@
       if (refs.deviceWifiSsidInput) refs.deviceWifiSsidInput.value = state.deviceWifiSsid || "";
       if (refs.deviceWifiPasswordInput) refs.deviceWifiPasswordInput.value = state.deviceWifiPassword || "";
       if (refs.deviceAuthTokenInput) refs.deviceAuthTokenInput.value = state.deviceAuthToken || "";
+      if (refs.deviceWifiApFallbackInput) refs.deviceWifiApFallbackInput.checked = Boolean(state.deviceWifiApFallback);
       if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
       if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes || 30);
       if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
@@ -579,9 +597,11 @@
     state.deviceWifiSsid = refs.deviceWifiSsidInput?.value?.trim() || "";
     state.deviceWifiPassword = refs.deviceWifiPasswordInput?.value || "";
     state.deviceAuthToken = refs.deviceAuthTokenInput?.value || "";
+    state.deviceWifiApFallback = Boolean(refs.deviceWifiApFallbackInput?.checked);
     writeStorage(STORAGE.deviceWifiSsid, state.deviceWifiSsid);
     writeStorage(STORAGE.deviceWifiPassword, state.deviceWifiPassword);
     writeStorage(STORAGE.deviceAuthToken, state.deviceAuthToken);
+    writeStorage(STORAGE.deviceWifiApFallback, state.deviceWifiApFallback ? "1" : "0");
     addLog("device", txt("Zapisano ustawienia łączności.", "Connectivity settings saved."));
     if (isDeviceConnected() && state.deviceTransport !== "wifi") {
       void applyConnectivityMode("wifi");
@@ -594,6 +614,9 @@
     if (state.deviceWifiSsid) params.wifiSsid = state.deviceWifiSsid;
     if (state.deviceWifiPassword) params.wifiPassword = state.deviceWifiPassword;
     if (state.deviceAuthToken) params.rpcToken = state.deviceAuthToken;
+    if (state.deviceWifiApFallback !== null && state.deviceWifiApFallback !== undefined) {
+      params.wifiApFallback = Boolean(state.deviceWifiApFallback);
+    }
     return params;
   }
 
@@ -670,6 +693,7 @@
 
   function renderAll() {
     renderBadges();
+    renderConnectivityHint();
     renderOverview();
     renderMintMatrix();
     renderQuickMintChecklist();
@@ -725,6 +749,25 @@
     else if (runtime.configured || runtime.initialized || runtime.hardwareReady) {
       setBadge(refs.radioBadge, "warn", txt("LoRa skonfigurowana", "LoRa configured"));
     } else setBadge(refs.radioBadge, "danger", txt("LoRa niegotowa", "LoRa not ready"));
+  }
+
+  function renderConnectivityHint() {
+    if (!refs.deviceBridgeHint) return;
+    const info = state.connectivityInfo || {};
+    const parts = [];
+    if (info.wifiIp) {
+      parts.push(txt(`Wi‑Fi IP: ${info.wifiIp}`, `Wi‑Fi IP: ${info.wifiIp}`));
+    }
+    if (info.wifiHostname) {
+      parts.push(txt(`mDNS: ${info.wifiHostname}.local`, `mDNS: ${info.wifiHostname}.local`));
+    }
+    if (!parts.length && state.deviceBridgeUrl) {
+      parts.push(txt("Użyj lokalnego adresu IP z DHCP lub ekranu urządzenia.", "Use the local DHCP IP or the device screen."));
+    }
+    if (!parts.length) {
+      parts.push(txt("Podłącz przez USB/Bluetooth i skonfiguruj Wi‑Fi na stronie ustawień.", "Connect over USB/Bluetooth and configure Wi‑Fi on the setup page."));
+    }
+    refs.deviceBridgeHint.textContent = parts.join(" · ");
   }
 
   function renderOverview() {
@@ -1182,7 +1225,7 @@
             <p class="helper">${escapeHtml(maskSecret(deviceEntry.publicKeyHex || ""))}</p>
           </div>
           <div class="button-row">
-            <button class="button button--ghost" type="button" data-action="use-device" data-id="${escapeHtml(deviceEntry.deviceId)}">${escapeHtml(txt("Uzyj", "Use"))}</button>
+          <button class="button button--ghost" type="button" data-action="use-device" data-id="${escapeHtml(deviceEntry.deviceId)}">${escapeHtml(txt("Użyj", "Use"))}</button>
             <button class="button button--ghost" type="button" data-action="remove-device" data-id="${escapeHtml(deviceEntry.deviceId)}">${escapeHtml(txt("Usun", "Remove"))}</button>
           </div>
         </div>
@@ -1288,7 +1331,7 @@
         <article class="token-card">
           <div class="token-card__head">
             <h3>${escapeHtml(token.tick)}</h3>
-            <button class="button button--ghost" type="button" data-action="use-token" data-tick="${escapeHtml(token.tick)}">${escapeHtml(txt("Uzyj", "Use"))}</button>
+            <button class="button button--ghost" type="button" data-action="use-token" data-tick="${escapeHtml(token.tick)}">${escapeHtml(txt("Użyj", "Use"))}</button>
           </div>
           <div class="token-meta">
             <span class="hero-chip">mint ${escapeHtml(token.limitPerMint)}</span>
@@ -1343,11 +1386,11 @@
           <span class="badge ${profile.enabled ? "badge--ok" : "badge--warn"}">${profile.enabled ? "active" : "paused"}</span>
         </div>
         <div class="button-row">
-          <button class="button button--ghost" type="button" data-action="use-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(txt("Uzyj", "Use"))}</button>
-          <button class="button button--ghost" type="button" data-action="toggle-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(profile.enabled ? txt("Pauza", "Pause") : txt("Wlacz", "Enable"))}</button>
-          <button class="button button--ghost" type="button" data-action="move-up" data-id="${escapeHtml(profile.id)}" ${index === 0 ? "disabled" : ""}>${escapeHtml(txt("Gora", "Up"))}</button>
-          <button class="button button--ghost" type="button" data-action="move-down" data-id="${escapeHtml(profile.id)}" ${index === state.profiles.length - 1 ? "disabled" : ""}>${escapeHtml(txt("Dol", "Down"))}</button>
-          <button class="button button--ghost" type="button" data-action="remove-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(txt("Usun", "Remove"))}</button>
+          <button class="button button--ghost" type="button" data-action="use-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(txt("Użyj", "Use"))}</button>
+          <button class="button button--ghost" type="button" data-action="toggle-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(profile.enabled ? txt("Pauza", "Pause") : txt("Włącz", "Enable"))}</button>
+          <button class="button button--ghost" type="button" data-action="move-up" data-id="${escapeHtml(profile.id)}" ${index === 0 ? "disabled" : ""}>${escapeHtml(txt("Góra", "Up"))}</button>
+          <button class="button button--ghost" type="button" data-action="move-down" data-id="${escapeHtml(profile.id)}" ${index === state.profiles.length - 1 ? "disabled" : ""}>${escapeHtml(txt("Dół", "Down"))}</button>
+          <button class="button button--ghost" type="button" data-action="remove-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(txt("Usuń", "Remove"))}</button>
         </div>
       </article>
     `).join("");
@@ -1463,7 +1506,7 @@
   }
 
   async function refreshDeviceState() {
-    await Promise.allSettled([refreshDeviceInfo(), refreshLorawanInfo()]);
+    await Promise.allSettled([refreshDeviceInfo(), refreshLorawanInfo(), refreshConnectivity()]);
   }
 
   async function refreshDeviceInfo() {
@@ -1482,6 +1525,26 @@
     }
     renderAll();
     return result;
+  }
+
+  async function refreshConnectivity() {
+    try {
+      const result = await requestDevice("get_connectivity", {});
+      state.connectivityInfo = result || null;
+      if (result?.wifiIp && (!state.deviceBridgeUrl || state.deviceBridgeUrl.includes("192.168.4.1"))) {
+        const nextUrl = normalizeUrl(`http://${result.wifiIp}`);
+        if (nextUrl) {
+          state.deviceBridgeUrl = nextUrl;
+          writeStorage(STORAGE.deviceBridgeUrl, state.deviceBridgeUrl);
+          if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
+        }
+      }
+      renderAll();
+      return result;
+    } catch (error) {
+      addLog("error", error instanceof Error ? error.message : String(error));
+      return null;
+    }
   }
 
   async function refreshLorawanInfo() {
@@ -1715,7 +1778,7 @@
       await delay(4000);
       const info = await refreshLorawanInfo();
       if (info.runtime?.joined) {
-        addLog("device", txt("Dolaczenie LoRaWAN zakonczone.", "LoRaWAN join completed."));
+        addLog("device", txt("Dołączenie LoRaWAN zakończone.", "LoRaWAN join completed."));
         return;
       }
     }
@@ -2120,7 +2183,7 @@
 
   async function connectWifiDevice() {
     handleSaveDeviceBridgeUrl();
-    if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres mostka Wi‑Fi.", "Provide the Wi-Fi bridge URL."));
+    if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres urządzenia w sieci lokalnej.", "Provide the local device URL."));
     state.deviceTransport = "wifi";
     try {
       const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 8000, "ping");
