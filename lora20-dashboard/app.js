@@ -1158,7 +1158,7 @@
     setText(refs.nextNonceValue, device?.nextNonce == null ? "-" : String(device.nextNonce));
     setText(refs.autoMintValue, device?.config?.autoMintEnabled ? "on" : "off");
     setText(refs.defaultMintValue, device?.config ? `${device.config.defaultTick || "-"} / ${device.config.defaultMintAmount || "-"}` : "-");
-    setText(refs.deviceSummaryOutput, device ? prettyJson(device) : "No device data yet.");
+    setText(refs.deviceSummaryOutput, device ? prettyJson(device) : txt("Brak danych urządzenia.", "No device data yet."));
 
     const hints = [];
     if (!device) hints.push(txt("Po połączeniu kliknij \"Pobierz info\".", "After connecting, click \"Fetch info\"."));
@@ -1199,7 +1199,7 @@
     setText(refs.lorawanPortValue, config?.appPort == null ? "-" : String(config.appPort));
     setText(refs.lorawanEventValue, runtime?.lastEvent || "-");
     setText(refs.lorawanDevEuiValue, config?.devEuiHex || "-");
-    setText(refs.lorawanSummaryOutput, info ? prettyJson(info) : "No LoRaWAN status yet.");
+    setText(refs.lorawanSummaryOutput, info ? prettyJson(info) : txt("Brak statusu LoRaWAN.", "No LoRaWAN status yet."));
 
     const messages = [];
     if (!config?.hasAppKey || !config?.hasJoinEui) messages.push(txt("Brakuje pelnej konfiguracji OTAA.", "Full OTAA configuration is missing."));
