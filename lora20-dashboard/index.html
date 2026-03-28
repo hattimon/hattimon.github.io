@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260328-01" />
+    <link rel="stylesheet" href="./styles.css?v=20260328-02" />
   </head>
   <body data-theme="medium">
     <div class="backdrop backdrop--left"></div>
@@ -37,11 +37,11 @@
         <div class="hero__mint-stream">
           <div class="section-head section-head--compact">
             <div>
-              <p class="section-kicker">Mint Stream</p>
-              <h2 id="mintMatrixHeading">Ostatnie operacje mint</h2>
+              <p class="section-kicker" data-i18n="mintStream.kicker">Mint stream</p>
+              <h2 id="mintMatrixHeading" data-i18n="mintStream.title">Ostatnie operacje mint</h2>
             </div>
           </div>
-          <p id="mintMatrixHint" class="helper">Kliknij wpis, aby zobaczyć witnessy i przepływ sygnału LoRa.</p>
+          <p id="mintMatrixHint" class="helper" data-i18n="mintStream.hint">Kliknij wpis, aby zobaczyć witnessy i przepływ sygnału LoRa.</p>
           <div id="mintMatrixFeed" class="mint-matrix"></div>
         </div>
 
@@ -75,8 +75,23 @@
             <span data-i18n="settings.deviceBridgeUrl">Adres mostka urządzenia (Wi‑Fi)</span>
             <input id="deviceBridgeUrlInput" type="url" placeholder="http://192.168.4.1" />
           </label>
+          <div class="field-grid">
+            <label class="field">
+              <span data-i18n="settings.deviceWifiSsid">SSID Wi‑Fi urządzenia</span>
+              <input id="deviceWifiSsidInput" type="text" placeholder="Twoja sieć Wi‑Fi" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.deviceWifiPassword">Hasło Wi‑Fi urządzenia</span>
+              <input id="deviceWifiPasswordInput" type="password" placeholder="••••••••" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.deviceAuthToken">Token autoryzacji urządzenia</span>
+              <input id="deviceAuthTokenInput" type="password" placeholder="••••••••" />
+            </label>
+          </div>
           <div class="button-row">
             <button id="saveIndexerButton" class="button button--ghost" type="button" data-i18n="actions.saveUrl">Zapisz URL</button>
+            <button id="saveConnectivityButton" class="button button--ghost" type="button" data-i18n="actions.saveConnectivity">Zastosuj łączność</button>
             <button id="connectUsbButton" class="button button--ghost" type="button" data-i18n="actions.connectUsb">Połącz USB</button>
             <button id="connectBleButton" class="button button--ghost" type="button" data-i18n="actions.connectBle">Połącz Bluetooth</button>
             <button id="connectWifiButton" class="button button--primary" type="button" data-i18n="actions.connectWifi">Połącz Wi‑Fi</button>
@@ -454,10 +469,10 @@
       <div class="witness-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="witnessModalTitle">
         <div class="section-head section-head--compact">
           <div>
-            <p class="section-kicker">Signal Diagram</p>
+            <p class="section-kicker" data-i18n="witness.kicker">Signal diagram</p>
             <h2 id="witnessModalTitle">MINT LORA 100</h2>
           </div>
-          <button id="closeWitnessModalButton" class="button button--ghost button--tiny" type="button">Zamknij</button>
+          <button id="closeWitnessModalButton" class="button button--ghost button--tiny" type="button" data-i18n="witness.close">Zamknij</button>
         </div>
         <p id="witnessModalSubtitle" class="helper">First Witness by "odd-bamboo-robin"</p>
         <div id="witnessGraph" class="witness-graph"></div>
@@ -465,6 +480,6 @@
       </div>
     </div>
 
-    <script defer src="./app.js?v=20260328-01"></script>
+    <script defer src="./app.js?v=20260328-02"></script>
   </body>
 </html>

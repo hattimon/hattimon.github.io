@@ -8,6 +8,9 @@
     logDockCollapsed: "lora20.dashboard.logDockCollapsed",
     indexerUrl: "lora20.dashboard.indexerBaseUrl",
     deviceBridgeUrl: "lora20.dashboard.deviceBridgeUrl",
+    deviceWifiSsid: "lora20.dashboard.deviceWifiSsid",
+    deviceWifiPassword: "lora20.dashboard.deviceWifiPassword",
+    deviceAuthToken: "lora20.dashboard.deviceAuthToken",
     profiles: "lora20.dashboard.profiles",
     scheduler: "lora20.dashboard.scheduler",
     knownDevices: "lora20.dashboard.knownDevices",
@@ -19,6 +22,9 @@
     theme: "dark",
     indexerUrl: "https://lora20.hattimon.pl",
     deviceBridgeUrl: "http://192.168.4.1",
+    deviceWifiSsid: "",
+    deviceWifiPassword: "",
+    deviceAuthToken: "",
     profiles: [],
     scheduler: { enabled: false, intervalMinutes: 30 }
   };
@@ -45,7 +51,10 @@
     "ciphertextHex",
     "tagHex",
     "saltHex",
-    "ivHex"
+    "ivHex",
+    "auth",
+    "rpcToken",
+    "wifiPassword"
   ]);
 
   const I18N_EN = {
@@ -55,12 +64,19 @@
     "hero.chipOne": "Web Serial + HTTPS",
     "hero.chipTwo": "Heltec V4 onboarding",
     "hero.chipThree": "Sticky log dock",
+    "mintStream.kicker": "Mint stream",
+    "mintStream.title": "Latest mint operations",
+    "mintStream.hint": "Click an entry to open witness details and the signal-flow diagram.",
     "settings.language": "Language",
     "settings.theme": "Theme",
     "settings.sound": "Sounds",
     "settings.indexerUrl": "Public indexer URL",
     "settings.deviceBridgeUrl": "Device bridge URL (Wi-Fi)",
+    "settings.deviceWifiSsid": "Device Wi-Fi SSID",
+    "settings.deviceWifiPassword": "Device Wi-Fi password",
+    "settings.deviceAuthToken": "Device auth token",
     "actions.saveUrl": "Save URL",
+    "actions.saveConnectivity": "Apply connectivity",
     "actions.connectUsb": "Connect USB",
     "actions.connectBle": "Connect Bluetooth",
     "actions.connectWifi": "Connect Wi-Fi",
@@ -174,12 +190,153 @@
     "advanced.importPassphrase": "Import passphrase",
     "advanced.rawTitle": "Raw commands and indexer debug",
     "logs.kicker": "Event report",
-    "logs.title": "Activity log"
+    "logs.title": "Activity log",
+    "witness.kicker": "Signal diagram",
+    "witness.close": "Close"
+  };
+
+  const I18N_PL = {
+    "hero.eyebrow": "lora20 control plane",
+    "hero.title": "Lekki panel do wysyłania inskrypcji przez Heltec V4 i LoRaWAN.",
+    "hero.lead": "Panel prowadzi od onboardingu i konfiguracji radia do deploy, mint, transfer oraz odczytu balansu.",
+    "hero.chipOne": "Web Serial + HTTPS",
+    "hero.chipTwo": "Onboarding Heltec V4",
+    "hero.chipThree": "Sticky log dock",
+    "mintStream.kicker": "Mint stream",
+    "mintStream.title": "Ostatnie operacje mint",
+    "mintStream.hint": "Kliknij wpis, aby otworzyć szczegóły witness i diagram przepływu sygnału.",
+    "settings.language": "Język",
+    "settings.theme": "Motyw",
+    "settings.sound": "Dźwięki",
+    "settings.indexerUrl": "Publiczny adres indexera",
+    "settings.deviceBridgeUrl": "Adres mostka urządzenia (Wi‑Fi)",
+    "settings.deviceWifiSsid": "SSID Wi‑Fi urządzenia",
+    "settings.deviceWifiPassword": "Hasło Wi‑Fi urządzenia",
+    "settings.deviceAuthToken": "Token autoryzacji urządzenia",
+    "actions.saveUrl": "Zapisz URL",
+    "actions.saveConnectivity": "Zastosuj łączność",
+    "actions.connectUsb": "Połącz USB",
+    "actions.connectBle": "Połącz Bluetooth",
+    "actions.connectWifi": "Połącz Wi‑Fi",
+    "actions.disconnect": "Rozłącz",
+    "actions.refresh": "Odśwież stan",
+    "actions.pullInfo": "Pobierz info",
+    "actions.publicKey": "Odczytaj klucz",
+    "actions.generateKey": "Wygeneruj klucz",
+    "actions.register": "Zarejestruj w indexerze",
+    "actions.pullRadio": "Pobierz radio",
+    "actions.join": "Join LoRaWAN",
+    "actions.reloadPortfolio": "Odśwież portfolio",
+    "actions.reloadHistory": "Odśwież historię",
+    "actions.reloadTokens": "Odśwież tokeny",
+    "actions.checkHealth": "Sprawdź indexer",
+    "actions.prepareMint": "Przygotuj mint",
+    "actions.sendMint": "Przygotuj i wyślij",
+    "actions.prepareDeploy": "Przygotuj deploy",
+    "actions.sendDeploy": "Przygotuj i wyślij",
+    "actions.prepareTransfer": "Przygotuj transfer",
+    "actions.sendTransfer": "Przygotuj i wyślij",
+    "actions.prepareConfig": "Przygotuj config",
+    "actions.sendConfig": "Przygotuj i wyślij",
+    "actions.saveLicense": "Zapisz licencję",
+    "actions.saveRadio": "Zapisz radio",
+    "actions.linkDevEui": "Powiąż DevEUI",
+    "actions.exportBackup": "Eksportuj backup",
+    "actions.importBackup": "Importuj backup",
+    "actions.sendRaw": "Wyślij raw JSON",
+    "actions.saveProfile": "Zapisz profil",
+    "actions.clearProfile": "Wyczyść edytor",
+    "actions.syncQueue": "Synchronizuj kolejkę",
+    "actions.syncBroadcast": "Synchronizuj + broadcast",
+    "actions.stopQueue": "Zatrzymaj pętlę",
+    "sections.overviewKicker": "Przegląd",
+    "sections.overviewTitle": "Najważniejsze rzeczy na start",
+    "sections.deviceKicker": "Urządzenie",
+    "sections.deviceTitle": "Aktualny node i znane urządzenia",
+    "sections.knownDevicesKicker": "Zapamiętane",
+    "sections.knownDevicesTitle": "Skonfigurowane urządzenia",
+    "sections.radioKicker": "Radio",
+    "sections.radioTitle": "Gotowość LoRaWAN",
+    "sections.portfolioKicker": "Portfolio",
+    "sections.portfolioTitle": "Balanse i ostatnie zdarzenia",
+    "sections.tokensKicker": "Tokeny",
+    "sections.tokensTitle": "Wdrożone tickery i wypełnianie formularzy",
+    "sections.operationsKicker": "Operacje",
+    "sections.operationsTitle": "Deploy, mint, transfer i config",
+    "sections.profilesKicker": "Profile",
+    "sections.profilesTitle": "Biblioteka mintu i kolejka round‑robin",
+    "sections.onboardingKicker": "Onboarding",
+    "sections.onboardingTitle": "Nowe urządzenie krok po kroku",
+    "sections.educationKicker": "Edukacja",
+    "sections.educationTitle": "Jak to działa i czego nie obiecuje protokół",
+    "sections.advancedKicker": "Zaawansowane",
+    "sections.advancedTitle": "Radio, backup i raw JSON",
+    "overview.deployedTokens": "Wdrożone tokeny",
+    "overview.portfolioEntries": "Pozycje w portfelu",
+    "overview.recentEvents": "Ostatnie zdarzenia",
+    "overview.activeProfiles": "Aktywne profile",
+    "overview.lastSend": "Ostatnia wysyłka",
+    "device.deviceId": "Device ID",
+    "device.nextNonce": "Następny nonce",
+    "device.autoMint": "Auto‑mint",
+    "device.defaultMint": "Domyślny mint",
+    "radio.joined": "Joined",
+    "radio.port": "Port",
+    "radio.event": "Ostatnie zdarzenie",
+    "radio.devEui": "DevEUI",
+    "portfolio.balancesTitle": "Tokeny w portfelu",
+    "portfolio.historyTitle": "Ostatnie zdarzenia",
+    "tokens.search": "Szukaj tickera",
+    "tokens.quickPick": "Wybierz do formularzy",
+    "operations.focusKicker": "Najczęściej używane",
+    "operations.mintTitle": "Mint tokena",
+    "operations.tick": "Tick",
+    "operations.amount": "Ilość",
+    "operations.payloadSize": "Payload",
+    "operations.dcCost": "Szac. DC",
+    "operations.protocol": "Protokół",
+    "operations.allowRisky": "Pozwól wysłać mimo przewidywanego błędu indexera",
+    "operations.deployTitle": "Deploy tokena",
+    "operations.maxSupply": "Max supply",
+    "operations.limitPerMint": "Limit per mint",
+    "operations.transferTitle": "Transfer tokena",
+    "operations.recipient": "Odbiorca deviceId",
+    "operations.configTitle": "Config inscription",
+    "operations.autoMintEnabled": "Auto‑mint włączony",
+    "operations.intervalSeconds": "Interwał (sekundy)",
+    "operations.preparedPreview": "Podgląd ostatnio przygotowanego payloadu",
+    "profiles.name": "Nazwa",
+    "profiles.amount": "Mint amount",
+    "profiles.interval": "Preferowany interwał (min)",
+    "profiles.include": "Dodaj do aktywnej kolejki",
+    "profiles.loopEnabled": "Pętla włączona",
+    "profiles.loopInterval": "Interwał pętli (min)",
+    "advanced.radioConfig": "Konfiguracja LoRaWAN i licencja Heltec",
+    "advanced.license": "Licencja Heltec",
+    "advanced.autoDevEui": "Auto DevEUI",
+    "advanced.adr": "ADR",
+    "advanced.confirmed": "Confirmed uplink",
+    "advanced.devEui": "DevEUI",
+    "advanced.joinEui": "JoinEUI",
+    "advanced.appKey": "AppKey",
+    "advanced.appPort": "App port",
+    "advanced.dataRate": "Data rate",
+    "advanced.indexerBinding": "Powiązanie DevEUI",
+    "advanced.devEuiLink": "DevEUI do powiązania",
+    "advanced.backupTitle": "Backup i restore",
+    "advanced.exportPassphrase": "Hasło eksportu",
+    "advanced.importPassphrase": "Hasło importu",
+    "advanced.rawTitle": "Surowe polecenia i debug indexera",
+    "logs.kicker": "Raport zdarzeń",
+    "logs.title": "Activity log",
+    "witness.kicker": "Diagram sygnału",
+    "witness.close": "Zamknij"
   };
 
   const refs = {};
   const refNames = [
-    "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput", "saveIndexerButton",
+    "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput",
+    "deviceWifiSsidInput", "deviceWifiPasswordInput", "deviceAuthTokenInput", "saveConnectivityButton", "saveIndexerButton",
     "connectUsbButton", "connectBleButton", "connectWifiButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
     "mintMatrixHeading", "mintMatrixHint", "mintMatrixFeed",
     "serialSupportNotice", "overviewTokensValue", "overviewBalancesValue", "overviewEventsValue",
@@ -219,6 +376,9 @@
       soundEnabled: readStorage(STORAGE.sound, "1") !== "0",
       indexerBaseUrl: normalizeUrl(readStorage(STORAGE.indexerUrl, DEFAULTS.indexerUrl)) || DEFAULTS.indexerUrl,
       deviceBridgeUrl: normalizeUrl(readStorage(STORAGE.deviceBridgeUrl, DEFAULTS.deviceBridgeUrl)) || DEFAULTS.deviceBridgeUrl,
+      deviceWifiSsid: readStorage(STORAGE.deviceWifiSsid, DEFAULTS.deviceWifiSsid),
+      deviceWifiPassword: readStorage(STORAGE.deviceWifiPassword, DEFAULTS.deviceWifiPassword),
+      deviceAuthToken: readStorage(STORAGE.deviceAuthToken, DEFAULTS.deviceAuthToken),
       profiles: loadJson(STORAGE.profiles, DEFAULTS.profiles),
       scheduler: loadJson(STORAGE.scheduler, DEFAULTS.scheduler),
       knownDevices: loadJson(STORAGE.knownDevices, []),
@@ -244,10 +404,9 @@
     requestId: 1,
     audioContext: null,
     deviceRequestChain: Promise.resolve(),
-    mintMatrixScrollTimer: null,
-    mintMatrixLastUserScrollAt: 0,
-    mintMatrixResumeTimer: null,
-    mintMatrixAutoPaused: false,
+    mintMatrixHoldUntil: 0,
+    mintMatrixHover: false,
+    mintMatrixTopEventId: null,
     mintMatrixProgrammaticScroll: false,
     activeWitnessEventId: null
   };
@@ -287,6 +446,7 @@
     refs.toggleLogDockButton?.addEventListener("click", toggleLogDock);
     wireAction(refs.saveIndexerButton, handleSaveIndexerUrl);
     refs.deviceBridgeUrlInput?.addEventListener("change", handleSaveDeviceBridgeUrl);
+    wireAction(refs.saveConnectivityButton, handleSaveConnectivity);
       wireAction(refs.connectUsbButton, () => connectUsbDevice());
       wireAction(refs.connectBleButton, () => connectBleDevice());
       wireAction(refs.connectWifiButton, () => connectWifiDevice());
@@ -333,6 +493,8 @@
     refs.knownDevicesList?.addEventListener("click", handleKnownDevicesClick);
     refs.mintMatrixFeed?.addEventListener("click", handleMintMatrixClick);
     refs.mintMatrixFeed?.addEventListener("scroll", handleMintMatrixScroll);
+    refs.mintMatrixFeed?.addEventListener("mouseenter", () => handleMintMatrixHover(true));
+    refs.mintMatrixFeed?.addEventListener("mouseleave", () => handleMintMatrixHover(false));
     refs.closeWitnessModalButton?.addEventListener("click", closeWitnessModal);
     refs.witnessModal?.addEventListener("click", (event) => {
       const target = event.target;
@@ -364,6 +526,9 @@
       if (refs.soundEnabledInput) refs.soundEnabledInput.checked = state.soundEnabled;
       if (refs.indexerBaseUrlInput) refs.indexerBaseUrlInput.value = state.indexerBaseUrl;
       if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
+      if (refs.deviceWifiSsidInput) refs.deviceWifiSsidInput.value = state.deviceWifiSsid || "";
+      if (refs.deviceWifiPasswordInput) refs.deviceWifiPasswordInput.value = state.deviceWifiPassword || "";
+      if (refs.deviceAuthTokenInput) refs.deviceAuthTokenInput.value = state.deviceAuthToken || "";
       if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
       if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes || 30);
       if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
@@ -410,12 +575,47 @@
     writeStorage(STORAGE.deviceBridgeUrl, state.deviceBridgeUrl);
   }
 
+  function handleSaveConnectivity() {
+    state.deviceWifiSsid = refs.deviceWifiSsidInput?.value?.trim() || "";
+    state.deviceWifiPassword = refs.deviceWifiPasswordInput?.value || "";
+    state.deviceAuthToken = refs.deviceAuthTokenInput?.value || "";
+    writeStorage(STORAGE.deviceWifiSsid, state.deviceWifiSsid);
+    writeStorage(STORAGE.deviceWifiPassword, state.deviceWifiPassword);
+    writeStorage(STORAGE.deviceAuthToken, state.deviceAuthToken);
+    addLog("device", txt("Zapisano ustawienia łączności.", "Connectivity settings saved."));
+    if (isDeviceConnected() && state.deviceTransport !== "wifi") {
+      void applyConnectivityMode("wifi");
+    }
+  }
+
+  function buildConnectivityParams(modeOverride) {
+    const params = {};
+    if (modeOverride) params.mode = modeOverride;
+    if (state.deviceWifiSsid) params.wifiSsid = state.deviceWifiSsid;
+    if (state.deviceWifiPassword) params.wifiPassword = state.deviceWifiPassword;
+    if (state.deviceAuthToken) params.rpcToken = state.deviceAuthToken;
+    return params;
+  }
+
+  async function applyConnectivityMode(modeOverride) {
+    if (!isDeviceConnected()) return;
+    const params = buildConnectivityParams(modeOverride);
+    if (!Object.keys(params).length) return;
+    try {
+      const result = await requestDevice("set_connectivity", params, TIMEOUTS.set_config);
+      addLog("device", txt("Zaktualizowano tryb łączności.", "Connectivity mode updated."), result);
+    } catch (error) {
+      addLog("error", error instanceof Error ? error.message : String(error));
+    }
+  }
+
   function applyLanguage() {
     document.documentElement.lang = state.language;
     document.querySelectorAll("[data-i18n]").forEach((node) => {
       const key = node.dataset.i18n;
-      node.textContent = state.language === "en" && I18N_EN[key]
-        ? I18N_EN[key]
+      const table = state.language === "en" ? I18N_EN : I18N_PL;
+      node.textContent = table && table[key]
+        ? table[key]
         : (node.dataset.defaultText || node.textContent);
     });
 
@@ -535,12 +735,12 @@
     setText(refs.overviewLastSendValue, formatLastSend(state.lastSendAt));
 
     const notes = [];
-    if (!isDeviceConnected()) notes.push(txt("Urzadzenie nie jest jeszcze podlaczone.", "The device is not connected yet."));
-    if (state.indexerOnline !== true) notes.push(txt("Indexer nie odpowiada lub dashboard nie moze go odczytac.", "Indexer is not responding or dashboard cannot read it."));
+    if (!isDeviceConnected()) notes.push(txt("Urządzenie nie jest jeszcze podłączone.", "The device is not connected yet."));
+    if (state.indexerOnline !== true) notes.push(txt("Indexer nie odpowiada lub dashboard nie może go odczytać.", "Indexer is not responding or dashboard cannot read it."));
     if (state.tokenCatalogError) notes.push(state.tokenCatalogError);
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
-    if (runtime && !runtime.joined) notes.push(txt("Radio nie jest joined, wiec proba wysylki skonczy sie timeoutem albo odrzuceniem.", "Radio is not joined, so sending will likely timeout or be rejected."));
-    if (state.lastSendAt) notes.push(txt(`Ostatnia wysylka: ${formatDateTime(state.lastSendAt)}.`, `Last send: ${formatDateTime(state.lastSendAt)}.`));
+    if (runtime && !runtime.joined) notes.push(txt("Radio nie jest joined, więc próba wysyłki skończy się timeoutem albo odrzuceniem.", "Radio is not joined, so sending will likely timeout or be rejected."));
+    if (state.lastSendAt) notes.push(txt(`Ostatnia wysyłka: ${formatDateTime(state.lastSendAt)}.`, `Last send: ${formatDateTime(state.lastSendAt)}.`));
     renderCallout(refs.overviewStatusNote, notes.length ? "warn" : "ok", notes.length ? notes.join(" ") : txt("Panel wyglada na gotowy do pracy.", "Dashboard looks ready."));
   }
 
@@ -560,7 +760,7 @@
           ${escapeHtml(txt("Brak operacji mint w historii indexera.", "No mint operations in indexer history yet."))}
         </div>
       `;
-      stopMintMatrixAutoScroll();
+      state.mintMatrixTopEventId = null;
       return;
     }
 
@@ -584,7 +784,8 @@
       `;
     }).join("");
 
-    restartMintMatrixAutoScroll();
+    const topEventKey = getMintEventKey(mintEvents[0], 0);
+    maybeScrollMintMatrixToTop(topEventKey);
   }
 
   function getMintEvents() {
@@ -596,6 +797,15 @@
       })
       .sort((left, right) => getEventTimestamp(right) - getEventTimestamp(left))
       .slice(0, 30);
+  }
+
+  function getMintEventKey(event, fallbackIndex) {
+    if (event?.id) return String(event.id);
+    const nonce = getEventNonce(event);
+    const tick = normalizeTick(event?.tick || "");
+    const amount = event?.amount == null ? "" : String(event.amount);
+    const timestamp = event?.receivedAt || event?.createdAt || event?.time || event?.timestamp || "";
+    return `${tick}|${amount}|${nonce ?? ""}|${timestamp}|${fallbackIndex}`;
   }
 
   function getWitnesses(event) {
@@ -740,30 +950,42 @@
     return Number.isNaN(parsed) ? 0 : parsed;
   }
 
-    function restartMintMatrixAutoScroll() {
-      stopMintMatrixAutoScroll();
-      const container = refs.mintMatrixFeed;
-      if (!container) return;
-      if (state.mintMatrixAutoPaused) return;
-      state.mintMatrixProgrammaticScroll = true;
-      container.scrollTop = 0;
-    }
+  function shouldAutoScrollMintMatrix() {
+    if (state.mintMatrixHover) return false;
+    if (state.mintMatrixHoldUntil && Date.now() < state.mintMatrixHoldUntil) return false;
+    return true;
+  }
 
-    function stopMintMatrixAutoScroll() {
-      if (state.mintMatrixScrollTimer) {
-        window.clearInterval(state.mintMatrixScrollTimer);
-        state.mintMatrixScrollTimer = null;
-      }
+  function maybeScrollMintMatrixToTop(nextKey) {
+    const container = refs.mintMatrixFeed;
+    if (!container) return;
+    if (!nextKey) {
+      state.mintMatrixTopEventId = null;
+      return;
     }
+    if (nextKey === state.mintMatrixTopEventId) return;
+    state.mintMatrixTopEventId = nextKey;
+    if (!shouldAutoScrollMintMatrix()) return;
+    state.mintMatrixProgrammaticScroll = true;
+    container.scrollTop = 0;
+    window.requestAnimationFrame(() => {
+      state.mintMatrixProgrammaticScroll = false;
+    });
+  }
 
   function handleMintMatrixScroll() {
-      if (state.mintMatrixProgrammaticScroll) {
-        state.mintMatrixProgrammaticScroll = false;
-        return;
-      }
-      state.mintMatrixLastUserScrollAt = Date.now();
-      state.mintMatrixAutoPaused = true;
-      if (state.mintMatrixResumeTimer) window.clearTimeout(state.mintMatrixResumeTimer);
+    if (state.mintMatrixProgrammaticScroll) {
+      state.mintMatrixProgrammaticScroll = false;
+      return;
+    }
+    state.mintMatrixHoldUntil = Date.now() + 10000;
+  }
+
+  function handleMintMatrixHover(isHovering) {
+    state.mintMatrixHover = isHovering;
+    if (!isHovering) {
+      state.mintMatrixHoldUntil = Date.now() + 10000;
+    }
   }
 
   function handleMintMatrixClick(event) {
@@ -840,10 +1062,10 @@
 
     const width = 1060;
     const sourceWidth = 280;
-    const sourceHeight = 106;
+    const sourceHeight = 118;
     const sourceX = 70;
     const targetWidth = 360;
-    const targetHeight = 110;
+    const targetHeight = 130;
     const targetX = 640;
     const gap = 24;
     const totalTargetsHeight = witnesses.length * targetHeight + Math.max(0, witnesses.length - 1) * gap;
@@ -939,16 +1161,16 @@
     setText(refs.deviceSummaryOutput, device ? prettyJson(device) : "No device data yet.");
 
     const hints = [];
-    if (!device) hints.push(txt("Po polaczeniu kliknij 'Pobierz info'.", "After connecting, click 'Fetch info'."));
+    if (!device) hints.push(txt("Po połączeniu kliknij \"Pobierz info\".", "After connecting, click \"Fetch info\"."));
     else {
       hints.push(txt(`Aktywny deviceId: ${device.deviceId}.`, `Active deviceId: ${device.deviceId}.`));
-      if (!device.hasKey) hints.push(txt("Klucz urzadzenia nie zostal jeszcze wygenerowany.", "Device key has not been generated yet."));
+      if (!device.hasKey) hints.push(txt("Klucz urządzenia nie został jeszcze wygenerowany.", "Device key has not been generated yet."));
     }
     renderCallout(refs.deviceReadinessBanner, device?.hasKey ? "ok" : "warn", hints.join(" "));
 
     if (!refs.knownDevicesList) return;
     if (!state.knownDevices.length) {
-      refs.knownDevicesList.innerHTML = `<div class="known-device"><h3>${escapeHtml(txt("Brak zapisanych urzadzen", "No saved devices"))}</h3><p class="helper">${escapeHtml(txt("Po udanym odczycie info lub rejestracji w indexerze urzadzenie pojawi sie tutaj.", "After successful info read or indexer registration, the device will appear here."))}</p></div>`;
+      refs.knownDevicesList.innerHTML = `<div class="known-device"><h3>${escapeHtml(txt("Brak zapisanych urządzeń", "No saved devices"))}</h3><p class="helper">${escapeHtml(txt("Po udanym odczycie info lub rejestracji w indexerze urządzenie pojawi się tutaj.", "After successful info read or indexer registration, the device will appear here."))}</p></div>`;
       return;
     }
 
@@ -981,10 +1203,10 @@
 
     const messages = [];
     if (!config?.hasAppKey || !config?.hasJoinEui) messages.push(txt("Brakuje pelnej konfiguracji OTAA.", "Full OTAA configuration is missing."));
-    if (runtime && !runtime.hardwareReady) messages.push(txt("hardwareReady=false. Po restarcie Helteca odczekaj chwile i dopiero odczytaj radio lub wykonaj join.", "hardwareReady=false. After Heltec restart, wait a moment, then refresh radio state or run join."));
-    if (runtime && !runtime.initialized) messages.push(txt("initialized=false. Radio nie jest gotowe do wysylki.", "initialized=false. Radio is not ready to send yet."));
-    if (runtime && !runtime.joined) messages.push(txt("joined=false. Wykonaj join przed wysylka.", "joined=false. Run join before sending."));
-    renderCallout(refs.radioActionHint, messages.length ? "warn" : "ok", messages.length ? messages.join(" ") : txt("Radio wyglada na gotowe do wysylki.", "Radio looks ready to send."));
+    if (runtime && !runtime.hardwareReady) messages.push(txt("hardwareReady=false. Po restarcie Helteca odczekaj chwilę i dopiero odczytaj radio lub wykonaj join.", "hardwareReady=false. After Heltec restart, wait a moment, then refresh radio state or run join."));
+    if (runtime && !runtime.initialized) messages.push(txt("initialized=false. Radio nie jest gotowe do wysyłki.", "initialized=false. Radio is not ready to send yet."));
+    if (runtime && !runtime.joined) messages.push(txt("joined=false. Wykonaj join przed wysyłką.", "joined=false. Run join before sending."));
+    renderCallout(refs.radioActionHint, messages.length ? "warn" : "ok", messages.length ? messages.join(" ") : txt("Radio wygląda na gotowe do wysyłki.", "Radio looks ready to send."));
   }
 
   function renderPortfolio() {
@@ -1056,7 +1278,7 @@
 
     if (!refs.tokenLibraryList) return;
     if (!filtered.length) {
-      refs.tokenLibraryList.innerHTML = `<div class="token-card"><h3>${escapeHtml(txt("Brak tokenow", "No tokens found"))}</h3><p class="helper">${escapeHtml(txt("Indexer nie zwrocil jeszcze zadnych wdrozonych tickerow.", "Indexer has not returned any deployed tickers yet."))}</p></div>`;
+      refs.tokenLibraryList.innerHTML = `<div class="token-card"><h3>${escapeHtml(txt("Brak tokenów", "No tokens found"))}</h3><p class="helper">${escapeHtml(txt("Indexer nie zwrócił jeszcze żadnych wdrożonych tickerów.", "Indexer has not returned any deployed tickers yet."))}</p></div>`;
       return;
     }
 
@@ -1091,7 +1313,7 @@
 
     if (refs.profilesPersistenceNote) {
       refs.profilesPersistenceNote.textContent = txt(
-        "Profile sa zapamietywane lokalnie w przegladarce. 'Synchronizuj kolejke' zapisuje je do Helteca, wiec urzadzenie moze mintowac takze bez podlaczonego panelu.",
+        "Profile są zapamiętywane lokalnie w przeglądarce. \"Synchronizuj kolejkę\" zapisuje je do Helteca, więc urządzenie może mintować także bez podłączonego panelu.",
         "Profiles are stored locally in the browser. 'Sync queue' writes them to Heltec, so the device can keep minting without an attached dashboard."
       );
     }
@@ -1107,7 +1329,7 @@
 
     if (!refs.profileList) return;
     if (!state.profiles.length) {
-      refs.profileList.innerHTML = `<div class="profile-card"><h3>${escapeHtml(txt("Brak profili", "No profiles yet"))}</h3><p class="helper">${escapeHtml(txt("Dodaj profil mintu, a potem zsynchronizuj kolejke z urzadzeniem.", "Add a mint profile, then sync queue with the device."))}</p></div>`;
+      refs.profileList.innerHTML = `<div class="profile-card"><h3>${escapeHtml(txt("Brak profili", "No profiles yet"))}</h3><p class="helper">${escapeHtml(txt("Dodaj profil mintu, a potem zsynchronizuj kolejkę z urządzeniem.", "Add a mint profile, then sync queue with the device."))}</p></div>`;
       return;
     }
 
@@ -1144,7 +1366,7 @@
           "warn",
           mintTick
             ? txt(
-              `Ticker ${mintTick} nie jest jeszcze widoczny w indexerze. Mint bez wczesniejszego deploy prawdopodobnie nie zostanie zaindeksowany.`,
+        `Ticker ${mintTick} nie jest jeszcze widoczny w indexerze. Mint bez wcześniejszego deploy prawdopodobnie nie zostanie zaindeksowany.`,
               `Ticker ${mintTick} is not visible in indexer yet. Mint without prior deploy is likely to be rejected.`
             )
             : txt("Wybierz ticker albo kliknij token z biblioteki.", "Choose a ticker or click a token from the library.")
@@ -1170,19 +1392,19 @@
     const lastSendMs = state.lastSendAt ? Date.now() - Date.parse(state.lastSendAt) : Number.POSITIVE_INFINITY;
     const transportNotes = [];
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
-    if (!isDeviceConnected()) transportNotes.push(txt("Brak polaczenia z urzadzeniem.", "No device connection."));
+    if (!isDeviceConnected()) transportNotes.push(txt("Brak połączenia z urządzeniem.", "No device connection."));
     if (runtime && !runtime.joined) transportNotes.push(txt("Radio nie jest joined.", "Radio is not joined."));
-    if (runtime && (!runtime.hardwareReady || !runtime.initialized)) transportNotes.push(txt("Radio po restarcie nie jest jeszcze gotowe do kolejnej wysylki.", "After restart the radio is not ready for the next send yet."));
+    if (runtime && (!runtime.hardwareReady || !runtime.initialized)) transportNotes.push(txt("Radio po restarcie nie jest jeszcze gotowe do kolejnej wysyłki.", "After restart the radio is not ready for the next send yet."));
     if (Number.isFinite(lastSendMs) && lastSendMs < 15000) {
       transportNotes.push(txt(
-        `Ostatnia wysylka byla ${formatRelative(Date.now(), Date.parse(state.lastSendAt))}. Daj urzadzeniu chwile przed nastepna proba.`,
+        `Ostatnia wysyłka była ${formatRelative(Date.now(), Date.parse(state.lastSendAt))}. Daj urządzeniu chwilę przed następną próbą.`,
         `Last send was ${formatRelative(Date.now(), Date.parse(state.lastSendAt))}. Give the device a short pause before trying again.`
       ));
     }
     renderCallout(refs.transportStatusNote, transportNotes.length ? "warn" : "ok", transportNotes.length ? transportNotes.join(" ") : txt("Transport wyglada poprawnie.", "Transport looks healthy."));
 
     const actionNote = txt(
-      "Przygotuj uruchamia na Heltecu tylko lokalne polecenie prepare_*, podpisuje payload i pokazuje podglad. Nie wysyla nic przez LoRaWAN i nie zapisuje nonce. Przygotuj i wyslij najpierw robi prepare, potem wywoluje lorawan_send, kolejkuje uplink w radiu i zapisuje nonce po akceptacji przez urzadzenie. Stan indexera zmienia sie dopiero po przekazaniu uplinku przez webhook ChirpStack.",
+      "Przygotuj uruchamia na Heltecu tylko lokalne polecenie prepare_*, podpisuje payload i pokazuje podgląd. Nie wysyła nic przez LoRaWAN i nie zapisuje nonce. Przygotuj i wyślij najpierw robi prepare, potem wywołuje lorawan_send, kolejkuje uplink w radiu i zapisuje nonce po akceptacji przez urządzenie. Stan indexera zmienia się dopiero po przekazaniu uplinku przez webhook ChirpStack.",
       "Prepare only runs local prepare_* on Heltec, signs payload and shows preview. It does not transmit over LoRaWAN and does not commit nonce. Prepare and send first prepares, then calls lorawan_send, queues uplink in radio and commits nonce after device accepts queueing. Indexer state changes only after ChirpStack forwards the uplink to webhook."
     );
     renderCallout(refs.operationActionNote, "ok", actionNote);
@@ -1306,7 +1528,7 @@
 
     if (response.device) {
       upsertKnownDevice({ deviceId: response.device.deviceId, publicKeyHex: response.device.publicKeyRaw });
-      addLog("indexer", txt("Urzadzenie zarejestrowane w indexerze", "Device registered in indexer"), response.device);
+    addLog("indexer", txt("Urządzenie zarejestrowane w indexerze", "Device registered in indexer"), response.device);
       await loadPortfolioAndHistory();
     }
   }
@@ -1375,22 +1597,22 @@
     if (isIndexerParameterTypeError(normalized)) {
       return hasFallbackTokens
         ? txt(
-            "Lista tokenow z indexera nie odswiezyla sie (blad zapytania po stronie indexera). Panel pokazuje dane z portfela urzadzenia.",
+            "Lista tokenów z indexera nie odświeżyła się (błąd zapytania po stronie indexera). Panel pokazuje dane z portfela urządzenia.",
             "Indexer token list refresh failed (server-side query error). Dashboard is showing portfolio-derived data."
           )
         : txt(
-            "Indexer zwrocil blad zapytania przy pobieraniu listy tokenow. Sprobuj ponownie po aktualizacji indexera.",
+            "Indexer zwrócił błąd zapytania przy pobieraniu listy tokenów. Spróbuj ponownie po aktualizacji indexera.",
             "Indexer returned a query error while loading the token list. Retry after updating the indexer."
           );
     }
 
     return hasFallbackTokens
       ? txt(
-          "Lista tokenow z indexera nie odswiezyla sie. Panel pokazuje dane z portfela urzadzenia.",
+          "Lista tokenów z indexera nie odświeżyła się. Panel pokazuje dane z portfela urządzenia.",
           "Indexer token list refresh failed. Dashboard is showing portfolio-derived data."
         )
       : txt(
-          "Nie udalo sie pobrac listy tokenow z indexera.",
+          "Nie udało się pobrać listy tokenów z indexera.",
           "Failed to fetch token list from indexer."
         );
   }
@@ -1408,7 +1630,7 @@
 
   async function loadPortfolio() {
     const deviceId = getCurrentDeviceId();
-    if (!deviceId) throw new Error(txt("Brak aktywnego deviceId. Najpierw odczytaj info urzadzenia albo wybierz zapisany node.", "No active deviceId. Fetch device info first or choose a saved node."));
+    if (!deviceId) throw new Error(txt("Brak aktywnego deviceId. Najpierw odczytaj info urządzenia albo wybierz zapisany node.", "No active deviceId. Fetch device info first or choose a saved node."));
     const response = await fetchJson(`/devices/${encodeURIComponent(deviceId)}/balances?limit=100`);
     state.portfolio = Array.isArray(response.balances) ? response.balances : [];
     setText(refs.balanceOutput, prettyJson(response));
@@ -1605,8 +1827,8 @@
     const runtime = radio.runtime || radio.lorawanRuntime;
     const config = radio.config || state.deviceInfo?.lorawan;
     if (!runtime?.configured) throw new Error(txt("Radio nie jest skonfigurowane. Najpierw zapisz LoRaWAN.", "Radio is not configured. Save LoRaWAN first."));
-    if (!runtime.hardwareReady || !runtime.initialized) throw new Error(txt("Radio nie jest gotowe po restarcie. Odczekaj chwile, pobierz stan radia i w razie potrzeby zrob join.", "Radio is not ready after restart. Wait a moment, refresh radio status, and run join if needed."));
-    if (!runtime.joined) throw new Error(txt("Radio nie jest joined. Zrob join przed wysylka.", "Radio is not joined. Run join before sending."));
+    if (!runtime.hardwareReady || !runtime.initialized) throw new Error(txt("Radio nie jest gotowe po restarcie. Odczekaj chwilę, pobierz stan radia i w razie potrzeby zrób join.", "Radio is not ready after restart. Wait a moment, refresh radio status, and run join if needed."));
+    if (!runtime.joined) throw new Error(txt("Radio nie jest joined. Zrób join przed wysyłką.", "Radio is not joined. Run join before sending."));
 
     const response = await requestDevice("lorawan_send", {
       payloadHex: prepared.payloadHex,
@@ -1809,9 +2031,9 @@
   }
 
   async function connectUsbDevice() {
-    if (!("serial" in navigator)) throw new Error(txt("Ta przegladarka nie wspiera Web Serial.", "This browser does not support Web Serial."));
+    if (!("serial" in navigator)) throw new Error(txt("Ta przeglądarka nie wspiera Web Serial.", "This browser does not support Web Serial."));
     if (state.port) {
-      addLog("device", txt("Urzadzenie jest juz podlaczone.", "Device is already connected."));
+      addLog("device", txt("Urządzenie jest już podłączone.", "Device is already connected."));
       return;
     }
     const port = await navigator.serial.requestPort();
@@ -1820,19 +2042,20 @@
     state.disconnecting = false;
     state.deviceTransport = "serial";
     state.wifiConnected = false;
-    addLog("device", txt("Port szeregowy podlaczony.", "Serial port connected."));
+    addLog("device", txt("Port szeregowy podłączony.", "Serial port connected."));
     renderAll();
     void startReadLoop();
     await delay(1200);
     await refreshDeviceState();
+    await applyConnectivityMode("usb");
   }
 
   async function connectBleDevice() {
     if (!("bluetooth" in navigator)) {
-      throw new Error(txt("Ta przegladarka nie wspiera Web Bluetooth.", "This browser does not support Web Bluetooth."));
+      throw new Error(txt("Ta przeglądarka nie wspiera Web Bluetooth.", "This browser does not support Web Bluetooth."));
     }
     if (state.ble?.connected) {
-      addLog("device", txt("Bluetooth jest juz polaczony.", "Bluetooth is already connected."));
+      addLog("device", txt("Bluetooth jest już połączony.", "Bluetooth is already connected."));
       return;
     }
 
@@ -1888,10 +2111,11 @@
     state.ble = bleState;
     state.deviceTransport = "ble";
     state.wifiConnected = false;
-    addLog("device", txt("Bluetooth podlaczony.", "Bluetooth connected."));
+    addLog("device", txt("Bluetooth podłączony.", "Bluetooth connected."));
     renderAll();
     await delay(400);
     await refreshDeviceState();
+    await applyConnectivityMode("ble");
   }
 
   async function connectWifiDevice() {
@@ -1899,9 +2123,9 @@
     if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres mostka Wi‑Fi.", "Provide the Wi-Fi bridge URL."));
     state.deviceTransport = "wifi";
     try {
-      const response = await sendWifiPayload({ id: `req-${state.requestId++}`, command: "ping", params: {} }, 8000, "ping");
+      const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 8000, "ping");
       state.wifiConnected = true;
-      addLog("device", txt("Wi‑Fi bridge polaczony.", "Wi‑Fi bridge connected."), response);
+      addLog("device", txt("Wi‑Fi bridge połączony.", "Wi‑Fi bridge connected."), response);
       renderAll();
       await refreshDeviceState();
     } catch (error) {
@@ -2017,18 +2241,26 @@
     return next;
   }
 
+  function withAuth(payload) {
+    if (state.deviceTransport !== "serial" && state.deviceAuthToken) {
+      return { ...payload, auth: state.deviceAuthToken };
+    }
+    return payload;
+  }
+
   async function sendDevicePayload(payload, timeout, label) {
+    const securedPayload = withAuth(payload);
     if (state.deviceTransport === "wifi") {
-      return sendWifiPayload(payload, timeout, label);
+      return sendWifiPayload(securedPayload, timeout, label);
     }
     if (state.deviceTransport === "ble") {
-      return sendBlePayload(payload, timeout, label);
+      return sendBlePayload(securedPayload, timeout, label);
     }
-    return sendSerialPayload(payload, timeout, label);
+    return sendSerialPayload(securedPayload, timeout, label);
   }
 
   async function sendSerialPayload(payload, timeout, label) {
-    if (!state.port?.writable) throw new Error(txt("Urzadzenie nie jest podlaczone.", "Device is not connected."));
+    if (!state.port?.writable) throw new Error(txt("Urządzenie nie jest podłączone.", "Device is not connected."));
     const writer = state.port.writable.getWriter();
     const encoder = new TextEncoder();
     const serialized = JSON.stringify(payload);
@@ -2052,7 +2284,7 @@
   }
 
   async function sendBlePayload(payload, timeout, label) {
-    if (!state.ble?.rxChar) throw new Error(txt("Bluetooth nie jest podlaczony.", "Bluetooth is not connected."));
+    if (!state.ble?.rxChar) throw new Error(txt("Bluetooth nie jest podłączony.", "Bluetooth is not connected."));
     const serialized = JSON.stringify(payload);
     addLog("tx", label || payload.command || payload.method || "raw", payload);
 
@@ -2128,10 +2360,10 @@
       return;
     }
     if (parsed.ok === false) {
-      addLog("error", parsed.error?.message || txt("Urzadzenie zwrocilo blad", "Device returned an error"), parsed.error);
+      addLog("error", parsed.error?.message || txt("Urządzenie zwróciło błąd", "Device returned an error"), parsed.error);
       return;
     }
-    addLog("event", txt("Zdarzenie urzadzenia", "Device event"), parsed);
+    addLog("event", txt("Zdarzenie urządzenia", "Device event"), parsed);
   }
 
   async function fetchJson(path, options = {}) {
@@ -2170,10 +2402,10 @@
     const existing = findToken(tick);
     const warnings = [];
     if (!tick) warnings.push({ blocking: true, message: txt("Tick deploy musi byc ustawiony.", "Deploy tick must be set.") });
-    if (maxSupply <= 0n) warnings.push({ blocking: true, message: txt("maxSupply musi byc wieksze od zera.", "maxSupply must be greater than zero.") });
-    if (limitPerMint <= 0n) warnings.push({ blocking: true, message: txt("limitPerMint musi byc wieksze od zera.", "limitPerMint must be greater than zero.") });
+    if (maxSupply <= 0n) warnings.push({ blocking: true, message: txt("maxSupply musi być większe od zera.", "maxSupply must be greater than zero.") });
+    if (limitPerMint <= 0n) warnings.push({ blocking: true, message: txt("limitPerMint musi być większe od zera.", "limitPerMint must be greater than zero.") });
     if (limitPerMint > maxSupply) warnings.push({ blocking: true, message: txt("limitPerMint nie moze przekraczac maxSupply.", "limitPerMint cannot exceed maxSupply.") });
-    if (existing) warnings.push({ blocking: true, message: txt(`Ticker ${tick} jest juz wdrozony. Duplikat deploy nie zostanie uznany przez indexer.`, `Ticker ${tick} is already deployed. Duplicate deploy will be rejected by indexer.`) });
+    if (existing) warnings.push({ blocking: true, message: txt(`Ticker ${tick} jest już wdrożony. Duplikat deploy nie zostanie uznany przez indexer.`, `Ticker ${tick} is already deployed. Duplicate deploy will be rejected by indexer.`) });
     return warnings;
   }
   function getMintWarnings(tick, amountText, token) {
@@ -2183,9 +2415,9 @@
       warnings.push({ blocking: true, message: txt("Tick mintu jest pusty.", "Mint ticker is empty.") });
       return warnings;
     }
-    if (amount <= 0n) warnings.push({ blocking: true, message: txt("Ilosc mintu musi byc wieksza od zera.", "Mint amount must be greater than zero.") });
+    if (amount <= 0n) warnings.push({ blocking: true, message: txt("Ilość mintu musi być większa od zera.", "Mint amount must be greater than zero.") });
     if (!token) {
-      warnings.push({ blocking: true, message: txt(`Ticker ${tick} nie jest wdrozony w indexerze. Taki mint najpewniej nie zostanie zaindeksowany.`, `Ticker ${tick} is not deployed in indexer. This mint will likely not be indexed.`) });
+      warnings.push({ blocking: true, message: txt(`Ticker ${tick} nie jest wdrożony w indexerze. Taki mint najpewniej nie zostanie zaindeksowany.`, `Ticker ${tick} is not deployed in indexer. This mint will likely not be indexed.`) });
       return warnings;
     }
     const limit = safeBigInt(token.limitPerMint);
@@ -2203,7 +2435,7 @@
     const amount = safeBigInt(refs.transferAmountInput?.value || "0");
     const recipient = refs.transferRecipientInput?.value?.trim() || "";
     if (!tick) warnings.push({ blocking: true, message: txt("Tick transferu jest pusty.", "Transfer ticker is empty.") });
-    if (amount <= 0n) warnings.push({ blocking: true, message: txt("Ilosc transferu musi byc wieksza od zera.", "Transfer amount must be greater than zero.") });
+    if (amount <= 0n) warnings.push({ blocking: true, message: txt("Ilość transferu musi być większa od zera.", "Transfer amount must be greater than zero.") });
     if (!/^[0-9a-fA-F]{16}$/.test(recipient)) warnings.push({ blocking: true, message: txt("Recipient deviceId musi miec dokladnie 16 znakow hex.", "Recipient deviceId must be exactly 16 hex characters.") });
     if (!findToken(tick)) warnings.push({ blocking: true, message: txt(`Ticker ${tick} nie istnieje w indexerze.`, `Ticker ${tick} does not exist in indexer.`) });
     const currentDeviceId = getCurrentDeviceId();

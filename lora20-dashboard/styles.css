@@ -1013,10 +1013,10 @@ body[data-theme="dark"] .log-dock {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   height: 100%;
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
   color: #f2f7ff;
 }
 
@@ -1026,14 +1026,14 @@ body[data-theme="dark"] .log-dock {
 
 .signal-node-name {
   font-weight: 800;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.1;
 }
 
 .signal-node-id {
   font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.2;
+  font-size: 10px;
+  line-height: 1.25;
   color: rgba(186, 204, 225, 0.95);
   word-break: break-word;
   overflow-wrap: anywhere;
