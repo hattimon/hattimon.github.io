@@ -116,6 +116,7 @@
     "actions.saveBackupFile": "Save JSON",
     "actions.loadBackupFile": "Load JSON",
     "actions.showFullBackup": "Show full backup",
+    "actions.remaskBackup": "Mask again",
     "actions.sendRaw": "Send raw JSON",
     "actions.saveProfile": "Save profile",
     "actions.clearProfile": "Clear editor",
@@ -265,6 +266,7 @@
     "actions.saveBackupFile": "Zapisz JSON",
     "actions.loadBackupFile": "Wczytaj JSON",
     "actions.showFullBackup": "Pokaż pełny backup",
+    "actions.remaskBackup": "Zamaskuj ponownie",
     "actions.sendRaw": "Wyślij raw JSON",
     "actions.saveProfile": "Zapisz profil",
     "actions.clearProfile": "Wyczyść edytor",
@@ -372,7 +374,7 @@
     "lorawanAdrInput", "lorawanConfirmedInput", "lorawanDevEuiInput", "lorawanJoinEuiInput",
     "lorawanAppKeyInput", "lorawanAppPortInput", "lorawanDataRateInput", "setLorawanButton",
     "linkDevEuiInput", "linkDevEuiButton", "exportBackupButton", "importBackupButton",
-    "saveBackupFileButton", "loadBackupFileButton", "showFullBackupButton", "showFullBackupConfirm", "backupFileInput",
+    "saveBackupFileButton", "loadBackupFileButton", "showFullBackupButton", "remaskBackupButton", "showFullBackupConfirm", "backupFileInput",
     "backupPassphraseInput", "backupImportPassphraseInput", "backupJsonTextarea", "deviceIdValue",
     "nextNonceValue", "autoMintValue", "defaultMintValue", "lorawanJoinedValue", "lorawanPortValue",
     "lorawanEventValue", "lorawanDevEuiValue", "deviceSummaryOutput", "lorawanSummaryOutput",
@@ -496,6 +498,7 @@
     wireAction(refs.saveBackupFileButton, () => saveBackupFile());
     wireAction(refs.loadBackupFileButton, () => promptBackupFile());
     wireAction(refs.showFullBackupButton, () => showFullBackup());
+    wireAction(refs.remaskBackupButton, () => remaskBackupPreview());
     refs.backupFileInput?.addEventListener("change", handleBackupFileSelected);
     wireAction(refs.loadPortfolioButton, () => loadPortfolioAndHistory());
     wireAction(refs.transactionsButton, () => loadTransactions());
@@ -1828,6 +1831,15 @@
     if (!proceed) return;
     if (refs.backupJsonTextarea) {
       refs.backupJsonTextarea.value = state.lastBackupRawText || JSON.stringify(state.lastBackupRaw, null, 2);
+    }
+  }
+
+  function remaskBackupPreview() {
+    if (!state.lastBackupRaw) {
+      throw new Error(txt("Najpierw wykonaj eksport backupu.", "Export the backup first."));
+    }
+    if (refs.backupJsonTextarea) {
+      refs.backupJsonTextarea.value = prettyJson(state.lastBackupRaw);
     }
   }
 
