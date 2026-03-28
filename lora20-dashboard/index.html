@@ -442,8 +442,10 @@
               <button id="importBackupButton" class="button button--ghost" type="button" data-i18n="actions.importBackup">Importuj backup</button>
               <button id="saveBackupFileButton" class="button button--ghost" type="button" data-i18n="actions.saveBackupFile">Zapisz JSON</button>
               <button id="loadBackupFileButton" class="button button--ghost" type="button" data-i18n="actions.loadBackupFile">Wczytaj JSON</button>
+              <button id="showFullBackupButton" class="button button--ghost" type="button" data-i18n="actions.showFullBackup">Pokaż pełny backup</button>
               <input id="backupFileInput" type="file" accept="application/json" hidden />
             </div>
+            <label class="field field--checkbox"><input id="showFullBackupConfirm" type="checkbox" /><span data-i18n="advanced.backupRevealConfirm">Rozumiem ryzyko ujawnienia danych i chcę je pokazać.</span></label>
             <p class="helper" data-i18n="advanced.backupHint">Podgląd jest maskowany. Użyj „Zapisz JSON”, aby pobrać pełny backup.</p>
             <textarea id="backupJsonTextarea" rows="8" placeholder="{ ... backup json ... }"></textarea>
           </div></details>

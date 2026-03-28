@@ -115,6 +115,7 @@
     "actions.importBackup": "Import backup",
     "actions.saveBackupFile": "Save JSON",
     "actions.loadBackupFile": "Load JSON",
+    "actions.showFullBackup": "Show full backup",
     "actions.sendRaw": "Send raw JSON",
     "actions.saveProfile": "Save profile",
     "actions.clearProfile": "Clear editor",
@@ -197,6 +198,7 @@
     "advanced.devEuiLink": "DevEUI to link",
     "advanced.backupTitle": "Backup and restore",
     "advanced.backupHint": "Preview is masked. Use Save JSON to download the full backup.",
+    "advanced.backupRevealConfirm": "I understand the risk of revealing sensitive data and want to show it.",
     "advanced.exportPassphrase": "Export passphrase",
     "advanced.importPassphrase": "Import passphrase",
     "advanced.rawTitle": "Raw commands and indexer debug",
@@ -262,6 +264,7 @@
     "actions.importBackup": "Importuj backup",
     "actions.saveBackupFile": "Zapisz JSON",
     "actions.loadBackupFile": "Wczytaj JSON",
+    "actions.showFullBackup": "Pokaż pełny backup",
     "actions.sendRaw": "Wyślij raw JSON",
     "actions.saveProfile": "Zapisz profil",
     "actions.clearProfile": "Wyczyść edytor",
@@ -344,6 +347,7 @@
     "advanced.devEuiLink": "DevEUI do powiązania",
     "advanced.backupTitle": "Backup i restore",
     "advanced.backupHint": "Podgląd jest maskowany. Użyj „Zapisz JSON”, aby pobrać pełny backup.",
+    "advanced.backupRevealConfirm": "Rozumiem ryzyko ujawnienia danych i chcę je pokazać.",
     "advanced.exportPassphrase": "Hasło eksportu",
     "advanced.importPassphrase": "Hasło importu",
     "advanced.rawTitle": "Surowe polecenia i debug indexera",
@@ -368,7 +372,7 @@
     "lorawanAdrInput", "lorawanConfirmedInput", "lorawanDevEuiInput", "lorawanJoinEuiInput",
     "lorawanAppKeyInput", "lorawanAppPortInput", "lorawanDataRateInput", "setLorawanButton",
     "linkDevEuiInput", "linkDevEuiButton", "exportBackupButton", "importBackupButton",
-    "saveBackupFileButton", "loadBackupFileButton", "backupFileInput",
+    "saveBackupFileButton", "loadBackupFileButton", "showFullBackupButton", "showFullBackupConfirm", "backupFileInput",
     "backupPassphraseInput", "backupImportPassphraseInput", "backupJsonTextarea", "deviceIdValue",
     "nextNonceValue", "autoMintValue", "defaultMintValue", "lorawanJoinedValue", "lorawanPortValue",
     "lorawanEventValue", "lorawanDevEuiValue", "deviceSummaryOutput", "lorawanSummaryOutput",
@@ -491,6 +495,7 @@
     wireAction(refs.importBackupButton, () => importBackup());
     wireAction(refs.saveBackupFileButton, () => saveBackupFile());
     wireAction(refs.loadBackupFileButton, () => promptBackupFile());
+    wireAction(refs.showFullBackupButton, () => showFullBackup());
     refs.backupFileInput?.addEventListener("change", handleBackupFileSelected);
     wireAction(refs.loadPortfolioButton, () => loadPortfolioAndHistory());
     wireAction(refs.transactionsButton, () => loadTransactions());
@@ -1805,6 +1810,25 @@
     const filename = `lora20-backup-${deviceId}.json`;
     const json = state.lastBackupRawText || JSON.stringify(state.lastBackupRaw, null, 2);
     downloadTextFile(json, filename);
+  }
+
+  function showFullBackup() {
+    if (!refs.showFullBackupConfirm?.checked) {
+      throw new Error(txt("Zaznacz potwierdzenie bezpieczeństwa.", "Check the safety confirmation first."));
+    }
+    if (!state.lastBackupRaw) {
+      throw new Error(txt("Najpierw wykonaj eksport backupu.", "Export the backup first."));
+    }
+    const proceed = window.confirm(
+      txt(
+        "Pokażę pełny backup na ekranie. Upewnij się, że nikt nie widzi danych. Kontynuować?",
+        "This will reveal the full backup on screen. Make sure no one can see it. Continue?"
+      )
+    );
+    if (!proceed) return;
+    if (refs.backupJsonTextarea) {
+      refs.backupJsonTextarea.value = state.lastBackupRawText || JSON.stringify(state.lastBackupRaw, null, 2);
+    }
   }
 
   function promptBackupFile() {
