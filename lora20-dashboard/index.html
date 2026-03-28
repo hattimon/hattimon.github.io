@@ -440,7 +440,11 @@
             <div class="button-row">
               <button id="exportBackupButton" class="button button--ghost" type="button" data-i18n="actions.exportBackup">Eksportuj backup</button>
               <button id="importBackupButton" class="button button--ghost" type="button" data-i18n="actions.importBackup">Importuj backup</button>
+              <button id="saveBackupFileButton" class="button button--ghost" type="button" data-i18n="actions.saveBackupFile">Zapisz JSON</button>
+              <button id="loadBackupFileButton" class="button button--ghost" type="button" data-i18n="actions.loadBackupFile">Wczytaj JSON</button>
+              <input id="backupFileInput" type="file" accept="application/json" hidden />
             </div>
+            <p class="helper" data-i18n="advanced.backupHint">Podgląd jest maskowany. Użyj „Zapisz JSON”, aby pobrać pełny backup.</p>
             <textarea id="backupJsonTextarea" rows="8" placeholder="{ ... backup json ... }"></textarea>
           </div></details>
           <details class="accordion"><summary><span data-i18n="advanced.rawTitle">Surowe polecenia i debug indexera</span></summary><div class="accordion__body stack">

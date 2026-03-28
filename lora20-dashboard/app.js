@@ -113,6 +113,8 @@
     "actions.linkDevEui": "Link DevEUI",
     "actions.exportBackup": "Export backup",
     "actions.importBackup": "Import backup",
+    "actions.saveBackupFile": "Save JSON",
+    "actions.loadBackupFile": "Load JSON",
     "actions.sendRaw": "Send raw JSON",
     "actions.saveProfile": "Save profile",
     "actions.clearProfile": "Clear editor",
@@ -194,6 +196,7 @@
     "advanced.indexerBinding": "DevEUI linking",
     "advanced.devEuiLink": "DevEUI to link",
     "advanced.backupTitle": "Backup and restore",
+    "advanced.backupHint": "Preview is masked. Use Save JSON to download the full backup.",
     "advanced.exportPassphrase": "Export passphrase",
     "advanced.importPassphrase": "Import passphrase",
     "advanced.rawTitle": "Raw commands and indexer debug",
@@ -257,6 +260,8 @@
     "actions.linkDevEui": "Powiąż DevEUI",
     "actions.exportBackup": "Eksportuj backup",
     "actions.importBackup": "Importuj backup",
+    "actions.saveBackupFile": "Zapisz JSON",
+    "actions.loadBackupFile": "Wczytaj JSON",
     "actions.sendRaw": "Wyślij raw JSON",
     "actions.saveProfile": "Zapisz profil",
     "actions.clearProfile": "Wyczyść edytor",
@@ -338,6 +343,7 @@
     "advanced.indexerBinding": "Powiązanie DevEUI",
     "advanced.devEuiLink": "DevEUI do powiązania",
     "advanced.backupTitle": "Backup i restore",
+    "advanced.backupHint": "Podgląd jest maskowany. Użyj „Zapisz JSON”, aby pobrać pełny backup.",
     "advanced.exportPassphrase": "Hasło eksportu",
     "advanced.importPassphrase": "Hasło importu",
     "advanced.rawTitle": "Surowe polecenia i debug indexera",
@@ -362,6 +368,7 @@
     "lorawanAdrInput", "lorawanConfirmedInput", "lorawanDevEuiInput", "lorawanJoinEuiInput",
     "lorawanAppKeyInput", "lorawanAppPortInput", "lorawanDataRateInput", "setLorawanButton",
     "linkDevEuiInput", "linkDevEuiButton", "exportBackupButton", "importBackupButton",
+    "saveBackupFileButton", "loadBackupFileButton", "backupFileInput",
     "backupPassphraseInput", "backupImportPassphraseInput", "backupJsonTextarea", "deviceIdValue",
     "nextNonceValue", "autoMintValue", "defaultMintValue", "lorawanJoinedValue", "lorawanPortValue",
     "lorawanEventValue", "lorawanDevEuiValue", "deviceSummaryOutput", "lorawanSummaryOutput",
@@ -418,6 +425,8 @@
     reader: null,
     disconnecting: false,
     pending: new Map(),
+    lastBackupRaw: null,
+    lastBackupRawText: "",
     requestId: 1,
     audioContext: null,
     deviceRequestChain: Promise.resolve(),
@@ -480,6 +489,9 @@
     wireAction(refs.linkDevEuiButton, () => linkDevEui());
     wireAction(refs.exportBackupButton, () => exportBackup());
     wireAction(refs.importBackupButton, () => importBackup());
+    wireAction(refs.saveBackupFileButton, () => saveBackupFile());
+    wireAction(refs.loadBackupFileButton, () => promptBackupFile());
+    refs.backupFileInput?.addEventListener("change", handleBackupFileSelected);
     wireAction(refs.loadPortfolioButton, () => loadPortfolioAndHistory());
     wireAction(refs.transactionsButton, () => loadTransactions());
     wireAction(refs.reloadTokensButton, () => loadTokens());
@@ -1760,16 +1772,55 @@
     const passphrase = refs.backupPassphraseInput?.value || "";
     if (!passphrase) throw new Error(txt("Podaj haslo backupu przed eksportem.", "Enter backup passphrase before export."));
     const response = await requestDevice("export_backup", { passphrase }, 30000);
+    state.lastBackupRaw = response;
+    state.lastBackupRawText = JSON.stringify(response, null, 2);
     if (refs.backupJsonTextarea) refs.backupJsonTextarea.value = prettyJson(response);
   }
 
   async function importBackup() {
     const passphrase = refs.backupImportPassphraseInput?.value || "";
     if (!passphrase) throw new Error(txt("Podaj haslo importu backupu.", "Enter import backup passphrase."));
-    const backup = JSON.parse(refs.backupJsonTextarea?.value || "{}");
+    const rawText = refs.backupJsonTextarea?.value || "";
+    let backup;
+    if (rawText.includes("...")) {
+      if (!state.lastBackupRaw) {
+        throw new Error(txt("Podgląd backupu jest maskowany. Wczytaj pełny JSON lub wykonaj eksport.", "Backup preview is masked. Load the full JSON or export again."));
+      }
+      backup = state.lastBackupRaw;
+    } else {
+      backup = JSON.parse(rawText || "{}");
+    }
     const response = await requestDevice("import_backup", { passphrase, backup, overwrite: true }, 30000);
     state.deviceInfo = response.device || state.deviceInfo;
+    state.lastBackupRaw = backup;
+    state.lastBackupRawText = JSON.stringify(backup, null, 2);
     renderAll();
+  }
+
+  function saveBackupFile() {
+    if (!state.lastBackupRaw) {
+      throw new Error(txt("Najpierw wykonaj eksport backupu.", "Export the backup first."));
+    }
+    const deviceId = state.lastBackupRaw.deviceId || (state.deviceInfo?.deviceId || "device");
+    const filename = `lora20-backup-${deviceId}.json`;
+    const json = state.lastBackupRawText || JSON.stringify(state.lastBackupRaw, null, 2);
+    downloadTextFile(json, filename);
+  }
+
+  function promptBackupFile() {
+    if (!refs.backupFileInput) return;
+    refs.backupFileInput.value = "";
+    refs.backupFileInput.click();
+  }
+
+  async function handleBackupFileSelected(event) {
+    const file = event?.target?.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    const backup = JSON.parse(text);
+    state.lastBackupRaw = backup;
+    state.lastBackupRawText = text;
+    if (refs.backupJsonTextarea) refs.backupJsonTextarea.value = prettyJson(backup);
   }
 
   async function joinLorawan() {
@@ -2692,6 +2743,18 @@
 
   function prettyJson(value) {
     return JSON.stringify(redactSecrets(value), null, 2);
+  }
+
+  function downloadTextFile(contents, filename) {
+    const blob = new Blob([contents], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   function redactSecrets(value) {
