@@ -7,6 +7,7 @@
     sound: "lora20.dashboard.soundEnabled",
     logDockCollapsed: "lora20.dashboard.logDockCollapsed",
     indexerUrl: "lora20.dashboard.indexerBaseUrl",
+    deviceBridgeUrl: "lora20.dashboard.deviceBridgeUrl",
     profiles: "lora20.dashboard.profiles",
     scheduler: "lora20.dashboard.scheduler",
     knownDevices: "lora20.dashboard.knownDevices",
@@ -17,6 +18,7 @@
     language: "pl",
     theme: "dark",
     indexerUrl: "https://lora20.hattimon.pl",
+    deviceBridgeUrl: "http://192.168.4.1",
     profiles: [],
     scheduler: { enabled: false, intervalMinutes: 30 }
   };
@@ -57,8 +59,11 @@
     "settings.theme": "Theme",
     "settings.sound": "Sounds",
     "settings.indexerUrl": "Public indexer URL",
+    "settings.deviceBridgeUrl": "Device bridge URL (Wi-Fi)",
     "actions.saveUrl": "Save URL",
-    "actions.connect": "Connect device",
+    "actions.connectUsb": "Connect USB",
+    "actions.connectBle": "Connect Bluetooth",
+    "actions.connectWifi": "Connect Wi-Fi",
     "actions.disconnect": "Disconnect",
     "actions.refresh": "Refresh state",
     "actions.pullInfo": "Fetch info",
@@ -174,8 +179,8 @@
 
   const refs = {};
   const refNames = [
-    "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "saveIndexerButton",
-    "connectButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
+    "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput", "saveIndexerButton",
+    "connectUsbButton", "connectBleButton", "connectWifiButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
     "mintMatrixHeading", "mintMatrixHint", "mintMatrixFeed",
     "serialSupportNotice", "overviewTokensValue", "overviewBalancesValue", "overviewEventsValue",
     "overviewProfilesValue", "overviewLastSendValue", "overviewStatusNote", "getInfoButton",
@@ -208,15 +213,19 @@
     "witnessModal", "closeWitnessModalButton", "witnessModalTitle", "witnessModalSubtitle",
     "witnessGraph", "witnessMetaList"
   ];
-  const state = {
-    language: readStorage(STORAGE.language, DEFAULTS.language),
-    theme: readStorage(STORAGE.theme, DEFAULTS.theme),
-    soundEnabled: readStorage(STORAGE.sound, "1") !== "0",
-    indexerBaseUrl: normalizeUrl(readStorage(STORAGE.indexerUrl, DEFAULTS.indexerUrl)) || DEFAULTS.indexerUrl,
-    profiles: loadJson(STORAGE.profiles, DEFAULTS.profiles),
-    scheduler: loadJson(STORAGE.scheduler, DEFAULTS.scheduler),
-    knownDevices: loadJson(STORAGE.knownDevices, []),
-    lastSendAt: readStorage(STORAGE.lastSendAt, ""),
+    const state = {
+      language: readStorage(STORAGE.language, DEFAULTS.language),
+      theme: readStorage(STORAGE.theme, DEFAULTS.theme),
+      soundEnabled: readStorage(STORAGE.sound, "1") !== "0",
+      indexerBaseUrl: normalizeUrl(readStorage(STORAGE.indexerUrl, DEFAULTS.indexerUrl)) || DEFAULTS.indexerUrl,
+      deviceBridgeUrl: normalizeUrl(readStorage(STORAGE.deviceBridgeUrl, DEFAULTS.deviceBridgeUrl)) || DEFAULTS.deviceBridgeUrl,
+      profiles: loadJson(STORAGE.profiles, DEFAULTS.profiles),
+      scheduler: loadJson(STORAGE.scheduler, DEFAULTS.scheduler),
+      knownDevices: loadJson(STORAGE.knownDevices, []),
+      lastSendAt: readStorage(STORAGE.lastSendAt, ""),
+      deviceTransport: null,
+      wifiConnected: false,
+      ble: null,
     tokenCatalog: [],
     portfolio: [],
     recentTransactions: [],
@@ -258,7 +267,7 @@
     renderAll();
     updateSerialSupport();
     window.addEventListener("beforeunload", () => {
-      if (state.port) {
+      if (state.deviceTransport) {
         void disconnectDevice(false);
       }
     });
@@ -277,8 +286,11 @@
     refs.soundEnabledInput?.addEventListener("change", handleSoundToggle);
     refs.toggleLogDockButton?.addEventListener("click", toggleLogDock);
     wireAction(refs.saveIndexerButton, handleSaveIndexerUrl);
-    wireAction(refs.connectButton, () => connectDevice());
-    wireAction(refs.disconnectButton, () => disconnectDevice(true));
+    refs.deviceBridgeUrlInput?.addEventListener("change", handleSaveDeviceBridgeUrl);
+      wireAction(refs.connectUsbButton, () => connectUsbDevice());
+      wireAction(refs.connectBleButton, () => connectBleDevice());
+      wireAction(refs.connectWifiButton, () => connectWifiDevice());
+      wireAction(refs.disconnectButton, () => disconnectDevice(true));
     wireAction(refs.refreshButton, () => refreshEverything());
     wireAction(refs.getInfoButton, () => refreshDeviceInfo());
     wireAction(refs.getLorawanButton, () => refreshLorawanInfo());
@@ -346,16 +358,17 @@
     });
   }
 
-  function hydrateSettings() {
-    if (refs.languageSelect) refs.languageSelect.value = state.language;
-    if (refs.themeSelect) refs.themeSelect.value = state.theme;
-    if (refs.soundEnabledInput) refs.soundEnabledInput.checked = state.soundEnabled;
-    if (refs.indexerBaseUrlInput) refs.indexerBaseUrlInput.value = state.indexerBaseUrl;
-    if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
-    if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes || 30);
-    if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
-    applyLogDockState();
-  }
+    function hydrateSettings() {
+      if (refs.languageSelect) refs.languageSelect.value = state.language;
+      if (refs.themeSelect) refs.themeSelect.value = state.theme;
+      if (refs.soundEnabledInput) refs.soundEnabledInput.checked = state.soundEnabled;
+      if (refs.indexerBaseUrlInput) refs.indexerBaseUrlInput.value = state.indexerBaseUrl;
+      if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
+      if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
+      if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes || 30);
+      if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
+      applyLogDockState();
+    }
 
   function handleLanguageChange() {
     state.language = refs.languageSelect?.value || DEFAULTS.language;
@@ -389,6 +402,12 @@
     writeStorage(STORAGE.indexerUrl, state.indexerBaseUrl);
     addLog("device", `Indexer URL saved: ${state.indexerBaseUrl}`);
     void refreshIndexer(true);
+  }
+
+  function handleSaveDeviceBridgeUrl() {
+    state.deviceBridgeUrl = normalizeUrl(refs.deviceBridgeUrlInput?.value) || DEFAULTS.deviceBridgeUrl;
+    if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
+    writeStorage(STORAGE.deviceBridgeUrl, state.deviceBridgeUrl);
   }
 
   function applyLanguage() {
@@ -442,11 +461,11 @@
     if (!refs.serialSupportNotice) return;
     refs.serialSupportNotice.textContent = "serial" in navigator
       ? (state.language === "en"
-          ? "Before connecting, close VS Code Serial Monitor, PlatformIO, MobaXterm and any app holding the COM port."
-          : "Przed połączeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM.")
+          ? "Before connecting over USB, close VS Code Serial Monitor, PlatformIO, MobaXterm and any app holding the COM port. You can also use Bluetooth or Wi-Fi bridge."
+          : "Przed połączeniem przez USB zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM. Możesz też użyć Bluetooth albo mostka Wi‑Fi.")
       : (state.language === "en"
-          ? "Web Serial works only in Chrome or Edge on HTTPS or localhost."
-          : "Web Serial działa tylko w Chrome lub Edge na HTTPS albo localhost.");
+          ? "Web Serial is not available here. Use Bluetooth or the Wi-Fi bridge."
+          : "Web Serial nie jest dostępny w tej przeglądarce. Użyj Bluetooth albo mostka Wi‑Fi.");
   }
 
   function renderAll() {
@@ -467,12 +486,35 @@
     applyLogDockState();
   }
 
+  function isDeviceConnected() {
+    if (state.deviceTransport === "serial") return Boolean(state.port);
+    if (state.deviceTransport === "ble") return Boolean(state.ble?.connected);
+    if (state.deviceTransport === "wifi") return Boolean(state.wifiConnected);
+    return false;
+  }
+
+  function getConnectionBadgeLabel() {
+    if (state.deviceTransport === "serial") {
+      return state.port ? txt("USB podłączony", "USB connected") : txt("USB offline", "USB offline");
+    }
+    if (state.deviceTransport === "ble") {
+      return state.ble?.connected ? txt("Bluetooth podłączony", "Bluetooth connected") : txt("Bluetooth offline", "Bluetooth offline");
+    }
+    if (state.deviceTransport === "wifi") {
+      return state.wifiConnected ? txt("Wi‑Fi bridge podłączony", "Wi‑Fi bridge connected") : txt("Wi‑Fi bridge offline", "Wi‑Fi bridge offline");
+    }
+    return txt("Brak połączenia", "No device connection");
+  }
+
+  function getConnectionBadgeTone() {
+    if (state.deviceTransport === "serial") return state.port ? "connected" : "danger";
+    if (state.deviceTransport === "ble") return state.ble?.connected ? "connected" : "warn";
+    if (state.deviceTransport === "wifi") return state.wifiConnected ? "connected" : "warn";
+    return "danger";
+  }
+
   function renderBadges() {
-    setBadge(
-      refs.connectionBadge,
-      state.port ? "connected" : "danger",
-      state.port ? txt("USB podlaczony", "USB connected") : txt("USB offline", "USB offline")
-    );
+    setBadge(refs.connectionBadge, getConnectionBadgeTone(), getConnectionBadgeLabel());
     if (state.indexerOnline === true) setBadge(refs.indexerBadge, "ok", txt("Indexer online", "Indexer online"));
     else if (state.indexerOnline === false) setBadge(refs.indexerBadge, "danger", txt("Indexer offline", "Indexer offline"));
     else setBadge(refs.indexerBadge, "warn", txt("Indexer sprawdzanie", "Indexer probing"));
@@ -493,7 +535,7 @@
     setText(refs.overviewLastSendValue, formatLastSend(state.lastSendAt));
 
     const notes = [];
-    if (!state.port) notes.push(txt("Urzadzenie nie jest jeszcze podlaczone przez Web Serial.", "The device is not connected via Web Serial yet."));
+    if (!isDeviceConnected()) notes.push(txt("Urzadzenie nie jest jeszcze podlaczone.", "The device is not connected yet."));
     if (state.indexerOnline !== true) notes.push(txt("Indexer nie odpowiada lub dashboard nie moze go odczytac.", "Indexer is not responding or dashboard cannot read it."));
     if (state.tokenCatalogError) notes.push(state.tokenCatalogError);
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
@@ -864,14 +906,14 @@
       : "Szybka ścieżka dla już skonfigurowanego urządzenia";
     const steps = state.language === "en"
       ? [
-          state.port ? "Device is already connected by USB." : "Connect the device by USB.",
+        isDeviceConnected() ? "Device connection is active." : "Connect the device (USB, Bluetooth or Wi-Fi).",
           state.deviceInfo?.hasKey ? "Device info and key are already available." : "Click Fetch info and confirm the device has a key.",
           runtime?.joined ? "LoRaWAN is already joined." : "Click Fetch radio and run Join LoRaWAN if joined=false.",
           token ? `Ticker ${currentTick} is visible in the indexer.` : "Refresh tokens or portfolio until the ticker appears.",
           "Open the mint card and click Prepare and send. For a brand new Heltec, use the onboarding section below."
         ]
       : [
-          state.port ? "Urządzenie jest już podłączone przez USB." : "Podłącz urządzenie przez USB.",
+        isDeviceConnected() ? "Połączenie z urządzeniem jest aktywne." : "Podłącz urządzenie (USB, Bluetooth lub Wi‑Fi).",
           state.deviceInfo?.hasKey ? "Info i klucz urządzenia są już dostępne." : "Kliknij „Pobierz info” i upewnij się, że urządzenie ma klucz.",
           runtime?.joined ? "LoRaWAN jest już joined." : "Kliknij „Pobierz radio”, a jeśli trzeba także „Join LoRaWAN”.",
           token ? `Ticker ${currentTick} jest widoczny w indexerze.` : "Odśwież tokeny albo portfolio, aż ticker pojawi się w indexerze.",
@@ -1128,7 +1170,7 @@
     const lastSendMs = state.lastSendAt ? Date.now() - Date.parse(state.lastSendAt) : Number.POSITIVE_INFINITY;
     const transportNotes = [];
     const runtime = state.lorawanInfo?.runtime || state.lorawanInfo?.lorawanRuntime;
-    if (!state.port) transportNotes.push(txt("Brak polaczenia USB.", "No USB connection."));
+    if (!isDeviceConnected()) transportNotes.push(txt("Brak polaczenia z urzadzeniem.", "No device connection."));
     if (runtime && !runtime.joined) transportNotes.push(txt("Radio nie jest joined.", "Radio is not joined."));
     if (runtime && (!runtime.hardwareReady || !runtime.initialized)) transportNotes.push(txt("Radio po restarcie nie jest jeszcze gotowe do kolejnej wysylki.", "After restart the radio is not ready for the next send yet."));
     if (Number.isFinite(lastSendMs) && lastSendMs < 15000) {
@@ -1766,7 +1808,7 @@
     state.profiles.splice(nextIndex, 0, profile);
   }
 
-  async function connectDevice() {
+  async function connectUsbDevice() {
     if (!("serial" in navigator)) throw new Error(txt("Ta przegladarka nie wspiera Web Serial.", "This browser does not support Web Serial."));
     if (state.port) {
       addLog("device", txt("Urzadzenie jest juz podlaczone.", "Device is already connected."));
@@ -1776,6 +1818,8 @@
     await port.open({ baudRate: 115200, bufferSize: 4096 });
     state.port = port;
     state.disconnecting = false;
+    state.deviceTransport = "serial";
+    state.wifiConnected = false;
     addLog("device", txt("Port szeregowy podlaczony.", "Serial port connected."));
     renderAll();
     void startReadLoop();
@@ -1783,26 +1827,133 @@
     await refreshDeviceState();
   }
 
+  async function connectBleDevice() {
+    if (!("bluetooth" in navigator)) {
+      throw new Error(txt("Ta przegladarka nie wspiera Web Bluetooth.", "This browser does not support Web Bluetooth."));
+    }
+    if (state.ble?.connected) {
+      addLog("device", txt("Bluetooth jest juz polaczony.", "Bluetooth is already connected."));
+      return;
+    }
+
+    const serviceUuid = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    const rxUuid = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    const txUuid = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [serviceUuid] }],
+      optionalServices: [serviceUuid]
+    });
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(serviceUuid);
+    const rxChar = await service.getCharacteristic(rxUuid);
+    const txChar = await service.getCharacteristic(txUuid);
+    await txChar.startNotifications();
+
+    const bleState = {
+      device,
+      server,
+      rxChar,
+      txChar,
+      buffer: "",
+      connected: true
+    };
+
+    const handleDisconnect = () => {
+      if (state.ble) {
+        state.ble.connected = false;
+      }
+      if (state.deviceTransport === "ble") {
+        state.deviceTransport = null;
+      }
+      renderAll();
+      addLog("device", txt("Bluetooth rozlaczony.", "Bluetooth disconnected."));
+    };
+
+    device.addEventListener("gattserverdisconnected", handleDisconnect);
+    txChar.addEventListener("characteristicvaluechanged", (event) => {
+      const value = event.target.value;
+      if (!value) return;
+      const decoder = new TextDecoder();
+      bleState.buffer += decoder.decode(value);
+      let newlineIndex = bleState.buffer.indexOf("\n");
+      while (newlineIndex >= 0) {
+        const line = bleState.buffer.slice(0, newlineIndex).replace(/\r$/, "");
+        bleState.buffer = bleState.buffer.slice(newlineIndex + 1);
+        handleDeviceLine(line, "ble");
+        newlineIndex = bleState.buffer.indexOf("\n");
+      }
+    });
+
+    state.ble = bleState;
+    state.deviceTransport = "ble";
+    state.wifiConnected = false;
+    addLog("device", txt("Bluetooth podlaczony.", "Bluetooth connected."));
+    renderAll();
+    await delay(400);
+    await refreshDeviceState();
+  }
+
+  async function connectWifiDevice() {
+    handleSaveDeviceBridgeUrl();
+    if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres mostka Wi‑Fi.", "Provide the Wi-Fi bridge URL."));
+    state.deviceTransport = "wifi";
+    try {
+      const response = await sendWifiPayload({ id: `req-${state.requestId++}`, command: "ping", params: {} }, 8000, "ping");
+      state.wifiConnected = true;
+      addLog("device", txt("Wi‑Fi bridge polaczony.", "Wi‑Fi bridge connected."), response);
+      renderAll();
+      await refreshDeviceState();
+    } catch (error) {
+      state.wifiConnected = false;
+      state.deviceTransport = null;
+      throw error;
+    }
+  }
+
   async function disconnectDevice(logIt) {
-    if (!state.port) return;
-    state.disconnecting = true;
-    for (const pending of state.pending.values()) {
-      clearTimeout(pending.timer);
-      pending.reject(new Error(txt("Port szeregowy rozlaczony.", "Serial port disconnected.")));
+    if (state.deviceTransport === "serial") {
+      if (!state.port) return;
+      state.disconnecting = true;
+      for (const pending of state.pending.values()) {
+        clearTimeout(pending.timer);
+        pending.reject(new Error(txt("Port szeregowy rozlaczony.", "Serial port disconnected.")));
+      }
+      state.pending.clear();
+      try {
+        if (state.reader) await state.reader.cancel();
+      } catch (_error) {
+        // ignore
+      }
+      try {
+        await state.port.close();
+      } catch (_error) {
+        // ignore
+      }
+      cleanupPortState();
+      state.deviceTransport = null;
+      if (logIt) addLog("device", txt("Port szeregowy rozlaczony.", "Serial port disconnected."));
+      renderAll();
+      return;
     }
-    state.pending.clear();
-    try {
-      if (state.reader) await state.reader.cancel();
-    } catch (_error) {
-      // ignore
+
+    if (state.deviceTransport === "ble") {
+      if (state.ble?.device?.gatt?.connected) {
+        state.ble.device.gatt.disconnect();
+      }
+      state.ble = null;
+      state.deviceTransport = null;
+      if (logIt) addLog("device", txt("Bluetooth rozlaczony.", "Bluetooth disconnected."));
+      renderAll();
+      return;
     }
-    try {
-      await state.port.close();
-    } catch (_error) {
-      // ignore
+
+    if (state.deviceTransport === "wifi") {
+      state.deviceTransport = null;
+      state.wifiConnected = false;
+      if (logIt) addLog("device", txt("Wi‑Fi bridge rozlaczony.", "Wi‑Fi bridge disconnected."));
+      renderAll();
     }
-    cleanupPortState();
-    if (logIt) addLog("device", txt("Port szeregowy rozlaczony.", "Serial port disconnected."));
   }
 
   async function startReadLoop() {
@@ -1820,7 +1971,7 @@
           const lineBreakIndex = buffer.indexOf("\n");
           const line = buffer.slice(0, lineBreakIndex).replace(/\r$/, "");
           buffer = buffer.slice(lineBreakIndex + 1);
-          handleSerialLine(line);
+          handleDeviceLine(line, "serial");
         }
       }
     } catch (error) {
@@ -1844,6 +1995,9 @@
     state.port = null;
     state.reader = null;
     state.disconnecting = false;
+    if (state.deviceTransport === "serial") {
+      state.deviceTransport = null;
+    }
   }
 
   async function requestDevice(command, params, timeout) {
@@ -1864,6 +2018,16 @@
   }
 
   async function sendDevicePayload(payload, timeout, label) {
+    if (state.deviceTransport === "wifi") {
+      return sendWifiPayload(payload, timeout, label);
+    }
+    if (state.deviceTransport === "ble") {
+      return sendBlePayload(payload, timeout, label);
+    }
+    return sendSerialPayload(payload, timeout, label);
+  }
+
+  async function sendSerialPayload(payload, timeout, label) {
     if (!state.port?.writable) throw new Error(txt("Urzadzenie nie jest podlaczone.", "Device is not connected."));
     const writer = state.port.writable.getWriter();
     const encoder = new TextEncoder();
@@ -1887,13 +2051,65 @@
     return responsePromise;
   }
 
-  function handleSerialLine(line) {
+  async function sendBlePayload(payload, timeout, label) {
+    if (!state.ble?.rxChar) throw new Error(txt("Bluetooth nie jest podlaczony.", "Bluetooth is not connected."));
+    const serialized = JSON.stringify(payload);
+    addLog("tx", label || payload.command || payload.method || "raw", payload);
+
+    const responsePromise = new Promise((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        state.pending.delete(payload.id);
+        reject(new Error(`Timeout waiting for ${label || payload.command || "response"}`));
+      }, timeout || TIMEOUTS.default);
+      state.pending.set(payload.id, { resolve, reject, timer, label: label || payload.command || payload.method || "raw" });
+    });
+
+    await writeBleLine(`${serialized}\n`);
+    return responsePromise;
+  }
+
+  async function writeBleLine(text) {
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(text);
+    const chunkSize = 20;
+    for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+      const chunk = bytes.slice(offset, offset + chunkSize);
+      await state.ble.rxChar.writeValueWithoutResponse(chunk);
+      await delay(10);
+    }
+  }
+
+  async function sendWifiPayload(payload, timeout, label) {
+    if (!state.deviceBridgeUrl) throw new Error(txt("Brak adresu mostka Wi‑Fi.", "Missing Wi-Fi bridge URL."));
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeout || TIMEOUTS.default);
+    const url = `${state.deviceBridgeUrl.replace(/\/$/, "")}/rpc`;
+    addLog("tx", label || payload.command || payload.method || "raw", payload);
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!response.ok) throw new Error(data?.error?.message || `${response.status} ${response.statusText}`);
+      return data;
+    } catch (error) {
+      throw error;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  function handleDeviceLine(line, source) {
     if (!line) return;
     let parsed;
     try {
       parsed = JSON.parse(line);
     } catch (_error) {
-      addLog("serial", line);
+      addLog(source === "ble" ? "ble" : "serial", line);
       return;
     }
 
@@ -2272,11 +2488,11 @@
     if (!refs.serialSupportNotice) return;
     refs.serialSupportNotice.textContent = "serial" in navigator
       ? (state.language === "en"
-          ? "Before connecting, close VS Code Serial Monitor, PlatformIO, MobaXterm and any app holding the COM port."
-          : "Przed połączeniem zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM.")
+          ? "Before connecting over USB, close VS Code Serial Monitor, PlatformIO, MobaXterm and any app holding the COM port. You can also use Bluetooth or Wi-Fi bridge."
+          : "Przed połączeniem przez USB zamknij VS Code Serial Monitor, PlatformIO, MobaXterm i inne aplikacje blokujące COM. Możesz też użyć Bluetooth albo mostka Wi‑Fi.")
       : (state.language === "en"
-          ? "Web Serial works only in Chrome or Edge on HTTPS or localhost."
-          : "Web Serial działa tylko w Chrome lub Edge na HTTPS albo localhost.");
+          ? "Web Serial is not available here. Use Bluetooth or the Wi-Fi bridge."
+          : "Web Serial nie jest dostępny w tej przeglądarce. Użyj Bluetooth albo mostka Wi‑Fi.");
   }
 
   function _legacy_renderQuickMintChecklistOverride() {
@@ -2289,14 +2505,14 @@
       : "Szybka ścieżka dla już skonfigurowanego urządzenia";
     const steps = state.language === "en"
       ? [
-          state.port ? "Device is already connected by USB." : "Connect the device by USB.",
+          isDeviceConnected() ? "Device connection is active." : "Connect the device (USB, Bluetooth or Wi-Fi).",
           state.deviceInfo?.hasKey ? "Device info and key are already available." : "Click Fetch info and confirm the device has a key.",
           runtime?.joined ? "LoRaWAN is already joined." : "Click Fetch radio and run Join LoRaWAN if joined=false.",
           token ? `Ticker ${currentTick} is visible in the indexer.` : "Refresh tokens or portfolio until the ticker appears.",
           "Open the mint card and click Prepare and send. For a brand new Heltec, use the onboarding section below."
         ]
       : [
-          state.port ? "Urządzenie jest już podłączone przez USB." : "Podłącz urządzenie przez USB.",
+          isDeviceConnected() ? "Połączenie z urządzeniem jest aktywne." : "Podłącz urządzenie (USB, Bluetooth lub Wi‑Fi).",
           state.deviceInfo?.hasKey ? "Info i klucz urządzenia są już dostępne." : "Kliknij \"Pobierz info\" i upewnij się, że urządzenie ma klucz.",
           runtime?.joined ? "LoRaWAN jest już joined." : "Kliknij \"Pobierz radio\", a jeśli trzeba także \"Join LoRaWAN\".",
           token ? `Ticker ${currentTick} jest widoczny w indexerze.` : "Odśwież tokeny albo portfolio, aż ticker pojawi się w indexerze.",

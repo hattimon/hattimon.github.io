@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260327-15" />
+    <link rel="stylesheet" href="./styles.css?v=20260328-01" />
   </head>
   <body data-theme="medium">
     <div class="backdrop backdrop--left"></div>
@@ -71,9 +71,15 @@
             <span data-i18n="settings.indexerUrl">Publiczny adres indexera</span>
             <input id="indexerBaseUrlInput" type="url" placeholder="https://lora20.hattimon.pl" />
           </label>
+          <label class="field">
+            <span data-i18n="settings.deviceBridgeUrl">Adres mostka urządzenia (Wi‑Fi)</span>
+            <input id="deviceBridgeUrlInput" type="url" placeholder="http://192.168.4.1" />
+          </label>
           <div class="button-row">
             <button id="saveIndexerButton" class="button button--ghost" type="button" data-i18n="actions.saveUrl">Zapisz URL</button>
-            <button id="connectButton" class="button button--primary" type="button" data-i18n="actions.connect">Połącz urządzenie</button>
+            <button id="connectUsbButton" class="button button--ghost" type="button" data-i18n="actions.connectUsb">Połącz USB</button>
+            <button id="connectBleButton" class="button button--ghost" type="button" data-i18n="actions.connectBle">Połącz Bluetooth</button>
+            <button id="connectWifiButton" class="button button--primary" type="button" data-i18n="actions.connectWifi">Połącz Wi‑Fi</button>
             <button id="disconnectButton" class="button button--ghost" type="button" data-i18n="actions.disconnect">Rozłącz</button>
             <button id="refreshButton" class="button button--secondary" type="button" data-i18n="actions.refresh">Odśwież stan</button>
           </div>
@@ -459,6 +465,6 @@
       </div>
     </div>
 
-    <script defer src="./app.js?v=20260327-15"></script>
+    <script defer src="./app.js?v=20260328-01"></script>
   </body>
 </html>
