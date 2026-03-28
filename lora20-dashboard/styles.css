@@ -56,20 +56,20 @@ body[data-theme="medium"] {
 }
 
 body[data-theme="light"] {
-  --bg: #fcfdfd;
-  --bg-soft: #f4f8fb;
-  --panel: rgba(255, 255, 255, 0.96);
-  --panel-strong: rgba(255, 255, 255, 0.98);
-  --panel-soft: rgba(245, 249, 252, 0.92);
-  --card-bg: rgba(255, 255, 255, 0.86);
-  --card-bg-soft: rgba(248, 251, 254, 0.92);
-  --field-bg: rgba(255, 255, 255, 0.96);
-  --field-bg-soft: rgba(245, 249, 252, 0.96);
-  --ghost-bg: rgba(240, 245, 249, 0.96);
-  --accordion-bg: rgba(249, 251, 253, 0.96);
-  --border: rgba(43, 78, 111, 0.12);
-  --ink: #162334;
-  --muted: #60748b;
+  --bg: #e7edf3;
+  --bg-soft: #dde6ef;
+  --panel: rgba(235, 242, 248, 0.96);
+  --panel-strong: rgba(228, 237, 245, 0.98);
+  --panel-soft: rgba(222, 233, 243, 0.92);
+  --card-bg: rgba(232, 240, 246, 0.88);
+  --card-bg-soft: rgba(225, 235, 243, 0.92);
+  --field-bg: rgba(236, 243, 248, 0.96);
+  --field-bg-soft: rgba(226, 235, 244, 0.96);
+  --ghost-bg: rgba(214, 226, 238, 0.96);
+  --accordion-bg: rgba(231, 239, 246, 0.96);
+  --border: rgba(43, 78, 111, 0.16);
+  --ink: #1a2a3d;
+  --muted: #566b82;
   --accent: #0a9b92;
   --accent-2: #2c62ee;
   --accent-soft: rgba(10, 155, 146, 0.1);
