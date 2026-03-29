@@ -38,6 +38,8 @@
   };
 
   const PLATFORM_COPY_COUNT = 2;
+  const INTERVAL_PRESET_MINUTES = [1, 5, 15, 30, 60, 240, 480, 960, 1440];
+  const INTERVAL_PRESET_SECONDS = INTERVAL_PRESET_MINUTES.map((value) => value * 60);
 
   const TIMEOUTS = {
     default: 15000,
@@ -62,7 +64,11 @@
     "ivHex",
     "auth",
     "rpcToken",
-    "wifiPassword"
+    "wifiPassword",
+    "seedHex",
+    "privateKeyHex",
+    "seed",
+    "privateKey"
   ]);
 
   const I18N_EN = {
@@ -74,7 +80,7 @@
     "hero.chipThree": "Sticky log dock",
     "setup.eyebrow": "Device setup",
     "setup.title": "Heltec V4 connectivity setup",
-    "setup.lead": "Provision Wi‑Fi over USB or Bluetooth, then connect using the local DHCP address.",
+    "setup.lead": "Save Wi-Fi settings over USB or Bluetooth, then control the device over BLE or the local Wi-Fi address.",
     "setup.back": "Back to dashboard",
     "mintStream.kicker": "Mint stream",
     "mintStream.title": "Latest mint operations",
@@ -86,7 +92,8 @@
     "settings.deviceBridgeUrl": "Device URL on your local network",
     "settings.deviceWifiSsid": "Device Wi-Fi SSID",
     "settings.deviceWifiPassword": "Device Wi-Fi password",
-    "settings.deviceAuthToken": "Device auth token",
+    "settings.deviceAuthToken": "Device auth token (Wi-Fi)",
+    "settings.deviceAuthTokenHint": "This token protects device RPC over Wi-Fi. USB and Bluetooth do not need it.",
     "settings.deviceWifiApFallback": "Allow AP fallback",
     "settings.displaySleepSeconds": "Display sleep (seconds)",
     "settings.bridgeWindowSeconds": "Bridge window after reboot (seconds)",
@@ -130,12 +137,15 @@
     "actions.loadBackupFile": "Load JSON",
     "actions.showFullBackup": "Show full backup",
     "actions.remaskBackup": "Mask again",
+    "actions.revealKeyMaterial": "Reveal key",
+    "actions.saveKeyMaterialFile": "Save key JSON",
+    "actions.hideKeyMaterial": "Hide key",
     "actions.sendRaw": "Send raw JSON",
     "actions.saveProfile": "Save profile",
     "actions.clearProfile": "Clear editor",
-    "actions.syncQueue": "Sync queue",
-    "actions.syncBroadcast": "Sync + broadcast",
-    "actions.stopQueue": "Stop loop",
+    "actions.syncQueue": "Save active tokens",
+    "actions.syncBroadcast": "Save + send config",
+    "actions.stopQueue": "Disable auto-mint",
     "sections.overviewKicker": "Overview",
     "sections.overviewTitle": "Most important things first",
     "sections.deviceKicker": "Device",
@@ -151,7 +161,7 @@
     "sections.operationsKicker": "Operations",
     "sections.operationsTitle": "Deploy, mint, transfer and config",
     "sections.profilesKicker": "Profiles",
-    "sections.profilesTitle": "Mint library and round-robin queue",
+    "sections.profilesTitle": "Auto-mint tokens",
     "sections.onboardingKicker": "Onboarding",
     "sections.onboardingTitle": "New device step by step",
     "sections.educationKicker": "Education",
@@ -195,9 +205,9 @@
     "profiles.name": "Name",
     "profiles.amount": "Mint amount",
     "profiles.interval": "Preferred interval (min)",
-    "profiles.include": "Add to active queue",
-    "profiles.loopEnabled": "Loop enabled",
-    "profiles.loopInterval": "Loop interval (min)",
+    "profiles.include": "Enabled for auto-mint",
+    "profiles.loopEnabled": "Device auto-mint",
+    "profiles.loopInterval": "Auto-mint interval (min)",
     "advanced.radioConfig": "LoRaWAN config and Heltec license",
     "advanced.license": "Heltec license",
     "advanced.autoDevEui": "Auto DevEUI",
@@ -215,6 +225,10 @@
     "advanced.backupRevealConfirm": "I understand the risk of revealing sensitive data and want to show it.",
     "advanced.exportPassphrase": "Export passphrase",
     "advanced.importPassphrase": "Import passphrase",
+    "advanced.keyMaterialKicker": "Device key",
+    "advanced.keyMaterialTitle": "Reveal or save seed / private key",
+    "advanced.keyMaterialHint": "This is not the AES backup. It is the raw seed and private key for manual migration or offline re-encryption.",
+    "advanced.keyRevealConfirm": "I understand the risk of showing the seed and private key on screen.",
     "advanced.rawTitle": "Raw commands and indexer debug",
     "logs.kicker": "Event report",
     "logs.title": "Activity log",
@@ -231,7 +245,7 @@
     "hero.chipThree": "Sticky log dock",
     "setup.eyebrow": "Konfiguracja urządzenia",
     "setup.title": "Konfiguracja łączności Heltec V4",
-    "setup.lead": "Skonfiguruj Wi‑Fi przez USB lub Bluetooth, potem łącz się po lokalnym adresie IP z DHCP.",
+    "setup.lead": "Zapisz Wi‑Fi przez USB lub Bluetooth, a potem obsługuj urządzenie po BLE albo lokalnym adresie Wi‑Fi.",
     "setup.back": "Powrót do panelu",
     "mintStream.kicker": "Mint stream",
     "mintStream.title": "Ostatnie operacje mint",
@@ -243,7 +257,8 @@
     "settings.deviceBridgeUrl": "Adres urządzenia w sieci lokalnej",
     "settings.deviceWifiSsid": "SSID Wi‑Fi urządzenia",
     "settings.deviceWifiPassword": "Hasło Wi‑Fi urządzenia",
-    "settings.deviceAuthToken": "Token autoryzacji urządzenia",
+    "settings.deviceAuthToken": "Token urządzenia (Wi‑Fi)",
+    "settings.deviceAuthTokenHint": "Ten token chroni RPC po Wi‑Fi. USB i Bluetooth go nie wymagają.",
     "settings.deviceWifiApFallback": "Pozwól na fallback AP",
     "settings.displaySleepSeconds": "Uśpienie ekranu (sekundy)",
     "settings.bridgeWindowSeconds": "Okno łączności po restarcie (sekundy)",
@@ -287,12 +302,15 @@
     "actions.loadBackupFile": "Wczytaj JSON",
     "actions.showFullBackup": "Pokaż pełny backup",
     "actions.remaskBackup": "Zamaskuj ponownie",
+    "actions.revealKeyMaterial": "Pokaż klucz",
+    "actions.saveKeyMaterialFile": "Zapisz klucz JSON",
+    "actions.hideKeyMaterial": "Ukryj klucz",
     "actions.sendRaw": "Wyślij raw JSON",
     "actions.saveProfile": "Zapisz profil",
     "actions.clearProfile": "Wyczyść edytor",
-    "actions.syncQueue": "Synchronizuj kolejkę",
-    "actions.syncBroadcast": "Synchronizuj + broadcast",
-    "actions.stopQueue": "Zatrzymaj pętlę",
+    "actions.syncQueue": "Zapisz aktywne tokeny",
+    "actions.syncBroadcast": "Zapisz + wyślij config",
+    "actions.stopQueue": "Wyłącz auto-mint",
     "sections.overviewKicker": "Przegląd",
     "sections.overviewTitle": "Najważniejsze rzeczy na start",
     "sections.deviceKicker": "Urządzenie",
@@ -308,7 +326,7 @@
     "sections.operationsKicker": "Operacje",
     "sections.operationsTitle": "Deploy, mint, transfer i config",
     "sections.profilesKicker": "Profile",
-    "sections.profilesTitle": "Biblioteka mintu i kolejka round‑robin",
+    "sections.profilesTitle": "Tokeny auto-mintu",
     "sections.onboardingKicker": "Onboarding",
     "sections.onboardingTitle": "Nowe urządzenie krok po kroku",
     "sections.educationKicker": "Edukacja",
@@ -352,9 +370,9 @@
     "profiles.name": "Nazwa",
     "profiles.amount": "Mint amount",
     "profiles.interval": "Preferowany interwał (min)",
-    "profiles.include": "Dodaj do aktywnej kolejki",
-    "profiles.loopEnabled": "Pętla włączona",
-    "profiles.loopInterval": "Interwał pętli (min)",
+    "profiles.include": "Włącz w auto-mint",
+    "profiles.loopEnabled": "Auto-mint urządzenia",
+    "profiles.loopInterval": "Interwał auto-mintu (min)",
     "advanced.radioConfig": "Konfiguracja LoRaWAN i licencja Heltec",
     "advanced.license": "Licencja Heltec",
     "advanced.autoDevEui": "Auto DevEUI",
@@ -372,6 +390,10 @@
     "advanced.backupRevealConfirm": "Rozumiem ryzyko ujawnienia danych i chcę je pokazać.",
     "advanced.exportPassphrase": "Hasło eksportu",
     "advanced.importPassphrase": "Hasło importu",
+    "advanced.keyMaterialKicker": "Klucz urządzenia",
+    "advanced.keyMaterialTitle": "Pokaż lub zapisz seed / private key",
+    "advanced.keyMaterialHint": "To nie jest backup AES. To bezpośredni seed i private key do ręcznego przeniesienia albo zaszyfrowania poza urządzeniem.",
+    "advanced.keyRevealConfirm": "Rozumiem ryzyko pokazania seed i private key na ekranie.",
     "advanced.rawTitle": "Surowe polecenia i debug indexera",
     "logs.kicker": "Raport zdarzeń",
     "logs.title": "Activity log",
@@ -419,7 +441,7 @@
     "witnessModal", "closeWitnessModalButton", "witnessModalTitle", "witnessModalSubtitle",
     "witnessGraph", "witnessMetaList"
   ];
-    const state = {
+  const state = {
       language: readStorage(STORAGE.language, DEFAULTS.language),
       theme: readStorage(STORAGE.theme, DEFAULTS.theme),
       soundEnabled: readStorage(STORAGE.sound, "1") !== "0",
@@ -438,6 +460,7 @@
       lastSendAt: readStorage(STORAGE.lastSendAt, ""),
       deviceTransport: null,
       wifiConnected: false,
+      activeWifiAuthToken: "",
       ble: null,
     tokenCatalog: [],
     portfolio: [],
@@ -457,6 +480,9 @@
     pending: new Map(),
     lastBackupRaw: null,
     lastBackupRawText: "",
+    lastKeyMaterialRaw: null,
+    lastKeyMaterialText: "",
+    lastAuthHintAt: 0,
     requestId: 1,
     audioContext: null,
     deviceRequestChain: Promise.resolve(),
@@ -467,11 +493,100 @@
     activeWitnessEventId: null
   };
 
+  function normalizePreset(value, presets, fallback) {
+    const parsed = Number.parseInt(String(value ?? ""), 10);
+    if (!Number.isFinite(parsed)) return fallback;
+    if (presets.includes(parsed)) return parsed;
+    for (const preset of presets) {
+      if (parsed < preset) return preset;
+    }
+    return presets[presets.length - 1];
+  }
+
+  function formatMinutesPresetLabel(minutes) {
+    if (minutes >= 60 && minutes % 60 === 0) return `${minutes / 60} h`;
+    return `${minutes} min`;
+  }
+
+  function formatSecondsPresetLabel(seconds) {
+    return formatMinutesPresetLabel(Math.max(1, Math.round(Number(seconds || 0) / 60)));
+  }
+
+  function replaceInputWithPresetSelect(node, presets, formatter, fallback) {
+    if (!node) return node;
+    if (node.tagName === "SELECT") return node;
+
+    const select = document.createElement("select");
+    select.id = node.id;
+    select.className = node.className;
+    select.name = node.name || "";
+    select.dataset.presetSelect = "1";
+
+    for (const preset of presets) {
+      const option = document.createElement("option");
+      option.value = String(preset);
+      option.textContent = formatter(preset);
+      select.appendChild(option);
+    }
+
+    select.value = String(normalizePreset(node.value, presets, fallback));
+    node.replaceWith(select);
+    return select;
+  }
+
+  function mountDynamicUi() {
+    refs.configAutoMintIntervalInput = replaceInputWithPresetSelect(refs.configAutoMintIntervalInput, INTERVAL_PRESET_SECONDS, formatSecondsPresetLabel, 1800);
+    refs.profileIntervalInput = replaceInputWithPresetSelect(refs.profileIntervalInput, INTERVAL_PRESET_MINUTES, formatMinutesPresetLabel, 30);
+    refs.profileQueueIntervalInput = replaceInputWithPresetSelect(refs.profileQueueIntervalInput, INTERVAL_PRESET_MINUTES, formatMinutesPresetLabel, 30);
+
+    const authField = refs.deviceAuthTokenInput?.closest(".field");
+    if (authField && !authField.querySelector("[data-i18n='settings.deviceAuthTokenHint']")) {
+      const hint = document.createElement("p");
+      hint.className = "helper";
+      hint.dataset.i18n = "settings.deviceAuthTokenHint";
+      hint.textContent = I18N_PL["settings.deviceAuthTokenHint"];
+      authField.appendChild(hint);
+    }
+
+    const backupStack = refs.backupJsonTextarea?.closest(".stack");
+    if (backupStack && !document.getElementById("revealKeyMaterialButton")) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "stack";
+      wrapper.innerHTML = `
+        <div class="section-head section-head--compact">
+          <div>
+            <p class="section-kicker" data-i18n="advanced.keyMaterialKicker">${escapeHtml(I18N_PL["advanced.keyMaterialKicker"])}</p>
+            <h3 data-i18n="advanced.keyMaterialTitle">${escapeHtml(I18N_PL["advanced.keyMaterialTitle"])}</h3>
+          </div>
+        </div>
+        <div class="button-row">
+          <button id="revealKeyMaterialButton" class="button button--ghost" type="button" data-i18n="actions.revealKeyMaterial">${escapeHtml(I18N_PL["actions.revealKeyMaterial"])}</button>
+          <button id="saveKeyMaterialFileButton" class="button button--ghost" type="button" data-i18n="actions.saveKeyMaterialFile">${escapeHtml(I18N_PL["actions.saveKeyMaterialFile"])}</button>
+          <button id="hideKeyMaterialButton" class="button button--ghost" type="button" data-i18n="actions.hideKeyMaterial">${escapeHtml(I18N_PL["actions.hideKeyMaterial"])}</button>
+        </div>
+        <label class="field field--checkbox">
+          <input id="showKeyMaterialConfirm" type="checkbox" />
+          <span data-i18n="advanced.keyRevealConfirm">${escapeHtml(I18N_PL["advanced.keyRevealConfirm"])}</span>
+        </label>
+        <p class="helper" data-i18n="advanced.keyMaterialHint">${escapeHtml(I18N_PL["advanced.keyMaterialHint"])}</p>
+        <textarea id="keyMaterialTextarea" rows="6" placeholder="{ ... key material ... }"></textarea>
+      `;
+      backupStack.appendChild(wrapper);
+    }
+
+    refs.revealKeyMaterialButton = document.getElementById("revealKeyMaterialButton");
+    refs.saveKeyMaterialFileButton = document.getElementById("saveKeyMaterialFileButton");
+    refs.hideKeyMaterialButton = document.getElementById("hideKeyMaterialButton");
+    refs.showKeyMaterialConfirm = document.getElementById("showKeyMaterialConfirm");
+    refs.keyMaterialTextarea = document.getElementById("keyMaterialTextarea");
+  }
+
   function init() {
     for (const name of refNames) {
       refs[name] = document.getElementById(name);
     }
 
+    mountDynamicUi();
     captureDefaultTexts();
     bindEvents();
     hydrateSettings();
@@ -524,6 +639,9 @@
     wireAction(refs.loadBackupFileButton, () => promptBackupFile());
     wireAction(refs.showFullBackupButton, () => showFullBackup());
     wireAction(refs.remaskBackupButton, () => remaskBackupPreview());
+    wireAction(refs.revealKeyMaterialButton, () => revealKeyMaterial());
+    wireAction(refs.saveKeyMaterialFileButton, () => saveKeyMaterialFile());
+    wireAction(refs.hideKeyMaterialButton, () => hideKeyMaterialPreview());
     refs.backupFileInput?.addEventListener("change", handleBackupFileSelected);
     wireAction(refs.loadPortfolioButton, () => loadPortfolioAndHistory());
     wireAction(refs.transactionsButton, () => loadTransactions());
@@ -596,7 +714,9 @@
       if (refs.bridgeWindowSecondsInput) refs.bridgeWindowSecondsInput.value = String(state.bridgeWindowSeconds);
       if (refs.powerSaveLevelInput) refs.powerSaveLevelInput.value = String(state.powerSaveLevel);
       if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
-      if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(state.scheduler.intervalMinutes || 30);
+      if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(normalizePreset(state.scheduler.intervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30));
+      if (refs.profileIntervalInput) refs.profileIntervalInput.value = String(normalizePreset(refs.profileIntervalInput.value || 30, INTERVAL_PRESET_MINUTES, 30));
+      if (refs.configAutoMintIntervalInput) refs.configAutoMintIntervalInput.value = String(normalizePreset(refs.configAutoMintIntervalInput.value || 1800, INTERVAL_PRESET_SECONDS, 1800));
       if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
       applyLogDockState();
     }
@@ -659,17 +779,17 @@
     writeStorage(STORAGE.displaySleepSeconds, String(state.displaySleepSeconds));
     writeStorage(STORAGE.bridgeWindowSeconds, String(state.bridgeWindowSeconds));
     writeStorage(STORAGE.powerSaveLevel, String(state.powerSaveLevel));
-    addLog("device", txt("Zapisano ustawienia łączności.", "Connectivity settings saved."));
     if (isDeviceConnected() && state.deviceTransport === "serial") {
-      void applyConnectivityMode("wifi");
+      addLog("device", txt("Zapisano ustawienia łączności i wysyłam je teraz po USB.", "Connectivity settings saved and sending them over USB now."));
+      void applyConnectivityMode();
     } else if (isDeviceConnected() && state.deviceTransport === "ble") {
-      addLog(
-        "device",
-        txt(
-          "Ustawienia zapisano lokalnie. Zastosuj je przez USB lub Wi‑Fi, bo zapis po BLE bywa niestabilny.",
-          "Settings were saved locally. Apply them over USB or Wi-Fi because BLE writes can be unstable."
-        )
-      );
+      addLog("device", txt("Zapisano ustawienia łączności i wysyłam je teraz po Bluetooth.", "Connectivity settings saved and sending them over Bluetooth now."));
+      void applyConnectivityMode();
+    } else if (isDeviceConnected() && state.deviceTransport === "wifi") {
+      addLog("device", txt("Zapisano ustawienia łączności i wysyłam je teraz po Wi‑Fi.", "Connectivity settings saved and sending them over Wi-Fi now."));
+      void applyConnectivityMode();
+    } else {
+      addLog("device", txt("Zapisano ustawienia łączności w panelu.", "Connectivity settings saved in the dashboard."));
     }
   }
 
@@ -686,8 +806,8 @@
     if (modeOverride) params.mode = modeOverride;
     if (state.deviceWifiSsid) params.wifiSsid = state.deviceWifiSsid;
     if (state.deviceWifiPassword) params.wifiPassword = state.deviceWifiPassword;
-    const authToken = getActiveDeviceAuthToken();
-    if (authToken) params.rpcToken = authToken;
+    const desiredToken = getDesiredDeviceAuthToken();
+    if (desiredToken) params.rpcToken = desiredToken;
     if (state.deviceWifiApFallback !== null && state.deviceWifiApFallback !== undefined) {
       params.wifiApFallback = Boolean(state.deviceWifiApFallback);
     }
@@ -703,6 +823,9 @@
     if (!Object.keys(params).length) return;
     try {
       const result = await requestDevice("set_connectivity", params, TIMEOUTS.set_config);
+      if (state.deviceTransport === "wifi" && params.rpcToken) {
+        state.activeWifiAuthToken = params.rpcToken;
+      }
       addLog("device", txt("Zaktualizowano tryb łączności.", "Connectivity mode updated."), result);
     } catch (error) {
       addLog("error", error instanceof Error ? error.message : String(error));
@@ -1439,23 +1562,26 @@
 
     if (refs.profilesPersistenceNote) {
       refs.profilesPersistenceNote.textContent = txt(
-        "Profile są zapamiętywane lokalnie w przeglądarce. \"Synchronizuj kolejkę\" zapisuje je do Helteca, więc urządzenie może mintować także bez podłączonego panelu.",
-        "Profiles are stored locally in the browser. 'Sync queue' writes them to Heltec, so the device can keep minting without an attached dashboard."
+        "Każdy profil możesz włączyć lub wyłączyć osobno. „Zapisz aktywne tokeny” przenosi ich listę do Helteca, więc urządzenie może mintować bez podłączonego panelu.",
+        "Each profile can be enabled or disabled independently. 'Save active tokens' writes the active list to Heltec, so the device can keep minting without an attached dashboard."
       );
     }
 
     if (refs.profileQueuePreview) {
       const active = state.profiles.filter((profile) => profile.enabled);
-      refs.profileQueuePreview.textContent = prettyJson({
-        loopEnabled: Boolean(state.scheduler.enabled),
-        intervalMinutes: Number(refs.profileQueueIntervalInput?.value || state.scheduler.intervalMinutes || 30),
-        activeProfiles: active.map((profile) => ({ tick: profile.tick, amount: profile.amount }))
-      });
+      const intervalMinutes = normalizePreset(refs.profileQueueIntervalInput?.value || state.scheduler.intervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30);
+      refs.profileQueuePreview.textContent = [
+        `${txt("Pętla", "Loop")}: ${state.scheduler.enabled ? "ON" : "OFF"}`,
+        `${txt("Interwał", "Interval")}: ${formatMinutesPresetLabel(intervalMinutes)}`,
+        active.length
+          ? `${txt("Aktywne tokeny", "Active tokens")}: ${active.map((profile) => `${profile.tick} ${profile.amount}`).join(", ")}`
+          : `${txt("Aktywne tokeny", "Active tokens")}: ${txt("brak", "none")}`
+      ].join("\n");
     }
 
     if (!refs.profileList) return;
     if (!state.profiles.length) {
-      refs.profileList.innerHTML = `<div class="profile-card"><h3>${escapeHtml(txt("Brak profili", "No profiles yet"))}</h3><p class="helper">${escapeHtml(txt("Dodaj profil mintu, a potem zsynchronizuj kolejkę z urządzeniem.", "Add a mint profile, then sync queue with the device."))}</p></div>`;
+      refs.profileList.innerHTML = `<div class="profile-card"><h3>${escapeHtml(txt("Brak profili", "No profiles yet"))}</h3><p class="helper">${escapeHtml(txt("Dodaj profil mintu, a potem zapisz aktywne tokeny do urządzenia.", "Add a mint profile, then save the active tokens to the device."))}</p></div>`;
       return;
     }
 
@@ -1464,13 +1590,13 @@
         <div class="token-card__head">
           <div>
             <h3>${escapeHtml(profile.name || `${profile.tick} / ${profile.amount}`)}</h3>
-            <p class="helper">${escapeHtml(profile.tick)} / ${escapeHtml(profile.amount)} / ${escapeHtml(String(profile.intervalMinutes || 30))} min</p>
+            <p class="helper">${escapeHtml(profile.tick)} / ${escapeHtml(profile.amount)} / ${escapeHtml(formatMinutesPresetLabel(profile.intervalMinutes || 30))}</p>
           </div>
-          <span class="badge ${profile.enabled ? "badge--ok" : "badge--warn"}">${profile.enabled ? "active" : "paused"}</span>
+          <span class="badge ${profile.enabled ? "badge--ok" : "badge--warn"}">${profile.enabled ? "ON" : "OFF"}</span>
         </div>
         <div class="button-row">
           <button class="button button--ghost" type="button" data-action="use-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(txt("Użyj", "Use"))}</button>
-          <button class="button button--ghost" type="button" data-action="toggle-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(profile.enabled ? txt("Pauza", "Pause") : txt("Włącz", "Enable"))}</button>
+          <button class="button button--ghost" type="button" data-action="toggle-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(profile.enabled ? "OFF" : "ON")}</button>
           <button class="button button--ghost" type="button" data-action="move-up" data-id="${escapeHtml(profile.id)}" ${index === 0 ? "disabled" : ""}>${escapeHtml(txt("Góra", "Up"))}</button>
           <button class="button button--ghost" type="button" data-action="move-down" data-id="${escapeHtml(profile.id)}" ${index === state.profiles.length - 1 ? "disabled" : ""}>${escapeHtml(txt("Dół", "Down"))}</button>
           <button class="button button--ghost" type="button" data-action="remove-profile" data-id="${escapeHtml(profile.id)}">${escapeHtml(txt("Usuń", "Remove"))}</button>
@@ -1569,7 +1695,7 @@
         <ul>
           <li><strong>Mint</strong>: currently about 81 B of payload, which is about ${mintBaseDc} DC of base cost in 24 B chunks. With the current tenant setting Max copy = ${PLATFORM_COPY_COUNT}, this becomes about ${mintEffectiveDc} DC of effective cost.</li>
           <li><strong>Prepare vs send</strong>: prepare only creates and signs the payload locally, while send also asks the radio to transmit a real LoRaWAN uplink.</li>
-          <li><strong>Config</strong>: stores auto-mint settings and interval; round-robin profiles stay locally in Heltec after synchronization.</li>
+          <li><strong>Config</strong>: stores auto-mint settings and interval; the enabled token list stays locally in Heltec after saving.</li>
           <li><strong>Security</strong>: the signature proves the author, nonce preserves order, and the webhook to the indexer should be protected by a separate token.</li>
         </ul>
       `
@@ -1578,7 +1704,7 @@
         <ul>
           <li><strong>Mint</strong>: obecnie około 81 B payloadu, czyli około ${mintBaseDc} DC bazowego kosztu przy porcjach 24 B. Przy aktualnym ustawieniu tenantu Max copy = ${PLATFORM_COPY_COUNT} daje to około ${mintEffectiveDc} DC kosztu efektywnego.</li>
           <li><strong>Prepare vs send</strong>: prepare tylko tworzy i podpisuje payload lokalnie, a send dodatkowo zleca faktyczny uplink LoRaWAN.</li>
-          <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; profile round-robin są utrzymywane lokalnie w Heltecu po synchronizacji.</li>
+          <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; lista włączonych tokenów zostaje lokalnie w Heltecu po zapisaniu.</li>
           <li><strong>Bezpieczeństwo</strong>: podpis udowadnia autora, nonce pilnuje kolejności, a webhook do indexera powinien być chroniony osobnym tokenem.</li>
         </ul>
       `;
@@ -1591,9 +1717,9 @@
   async function refreshDeviceState() {
     if (state.deviceTransport === "ble") {
       await refreshDeviceInfo();
-      await delay(120);
+      await delay(240);
       await refreshLorawanInfo();
-      await delay(120);
+      await delay(240);
       await refreshConnectivity();
       return;
     }
@@ -1937,6 +2063,41 @@
     }
   }
 
+  async function revealKeyMaterial() {
+    if (!refs.showKeyMaterialConfirm?.checked) {
+      throw new Error(txt("Zaznacz potwierdzenie bezpieczeństwa dla klucza.", "Check the safety confirmation for key reveal."));
+    }
+    const proceed = window.confirm(
+      txt(
+        "Pokażę seed i private key na ekranie. Upewnij się, że nikt ich nie widzi. Kontynuować?",
+        "This will reveal the seed and private key on screen. Make sure nobody can see them. Continue?"
+      )
+    );
+    if (!proceed) return;
+
+    const response = await requestDevice("export_key_material", { confirmReveal: true }, 30000);
+    state.lastKeyMaterialRaw = response;
+    state.lastKeyMaterialText = JSON.stringify(response, null, 2);
+    if (refs.keyMaterialTextarea) refs.keyMaterialTextarea.value = state.lastKeyMaterialText;
+  }
+
+  function hideKeyMaterialPreview() {
+    if (!state.lastKeyMaterialRaw) {
+      throw new Error(txt("Najpierw odczytaj klucz z urządzenia.", "Read the key from the device first."));
+    }
+    if (refs.keyMaterialTextarea) refs.keyMaterialTextarea.value = prettyJson(state.lastKeyMaterialRaw);
+  }
+
+  function saveKeyMaterialFile() {
+    if (!state.lastKeyMaterialRaw) {
+      throw new Error(txt("Najpierw odczytaj klucz z urządzenia.", "Read the key from the device first."));
+    }
+    const deviceId = state.lastKeyMaterialRaw.deviceId || (state.deviceInfo?.deviceId || "device");
+    const filename = `lora20-key-material-${deviceId}.json`;
+    const json = state.lastKeyMaterialText || JSON.stringify(state.lastKeyMaterialRaw, null, 2);
+    downloadTextFile(json, filename);
+  }
+
   function promptBackupFile() {
     if (!refs.backupFileInput) return;
     refs.backupFileInput.value = "";
@@ -2112,7 +2273,7 @@
       name: refs.profileNameInput?.value?.trim() || `${tick} / ${amount}`,
       tick,
       amount,
-      intervalMinutes: Number(refs.profileIntervalInput?.value || 30),
+      intervalMinutes: normalizePreset(refs.profileIntervalInput?.value || 30, INTERVAL_PRESET_MINUTES, 30),
       enabled: Boolean(refs.profileEnabledInput?.checked)
     };
 
@@ -2138,11 +2299,11 @@
 
   async function syncProfiles(broadcast) {
     state.scheduler.enabled = Boolean(refs.profileQueueEnabledInput?.checked);
-    state.scheduler.intervalMinutes = Number(refs.profileQueueIntervalInput?.value || 30);
+    state.scheduler.intervalMinutes = normalizePreset(refs.profileQueueIntervalInput?.value || 30, INTERVAL_PRESET_MINUTES, 30);
     saveJson(STORAGE.scheduler, state.scheduler);
     const firstActiveProfile = state.profiles.find((profile) => profile.enabled) || state.profiles[0] || null;
     if (refs.configAutoMintEnabledInput) refs.configAutoMintEnabledInput.checked = state.scheduler.enabled && state.profiles.some((profile) => profile.enabled);
-    if (refs.configAutoMintIntervalInput) refs.configAutoMintIntervalInput.value = String(Math.max(30, Number(state.scheduler.intervalMinutes || 30) * 60));
+    if (refs.configAutoMintIntervalInput) refs.configAutoMintIntervalInput.value = String(normalizePreset(Math.max(30, Number(state.scheduler.intervalMinutes || 30) * 60), INTERVAL_PRESET_SECONDS, 1800));
 
     const response = await requestDevice("set_config", {
       autoMintEnabled: state.scheduler.enabled && state.profiles.some((profile) => profile.enabled),
@@ -2185,7 +2346,7 @@
         }
         if (refs.profileTickInput) refs.profileTickInput.value = profile.tick;
         if (refs.profileAmountInput) refs.profileAmountInput.value = profile.amount;
-        if (refs.profileIntervalInput) refs.profileIntervalInput.value = String(profile.intervalMinutes || 30);
+        if (refs.profileIntervalInput) refs.profileIntervalInput.value = String(normalizePreset(profile.intervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30));
         if (refs.profileEnabledInput) refs.profileEnabledInput.checked = Boolean(profile.enabled);
         if (refs.mintTickInput) refs.mintTickInput.value = profile.tick;
         if (refs.mintAmountInput) refs.mintAmountInput.value = profile.amount;
@@ -2327,6 +2488,7 @@
     };
 
     const handleDisconnect = () => {
+      flushPendingDeviceRequests(txt("Bluetooth rozlaczony.", "Bluetooth disconnected."));
       if (state.ble) {
         state.ble.connected = false;
       }
@@ -2349,22 +2511,10 @@
     state.ble = bleState;
     state.deviceTransport = "ble";
     state.wifiConnected = false;
-    addLog("device", txt("Bluetooth podłączony.", "Bluetooth connected."));
+    addLog("device", txt("Bluetooth podłączony. BLE nie wymaga tokena urządzenia.", "Bluetooth connected. BLE does not require the device token."));
     renderAll();
     await delay(400);
-    if (!getActiveDeviceAuthToken()) {
-      addLog(
-        "device",
-        txt(
-          "Sesja prywatna nie pamięta tokena. Wpisz token autoryzacji i kliknij Odśwież stan.",
-          "Private browsing does not remember the auth token. Enter the auth token and click Refresh state."
-        )
-      );
-      return;
-    }
     await refreshDeviceInfo();
-    await delay(120);
-    await refreshLorawanInfo();
   }
 
   async function connectWifiDevice() {
@@ -2374,11 +2524,13 @@
     try {
       const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 8000, "ping");
       state.wifiConnected = true;
+      state.activeWifiAuthToken = getDesiredDeviceAuthToken();
       addLog("device", txt("Wi‑Fi bridge połączony.", "Wi‑Fi bridge connected."), response);
       renderAll();
       await refreshDeviceState();
     } catch (error) {
       state.wifiConnected = false;
+      state.activeWifiAuthToken = "";
       state.deviceTransport = null;
       throw error;
     }
@@ -2411,6 +2563,7 @@
     }
 
     if (state.deviceTransport === "ble") {
+      flushPendingDeviceRequests(txt("Bluetooth rozlaczony.", "Bluetooth disconnected."));
       if (state.ble?.device?.gatt?.connected) {
         state.ble.device.gatt.disconnect();
       }
@@ -2422,8 +2575,10 @@
     }
 
     if (state.deviceTransport === "wifi") {
+      flushPendingDeviceRequests(txt("Wi‑Fi bridge rozlaczony.", "Wi‑Fi bridge disconnected."));
       state.deviceTransport = null;
       state.wifiConnected = false;
+      state.activeWifiAuthToken = "";
       if (logIt) addLog("device", txt("Wi‑Fi bridge rozlaczony.", "Wi‑Fi bridge disconnected."));
       renderAll();
     }
@@ -2473,6 +2628,14 @@
     }
   }
 
+  function flushPendingDeviceRequests(message) {
+    for (const pending of state.pending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(new Error(message));
+    }
+    state.pending.clear();
+  }
+
   async function requestDevice(command, params, timeout) {
     const run = async () => {
       const payload = { id: `req-${state.requestId++}`, command, params: params || {} };
@@ -2480,6 +2643,7 @@
       if (response.ok === false) {
         const error = new Error(response.error?.message || `Command ${command} failed`);
         error.code = response.error?.code || "device_command_failed";
+        if (error.code === "unauthorized") maybeShowAuthHint();
         throw error;
       }
       return response.result || {};
@@ -2490,19 +2654,33 @@
     return next;
   }
 
-  function getActiveDeviceAuthToken() {
+  function getDesiredDeviceAuthToken() {
     const inputToken = String(refs.deviceAuthTokenInput?.value || "").trim();
     const storedToken = String(state.deviceAuthToken || "").trim();
     const token = inputToken || storedToken;
     if (token && token !== state.deviceAuthToken) {
       state.deviceAuthToken = token;
+      writeStorage(STORAGE.deviceAuthToken, token);
     }
     return token;
   }
 
+  function maybeShowAuthHint() {
+    const now = Date.now();
+    if ((now - state.lastAuthHintAt) < 15000) return;
+    state.lastAuthHintAt = now;
+    addLog(
+      "device",
+      txt(
+        "Ten token jest potrzebny tylko dla mostka Wi‑Fi. BLE i USB nie wymagają tokena urządzenia. Jeśli zmienisz token, zapisz go do urządzenia przez USB, BLE albo aktualne połączenie Wi‑Fi.",
+        "This token is only required for the Wi-Fi bridge. BLE and USB do not require the device token. If you change it, save it to the device over USB, BLE, or the current Wi-Fi session."
+      )
+    );
+  }
+
   function withAuth(payload) {
-    const authToken = getActiveDeviceAuthToken();
-    if (state.deviceTransport !== "serial" && authToken) {
+    const authToken = state.activeWifiAuthToken || getDesiredDeviceAuthToken();
+    if (state.deviceTransport === "wifi" && authToken) {
       return { ...payload, auth: authToken };
     }
     return payload;
@@ -2690,8 +2868,10 @@
       const pending = state.pending.get(parsed.id);
       clearTimeout(pending.timer);
       state.pending.delete(parsed.id);
-      if (parsed.ok === false) addLog("error", `${pending.label} failed`, parsed.error);
-      else addLog("rx", `${pending.label} ok`, parsed.result);
+      if (parsed.ok === false) {
+        addLog("error", `${pending.label} failed`, parsed.error);
+        if (parsed.error?.code === "unauthorized") maybeShowAuthHint();
+      } else addLog("rx", `${pending.label} ok`, parsed.result);
       pending.resolve(parsed);
       return;
     }
@@ -2702,6 +2882,7 @@
     }
     if (parsed.ok === false) {
       addLog("error", parsed.error?.message || txt("Urządzenie zwróciło błąd", "Device returned an error"), parsed.error);
+      if (parsed.error?.code === "unauthorized") maybeShowAuthHint();
       return;
     }
     addLog("event", txt("Zdarzenie urządzenia", "Device event"), parsed);
@@ -2754,7 +2935,9 @@
     if (refs.lorawanAdrInput) refs.lorawanAdrInput.checked = Boolean(config?.adr);
     if (refs.lorawanConfirmedInput) refs.lorawanConfirmedInput.checked = Boolean(config?.confirmedUplink);
     if (refs.configAutoMintEnabledInput) refs.configAutoMintEnabledInput.checked = Boolean(state.deviceInfo?.config?.autoMintEnabled);
-    if (refs.configAutoMintIntervalInput && state.deviceInfo?.config?.autoMintIntervalSeconds != null) refs.configAutoMintIntervalInput.value = String(state.deviceInfo.config.autoMintIntervalSeconds);
+    if (refs.configAutoMintIntervalInput && state.deviceInfo?.config?.autoMintIntervalSeconds != null) {
+      refs.configAutoMintIntervalInput.value = String(normalizePreset(state.deviceInfo.config.autoMintIntervalSeconds, INTERVAL_PRESET_SECONDS, 1800));
+    }
   }
 
   function getDeployWarnings() {
@@ -3188,7 +3371,7 @@
         <ul>
           <li><strong>Mint</strong>: currently about 81 B of payload, which is about ${mintBaseDc} DC of base cost in 24 B chunks. With the current tenant setting Max copy = ${PLATFORM_COPY_COUNT}, this becomes about ${mintEffectiveDc} DC of effective cost.</li>
           <li><strong>Prepare vs send</strong>: prepare only creates and signs the payload locally, while send also asks the radio to transmit a real LoRaWAN uplink.</li>
-          <li><strong>Config</strong>: stores auto-mint settings and interval; round-robin profiles stay locally in Heltec after synchronization.</li>
+          <li><strong>Config</strong>: stores auto-mint settings and interval; the enabled token list stays locally in Heltec after saving.</li>
           <li><strong>Security</strong>: the signature proves the author, nonce preserves order, and the webhook to the indexer should be protected by a separate token.</li>
         </ul>
       `
@@ -3197,7 +3380,7 @@
         <ul>
           <li><strong>Mint</strong>: obecnie około 81 B payloadu, czyli około ${mintBaseDc} DC bazowego kosztu przy porcjach 24 B. Przy aktualnym ustawieniu tenantu Max copy = ${PLATFORM_COPY_COUNT} daje to około ${mintEffectiveDc} DC kosztu efektywnego.</li>
           <li><strong>Prepare vs send</strong>: prepare tylko tworzy i podpisuje payload lokalnie, a send dodatkowo zleca faktyczny uplink LoRaWAN.</li>
-          <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; profile round-robin są utrzymywane lokalnie w Heltecu po synchronizacji.</li>
+          <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; lista włączonych tokenów zostaje lokalnie w Heltecu po zapisaniu.</li>
           <li><strong>Bezpieczeństwo</strong>: podpis udowadnia autora, nonce pilnuje kolejności, a webhook do indexera powinien być chroniony osobnym tokenem.</li>
         </ul>
       `;

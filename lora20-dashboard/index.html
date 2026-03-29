@@ -86,7 +86,7 @@
               <input id="deviceWifiPasswordInput" type="password" placeholder="••••••••" />
             </label>
             <label class="field">
-              <span data-i18n="settings.deviceAuthToken">Token autoryzacji urządzenia</span>
+              <span data-i18n="settings.deviceAuthToken">Token urządzenia (Wi‑Fi)</span>
               <div class="field-inline">
                 <input id="deviceAuthTokenInput" type="password" placeholder="••••••••" />
                 <button id="generateAuthTokenButton" class="button button--ghost button--tiny" type="button" data-i18n="actions.generateAuthToken">Wygeneruj token</button>
@@ -375,7 +375,7 @@
           <div class="section-head">
             <div>
               <p class="section-kicker" data-i18n="sections.profilesKicker">Profile</p>
-              <h2 data-i18n="sections.profilesTitle">Biblioteka mintu i kolejka round-robin</h2>
+              <h2 data-i18n="sections.profilesTitle">Tokeny auto-mintu</h2>
             </div>
           </div>
           <div class="profile-layout">
@@ -385,7 +385,7 @@
                 <label class="field"><span data-i18n="operations.tick">Tick</span><input id="profileTickInput" type="text" maxlength="4" value="LORA" /></label>
                 <label class="field"><span data-i18n="profiles.amount">Mint amount</span><input id="profileAmountInput" type="text" value="100" /></label>
                 <label class="field"><span data-i18n="profiles.interval">Preferowany interwał (min)</span><input id="profileIntervalInput" type="number" min="1" value="30" /></label>
-                <label class="field field--checkbox"><input id="profileEnabledInput" type="checkbox" checked /><span data-i18n="profiles.include">Dodaj do aktywnej kolejki</span></label>
+                <label class="field field--checkbox"><input id="profileEnabledInput" type="checkbox" checked /><span data-i18n="profiles.include">Włącz w auto-mint</span></label>
               </div>
               <div id="profilesPersistenceNote" class="callout callout--neutral"></div>
               <div class="button-row">
@@ -395,13 +395,13 @@
             </article>
             <article class="panel panel--soft">
               <div class="field-grid">
-                <label class="field field--checkbox"><input id="profileQueueEnabledInput" type="checkbox" checked /><span data-i18n="profiles.loopEnabled">Pętla włączona</span></label>
-                <label class="field"><span data-i18n="profiles.loopInterval">Interwał pętli (min)</span><input id="profileQueueIntervalInput" type="number" min="1" value="30" /></label>
+                <label class="field field--checkbox"><input id="profileQueueEnabledInput" type="checkbox" checked /><span data-i18n="profiles.loopEnabled">Auto-mint urządzenia</span></label>
+                <label class="field"><span data-i18n="profiles.loopInterval">Interwał auto-mintu (min)</span><input id="profileQueueIntervalInput" type="number" min="1" value="30" /></label>
               </div>
               <div class="button-row">
-                <button id="syncProfilesButton" class="button button--ghost" type="button" data-i18n="actions.syncQueue">Synchronizuj kolejkę</button>
+                <button id="syncProfilesButton" class="button button--ghost" type="button" data-i18n="actions.syncQueue">Zapisz aktywne tokeny</button>
                 <button id="syncProfilesBroadcastButton" class="button button--primary" type="button" data-i18n="actions.syncBroadcast">Synchronizuj + broadcast</button>
-                <button id="stopProfilesButton" class="button button--ghost" type="button" data-i18n="actions.stopQueue">Zatrzymaj pętlę</button>
+                <button id="stopProfilesButton" class="button button--ghost" type="button" data-i18n="actions.stopQueue">Wyłącz auto-mint</button>
               </div>
               <pre id="profileQueuePreview" class="output output--compact">No active queue yet.</pre>
             </article>
@@ -512,6 +512,6 @@
       </div>
     </div>
 
-    <script defer src="./app.js?v=20260328-04" charset="utf-8"></script>
+    <script defer src="./app.js?v=20260329-03" charset="utf-8"></script>
   </body>
 </html>
