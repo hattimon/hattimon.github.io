@@ -686,7 +686,8 @@
     if (modeOverride) params.mode = modeOverride;
     if (state.deviceWifiSsid) params.wifiSsid = state.deviceWifiSsid;
     if (state.deviceWifiPassword) params.wifiPassword = state.deviceWifiPassword;
-    if (state.deviceAuthToken) params.rpcToken = state.deviceAuthToken;
+    const authToken = getActiveDeviceAuthToken();
+    if (authToken) params.rpcToken = authToken;
     if (state.deviceWifiApFallback !== null && state.deviceWifiApFallback !== undefined) {
       params.wifiApFallback = Boolean(state.deviceWifiApFallback);
     }
@@ -2349,6 +2350,16 @@
     addLog("device", txt("Bluetooth podłączony.", "Bluetooth connected."));
     renderAll();
     await delay(400);
+    if (!getActiveDeviceAuthToken()) {
+      addLog(
+        "device",
+        txt(
+          "Sesja prywatna nie pamięta tokena. Wpisz token autoryzacji i kliknij Odśwież stan.",
+          "Private browsing does not remember the auth token. Enter the auth token and click Refresh state."
+        )
+      );
+      return;
+    }
     await refreshDeviceState();
   }
 
@@ -2475,9 +2486,20 @@
     return next;
   }
 
+  function getActiveDeviceAuthToken() {
+    const inputToken = String(refs.deviceAuthTokenInput?.value || "").trim();
+    const storedToken = String(state.deviceAuthToken || "").trim();
+    const token = inputToken || storedToken;
+    if (token && token !== state.deviceAuthToken) {
+      state.deviceAuthToken = token;
+    }
+    return token;
+  }
+
   function withAuth(payload) {
-    if (state.deviceTransport !== "serial" && state.deviceAuthToken) {
-      return { ...payload, auth: state.deviceAuthToken };
+    const authToken = getActiveDeviceAuthToken();
+    if (state.deviceTransport !== "serial" && authToken) {
+      return { ...payload, auth: authToken };
     }
     return payload;
   }
