@@ -660,8 +660,16 @@
     writeStorage(STORAGE.bridgeWindowSeconds, String(state.bridgeWindowSeconds));
     writeStorage(STORAGE.powerSaveLevel, String(state.powerSaveLevel));
     addLog("device", txt("Zapisano ustawienia łączności.", "Connectivity settings saved."));
-    if (isDeviceConnected() && state.deviceTransport !== "wifi") {
+    if (isDeviceConnected() && state.deviceTransport === "serial") {
       void applyConnectivityMode("wifi");
+    } else if (isDeviceConnected() && state.deviceTransport === "ble") {
+      addLog(
+        "device",
+        txt(
+          "Ustawienia zapisano lokalnie. Zastosuj je przez USB lub Wi‑Fi, bo zapis po BLE bywa niestabilny.",
+          "Settings were saved locally. Apply them over USB or Wi-Fi because BLE writes can be unstable."
+        )
+      );
     }
   }
 
@@ -2342,7 +2350,6 @@
     renderAll();
     await delay(400);
     await refreshDeviceState();
-    await applyConnectivityMode("ble");
   }
 
   async function connectWifiDevice() {
@@ -2562,15 +2569,57 @@
     }
   }
 
-  function handleDeviceLine(line, source) {
-    if (!line) return;
-    let parsed;
-    try {
-      parsed = JSON.parse(line);
-    } catch (_error) {
-      addLog(source === "ble" ? "ble" : "serial", line);
-      return;
+  function extractJsonObjects(text) {
+    const source = String(text || "").trim();
+    if (!source) return [];
+
+    const objects = [];
+    let start = -1;
+    let depth = 0;
+    let inString = false;
+    let escaping = false;
+
+    for (let index = 0; index < source.length; index += 1) {
+      const char = source[index];
+
+      if (start < 0) {
+        if (char === "{") {
+          start = index;
+          depth = 1;
+          inString = false;
+          escaping = false;
+        }
+        continue;
+      }
+
+      if (inString) {
+        if (escaping) escaping = false;
+        else if (char === "\\") escaping = true;
+        else if (char === "\"") inString = false;
+        continue;
+      }
+
+      if (char === "\"") {
+        inString = true;
+        continue;
+      }
+      if (char === "{") {
+        depth += 1;
+        continue;
+      }
+      if (char === "}") {
+        depth -= 1;
+        if (depth === 0) {
+          objects.push(source.slice(start, index + 1));
+          start = -1;
+        }
+      }
     }
+
+    return objects;
+  }
+
+  function processDeviceMessage(parsed, source) {
 
     if (parsed.id && state.pending.has(parsed.id)) {
       const pending = state.pending.get(parsed.id);
@@ -2591,6 +2640,27 @@
       return;
     }
     addLog("event", txt("Zdarzenie urządzenia", "Device event"), parsed);
+  }
+
+  function handleDeviceLine(line, source) {
+    if (!line) return;
+    try {
+      processDeviceMessage(JSON.parse(line), source);
+      return;
+    } catch (_error) {
+      const extracted = extractJsonObjects(line);
+      if (extracted.length > 1) {
+        for (const chunk of extracted) {
+          try {
+            processDeviceMessage(JSON.parse(chunk), source);
+          } catch (_nestedError) {
+            addLog(source === "ble" ? "ble" : "serial", chunk);
+          }
+        }
+        return;
+      }
+      addLog(source === "ble" ? "ble" : "serial", line);
+    }
   }
 
   async function fetchJson(path, options = {}) {
