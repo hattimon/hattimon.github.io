@@ -357,9 +357,12 @@
                 <summary><span data-i18n="operations.configTitle">Config inscription</span></summary>
                 <div class="accordion__body">
                   <div class="field-grid">
-                    <label class="field field--checkbox"><input id="configAutoMintEnabledInput" type="checkbox" /><span data-i18n="operations.autoMintEnabled">Auto-mint włączony</span></label>
-                    <label class="field"><span data-i18n="operations.intervalSeconds">Interwał (sekundy)</span><input id="configAutoMintIntervalInput" type="number" min="30" step="30" value="1800" /></label>
+                    <label class="field field--checkbox"><input id="configAutoMintEnabledInput" type="checkbox" /><span data-i18n="operations.autoMintEnabled">Pojedynczy token w pętli</span></label>
+                    <label class="field"><span data-i18n="operations.intervalMinutes">Interwał (minuty)</span><input id="configAutoMintIntervalInput" type="number" min="1" value="30" /></label>
+                    <label class="field"><span data-i18n="operations.singleTick">Token w pętli</span><input id="configAutoMintTickInput" type="text" maxlength="4" value="LORA" /></label>
+                    <label class="field"><span data-i18n="operations.singleAmount">Ilość na mint</span><input id="configAutoMintAmountInput" type="text" value="100" /></label>
                   </div>
+                  <p id="configModeHint" class="helper" data-i18n="operations.configModeHint">Włączenie pojedynczej pętli wyłącza kolejkę profili. Zapis aktywnej kolejki wyłącza pojedynczą pętlę.</p>
                   <div class="button-row">
                     <button id="configPrepareButton" class="button button--ghost" type="button" data-i18n="actions.prepareConfig">Przygotuj config</button>
                     <button id="configSendButton" class="button button--secondary" type="button" data-i18n="actions.sendConfig">Przygotuj i wyślij</button>

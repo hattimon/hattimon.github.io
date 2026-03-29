@@ -34,7 +34,14 @@
     bridgeWindowSeconds: 300,
     powerSaveLevel: 1,
     profiles: [],
-    scheduler: { enabled: false, intervalMinutes: 30 }
+    scheduler: {
+      enabled: false,
+      intervalMinutes: 30,
+      singleEnabled: false,
+      singleTick: "LORA",
+      singleAmount: "100",
+      singleIntervalMinutes: 30
+    }
   };
 
   const PLATFORM_COPY_COUNT = 2;
@@ -199,15 +206,19 @@
     "operations.transferTitle": "Transfer token",
     "operations.recipient": "Recipient deviceId",
     "operations.configTitle": "Config inscription",
-    "operations.autoMintEnabled": "Auto-mint enabled",
+    "operations.autoMintEnabled": "Single-token loop",
     "operations.intervalSeconds": "Interval (seconds)",
+    "operations.intervalMinutes": "Interval (minutes)",
+    "operations.singleTick": "Loop ticker",
+    "operations.singleAmount": "Mint amount",
+    "operations.configModeHint": "Enabling the single loop disables the profile queue. Saving an active queue disables the single loop.",
     "operations.preparedPreview": "Preview of the last prepared payload",
     "profiles.name": "Name",
     "profiles.amount": "Mint amount",
     "profiles.interval": "Preferred interval (min)",
     "profiles.include": "Enabled for auto-mint",
-    "profiles.loopEnabled": "Device auto-mint",
-    "profiles.loopInterval": "Auto-mint interval (min)",
+    "profiles.loopEnabled": "Multi-mint queue",
+    "profiles.loopInterval": "Queue interval (min)",
     "advanced.radioConfig": "LoRaWAN config and Heltec license",
     "advanced.license": "Heltec license",
     "advanced.autoDevEui": "Auto DevEUI",
@@ -364,15 +375,19 @@
     "operations.transferTitle": "Transfer tokena",
     "operations.recipient": "Odbiorca deviceId",
     "operations.configTitle": "Config inscription",
-    "operations.autoMintEnabled": "Auto‑mint włączony",
+    "operations.autoMintEnabled": "Pojedynczy token w pętli",
     "operations.intervalSeconds": "Interwał (sekundy)",
+    "operations.intervalMinutes": "Interwał (minuty)",
+    "operations.singleTick": "Token w pętli",
+    "operations.singleAmount": "Ilość na mint",
+    "operations.configModeHint": "Włączenie pojedynczej pętli wyłącza kolejkę profili. Zapis aktywnej kolejki wyłącza pojedynczą pętlę.",
     "operations.preparedPreview": "Podgląd ostatnio przygotowanego payloadu",
     "profiles.name": "Nazwa",
     "profiles.amount": "Mint amount",
     "profiles.interval": "Preferowany interwał (min)",
     "profiles.include": "Włącz w auto-mint",
-    "profiles.loopEnabled": "Auto-mint urządzenia",
-    "profiles.loopInterval": "Interwał auto-mintu (min)",
+    "profiles.loopEnabled": "Kolejka multi-mint",
+    "profiles.loopInterval": "Interwał kolejki (min)",
     "advanced.radioConfig": "Konfiguracja LoRaWAN i licencja Heltec",
     "advanced.license": "Licencja Heltec",
     "advanced.autoDevEui": "Auto DevEUI",
@@ -429,7 +444,8 @@
     "deployPrepareButton", "deploySendButton", "mintTickInput", "mintAmountInput", "mintPrepareButton",
     "mintSendButton", "transferTickInput", "transferAmountInput", "transferRecipientInput",
     "transferPrepareButton", "transferSendButton", "configAutoMintEnabledInput",
-    "configAutoMintIntervalInput", "configPrepareButton", "configSendButton", "profileNameInput",
+    "configAutoMintIntervalInput", "configAutoMintTickInput", "configAutoMintAmountInput", "configModeHint",
+    "configPrepareButton", "configSendButton", "profileNameInput",
     "profileTickInput", "profileAmountInput", "profileIntervalInput", "profileEnabledInput",
     "saveProfileButton", "clearProfileButton", "profileQueueEnabledInput", "profileQueueIntervalInput",
     "syncProfilesButton", "syncProfilesBroadcastButton", "stopProfilesButton", "profileQueuePreview",
@@ -455,7 +471,7 @@
       bridgeWindowSeconds: parseBoundedInt(readStorage(STORAGE.bridgeWindowSeconds, String(DEFAULTS.bridgeWindowSeconds)), 30, 3600, DEFAULTS.bridgeWindowSeconds),
       powerSaveLevel: parseBoundedInt(readStorage(STORAGE.powerSaveLevel, String(DEFAULTS.powerSaveLevel)), 0, 2, DEFAULTS.powerSaveLevel),
       profiles: loadJson(STORAGE.profiles, DEFAULTS.profiles),
-      scheduler: loadJson(STORAGE.scheduler, DEFAULTS.scheduler),
+      scheduler: { ...DEFAULTS.scheduler, ...(loadJson(STORAGE.scheduler, DEFAULTS.scheduler) || {}) },
       knownDevices: loadJson(STORAGE.knownDevices, []),
       lastSendAt: readStorage(STORAGE.lastSendAt, ""),
       deviceTransport: null,
@@ -512,6 +528,122 @@
     return formatMinutesPresetLabel(Math.max(1, Math.round(Number(seconds || 0) / 60)));
   }
 
+  function getEnabledProfiles() {
+    return state.profiles.filter((profile) => profile.enabled);
+  }
+
+  function syncSchedulerInputsToState() {
+    state.scheduler.enabled = Boolean(refs.profileQueueEnabledInput?.checked);
+    state.scheduler.intervalMinutes = normalizePreset(refs.profileQueueIntervalInput?.value || state.scheduler.intervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30);
+    state.scheduler.singleEnabled = Boolean(refs.configAutoMintEnabledInput?.checked);
+    state.scheduler.singleIntervalMinutes = normalizePreset(refs.configAutoMintIntervalInput?.value || state.scheduler.singleIntervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30);
+    state.scheduler.singleTick = normalizeTick(refs.configAutoMintTickInput?.value || state.scheduler.singleTick || "LORA") || "LORA";
+    state.scheduler.singleAmount = refs.configAutoMintAmountInput?.value?.trim() || state.scheduler.singleAmount || "100";
+    saveJson(STORAGE.scheduler, state.scheduler);
+  }
+
+  function getConfigAutoMintIntervalMinutes() {
+    return normalizePreset(refs.configAutoMintIntervalInput?.value || state.scheduler.singleIntervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30);
+  }
+
+  function getConfigAutoMintIntervalSeconds() {
+    return getConfigAutoMintIntervalMinutes() * 60;
+  }
+
+  function getConfigAutoMintTick() {
+    return normalizeTick(refs.configAutoMintTickInput?.value || state.scheduler.singleTick || "LORA");
+  }
+
+  function getConfigAutoMintAmount() {
+    const amountText = refs.configAutoMintAmountInput?.value?.trim() || state.scheduler.singleAmount || "100";
+    if (safeBigInt(amountText) <= 0n) {
+      throw new Error(txt("Ilość dla pojedynczej pętli musi być większa od zera.", "Single-loop mint amount must be greater than zero."));
+    }
+    return amountText;
+  }
+
+  function buildQueueConfigParams() {
+    const enabledProfiles = getEnabledProfiles();
+    const queueEnabled = Boolean(refs.profileQueueEnabledInput?.checked);
+    const intervalSeconds = Math.max(60, normalizePreset(refs.profileQueueIntervalInput?.value || state.scheduler.intervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30) * 60);
+    const firstActiveProfile = enabledProfiles[0] || state.profiles[0] || null;
+    return {
+      mode: "queue",
+      autoMintEnabled: queueEnabled && enabledProfiles.length > 0,
+      autoMintIntervalSeconds: intervalSeconds,
+      ...(firstActiveProfile ? {
+        defaultTick: firstActiveProfile.tick,
+        defaultMintAmount: firstActiveProfile.amount
+      } : {}),
+      profiles: state.profiles.map((profile) => ({
+        tick: profile.tick,
+        amount: profile.amount,
+        enabled: profile.enabled
+      }))
+    };
+  }
+
+  function buildSingleMintConfigParams() {
+    const tick = getConfigAutoMintTick();
+    if (!tick) {
+      throw new Error(txt("Wybierz token dla pojedynczej pętli mintu.", "Choose a token for the single mint loop."));
+    }
+    return {
+      mode: "single",
+      autoMintEnabled: Boolean(refs.configAutoMintEnabledInput?.checked),
+      autoMintIntervalSeconds: getConfigAutoMintIntervalSeconds(),
+      defaultTick: tick,
+      defaultMintAmount: getConfigAutoMintAmount(),
+      profiles: []
+    };
+  }
+
+  function buildDisabledConfigParams() {
+    if (state.profiles.length) {
+      const queueParams = buildQueueConfigParams();
+      return { ...queueParams, mode: "disabled", autoMintEnabled: false };
+    }
+    return {
+      mode: "disabled",
+      autoMintEnabled: false,
+      autoMintIntervalSeconds: getConfigAutoMintIntervalSeconds(),
+      defaultTick: getConfigAutoMintTick() || normalizeTick(state.deviceInfo?.config?.defaultTick || "LORA"),
+      defaultMintAmount: getConfigAutoMintAmount(),
+      profiles: []
+    };
+  }
+
+  function buildActiveAutoMintConfigParams() {
+    syncSchedulerInputsToState();
+    if (refs.configAutoMintEnabledInput?.checked) return buildSingleMintConfigParams();
+    if (refs.profileQueueEnabledInput?.checked && getEnabledProfiles().length) return buildQueueConfigParams();
+    return buildDisabledConfigParams();
+  }
+
+  function buildPrepareConfigParams(configParams) {
+    return {
+      autoMintEnabled: Boolean(configParams.autoMintEnabled),
+      autoMintIntervalSeconds: Number(configParams.autoMintIntervalSeconds || 0),
+      commit: false
+    };
+  }
+
+  function handleSingleMintModeToggle() {
+    if (refs.configAutoMintEnabledInput?.checked && refs.profileQueueEnabledInput) {
+      refs.profileQueueEnabledInput.checked = false;
+    }
+    syncSchedulerInputsToState();
+    renderAll();
+  }
+
+  function handleQueueModeToggle() {
+    if (refs.profileQueueEnabledInput?.checked && refs.configAutoMintEnabledInput) {
+      refs.configAutoMintEnabledInput.checked = false;
+    }
+    syncSchedulerInputsToState();
+    renderAll();
+  }
+
   function replaceInputWithPresetSelect(node, presets, formatter, fallback) {
     if (!node) return node;
     if (node.tagName === "SELECT") return node;
@@ -535,7 +667,7 @@
   }
 
   function mountDynamicUi() {
-    refs.configAutoMintIntervalInput = replaceInputWithPresetSelect(refs.configAutoMintIntervalInput, INTERVAL_PRESET_SECONDS, formatSecondsPresetLabel, 1800);
+    refs.configAutoMintIntervalInput = replaceInputWithPresetSelect(refs.configAutoMintIntervalInput, INTERVAL_PRESET_MINUTES, formatMinutesPresetLabel, 30);
     refs.profileIntervalInput = replaceInputWithPresetSelect(refs.profileIntervalInput, INTERVAL_PRESET_MINUTES, formatMinutesPresetLabel, 30);
     refs.profileQueueIntervalInput = replaceInputWithPresetSelect(refs.profileQueueIntervalInput, INTERVAL_PRESET_MINUTES, formatMinutesPresetLabel, 30);
 
@@ -668,6 +800,24 @@
     refs.mintTickInput?.addEventListener("input", renderOperations);
     refs.mintAmountInput?.addEventListener("input", renderOperations);
     refs.allowRiskySendInput?.addEventListener("change", renderOperations);
+    refs.configAutoMintEnabledInput?.addEventListener("change", handleSingleMintModeToggle);
+    refs.configAutoMintIntervalInput?.addEventListener("change", () => {
+      syncSchedulerInputsToState();
+      renderAll();
+    });
+    refs.configAutoMintTickInput?.addEventListener("input", () => {
+      syncSchedulerInputsToState();
+      renderAll();
+    });
+    refs.configAutoMintAmountInput?.addEventListener("input", () => {
+      syncSchedulerInputsToState();
+      renderAll();
+    });
+    refs.profileQueueEnabledInput?.addEventListener("change", handleQueueModeToggle);
+    refs.profileQueueIntervalInput?.addEventListener("change", () => {
+      syncSchedulerInputsToState();
+      renderAll();
+    });
     refs.profileList?.addEventListener("click", handleProfileListClick);
     refs.tokenLibraryList?.addEventListener("click", handleTokenLibraryClick);
     refs.knownDevicesList?.addEventListener("click", handleKnownDevicesClick);
@@ -716,7 +866,10 @@
       if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
       if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(normalizePreset(state.scheduler.intervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30));
       if (refs.profileIntervalInput) refs.profileIntervalInput.value = String(normalizePreset(refs.profileIntervalInput.value || 30, INTERVAL_PRESET_MINUTES, 30));
-      if (refs.configAutoMintIntervalInput) refs.configAutoMintIntervalInput.value = String(normalizePreset(refs.configAutoMintIntervalInput.value || 1800, INTERVAL_PRESET_SECONDS, 1800));
+      if (refs.configAutoMintEnabledInput) refs.configAutoMintEnabledInput.checked = Boolean(state.scheduler.singleEnabled);
+      if (refs.configAutoMintIntervalInput) refs.configAutoMintIntervalInput.value = String(normalizePreset(state.scheduler.singleIntervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30));
+      if (refs.configAutoMintTickInput) refs.configAutoMintTickInput.value = state.scheduler.singleTick || "LORA";
+      if (refs.configAutoMintAmountInput) refs.configAutoMintAmountInput.value = state.scheduler.singleAmount || "100";
       if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
       applyLogDockState();
     }
@@ -899,6 +1052,7 @@
     renderQuickMintChecklist();
     renderDevice();
     renderRadio();
+    syncIndexerLookupFields();
     renderTokenLibrary();
     renderPortfolio();
     renderPrepared();
@@ -906,7 +1060,6 @@
     renderOnboarding();
     renderEducation();
     renderOperations();
-    syncIndexerLookupFields();
     applyLogDockState();
   }
 
@@ -1557,22 +1710,24 @@
   }
 
   function renderProfiles() {
+    syncSchedulerInputsToState();
     saveJson(STORAGE.profiles, state.profiles);
     saveJson(STORAGE.scheduler, state.scheduler);
 
     if (refs.profilesPersistenceNote) {
       refs.profilesPersistenceNote.textContent = txt(
-        "Każdy profil możesz włączyć lub wyłączyć osobno. „Zapisz aktywne tokeny” przenosi ich listę do Helteca, więc urządzenie może mintować bez podłączonego panelu.",
-        "Each profile can be enabled or disabled independently. 'Save active tokens' writes the active list to Heltec, so the device can keep minting without an attached dashboard."
+        "Każdy profil możesz włączyć lub wyłączyć osobno. „Zapisz aktywne tokeny” przenosi kolejkę do Helteca. Aktywna kolejka wyłącza pojedynczą pętlę z sekcji Config inscription.",
+        "Each profile can be enabled or disabled independently. 'Save active tokens' writes the queue to Heltec. An active queue disables the single-token loop from Config inscription."
       );
     }
 
     if (refs.profileQueuePreview) {
-      const active = state.profiles.filter((profile) => profile.enabled);
+      const active = getEnabledProfiles();
       const intervalMinutes = normalizePreset(refs.profileQueueIntervalInput?.value || state.scheduler.intervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30);
       refs.profileQueuePreview.textContent = [
-        `${txt("Pętla", "Loop")}: ${state.scheduler.enabled ? "ON" : "OFF"}`,
+        `${txt("Kolejka", "Queue")}: ${state.scheduler.enabled ? "ON" : "OFF"}`,
         `${txt("Interwał", "Interval")}: ${formatMinutesPresetLabel(intervalMinutes)}`,
+        `${txt("Pojedynczy token", "Single token")}: ${refs.configAutoMintEnabledInput?.checked ? "ON" : "OFF"}`,
         active.length
           ? `${txt("Aktywne tokeny", "Active tokens")}: ${active.map((profile) => `${profile.tick} ${profile.amount}`).join(", ")}`
           : `${txt("Aktywne tokeny", "Active tokens")}: ${txt("brak", "none")}`
@@ -1695,7 +1850,7 @@
         <ul>
           <li><strong>Mint</strong>: currently about 81 B of payload, which is about ${mintBaseDc} DC of base cost in 24 B chunks. With the current tenant setting Max copy = ${PLATFORM_COPY_COUNT}, this becomes about ${mintEffectiveDc} DC of effective cost.</li>
           <li><strong>Prepare vs send</strong>: prepare only creates and signs the payload locally, while send also asks the radio to transmit a real LoRaWAN uplink.</li>
-          <li><strong>Config</strong>: stores auto-mint settings and interval; the enabled token list stays locally in Heltec after saving.</li>
+          <li><strong>Config</strong>: the single-token loop and the profile queue are mutually exclusive. Single mode stores default tick + amount, while queue mode stores the enabled profile list in Heltec.</li>
           <li><strong>Security</strong>: the signature proves the author, nonce preserves order, and the webhook to the indexer should be protected by a separate token.</li>
         </ul>
       `
@@ -1704,7 +1859,7 @@
         <ul>
           <li><strong>Mint</strong>: obecnie około 81 B payloadu, czyli około ${mintBaseDc} DC bazowego kosztu przy porcjach 24 B. Przy aktualnym ustawieniu tenantu Max copy = ${PLATFORM_COPY_COUNT} daje to około ${mintEffectiveDc} DC kosztu efektywnego.</li>
           <li><strong>Prepare vs send</strong>: prepare tylko tworzy i podpisuje payload lokalnie, a send dodatkowo zleca faktyczny uplink LoRaWAN.</li>
-          <li><strong>Config</strong>: zapis ustawień auto-mintu i interwału; lista włączonych tokenów zostaje lokalnie w Heltecu po zapisaniu.</li>
+          <li><strong>Config</strong>: pojedyncza pętla tokena i kolejka profili wykluczają się wzajemnie. Tryb single zapisuje default tick + amount, a kolejka zapisuje włączoną listę profili w Heltecu.</li>
           <li><strong>Bezpieczeństwo</strong>: podpis udowadnia autora, nonce pilnuje kolejności, a webhook do indexera powinien być chroniony osobnym tokenem.</li>
         </ul>
       `;
@@ -2207,22 +2362,27 @@
   }
 
   async function prepareConfig() {
-    const response = await requestDevice("prepare_config", {
-      autoMintEnabled: Boolean(refs.configAutoMintEnabledInput?.checked),
-      autoMintIntervalSeconds: Number(refs.configAutoMintIntervalInput?.value || 1800),
-      commit: false
-    });
-    state.lastPrepared = { type: "config", ...response };
+    const configParams = buildActiveAutoMintConfigParams();
+    const response = await requestDevice("prepare_config", buildPrepareConfigParams(configParams));
+    state.lastPrepared = { type: "config", mode: configParams.mode, targetConfig: configParams, ...response };
     renderAll();
   }
 
   async function sendConfig() {
-    const prepared = await requestDevice("prepare_config", {
-      autoMintEnabled: Boolean(refs.configAutoMintEnabledInput?.checked),
-      autoMintIntervalSeconds: Number(refs.configAutoMintIntervalInput?.value || 1800),
-      commit: false
-    });
-    state.lastPrepared = { type: "config", ...prepared };
+    const configParams = buildActiveAutoMintConfigParams();
+    if (configParams.mode === "single" && refs.profileQueueEnabledInput) {
+      refs.profileQueueEnabledInput.checked = false;
+      state.scheduler.enabled = false;
+    }
+    if (configParams.mode === "queue" && refs.configAutoMintEnabledInput) {
+      refs.configAutoMintEnabledInput.checked = false;
+      state.scheduler.singleEnabled = false;
+    }
+    syncSchedulerInputsToState();
+    const appliedConfig = await requestDevice("set_config", configParams, 30000);
+    if (appliedConfig) state.deviceInfo = { ...(state.deviceInfo || {}), config: appliedConfig };
+    const prepared = await requestDevice("prepare_config", buildPrepareConfigParams(configParams));
+    state.lastPrepared = { type: "config", mode: configParams.mode, targetConfig: configParams, deviceConfig: appliedConfig, ...prepared };
     renderAll();
     await sendPreparedPayload(prepared);
   }
@@ -2298,26 +2458,12 @@
   }
 
   async function syncProfiles(broadcast) {
-    state.scheduler.enabled = Boolean(refs.profileQueueEnabledInput?.checked);
-    state.scheduler.intervalMinutes = normalizePreset(refs.profileQueueIntervalInput?.value || 30, INTERVAL_PRESET_MINUTES, 30);
-    saveJson(STORAGE.scheduler, state.scheduler);
-    const firstActiveProfile = state.profiles.find((profile) => profile.enabled) || state.profiles[0] || null;
-    if (refs.configAutoMintEnabledInput) refs.configAutoMintEnabledInput.checked = state.scheduler.enabled && state.profiles.some((profile) => profile.enabled);
-    if (refs.configAutoMintIntervalInput) refs.configAutoMintIntervalInput.value = String(normalizePreset(Math.max(30, Number(state.scheduler.intervalMinutes || 30) * 60), INTERVAL_PRESET_SECONDS, 1800));
+    if (refs.configAutoMintEnabledInput) refs.configAutoMintEnabledInput.checked = false;
+    state.scheduler.singleEnabled = false;
+    syncSchedulerInputsToState();
+    const queueParams = buildQueueConfigParams();
 
-    const response = await requestDevice("set_config", {
-      autoMintEnabled: state.scheduler.enabled && state.profiles.some((profile) => profile.enabled),
-      autoMintIntervalSeconds: Math.max(30, Number(state.scheduler.intervalMinutes || 30) * 60),
-      ...(firstActiveProfile ? {
-        defaultTick: firstActiveProfile.tick,
-        defaultMintAmount: firstActiveProfile.amount
-      } : {}),
-      profiles: state.profiles.map((profile) => ({
-        tick: profile.tick,
-        amount: profile.amount,
-        enabled: profile.enabled
-      }))
-    }, 30000);
+    const response = await requestDevice("set_config", queueParams, 30000);
 
     if (response) state.deviceInfo = { ...(state.deviceInfo || {}), config: response };
     await refreshDeviceInfo().catch(() => {});
@@ -2329,6 +2475,7 @@
   async function stopProfiles() {
     if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = false;
     state.scheduler.enabled = false;
+    syncSchedulerInputsToState();
     await syncProfiles(false);
   }
 
@@ -2350,6 +2497,10 @@
         if (refs.profileEnabledInput) refs.profileEnabledInput.checked = Boolean(profile.enabled);
         if (refs.mintTickInput) refs.mintTickInput.value = profile.tick;
         if (refs.mintAmountInput) refs.mintAmountInput.value = profile.amount;
+        if (refs.configAutoMintTickInput) refs.configAutoMintTickInput.value = profile.tick;
+        if (refs.configAutoMintAmountInput) refs.configAutoMintAmountInput.value = profile.amount;
+        if (refs.configAutoMintIntervalInput) refs.configAutoMintIntervalInput.value = String(normalizePreset(profile.intervalMinutes || 30, INTERVAL_PRESET_MINUTES, 30));
+        syncSchedulerInputsToState();
         break;
       case "toggle-profile":
         profile.enabled = !profile.enabled;
@@ -2421,9 +2572,12 @@
     if (refs.deployMaxSupplyInput) refs.deployMaxSupplyInput.value = token.maxSupply;
     if (refs.deployLimitPerMintInput) refs.deployLimitPerMintInput.value = token.limitPerMint;
     if (refs.mintAmountInput) refs.mintAmountInput.value = token.limitPerMint;
+    if (refs.configAutoMintTickInput) refs.configAutoMintTickInput.value = token.tick;
+    if (refs.configAutoMintAmountInput) refs.configAutoMintAmountInput.value = token.limitPerMint;
     if (refs.tokenTickInput) refs.tokenTickInput.value = token.tick;
     if (refs.balanceTickInput) refs.balanceTickInput.value = token.tick;
     if (refs.transactionsTickInput) refs.transactionsTickInput.value = token.tick;
+    syncSchedulerInputsToState();
   }
 
   function moveProfile(profileId, delta) {
@@ -2925,19 +3079,55 @@
     const deviceId = getCurrentDeviceId();
     if (refs.balanceDeviceIdInput && !refs.balanceDeviceIdInput.value) refs.balanceDeviceIdInput.value = deviceId;
     if (refs.transactionsDeviceIdInput && !refs.transactionsDeviceIdInput.value) refs.transactionsDeviceIdInput.value = deviceId;
-    const config = state.lorawanInfo?.config || state.deviceInfo?.lorawan;
-    if (refs.linkDevEuiInput && !refs.linkDevEuiInput.value && config?.devEuiHex) refs.linkDevEuiInput.value = config.devEuiHex;
-    if (refs.lorawanDevEuiInput && !refs.lorawanDevEuiInput.value && config?.devEuiHex) refs.lorawanDevEuiInput.value = config.devEuiHex;
-    if (refs.lorawanJoinEuiInput && !refs.lorawanJoinEuiInput.value && config?.joinEuiHex) refs.lorawanJoinEuiInput.value = config.joinEuiHex;
-    if (refs.lorawanAppPortInput && config?.appPort != null) refs.lorawanAppPortInput.value = String(config.appPort);
-    if (refs.lorawanDataRateInput && config?.defaultDataRate != null) refs.lorawanDataRateInput.value = String(config.defaultDataRate);
-    if (refs.lorawanAutoDevEuiInput) refs.lorawanAutoDevEuiInput.checked = Boolean(config?.autoDevEui);
-    if (refs.lorawanAdrInput) refs.lorawanAdrInput.checked = Boolean(config?.adr);
-    if (refs.lorawanConfirmedInput) refs.lorawanConfirmedInput.checked = Boolean(config?.confirmedUplink);
-    if (refs.configAutoMintEnabledInput) refs.configAutoMintEnabledInput.checked = Boolean(state.deviceInfo?.config?.autoMintEnabled);
-    if (refs.configAutoMintIntervalInput && state.deviceInfo?.config?.autoMintIntervalSeconds != null) {
-      refs.configAutoMintIntervalInput.value = String(normalizePreset(state.deviceInfo.config.autoMintIntervalSeconds, INTERVAL_PRESET_SECONDS, 1800));
+    const lorawanConfig = state.lorawanInfo?.config || state.deviceInfo?.lorawan;
+    if (refs.linkDevEuiInput && !refs.linkDevEuiInput.value && lorawanConfig?.devEuiHex) refs.linkDevEuiInput.value = lorawanConfig.devEuiHex;
+    if (refs.lorawanDevEuiInput && !refs.lorawanDevEuiInput.value && lorawanConfig?.devEuiHex) refs.lorawanDevEuiInput.value = lorawanConfig.devEuiHex;
+    if (refs.lorawanJoinEuiInput && !refs.lorawanJoinEuiInput.value && lorawanConfig?.joinEuiHex) refs.lorawanJoinEuiInput.value = lorawanConfig.joinEuiHex;
+    if (refs.lorawanAppPortInput && lorawanConfig?.appPort != null) refs.lorawanAppPortInput.value = String(lorawanConfig.appPort);
+    if (refs.lorawanDataRateInput && lorawanConfig?.defaultDataRate != null) refs.lorawanDataRateInput.value = String(lorawanConfig.defaultDataRate);
+    if (refs.lorawanAutoDevEuiInput) refs.lorawanAutoDevEuiInput.checked = Boolean(lorawanConfig?.autoDevEui);
+    if (refs.lorawanAdrInput) refs.lorawanAdrInput.checked = Boolean(lorawanConfig?.adr);
+    if (refs.lorawanConfirmedInput) refs.lorawanConfirmedInput.checked = Boolean(lorawanConfig?.confirmedUplink);
+
+    const deviceConfig = state.deviceInfo?.config || null;
+    if (!deviceConfig) return;
+
+    const deviceProfiles = Array.isArray(deviceConfig.profiles) ? deviceConfig.profiles : [];
+    const queueModeActive = Boolean(deviceConfig.autoMintEnabled) && deviceProfiles.length > 0 && deviceProfiles.some((profile) => profile?.enabled);
+    const singleModeActive = Boolean(deviceConfig.autoMintEnabled) && deviceProfiles.length === 0;
+    const intervalMinutes = normalizePreset(Math.max(1, Math.round(Number(deviceConfig.autoMintIntervalSeconds || 1800) / 60)), INTERVAL_PRESET_MINUTES, 30);
+
+    if (deviceProfiles.length) {
+      state.profiles = deviceProfiles.map((profile, index) => {
+        const tick = normalizeTick(profile?.tick || "");
+        const amount = String(profile?.amount || "1");
+        const existing = state.profiles.find((item) => item.tick === tick && String(item.amount) === amount);
+        return {
+          id: existing?.id || `device-profile-${index}-${tick || "token"}`,
+          name: existing?.name || `${tick || txt("TOKEN", "TOKEN")} / ${amount}`,
+          tick,
+          amount,
+          intervalMinutes: normalizePreset(existing?.intervalMinutes || intervalMinutes, INTERVAL_PRESET_MINUTES, intervalMinutes),
+          enabled: Boolean(profile?.enabled)
+        };
+      });
+      saveJson(STORAGE.profiles, state.profiles);
     }
+
+    if (refs.configAutoMintEnabledInput) refs.configAutoMintEnabledInput.checked = singleModeActive;
+    if (refs.configAutoMintIntervalInput) refs.configAutoMintIntervalInput.value = String(intervalMinutes);
+    if (refs.configAutoMintTickInput && deviceConfig.defaultTick) refs.configAutoMintTickInput.value = deviceConfig.defaultTick;
+    if (refs.configAutoMintAmountInput && deviceConfig.defaultMintAmount != null) refs.configAutoMintAmountInput.value = String(deviceConfig.defaultMintAmount);
+    if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = queueModeActive;
+    if (refs.profileQueueIntervalInput) refs.profileQueueIntervalInput.value = String(intervalMinutes);
+
+    state.scheduler.singleEnabled = singleModeActive;
+    state.scheduler.singleIntervalMinutes = intervalMinutes;
+    state.scheduler.singleTick = deviceConfig.defaultTick || state.scheduler.singleTick || "LORA";
+    state.scheduler.singleAmount = String(deviceConfig.defaultMintAmount || state.scheduler.singleAmount || "100");
+    state.scheduler.enabled = queueModeActive;
+    state.scheduler.intervalMinutes = intervalMinutes;
+    saveJson(STORAGE.scheduler, state.scheduler);
   }
 
   function getDeployWarnings() {
