@@ -1589,6 +1589,14 @@
   }
 
   async function refreshDeviceState() {
+    if (state.deviceTransport === "ble") {
+      await refreshDeviceInfo();
+      await delay(120);
+      await refreshLorawanInfo();
+      await delay(120);
+      await refreshConnectivity();
+      return;
+    }
     await Promise.allSettled([refreshDeviceInfo(), refreshLorawanInfo(), refreshConnectivity()]);
   }
 
@@ -2334,14 +2342,8 @@
       const value = event.target.value;
       if (!value) return;
       const decoder = new TextDecoder();
-      bleState.buffer += decoder.decode(value);
-      let newlineIndex = bleState.buffer.indexOf("\n");
-      while (newlineIndex >= 0) {
-        const line = bleState.buffer.slice(0, newlineIndex).replace(/\r$/, "");
-        bleState.buffer = bleState.buffer.slice(newlineIndex + 1);
-        handleDeviceLine(line, "ble");
-        newlineIndex = bleState.buffer.indexOf("\n");
-      }
+      bleState.buffer += decoder.decode(value, { stream: true });
+      drainBleBuffer();
     });
 
     state.ble = bleState;
@@ -2360,7 +2362,9 @@
       );
       return;
     }
-    await refreshDeviceState();
+    await refreshDeviceInfo();
+    await delay(120);
+    await refreshLorawanInfo();
   }
 
   async function connectWifiDevice() {
@@ -2567,6 +2571,46 @@
     }
   }
 
+  function drainBleBuffer() {
+    if (!state.ble) return;
+
+    let madeProgress = true;
+    while (madeProgress) {
+      madeProgress = false;
+      if (!state.ble.buffer) return;
+
+      const trimmed = state.ble.buffer.replace(/^[\r\n\t ]+/, "");
+      if (trimmed !== state.ble.buffer) {
+        state.ble.buffer = trimmed;
+        madeProgress = true;
+        if (!state.ble.buffer) return;
+      }
+
+      const extracted = extractJsonObjects(state.ble.buffer);
+      if (extracted.length > 0) {
+        const first = extracted[0];
+        const prefix = state.ble.buffer.slice(0, first.start).trim();
+        if (prefix) addLog("ble", prefix);
+        try {
+          processDeviceMessage(JSON.parse(first.json), "ble");
+        } catch (_error) {
+          addLog("ble", first.json);
+        }
+        state.ble.buffer = state.ble.buffer.slice(first.end);
+        madeProgress = true;
+        continue;
+      }
+
+      const newlineIndex = state.ble.buffer.indexOf("\n");
+      if (newlineIndex >= 0) {
+        const line = state.ble.buffer.slice(0, newlineIndex).replace(/\r$/, "");
+        state.ble.buffer = state.ble.buffer.slice(newlineIndex + 1);
+        handleDeviceLine(line, "ble");
+        madeProgress = true;
+      }
+    }
+  }
+
   async function sendWifiPayload(payload, timeout, label) {
     if (!state.deviceBridgeUrl) throw new Error(txt("Brak adresu mostka Wi‑Fi.", "Missing Wi-Fi bridge URL."));
     const controller = new AbortController();
@@ -2596,45 +2640,44 @@
     if (!source) return [];
 
     const objects = [];
-    let start = -1;
-    let depth = 0;
-    let inString = false;
-    let escaping = false;
+    const findJsonEnd = (startIndex) => {
+      let depth = 0;
+      let inString = false;
+      let escaping = false;
+
+      for (let index = startIndex; index < source.length; index += 1) {
+        const char = source[index];
+
+        if (inString) {
+          if (escaping) escaping = false;
+          else if (char === "\\") escaping = true;
+          else if (char === "\"") inString = false;
+          continue;
+        }
+
+        if (char === "\"") {
+          inString = true;
+          continue;
+        }
+        if (char === "{") {
+          depth += 1;
+          continue;
+        }
+        if (char === "}") {
+          depth -= 1;
+          if (depth === 0) return index;
+        }
+      }
+
+      return -1;
+    };
 
     for (let index = 0; index < source.length; index += 1) {
-      const char = source[index];
-
-      if (start < 0) {
-        if (char === "{") {
-          start = index;
-          depth = 1;
-          inString = false;
-          escaping = false;
-        }
-        continue;
-      }
-
-      if (inString) {
-        if (escaping) escaping = false;
-        else if (char === "\\") escaping = true;
-        else if (char === "\"") inString = false;
-        continue;
-      }
-
-      if (char === "\"") {
-        inString = true;
-        continue;
-      }
-      if (char === "{") {
-        depth += 1;
-        continue;
-      }
-      if (char === "}") {
-        depth -= 1;
-        if (depth === 0) {
-          objects.push(source.slice(start, index + 1));
-          start = -1;
-        }
+      if (source[index] !== "{") continue;
+      const end = findJsonEnd(index);
+      if (end >= 0) {
+        objects.push({ json: source.slice(index, end + 1), start: index, end: end + 1 });
+        index = end;
       }
     }
 
@@ -2671,12 +2714,12 @@
       return;
     } catch (_error) {
       const extracted = extractJsonObjects(line);
-      if (extracted.length > 1) {
+      if (extracted.length >= 1) {
         for (const chunk of extracted) {
           try {
-            processDeviceMessage(JSON.parse(chunk), source);
+            processDeviceMessage(JSON.parse(chunk.json), source);
           } catch (_nestedError) {
-            addLog(source === "ble" ? "ble" : "serial", chunk);
+            addLog(source === "ble" ? "ble" : "serial", chunk.json);
           }
         }
         return;
