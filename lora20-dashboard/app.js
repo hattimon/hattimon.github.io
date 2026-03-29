@@ -506,7 +506,9 @@
     mintMatrixHover: false,
     mintMatrixTopEventId: null,
     mintMatrixProgrammaticScroll: false,
-    activeWitnessEventId: null
+    activeWitnessEventId: null,
+    configFormDirty: false,
+    configDirtyAt: 0
   };
 
   function normalizePreset(value, presets, fallback) {
@@ -632,6 +634,7 @@
     if (refs.configAutoMintEnabledInput?.checked && refs.profileQueueEnabledInput) {
       refs.profileQueueEnabledInput.checked = false;
     }
+    markConfigDirty();
     syncSchedulerInputsToState();
     renderAll();
   }
@@ -640,8 +643,18 @@
     if (refs.profileQueueEnabledInput?.checked && refs.configAutoMintEnabledInput) {
       refs.configAutoMintEnabledInput.checked = false;
     }
+    markConfigDirty();
     syncSchedulerInputsToState();
     renderAll();
+  }
+
+  function markConfigDirty() {
+    state.configFormDirty = true;
+    state.configDirtyAt = Date.now();
+  }
+
+  function clearConfigDirty() {
+    state.configFormDirty = false;
   }
 
   function replaceInputWithPresetSelect(node, presets, formatter, fallback) {
@@ -802,19 +815,23 @@
     refs.allowRiskySendInput?.addEventListener("change", renderOperations);
     refs.configAutoMintEnabledInput?.addEventListener("change", handleSingleMintModeToggle);
     refs.configAutoMintIntervalInput?.addEventListener("change", () => {
+      markConfigDirty();
       syncSchedulerInputsToState();
       renderAll();
     });
     refs.configAutoMintTickInput?.addEventListener("input", () => {
+      markConfigDirty();
       syncSchedulerInputsToState();
       renderAll();
     });
     refs.configAutoMintAmountInput?.addEventListener("input", () => {
+      markConfigDirty();
       syncSchedulerInputsToState();
       renderAll();
     });
     refs.profileQueueEnabledInput?.addEventListener("change", handleQueueModeToggle);
     refs.profileQueueIntervalInput?.addEventListener("change", () => {
+      markConfigDirty();
       syncSchedulerInputsToState();
       renderAll();
     });
@@ -1896,6 +1913,7 @@
       upsertKnownDevice({ deviceId: result.device.deviceId, publicKeyHex: result.device.publicKeyHex || state.publicKeyInfo?.publicKeyHex || "" });
     }
     renderAll();
+    clearConfigDirty();
     return result;
   }
 
@@ -2383,6 +2401,7 @@
     if (appliedConfig) state.deviceInfo = { ...(state.deviceInfo || {}), config: appliedConfig };
     const prepared = await requestDevice("prepare_config", buildPrepareConfigParams(configParams));
     state.lastPrepared = { type: "config", mode: configParams.mode, targetConfig: configParams, deviceConfig: appliedConfig, ...prepared };
+    clearConfigDirty();
     renderAll();
     await sendPreparedPayload(prepared);
   }
@@ -2440,6 +2459,7 @@
     const existingIndex = state.profiles.findIndex((item) => item.id === profileId);
     if (existingIndex >= 0) state.profiles.splice(existingIndex, 1, profile);
     else state.profiles.push(profile);
+    markConfigDirty();
     clearProfileEditor(false);
     renderAll();
     addLog("device", txt("Profil zapisany", "Profile saved"), profile);
@@ -2466,6 +2486,7 @@
     const response = await requestDevice("set_config", queueParams, 30000);
 
     if (response) state.deviceInfo = { ...(state.deviceInfo || {}), config: response };
+    clearConfigDirty();
     await refreshDeviceInfo().catch(() => {});
     if (broadcast) await sendConfig();
     else addLog("device", "Profiles synced to device", response);
@@ -2504,15 +2525,19 @@
         break;
       case "toggle-profile":
         profile.enabled = !profile.enabled;
+        markConfigDirty();
         break;
       case "move-up":
         moveProfile(profile.id, -1);
+        markConfigDirty();
         break;
       case "move-down":
         moveProfile(profile.id, 1);
+        markConfigDirty();
         break;
       case "remove-profile":
         state.profiles = state.profiles.filter((item) => item.id !== profile.id);
+        markConfigDirty();
         break;
       default:
         break;
@@ -3091,6 +3116,10 @@
 
     const deviceConfig = state.deviceInfo?.config || null;
     if (!deviceConfig) return;
+
+    if (state.configFormDirty) {
+      return;
+    }
 
     const deviceProfiles = Array.isArray(deviceConfig.profiles) ? deviceConfig.profiles : [];
     const queueModeActive = Boolean(deviceConfig.autoMintEnabled) && deviceProfiles.length > 0 && deviceProfiles.some((profile) => profile?.enabled);
