@@ -875,10 +875,17 @@
   function wireAction(node, task) {
     node?.addEventListener("click", (event) => {
       event.preventDefault();
+      if (node.dataset.busy === "1") return;
+      node.dataset.busy = "1";
+      node.disabled = true;
       Promise.resolve()
         .then(() => task())
         .catch((error) => {
           addLog("error", error instanceof Error ? error.message : String(error));
+        })
+        .finally(() => {
+          node.dataset.busy = "0";
+          node.disabled = false;
         });
     });
   }
