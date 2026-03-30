@@ -227,7 +227,7 @@
     "profiles.loopInterval": "Queue interval (min)",
     "advanced.radioConfig": "LoRaWAN config and Heltec license",
     "advanced.license": "Heltec license",
-    "advanced.autoDevEui": "Use chip DevEUI when field is empty",
+    "advanced.autoDevEui": "Auto DevEUI",
     "advanced.adr": "ADR",
     "advanced.confirmed": "Confirmed uplink",
     "advanced.devEui": "DevEUI",
@@ -398,7 +398,7 @@
     "profiles.loopInterval": "Interwał kolejki (min)",
     "advanced.radioConfig": "Konfiguracja LoRaWAN i licencja Heltec",
     "advanced.license": "Licencja Heltec",
-    "advanced.autoDevEui": "Użyj DevEUI z chipa, gdy pole jest puste",
+    "advanced.autoDevEui": "Auto DevEUI",
     "advanced.adr": "ADR",
     "advanced.confirmed": "Confirmed uplink",
     "advanced.devEui": "DevEUI",
@@ -1666,12 +1666,11 @@
     const info = state.lorawanInfo;
     const runtime = info?.runtime || info?.lorawanRuntime;
     const config = info?.config || state.deviceInfo?.lorawan;
-    const effectiveDevEui = getEffectiveDevEui(config);
 
     setText(refs.lorawanJoinedValue, runtime ? String(Boolean(runtime.joined)) : "-");
     setText(refs.lorawanPortValue, config?.appPort == null ? "-" : String(config.appPort));
     setText(refs.lorawanEventValue, runtime?.lastEvent || "-");
-    setText(refs.lorawanDevEuiValue, effectiveDevEui || "-");
+    setText(refs.lorawanDevEuiValue, config?.devEuiHex || "-");
     setText(refs.lorawanSummaryOutput, info ? prettyJson(info) : txt("Brak statusu LoRaWAN.", "No LoRaWAN status yet."));
 
     const messages = [];
@@ -2212,10 +2211,10 @@
       appPort: Number(refs.lorawanAppPortInput?.value || 1),
       defaultDataRate: Number(refs.lorawanDataRateInput?.value || 3)
     };
-    const devEuiHex = refs.lorawanDevEuiInput?.value?.trim() ?? "";
+    const devEuiHex = refs.lorawanDevEuiInput?.value?.trim();
     const joinEuiHex = refs.lorawanJoinEuiInput?.value?.trim();
     const appKeyHex = refs.lorawanAppKeyInput?.value?.trim();
-    params.devEuiHex = devEuiHex;
+    if (devEuiHex) params.devEuiHex = devEuiHex;
     if (joinEuiHex) params.joinEuiHex = joinEuiHex;
     if (appKeyHex) params.appKeyHex = appKeyHex;
     await requestDevice("set_lorawan", params, 30000);
@@ -2224,7 +2223,7 @@
 
   async function linkDevEui() {
     const deviceId = getCurrentDeviceId();
-    const devEui = (refs.linkDevEuiInput?.value || getEffectiveDevEui(state.lorawanInfo?.config || state.deviceInfo?.lorawan) || "").trim();
+    const devEui = (refs.linkDevEuiInput?.value || state.lorawanInfo?.config?.devEuiHex || "").trim();
     if (!deviceId) throw new Error(txt("Brak aktywnego deviceId.", "No active deviceId."));
     if (!devEui) throw new Error(txt("Podaj DevEUI do powiazania.", "Provide DevEUI to link."));
     const response = await fetchJson(`/devices/${encodeURIComponent(deviceId)}/lorawan`, {
@@ -3242,18 +3241,13 @@
     return state.deviceInfo?.deviceId || state.publicKeyInfo?.deviceId || state.knownDevices[0]?.deviceId || "";
   }
 
-  function getEffectiveDevEui(config) {
-    return (config?.effectiveDevEuiHex || config?.devEuiHex || "").trim();
-  }
-
   function syncIndexerLookupFields() {
     const deviceId = getCurrentDeviceId();
     if (refs.balanceDeviceIdInput && !refs.balanceDeviceIdInput.value) refs.balanceDeviceIdInput.value = deviceId;
     if (refs.transactionsDeviceIdInput && !refs.transactionsDeviceIdInput.value) refs.transactionsDeviceIdInput.value = deviceId;
     const lorawanConfig = state.lorawanInfo?.config || state.deviceInfo?.lorawan;
-    const effectiveDevEui = getEffectiveDevEui(lorawanConfig);
-    if (refs.linkDevEuiInput && !refs.linkDevEuiInput.value && effectiveDevEui) refs.linkDevEuiInput.value = effectiveDevEui;
-    if (refs.lorawanDevEuiInput && !refs.lorawanDevEuiInput.value && effectiveDevEui) refs.lorawanDevEuiInput.value = effectiveDevEui;
+    if (refs.linkDevEuiInput && !refs.linkDevEuiInput.value && lorawanConfig?.devEuiHex) refs.linkDevEuiInput.value = lorawanConfig.devEuiHex;
+    if (refs.lorawanDevEuiInput && !refs.lorawanDevEuiInput.value && lorawanConfig?.devEuiHex) refs.lorawanDevEuiInput.value = lorawanConfig.devEuiHex;
     if (refs.lorawanJoinEuiInput && !refs.lorawanJoinEuiInput.value && lorawanConfig?.joinEuiHex) refs.lorawanJoinEuiInput.value = lorawanConfig.joinEuiHex;
     if (refs.lorawanAppPortInput && lorawanConfig?.appPort != null) refs.lorawanAppPortInput.value = String(lorawanConfig.appPort);
     if (refs.lorawanDataRateInput && lorawanConfig?.defaultDataRate != null) refs.lorawanDataRateInput.value = String(lorawanConfig.defaultDataRate);
