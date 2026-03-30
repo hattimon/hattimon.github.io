@@ -506,10 +506,12 @@
     recentTransactions: [],
     chatMessages: [],
     chatRetention: null,
+    chatEndpointAvailable: null,
     tokenCatalogError: "",
     tokenCatalogErrorRaw: "",
     deviceInfo: null,
     connectivityInfo: null,
+    connectivityRpcUnsupported: false,
     lorawanInfo: null,
     publicKeyInfo: null,
     lastPrepared: null,
@@ -924,7 +926,7 @@
       renderChat();
       void loadChatMessages({ scope: CHAT_SCOPE_PUBLIC });
     });
-    wireAction(refs.chatRefreshButton, () => loadChatMessages());
+    wireAction(refs.chatRefreshButton, () => loadChatMessages({ forceReload: true }));
     wireAction(refs.chatSendButton, () => sendChatMessage());
     refs.tokenSearchInput?.addEventListener("input", renderTokenLibrary);
     refs.tokenQuickPick?.addEventListener("change", handleQuickPickChange);
@@ -1112,11 +1114,17 @@
     if (!Object.keys(params).length) return;
     try {
       const result = await requestDevice("set_connectivity", params, TIMEOUTS.set_config);
+      state.connectivityRpcUnsupported = false;
       if (state.deviceTransport === "wifi" && params.rpcToken) {
         state.activeWifiAuthToken = params.rpcToken;
       }
       addLog("device", txt("Zaktualizowano tryb łączności.", "Connectivity mode updated."), result);
     } catch (error) {
+      if (isUnsupportedDeviceCommand(error, "set_connectivity")) {
+        state.connectivityRpcUnsupported = true;
+        renderAll();
+        return;
+      }
       addLog("error", error instanceof Error ? error.message : String(error));
     }
   }
@@ -1754,6 +1762,8 @@
     const peer = state.knownDevices.find((entry) => entry.deviceId === state.chatPeerDeviceId) || null;
     const isPublicChat = state.chatScope === CHAT_SCOPE_PUBLIC;
     const canChat = Boolean(activeDeviceId && (isPublicChat || (peer && peer.deviceId !== activeDeviceId)));
+    const chatBackendMissing = state.chatEndpointAvailable === false;
+    const canSendChat = canChat && !chatBackendMissing;
     const draftText = refs.chatMessageInput.value || "";
     const retentionInfo = state.chatRetention?.mode === "soft"
       ? txt(
@@ -1769,7 +1779,16 @@
       }
     })() : null;
 
-    if (!activeDeviceId) {
+    if (chatBackendMissing) {
+      renderCallout(
+        refs.chatStatusNote,
+        "warn",
+        txt(
+          "Aktualny live indexer nie obsługuje endpointu /messages i nie indeksuje jeszcze chatu. Wiadomości z panelu nie będą tu widoczne, więc wysyłka została zablokowana, żeby nie palić DC.",
+          "The current live indexer does not support the /messages endpoint and does not index chat yet. Messages sent from the dashboard will not appear here, so sending has been disabled to avoid burning DC."
+        )
+      );
+    } else if (!activeDeviceId) {
       renderCallout(
         refs.chatStatusNote,
         "warn",
@@ -1818,7 +1837,14 @@
           `
           : "");
 
-    if (!state.chatMessages.length) {
+    if (chatBackendMissing) {
+      refs.chatThread.innerHTML = `<div class="chat-thread__empty">${escapeHtml(
+        txt(
+          "Chat backend nie jest jeszcze wdrożony na live indexerze. Odśwież chat po aktualizacji serwera.",
+          "The chat backend is not deployed on the live indexer yet. Refresh chat after the server is updated."
+        )
+      )}</div>`;
+    } else if (!state.chatMessages.length) {
       refs.chatThread.innerHTML = `<div class="chat-thread__empty">${escapeHtml(
         isPublicChat
           ? txt("Brak wiadomości w kanale publicznym.", "No public-channel messages yet.")
@@ -1847,13 +1873,20 @@
       }).join("");
     }
 
-    refs.chatMessageInput.disabled = !canChat;
-    refs.chatMessageInput.placeholder = isPublicChat
-      ? txt("Halo do wszystkich z Helteca", "Hello everyone from Heltec")
-      : txt("Halo do wybranego urządzenia", "Hello to the selected device");
-    if (refs.chatSendButton) refs.chatSendButton.disabled = !canChat;
+    refs.chatMessageInput.disabled = !canSendChat;
+    refs.chatMessageInput.placeholder = chatBackendMissing
+      ? txt("Chat czeka na aktualizację live indexera", "Chat is waiting for the live indexer update")
+      : (isPublicChat
+          ? txt("Halo do wszystkich z Helteca", "Hello everyone from Heltec")
+          : txt("Halo do wybranego urządzenia", "Hello to the selected device"));
+    if (refs.chatSendButton) refs.chatSendButton.disabled = !canSendChat;
     if (refs.chatPublicButton) refs.chatPublicButton.setAttribute("aria-pressed", isPublicChat ? "true" : "false");
-    refs.chatComposerHint.textContent = draftInfo
+    refs.chatComposerHint.textContent = chatBackendMissing
+      ? txt(
+          "Live indexer nie zapisuje jeszcze wiadomości, więc wysyłka z panelu jest zablokowana do czasu wdrożenia backendu.",
+          "The live indexer does not store messages yet, so dashboard chat sending is disabled until the backend is deployed."
+        )
+      : (draftInfo
       ? (draftInfo.ok
           ? txt(
               `Po normalizacji: ${draftInfo.normalized.length} znaków, ${draftInfo.packedBytes}/${CHAT_MAX_PACKED_BYTES} B pakietu. Diakrytyki są spłaszczane do ASCII.`,
@@ -1863,7 +1896,7 @@
       : txt(
           `Budżet chatu: do ${CHAT_MAX_CHAR_COUNT} znaków po normalizacji, maks. ${CHAT_MAX_PACKED_BYTES} B spakowanego tekstu.`,
           `Chat budget: up to ${CHAT_MAX_CHAR_COUNT} normalized characters, max ${CHAT_MAX_PACKED_BYTES} packed bytes.`
-        );
+        ));
   }
 
   function renderRadio() {
@@ -2177,6 +2210,7 @@
   async function refreshConnectivity() {
     try {
       const result = await requestDevice("get_connectivity", {});
+      state.connectivityRpcUnsupported = false;
       state.connectivityInfo = result || null;
       if (typeof result?.wifiApFallback === "boolean") {
         state.deviceWifiApFallback = result.wifiApFallback;
@@ -2212,6 +2246,12 @@
       renderAll();
       return result;
     } catch (error) {
+      if (isUnsupportedDeviceCommand(error, "get_connectivity")) {
+        state.connectivityRpcUnsupported = true;
+        state.connectivityInfo = null;
+        renderAll();
+        return null;
+      }
       addLog("error", error instanceof Error ? error.message : String(error));
       return null;
     }
@@ -2398,6 +2438,12 @@
     if (!deviceId) throw new Error(txt("Brak aktywnego deviceId do pobrania rozmów.", "No active deviceId to load conversations."));
     const scope = typeof target === "string" ? CHAT_SCOPE_DIRECT : (target.scope ?? state.chatScope);
     const peerDeviceId = typeof target === "string" ? target : (target.peerDeviceId ?? state.chatPeerDeviceId);
+    const forceReload = typeof target === "object" && Boolean(target.forceReload);
+
+    if (state.chatEndpointAvailable === false && !forceReload) {
+      renderChat();
+      return null;
+    }
 
     if (scope === CHAT_SCOPE_DIRECT && !peerDeviceId) {
       state.chatMessages = [];
@@ -2413,11 +2459,33 @@
       query.set("peerDeviceId", peerDeviceId);
     }
 
-    const response = await fetchJson(`/messages?${query.toString()}`);
-    state.chatMessages = Array.isArray(response.messages) ? response.messages : [];
-    state.chatRetention = response.retention || state.chatRetention;
-    renderChat();
-    return response;
+    try {
+      const response = await fetchJson(`/messages?${query.toString()}`);
+      state.chatEndpointAvailable = true;
+      state.chatMessages = Array.isArray(response.messages) ? response.messages : [];
+      state.chatRetention = response.retention || state.chatRetention;
+      renderChat();
+      return response;
+    } catch (error) {
+      if (isRouteMissing(error, "/messages")) {
+        const firstFailure = state.chatEndpointAvailable !== false;
+        state.chatEndpointAvailable = false;
+        state.chatMessages = [];
+        state.chatRetention = null;
+        if (firstFailure) {
+          addLog(
+            "warn",
+            txt(
+              "Live indexer nie ma jeszcze endpointu /messages. Chat został zablokowany, żeby nie wysyłać wiadomości w ciemno i nie palić DC.",
+              "The live indexer does not expose /messages yet. Chat has been disabled so messages are not sent blindly and DC is not wasted."
+            )
+          );
+        }
+        renderChat();
+        return null;
+      }
+      throw error;
+    }
   }
 
   async function saveHeltecLicense() {
@@ -2699,6 +2767,16 @@
     const activeDeviceId = getCurrentDeviceId();
     const peerDeviceId = state.chatPeerDeviceId;
     const isPublicChat = state.chatScope === CHAT_SCOPE_PUBLIC;
+    if (state.chatEndpointAvailable == null) {
+      await loadChatMessages({
+        forceReload: true,
+        scope: isPublicChat ? CHAT_SCOPE_PUBLIC : CHAT_SCOPE_DIRECT,
+        peerDeviceId
+      });
+    }
+    if (state.chatEndpointAvailable === false) {
+      throw new Error(txt("Live indexer nie obsługuje jeszcze chatu. Wysyłka została zablokowana, żeby nie palić DC.", "The live indexer does not support chat yet. Sending has been blocked to avoid burning DC."));
+    }
     if (!activeDeviceId) {
       throw new Error(txt("Brak aktywnego node'a do wysłania wiadomości.", "No active node selected for sending a message."));
     }
@@ -3465,8 +3543,29 @@
     const response = await fetch(`${state.indexerBaseUrl}${path}`, options);
     const text = await response.text();
     const data = text ? JSON.parse(text) : {};
-    if (!response.ok) throw new Error(data?.error?.message || `${response.status} ${response.statusText}`);
+    if (!response.ok) {
+      const error = new Error(data?.error?.message || `${response.status} ${response.statusText}`);
+      error.code = data?.error?.code || `http_${response.status}`;
+      error.status = response.status;
+      error.path = path;
+      throw error;
+    }
     return data;
+  }
+
+  function isUnsupportedDeviceCommand(error, command = "") {
+    const code = String(error?.code || "");
+    const message = String(error?.message || "");
+    return code === "unknown_command" || message.includes(`Unknown command: ${command}`) || message.includes("Unknown command:");
+  }
+
+  function isRouteMissing(error, path = "") {
+    const code = String(error?.code || "");
+    const message = String(error?.message || "");
+    const errorPath = String(error?.path || "");
+    return code === "route_not_found"
+      || (Number(error?.status || 0) === 404 && (!path || errorPath.startsWith(path)))
+      || (!!path && message.includes(`No route for GET ${path}`));
   }
 
   function getCurrentDeviceId() {
