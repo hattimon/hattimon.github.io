@@ -12,9 +12,7 @@
     deviceWifiPassword: "lora20.dashboard.deviceWifiPassword",
     deviceAuthToken: "lora20.dashboard.deviceAuthToken",
     deviceWifiApFallback: "lora20.dashboard.deviceWifiApFallback",
-    displaySleepEnabled: "lora20.dashboard.displaySleepEnabled",
     displaySleepSeconds: "lora20.dashboard.displaySleepSeconds",
-    displayBrightnessPercent: "lora20.dashboard.displayBrightnessPercent",
     bridgeWindowSeconds: "lora20.dashboard.bridgeWindowSeconds",
     powerSaveLevel: "lora20.dashboard.powerSaveLevel",
     profiles: "lora20.dashboard.profiles",
@@ -32,9 +30,7 @@
     deviceWifiPassword: "",
     deviceAuthToken: "",
     deviceWifiApFallback: false,
-    displaySleepEnabled: true,
     displaySleepSeconds: 60,
-    displayBrightnessPercent: 100,
     bridgeWindowSeconds: 300,
     powerSaveLevel: 1,
     profiles: [],
@@ -106,9 +102,7 @@
     "settings.deviceAuthToken": "Device auth token (Wi-Fi)",
     "settings.deviceAuthTokenHint": "This token protects device RPC over Wi-Fi. USB and Bluetooth do not need it.",
     "settings.deviceWifiApFallback": "Allow AP fallback",
-    "settings.displaySleepEnabled": "Enable display sleep",
     "settings.displaySleepSeconds": "Display sleep (seconds)",
-    "settings.displayBrightness": "Display brightness (%)",
     "settings.bridgeWindowSeconds": "Bridge window after reboot (seconds)",
     "settings.powerSaveLevel": "Power save level",
     "settings.powerSaveLevel0": "Level 0 - performance",
@@ -277,9 +271,7 @@
     "settings.deviceAuthToken": "Token urządzenia (Wi‑Fi)",
     "settings.deviceAuthTokenHint": "Ten token chroni RPC po Wi‑Fi. USB i Bluetooth go nie wymagają.",
     "settings.deviceWifiApFallback": "Pozwól na fallback AP",
-    "settings.displaySleepEnabled": "Włącz usypianie ekranu",
     "settings.displaySleepSeconds": "Uśpienie ekranu (sekundy)",
-    "settings.displayBrightness": "Jasność ekranu (%)",
     "settings.bridgeWindowSeconds": "Okno łączności po restarcie (sekundy)",
     "settings.powerSaveLevel": "Poziom oszczędzania energii",
     "settings.powerSaveLevel0": "Poziom 0 - wydajność",
@@ -428,8 +420,7 @@
   const refNames = [
     "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput", "deviceBridgeHint",
     "deviceWifiSsidInput", "deviceWifiPasswordInput", "deviceAuthTokenInput", "generateAuthTokenButton",
-    "deviceWifiApFallbackInput", "displaySleepEnabledInput", "displaySleepSecondsInput", "displayBrightnessInput",
-    "bridgeWindowSecondsInput", "powerSaveLevelInput",
+    "deviceWifiApFallbackInput", "displaySleepSecondsInput", "bridgeWindowSecondsInput", "powerSaveLevelInput",
     "saveConnectivityButton", "saveIndexerButton",
     "connectUsbButton", "connectBleButton", "connectWifiButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
     "mintMatrixHeading", "mintMatrixHint", "mintMatrixFeed",
@@ -471,14 +462,12 @@
       theme: readStorage(STORAGE.theme, DEFAULTS.theme),
       soundEnabled: readStorage(STORAGE.sound, "1") !== "0",
       indexerBaseUrl: normalizeUrl(readStorage(STORAGE.indexerUrl, DEFAULTS.indexerUrl)) || DEFAULTS.indexerUrl,
-      deviceBridgeUrl: normalizeDeviceBridgeUrl(readStorage(STORAGE.deviceBridgeUrl, DEFAULTS.deviceBridgeUrl)) || DEFAULTS.deviceBridgeUrl,
+      deviceBridgeUrl: normalizeUrl(readStorage(STORAGE.deviceBridgeUrl, DEFAULTS.deviceBridgeUrl)) || DEFAULTS.deviceBridgeUrl,
       deviceWifiSsid: readStorage(STORAGE.deviceWifiSsid, DEFAULTS.deviceWifiSsid),
       deviceWifiPassword: readStorage(STORAGE.deviceWifiPassword, DEFAULTS.deviceWifiPassword),
       deviceAuthToken: readStorage(STORAGE.deviceAuthToken, DEFAULTS.deviceAuthToken),
       deviceWifiApFallback: readStorage(STORAGE.deviceWifiApFallback, DEFAULTS.deviceWifiApFallback ? "1" : "0") === "1",
-      displaySleepEnabled: readStorage(STORAGE.displaySleepEnabled, DEFAULTS.displaySleepEnabled ? "1" : "0") === "1",
       displaySleepSeconds: parseBoundedInt(readStorage(STORAGE.displaySleepSeconds, String(DEFAULTS.displaySleepSeconds)), 0, 3600, DEFAULTS.displaySleepSeconds),
-      displayBrightnessPercent: parseBoundedInt(readStorage(STORAGE.displayBrightnessPercent, String(DEFAULTS.displayBrightnessPercent)), 1, 100, DEFAULTS.displayBrightnessPercent),
       bridgeWindowSeconds: parseBoundedInt(readStorage(STORAGE.bridgeWindowSeconds, String(DEFAULTS.bridgeWindowSeconds)), 30, 3600, DEFAULTS.bridgeWindowSeconds),
       powerSaveLevel: parseBoundedInt(readStorage(STORAGE.powerSaveLevel, String(DEFAULTS.powerSaveLevel)), 0, 2, DEFAULTS.powerSaveLevel),
       profiles: loadJson(STORAGE.profiles, DEFAULTS.profiles),
@@ -773,11 +762,6 @@
     refs.toggleLogDockButton?.addEventListener("click", toggleLogDock);
     wireAction(refs.saveIndexerButton, handleSaveIndexerUrl);
     refs.deviceBridgeUrlInput?.addEventListener("change", handleSaveDeviceBridgeUrl);
-    refs.displaySleepEnabledInput?.addEventListener("change", () => {
-      state.displaySleepEnabled = Boolean(refs.displaySleepEnabledInput?.checked);
-      writeStorage(STORAGE.displaySleepEnabled, state.displaySleepEnabled ? "1" : "0");
-      syncDisplaySleepUi();
-    });
     wireAction(refs.saveConnectivityButton, handleSaveConnectivity);
     wireAction(refs.generateAuthTokenButton, generateAuthToken);
       wireAction(refs.connectUsbButton, () => connectUsbDevice());
@@ -875,17 +859,10 @@
   function wireAction(node, task) {
     node?.addEventListener("click", (event) => {
       event.preventDefault();
-      if (node.dataset.busy === "1") return;
-      node.dataset.busy = "1";
-      node.disabled = true;
       Promise.resolve()
         .then(() => task())
         .catch((error) => {
           addLog("error", error instanceof Error ? error.message : String(error));
-        })
-        .finally(() => {
-          node.dataset.busy = "0";
-          node.disabled = false;
         });
     });
   }
@@ -900,9 +877,7 @@
       if (refs.deviceWifiPasswordInput) refs.deviceWifiPasswordInput.value = state.deviceWifiPassword || "";
       if (refs.deviceAuthTokenInput) refs.deviceAuthTokenInput.value = state.deviceAuthToken || "";
       if (refs.deviceWifiApFallbackInput) refs.deviceWifiApFallbackInput.checked = Boolean(state.deviceWifiApFallback);
-      if (refs.displaySleepEnabledInput) refs.displaySleepEnabledInput.checked = Boolean(state.displaySleepEnabled);
       if (refs.displaySleepSecondsInput) refs.displaySleepSecondsInput.value = String(state.displaySleepSeconds);
-      if (refs.displayBrightnessInput) refs.displayBrightnessInput.value = String(state.displayBrightnessPercent);
       if (refs.bridgeWindowSecondsInput) refs.bridgeWindowSecondsInput.value = String(state.bridgeWindowSeconds);
       if (refs.powerSaveLevelInput) refs.powerSaveLevelInput.value = String(state.powerSaveLevel);
       if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
@@ -913,7 +888,6 @@
       if (refs.configAutoMintTickInput) refs.configAutoMintTickInput.value = state.scheduler.singleTick || "LORA";
       if (refs.configAutoMintAmountInput) refs.configAutoMintAmountInput.value = state.scheduler.singleAmount || "100";
       if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
-      syncDisplaySleepUi();
       applyLogDockState();
     }
 
@@ -952,15 +926,9 @@
   }
 
   function handleSaveDeviceBridgeUrl() {
-    state.deviceBridgeUrl = normalizeDeviceBridgeUrl(refs.deviceBridgeUrlInput?.value) || DEFAULTS.deviceBridgeUrl;
+    state.deviceBridgeUrl = normalizeUrl(refs.deviceBridgeUrlInput?.value) || DEFAULTS.deviceBridgeUrl;
     if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
     writeStorage(STORAGE.deviceBridgeUrl, state.deviceBridgeUrl);
-  }
-
-  function syncDisplaySleepUi() {
-    if (refs.displaySleepSecondsInput) {
-      refs.displaySleepSecondsInput.disabled = !state.displaySleepEnabled;
-    }
   }
 
   function handleSaveConnectivity() {
@@ -968,25 +936,19 @@
     state.deviceWifiPassword = refs.deviceWifiPasswordInput?.value || "";
     state.deviceAuthToken = refs.deviceAuthTokenInput?.value || "";
     state.deviceWifiApFallback = Boolean(refs.deviceWifiApFallbackInput?.checked);
-    state.displaySleepEnabled = Boolean(refs.displaySleepEnabledInput?.checked);
     state.displaySleepSeconds = parseBoundedInt(refs.displaySleepSecondsInput?.value, 0, 3600, DEFAULTS.displaySleepSeconds);
-    state.displayBrightnessPercent = parseBoundedInt(refs.displayBrightnessInput?.value, 1, 100, DEFAULTS.displayBrightnessPercent);
     state.bridgeWindowSeconds = parseBoundedInt(refs.bridgeWindowSecondsInput?.value, 30, 3600, DEFAULTS.bridgeWindowSeconds);
     state.powerSaveLevel = parseBoundedInt(refs.powerSaveLevelInput?.value, 0, 2, DEFAULTS.powerSaveLevel);
     if (refs.displaySleepSecondsInput) refs.displaySleepSecondsInput.value = String(state.displaySleepSeconds);
-    if (refs.displayBrightnessInput) refs.displayBrightnessInput.value = String(state.displayBrightnessPercent);
     if (refs.bridgeWindowSecondsInput) refs.bridgeWindowSecondsInput.value = String(state.bridgeWindowSeconds);
     if (refs.powerSaveLevelInput) refs.powerSaveLevelInput.value = String(state.powerSaveLevel);
     writeStorage(STORAGE.deviceWifiSsid, state.deviceWifiSsid);
     writeStorage(STORAGE.deviceWifiPassword, state.deviceWifiPassword);
     writeStorage(STORAGE.deviceAuthToken, state.deviceAuthToken);
     writeStorage(STORAGE.deviceWifiApFallback, state.deviceWifiApFallback ? "1" : "0");
-    writeStorage(STORAGE.displaySleepEnabled, state.displaySleepEnabled ? "1" : "0");
     writeStorage(STORAGE.displaySleepSeconds, String(state.displaySleepSeconds));
-    writeStorage(STORAGE.displayBrightnessPercent, String(state.displayBrightnessPercent));
     writeStorage(STORAGE.bridgeWindowSeconds, String(state.bridgeWindowSeconds));
     writeStorage(STORAGE.powerSaveLevel, String(state.powerSaveLevel));
-    syncDisplaySleepUi();
     if (isDeviceConnected() && state.deviceTransport === "serial") {
       addLog("device", txt("Zapisano ustawienia łączności i wysyłam je teraz po USB.", "Connectivity settings saved and sending them over USB now."));
       void applyConnectivityMode();
@@ -1019,8 +981,7 @@
     if (state.deviceWifiApFallback !== null && state.deviceWifiApFallback !== undefined) {
       params.wifiApFallback = Boolean(state.deviceWifiApFallback);
     }
-    params.displaySleepSeconds = state.displaySleepEnabled ? state.displaySleepSeconds : 0;
-    params.displayBrightness = percentToByte(state.displayBrightnessPercent);
+    params.displaySleepSeconds = state.displaySleepSeconds;
     params.bridgeWindowSeconds = state.bridgeWindowSeconds;
     params.powerSaveLevel = state.powerSaveLevel;
     return params;
@@ -1967,21 +1928,9 @@
       }
       const displaySleepSeconds = parseBoundedInt(result?.displaySleepSeconds, 0, 3600, null);
       if (displaySleepSeconds !== null) {
-        state.displaySleepEnabled = displaySleepSeconds > 0;
-        writeStorage(STORAGE.displaySleepEnabled, state.displaySleepEnabled ? "1" : "0");
-        if (displaySleepSeconds > 0) {
-          state.displaySleepSeconds = displaySleepSeconds;
-          writeStorage(STORAGE.displaySleepSeconds, String(state.displaySleepSeconds));
-        }
-        if (refs.displaySleepEnabledInput) refs.displaySleepEnabledInput.checked = state.displaySleepEnabled;
+        state.displaySleepSeconds = displaySleepSeconds;
+        writeStorage(STORAGE.displaySleepSeconds, String(state.displaySleepSeconds));
         if (refs.displaySleepSecondsInput) refs.displaySleepSecondsInput.value = String(state.displaySleepSeconds);
-        syncDisplaySleepUi();
-      }
-      const displayBrightness = parseBoundedInt(result?.displayBrightness, 0, 255, null);
-      if (displayBrightness !== null) {
-        state.displayBrightnessPercent = byteToPercent(displayBrightness);
-        writeStorage(STORAGE.displayBrightnessPercent, String(state.displayBrightnessPercent));
-        if (refs.displayBrightnessInput) refs.displayBrightnessInput.value = String(state.displayBrightnessPercent);
       }
       const bridgeWindowSeconds = parseBoundedInt(result?.bridgeWindowSeconds, 30, 3600, null);
       if (bridgeWindowSeconds !== null) {
@@ -2752,7 +2701,7 @@
     if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres urządzenia w sieci lokalnej.", "Provide the local device URL."));
     state.deviceTransport = "wifi";
     try {
-      const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 20000, "ping");
+      const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 8000, "ping");
       state.wifiConnected = true;
       state.activeWifiAuthToken = getDesiredDeviceAuthToken();
       addLog("device", txt("Wi‑Fi bridge połączony.", "Wi‑Fi bridge connected."), response);
@@ -3022,8 +2971,7 @@
   async function sendWifiPayload(payload, timeout, label) {
     if (!state.deviceBridgeUrl) throw new Error(txt("Brak adresu mostka Wi‑Fi.", "Missing Wi-Fi bridge URL."));
     const controller = new AbortController();
-    const timeoutMs = timeout || TIMEOUTS.default;
-    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+    const timer = window.setTimeout(() => controller.abort(), timeout || TIMEOUTS.default);
     const url = `${state.deviceBridgeUrl.replace(/\/$/, "")}/rpc`;
     addLog("tx", label || payload.command || payload.method || "raw", payload);
     try {
@@ -3034,33 +2982,10 @@
         signal: controller.signal
       });
       const text = await response.text();
-      let data = {};
-      if (text) {
-        const trimmed = text.trim();
-        if (trimmed.startsWith("<")) {
-          throw new Error(txt(
-            `Adres Wi‑Fi nie wskazuje RPC urządzenia: ${url}. Odpowiedź to HTML, nie JSON.`,
-            `Wi-Fi URL does not point to the device RPC endpoint: ${url}. Response is HTML, not JSON.`
-          ));
-        }
-        try {
-          data = JSON.parse(text);
-        } catch (_error) {
-          throw new Error(txt(
-            `Nieprawidłowa odpowiedź JSON z mostka Wi‑Fi (${url}).`,
-            `Invalid JSON response from Wi-Fi bridge (${url}).`
-          ));
-        }
-      }
+      const data = text ? JSON.parse(text) : {};
       if (!response.ok) throw new Error(data?.error?.message || `${response.status} ${response.statusText}`);
       return data;
     } catch (error) {
-      if (error?.name === "AbortError") {
-        throw new Error(txt(
-          `Timeout ${timeoutMs}ms dla ${label || payload.command || "request"} przez Wi‑Fi (${url}).`,
-          `Timeout ${timeoutMs}ms waiting for ${label || payload.command || "request"} over Wi-Fi (${url}).`
-        ));
-      }
       throw error;
     } finally {
       window.clearTimeout(timer);
@@ -3404,20 +3329,6 @@
     return parsed;
   }
 
-  function percentToByte(percent) {
-    const parsed = Number(percent);
-    if (!Number.isFinite(parsed)) return 255;
-    const clamped = Math.max(0, Math.min(100, parsed));
-    return Math.max(0, Math.min(255, Math.round((clamped / 100) * 255)));
-  }
-
-  function byteToPercent(value) {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed)) return DEFAULTS.displayBrightnessPercent;
-    const clamped = Math.max(0, Math.min(255, parsed));
-    return Math.max(1, Math.min(100, Math.round((clamped / 255) * 100)));
-  }
-
   function generateRandomTokenHex(bytesLength) {
     const bytes = new Uint8Array(Math.max(16, Number(bytesLength) || 32));
     if (window.crypto?.getRandomValues) {
@@ -3465,18 +3376,6 @@
 
   function normalizeUrl(value) {
     return String(value || "").trim().replace(/\/+$/, "");
-  }
-
-  function normalizeDeviceBridgeUrl(value) {
-    const normalized = normalizeUrl(value);
-    if (!normalized) return "";
-    const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(normalized) ? normalized : `http://${normalized}`;
-    try {
-      const parsed = new URL(withScheme);
-      return `${parsed.protocol}//${parsed.host}`;
-    } catch (_error) {
-      return normalized;
-    }
   }
 
   function normalizeTick(value) {
