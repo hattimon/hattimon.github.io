@@ -222,7 +222,7 @@
     "profiles.name": "Name",
     "profiles.amount": "Mint amount",
     "profiles.interval": "Preferred interval (min)",
-    "profiles.include": "Enabled for auto-mint",
+    "profiles.include": "Active after saving profile",
     "profiles.loopEnabled": "Multi-mint queue",
     "profiles.loopInterval": "Queue interval (min)",
     "advanced.radioConfig": "LoRaWAN config and Heltec license",
@@ -393,7 +393,7 @@
     "profiles.name": "Nazwa",
     "profiles.amount": "Mint amount",
     "profiles.interval": "Preferowany interwał (min)",
-    "profiles.include": "Włącz w auto-mint",
+    "profiles.include": "Aktywny po zapisie profilu",
     "profiles.loopEnabled": "Kolejka multi-mint",
     "profiles.loopInterval": "Interwał kolejki (min)",
     "advanced.radioConfig": "Konfiguracja LoRaWAN i licencja Heltec",
@@ -1786,8 +1786,8 @@
 
     if (refs.profilesPersistenceNote) {
       refs.profilesPersistenceNote.textContent = txt(
-        "Każdy profil możesz włączyć lub wyłączyć osobno. „Zapisz aktywne tokeny” przenosi kolejkę do Helteca. Aktywna kolejka wyłącza pojedynczą pętlę z sekcji Config inscription.",
-        "Each profile can be enabled or disabled independently. 'Save active tokens' writes the queue to Heltec. An active queue disables the single-token loop from Config inscription."
+        "Każdy profil możesz włączyć lub wyłączyć osobno. Checkbox w edytorze dotyczy tylko aktualnie zapisywanego profilu. „Zapisz aktywne tokeny” przenosi kolejkę do Helteca. Aktywna kolejka wyłącza pojedynczą pętlę z sekcji Config inscription.",
+        "Each profile can be enabled or disabled independently. The editor checkbox only applies to the profile currently being saved. 'Save active tokens' writes the queue to Heltec. An active queue disables the single-token loop from Config inscription."
       );
     }
 
@@ -2538,7 +2538,7 @@
     if (refs.profileTickInput) refs.profileTickInput.value = "LORA";
     if (refs.profileAmountInput) refs.profileAmountInput.value = "100";
     if (refs.profileIntervalInput) refs.profileIntervalInput.value = "30";
-    if (refs.profileEnabledInput) refs.profileEnabledInput.checked = true;
+    if (refs.profileEnabledInput) refs.profileEnabledInput.checked = false;
     if (render) renderAll();
   }
 
