@@ -32,8 +32,8 @@
     deviceWifiPassword: "",
     deviceAuthToken: "",
     deviceWifiApFallback: false,
-    displaySleepEnabled: true,
-    displaySleepSeconds: 60,
+    displaySleepEnabled: false,
+    displaySleepSeconds: 0,
     displayBrightnessPercent: 100,
     bridgeWindowSeconds: 300,
     powerSaveLevel: 1,
@@ -466,6 +466,11 @@
     "witnessModal", "closeWitnessModalButton", "witnessModalTitle", "witnessModalSubtitle",
     "witnessGraph", "witnessMetaList"
   ];
+  const storedDisplaySleepEnabled = readStorage(STORAGE.displaySleepEnabled, null);
+  const storedDisplaySleepSeconds = readStorage(STORAGE.displaySleepSeconds, null);
+  const hasLegacyDisplaySleepDefaults = storedDisplaySleepEnabled === "1" &&
+    (storedDisplaySleepSeconds === null || storedDisplaySleepSeconds === "60");
+
   const state = {
       language: readStorage(STORAGE.language, DEFAULTS.language),
       theme: readStorage(STORAGE.theme, DEFAULTS.theme),
@@ -476,8 +481,12 @@
       deviceWifiPassword: readStorage(STORAGE.deviceWifiPassword, DEFAULTS.deviceWifiPassword),
       deviceAuthToken: readStorage(STORAGE.deviceAuthToken, DEFAULTS.deviceAuthToken),
       deviceWifiApFallback: readStorage(STORAGE.deviceWifiApFallback, DEFAULTS.deviceWifiApFallback ? "1" : "0") === "1",
-      displaySleepEnabled: readStorage(STORAGE.displaySleepEnabled, DEFAULTS.displaySleepEnabled ? "1" : "0") === "1",
-      displaySleepSeconds: parseBoundedInt(readStorage(STORAGE.displaySleepSeconds, String(DEFAULTS.displaySleepSeconds)), 0, 3600, DEFAULTS.displaySleepSeconds),
+      displaySleepEnabled: hasLegacyDisplaySleepDefaults
+        ? false
+        : readStorage(STORAGE.displaySleepEnabled, DEFAULTS.displaySleepEnabled ? "1" : "0") === "1",
+      displaySleepSeconds: hasLegacyDisplaySleepDefaults
+        ? 0
+        : parseBoundedInt(readStorage(STORAGE.displaySleepSeconds, String(DEFAULTS.displaySleepSeconds)), 0, 3600, DEFAULTS.displaySleepSeconds),
       displayBrightnessPercent: parseBoundedInt(readStorage(STORAGE.displayBrightnessPercent, String(DEFAULTS.displayBrightnessPercent)), 1, 100, DEFAULTS.displayBrightnessPercent),
       bridgeWindowSeconds: parseBoundedInt(readStorage(STORAGE.bridgeWindowSeconds, String(DEFAULTS.bridgeWindowSeconds)), 30, 3600, DEFAULTS.bridgeWindowSeconds),
       powerSaveLevel: parseBoundedInt(readStorage(STORAGE.powerSaveLevel, String(DEFAULTS.powerSaveLevel)), 0, 2, DEFAULTS.powerSaveLevel),
@@ -521,6 +530,11 @@
     configFormDirty: false,
     configDirtyAt: 0
   };
+
+  if (hasLegacyDisplaySleepDefaults) {
+    writeStorage(STORAGE.displaySleepEnabled, "0");
+    writeStorage(STORAGE.displaySleepSeconds, "0");
+  }
 
   function normalizePreset(value, presets, fallback) {
     const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -2750,6 +2764,7 @@
   async function connectWifiDevice() {
     handleSaveDeviceBridgeUrl();
     if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres urządzenia w sieci lokalnej.", "Provide the local device URL."));
+    await probeWifiBridge(8000);
     state.deviceTransport = "wifi";
     try {
       const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 20000, "ping");
@@ -3055,10 +3070,61 @@
       if (!response.ok) throw new Error(data?.error?.message || `${response.status} ${response.statusText}`);
       return data;
     } catch (error) {
-      if (error?.name === "AbortError") {
+      const message = error instanceof Error ? String(error.message || "") : String(error || "");
+      if (error?.name === "AbortError" || /aborted/i.test(message)) {
         throw new Error(txt(
           `Timeout ${timeoutMs}ms dla ${label || payload.command || "request"} przez Wi‑Fi (${url}).`,
           `Timeout ${timeoutMs}ms waiting for ${label || payload.command || "request"} over Wi-Fi (${url}).`
+        ));
+      }
+      if (error instanceof TypeError) {
+        throw new Error(txt(
+          `Brak połączenia z mostkiem Wi‑Fi (${url}). Sprawdź IP/URL i czy urządzenie odpowiada na /health.`,
+          `Cannot reach Wi-Fi bridge (${url}). Check IP/URL and whether the device responds on /health.`
+        ));
+      }
+      throw error;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  async function probeWifiBridge(timeoutMs = 8000) {
+    if (!state.deviceBridgeUrl) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+    const healthUrl = `${state.deviceBridgeUrl.replace(/\/$/, "")}/health`;
+    try {
+      const response = await fetch(healthUrl, { method: "GET", signal: controller.signal });
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(txt(
+          `Mostek Wi‑Fi nie odpowiada poprawnie (${healthUrl}): ${response.status} ${response.statusText}`,
+          `Wi-Fi bridge health check failed (${healthUrl}): ${response.status} ${response.statusText}`
+        ));
+      }
+      if (!text) return;
+      const trimmed = text.trim();
+      if (trimmed.startsWith("<")) {
+        throw new Error(txt(
+          `Adres Wi‑Fi jest niepoprawny: ${healthUrl} zwraca HTML zamiast JSON.`,
+          `Wi-Fi URL is incorrect: ${healthUrl} returns HTML instead of JSON.`
+        ));
+      }
+      try {
+        JSON.parse(trimmed);
+      } catch (_error) {
+        throw new Error(txt(
+          `Mostek Wi‑Fi zwrócił nieprawidłowy JSON na ${healthUrl}.`,
+          `Wi-Fi bridge returned invalid JSON at ${healthUrl}.`
+        ));
+      }
+    } catch (error) {
+      const message = error instanceof Error ? String(error.message || "") : String(error || "");
+      if (error?.name === "AbortError" || /aborted/i.test(message)) {
+        throw new Error(txt(
+          `Timeout ${timeoutMs}ms przy sprawdzaniu mostka Wi‑Fi (${healthUrl}).`,
+          `Timeout ${timeoutMs}ms while checking Wi-Fi bridge (${healthUrl}).`
         ));
       }
       throw error;
