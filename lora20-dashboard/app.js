@@ -471,7 +471,7 @@
       theme: readStorage(STORAGE.theme, DEFAULTS.theme),
       soundEnabled: readStorage(STORAGE.sound, "1") !== "0",
       indexerBaseUrl: normalizeUrl(readStorage(STORAGE.indexerUrl, DEFAULTS.indexerUrl)) || DEFAULTS.indexerUrl,
-      deviceBridgeUrl: normalizeUrl(readStorage(STORAGE.deviceBridgeUrl, DEFAULTS.deviceBridgeUrl)) || DEFAULTS.deviceBridgeUrl,
+      deviceBridgeUrl: normalizeDeviceBridgeUrl(readStorage(STORAGE.deviceBridgeUrl, DEFAULTS.deviceBridgeUrl)) || DEFAULTS.deviceBridgeUrl,
       deviceWifiSsid: readStorage(STORAGE.deviceWifiSsid, DEFAULTS.deviceWifiSsid),
       deviceWifiPassword: readStorage(STORAGE.deviceWifiPassword, DEFAULTS.deviceWifiPassword),
       deviceAuthToken: readStorage(STORAGE.deviceAuthToken, DEFAULTS.deviceAuthToken),
@@ -945,7 +945,7 @@
   }
 
   function handleSaveDeviceBridgeUrl() {
-    state.deviceBridgeUrl = normalizeUrl(refs.deviceBridgeUrlInput?.value) || DEFAULTS.deviceBridgeUrl;
+    state.deviceBridgeUrl = normalizeDeviceBridgeUrl(refs.deviceBridgeUrlInput?.value) || DEFAULTS.deviceBridgeUrl;
     if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
     writeStorage(STORAGE.deviceBridgeUrl, state.deviceBridgeUrl);
   }
@@ -2745,7 +2745,7 @@
     if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres urządzenia w sieci lokalnej.", "Provide the local device URL."));
     state.deviceTransport = "wifi";
     try {
-      const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 8000, "ping");
+      const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 20000, "ping");
       state.wifiConnected = true;
       state.activeWifiAuthToken = getDesiredDeviceAuthToken();
       addLog("device", txt("Wi‑Fi bridge połączony.", "Wi‑Fi bridge connected."), response);
@@ -3015,7 +3015,8 @@
   async function sendWifiPayload(payload, timeout, label) {
     if (!state.deviceBridgeUrl) throw new Error(txt("Brak adresu mostka Wi‑Fi.", "Missing Wi-Fi bridge URL."));
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), timeout || TIMEOUTS.default);
+    const timeoutMs = timeout || TIMEOUTS.default;
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
     const url = `${state.deviceBridgeUrl.replace(/\/$/, "")}/rpc`;
     addLog("tx", label || payload.command || payload.method || "raw", payload);
     try {
@@ -3026,10 +3027,33 @@
         signal: controller.signal
       });
       const text = await response.text();
-      const data = text ? JSON.parse(text) : {};
+      let data = {};
+      if (text) {
+        const trimmed = text.trim();
+        if (trimmed.startsWith("<")) {
+          throw new Error(txt(
+            `Adres Wi‑Fi nie wskazuje RPC urządzenia: ${url}. Odpowiedź to HTML, nie JSON.`,
+            `Wi-Fi URL does not point to the device RPC endpoint: ${url}. Response is HTML, not JSON.`
+          ));
+        }
+        try {
+          data = JSON.parse(text);
+        } catch (_error) {
+          throw new Error(txt(
+            `Nieprawidłowa odpowiedź JSON z mostka Wi‑Fi (${url}).`,
+            `Invalid JSON response from Wi-Fi bridge (${url}).`
+          ));
+        }
+      }
       if (!response.ok) throw new Error(data?.error?.message || `${response.status} ${response.statusText}`);
       return data;
     } catch (error) {
+      if (error?.name === "AbortError") {
+        throw new Error(txt(
+          `Timeout ${timeoutMs}ms dla ${label || payload.command || "request"} przez Wi‑Fi (${url}).`,
+          `Timeout ${timeoutMs}ms waiting for ${label || payload.command || "request"} over Wi-Fi (${url}).`
+        ));
+      }
       throw error;
     } finally {
       window.clearTimeout(timer);
@@ -3434,6 +3458,18 @@
 
   function normalizeUrl(value) {
     return String(value || "").trim().replace(/\/+$/, "");
+  }
+
+  function normalizeDeviceBridgeUrl(value) {
+    const normalized = normalizeUrl(value);
+    if (!normalized) return "";
+    const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(normalized) ? normalized : `http://${normalized}`;
+    try {
+      const parsed = new URL(withScheme);
+      return `${parsed.protocol}//${parsed.host}`;
+    } catch (_error) {
+      return normalized;
+    }
   }
 
   function normalizeTick(value) {
