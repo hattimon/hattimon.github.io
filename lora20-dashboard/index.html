@@ -253,6 +253,13 @@
             <article class="stat"><span class="stat__label" data-i18n="radio.devEui">DevEUI</span><strong id="lorawanDevEuiValue" class="mono">-</strong></article>
           </div>
           <div id="radioActionHint" class="callout callout--neutral"></div>
+          <div id="bootControlNote" class="callout callout--neutral"></div>
+          <div class="button-row">
+            <button id="switchToLora20Button" class="button button--ghost" type="button">Przełącz na lora20</button>
+            <button id="switchToMeshCoreButton" class="button button--ghost" type="button">Przełącz na MeshCore</button>
+            <button id="switchToMeshtasticButton" class="button button--ghost" type="button">Przełącz na Meshtastic</button>
+          </div>
+          <pre id="bootSlotSummary" class="output output--compact">Brak danych tri-boot.</pre>
           <pre id="lorawanSummaryOutput" class="output output--compact">No LoRaWAN status yet.</pre>
         </section>
 
@@ -538,6 +545,6 @@
       </div>
     </div>
 
-    <script defer src="./app.js?v=20260330-14" charset="utf-8"></script>
+    <script defer src="./app.js?v=20260330-15" charset="utf-8"></script>
   </body>
 </html>

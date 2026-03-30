@@ -459,7 +459,7 @@
     "backupPassphraseInput", "backupImportPassphraseInput", "backupJsonTextarea", "deviceIdValue",
     "nextNonceValue", "autoMintValue", "defaultMintValue", "lorawanJoinedValue", "lorawanPortValue",
     "lorawanEventValue", "lorawanDevEuiValue", "deviceSummaryOutput", "lorawanSummaryOutput",
-    "deviceReadinessBanner", "radioActionHint", "knownDevicesList", "chatPublicButton", "chatRefreshButton", "chatStatusNote", "chatPeerSummary", "chatThread", "chatMessageInput", "chatComposerHint", "chatSendButton", "tokenSearchInput", "tokenQuickPick",
+    "deviceReadinessBanner", "radioActionHint", "bootControlNote", "bootSlotSummary", "switchToLora20Button", "switchToMeshCoreButton", "switchToMeshtasticButton", "knownDevicesList", "chatPublicButton", "chatRefreshButton", "chatStatusNote", "chatPeerSummary", "chatThread", "chatMessageInput", "chatComposerHint", "chatSendButton", "tokenSearchInput", "tokenQuickPick",
     "tokenLibraryList", "portfolioList", "recentTransactionsList", "loadPortfolioButton",
     "reloadTokensButton", "selectedTokenSummary", "operationWarnings", "estimatedPayloadValue",
     "estimatedDcValue", "protocolVersionValue", "transportStatusNote", "preparedOutput",
@@ -513,6 +513,7 @@
     connectivityInfo: null,
     connectivityRpcUnsupported: false,
     lorawanInfo: null,
+    bootInfo: null,
     publicKeyInfo: null,
     lastPrepared: null,
     indexerOnline: null,
@@ -883,6 +884,9 @@
     wireAction(refs.refreshButton, () => refreshEverything());
     wireAction(refs.getInfoButton, () => refreshDeviceInfo());
     wireAction(refs.getLorawanButton, () => refreshLorawanInfo());
+    wireAction(refs.switchToLora20Button, () => switchBootTarget("lora20"));
+    wireAction(refs.switchToMeshCoreButton, () => switchBootTarget("meshcore"));
+    wireAction(refs.switchToMeshtasticButton, () => switchBootTarget("meshtastic"));
     wireAction(refs.generateKeyButton, () => generateKey());
     wireAction(refs.getPublicKeyButton, () => readPublicKey());
     wireAction(refs.registerDeviceButton, () => registerDevice());
@@ -1899,6 +1903,112 @@
         ));
   }
 
+  function getBootSlot(protocol) {
+    const slots = Array.isArray(state.bootInfo?.slots) ? state.bootInfo.slots : [];
+    return slots.find((slot) => String(slot?.protocol || "").toLowerCase() === String(protocol || "").toLowerCase()) || null;
+  }
+
+  function renderBootControl() {
+    if (refs.switchToLora20Button) refs.switchToLora20Button.textContent = txt("Przełącz na lora20", "Switch to lora20");
+    if (refs.switchToMeshCoreButton) refs.switchToMeshCoreButton.textContent = txt("Przełącz na MeshCore", "Switch to MeshCore");
+    if (refs.switchToMeshtasticButton) refs.switchToMeshtasticButton.textContent = txt("Przełącz na Meshtastic", "Switch to Meshtastic");
+
+    const boot = state.bootInfo;
+    const connected = isDeviceConnected();
+    const currentProtocol = boot?.currentProtocol || "-";
+    const bootProtocol = boot?.bootProtocol || "-";
+    const slots = Array.isArray(boot?.slots) ? boot.slots : [];
+
+    if (!boot) {
+      renderCallout(
+        refs.bootControlNote,
+        "neutral",
+        txt(
+          "Ten firmware nie raportuje jeszcze tri-boot. Po wgraniu builda triboot panel pokaże sloty lora20 / MeshCore / Meshtastic i pozwoli je przełączać.",
+          "This firmware does not report tri-boot yet. After flashing the triboot build, the dashboard will show lora20 / MeshCore / Meshtastic slots and allow switching."
+        )
+      );
+      setText(
+        refs.bootSlotSummary,
+        txt(
+          "Brak danych boot-control z urządzenia. Najpierw pobierz info z firmware triboot.",
+          "No boot-control data from the device yet. Fetch info from the triboot firmware first."
+        )
+      );
+    } else if (!boot.supported) {
+      renderCallout(
+        refs.bootControlNote,
+        "warn",
+        txt(
+          "Obecny build działa w trybie stable i nie ma włączonego tri-boot. Sam mechanizm nie wpływa na ten firmware, ale przełączanie aktywuje się dopiero po wgraniu env heltec_v4_triboot.",
+          "The current build runs in stable mode and tri-boot is not enabled. The mechanism does not affect this firmware, but switching becomes active only after flashing the heltec_v4_triboot env."
+        )
+      );
+      setText(
+        refs.bootSlotSummary,
+        [
+          `${txt("Aktualny protokół", "Current protocol")}: ${currentProtocol}`,
+          `${txt("Cel po restarcie", "Boot target")}: ${bootProtocol}`,
+          boot.buttonHint ? `${txt("PRG", "PRG")}: ${boot.buttonHint}` : ""
+        ].filter(Boolean).join("\n")
+      );
+    } else {
+      const readyTargets = slots.filter((slot) => slot.partitionPresent && slot.validImage).map((slot) => slot.protocol);
+      const missingTargets = slots.filter((slot) => !slot.partitionPresent || !slot.validImage).map((slot) => slot.protocol);
+      renderCallout(
+        refs.bootControlNote,
+        missingTargets.length ? "warn" : "ok",
+        missingTargets.length
+          ? txt(
+              `Tri-boot jest aktywny, ale nie wszystkie sloty mają obraz: ${missingTargets.join(", ")}. Najpierw wgraj brakujące firmware.`,
+              `Tri-boot is active, but not all slots contain a valid image: ${missingTargets.join(", ")}. Flash the missing firmware first.`
+            )
+          : txt(
+              `Tri-boot jest gotowy. Dostępne cele: ${readyTargets.join(", ")}.`,
+              `Tri-boot is ready. Available targets: ${readyTargets.join(", ")}.`
+            )
+      );
+      setText(
+        refs.bootSlotSummary,
+        [
+          `${txt("Aktualny protokół", "Current protocol")}: ${currentProtocol}`,
+          `${txt("Cel po restarcie", "Boot target")}: ${bootProtocol}`,
+          boot.buttonHint ? `${txt("PRG", "PRG")}: ${boot.buttonHint}` : "",
+          "",
+          ...slots.map((slot) => {
+            const flags = [
+              slot.running ? txt("uruchomiony", "running") : "",
+              slot.bootTarget ? txt("następny boot", "next boot") : "",
+              slot.validImage ? txt("obraz OK", "image OK") : txt("brak obrazu", "image missing")
+            ].filter(Boolean).join(", ");
+            const version = slot.version ? ` v${slot.version}` : "";
+            return `${slot.protocol}${version} · ${slot.partitionLabel || "-"} · ${flags}`;
+          })
+        ].join("\n")
+      );
+    }
+
+    const applyButtonState = (button, protocol) => {
+      if (!button) return;
+      const slot = getBootSlot(protocol);
+      const enabled = connected && Boolean(boot?.supported) && Boolean(slot?.partitionPresent) && Boolean(slot?.validImage) && bootProtocol !== protocol;
+      button.disabled = !enabled;
+      button.title = enabled
+        ? txt(`Przełącz i zrestartuj do ${protocol}.`, `Switch and reboot into ${protocol}.`)
+        : (!connected
+            ? txt("Najpierw podłącz urządzenie po USB/BLE/Wi‑Fi.", "Connect the device over USB/BLE/Wi‑Fi first.")
+            : (!boot?.supported
+                ? txt("Tri-boot nie jest aktywny w tym buildzie firmware.", "Tri-boot is not enabled in this firmware build.")
+                : (!slot?.partitionPresent || !slot?.validImage
+                    ? txt(`Slot ${protocol} nie ma jeszcze poprawnego obrazu.`, `The ${protocol} slot does not contain a valid image yet.`)
+                    : txt("To już jest aktywny target po restarcie.", "This is already the active boot target."))));
+    };
+
+    applyButtonState(refs.switchToLora20Button, "lora20");
+    applyButtonState(refs.switchToMeshCoreButton, "meshcore");
+    applyButtonState(refs.switchToMeshtasticButton, "meshtastic");
+  }
+
   function renderRadio() {
     const info = state.lorawanInfo;
     const runtime = info?.runtime || info?.lorawanRuntime;
@@ -1916,6 +2026,7 @@
     if (runtime && !runtime.initialized) messages.push(txt("initialized=false. Radio nie jest gotowe do wysyłki.", "initialized=false. Radio is not ready to send yet."));
     if (runtime && !runtime.joined) messages.push(txt("joined=false. Wykonaj join przed wysyłką.", "joined=false. Run join before sending."));
     renderCallout(refs.radioActionHint, messages.length ? "warn" : "ok", messages.length ? messages.join(" ") : txt("Radio wygląda na gotowe do wysyłki.", "Radio looks ready to send."));
+    renderBootControl();
   }
 
   function renderPortfolio() {
@@ -2191,6 +2302,7 @@
   async function refreshDeviceInfo() {
     const result = await requestDevice("get_info", {});
     state.deviceInfo = result.device || null;
+    state.bootInfo = result.boot || state.bootInfo;
     if (result.lorawanRuntime) {
       state.lorawanInfo = {
         ...(state.lorawanInfo || {}),
@@ -2655,6 +2767,27 @@
       }
     }
     addLog("warn", txt("Join uruchomiony, ale joined=true jeszcze sie nie pojawilo. Sprawdz ChirpStack i stan radia.", "Join started, but joined=true did not appear yet. Check ChirpStack and radio status."));
+  }
+
+  async function switchBootTarget(protocol) {
+    if (!isDeviceConnected()) {
+      throw new Error(txt("Najpierw podłącz urządzenie, żeby zmienić target boot.", "Connect the device first to change the boot target."));
+    }
+
+    const protocolLabel = protocol === "meshcore"
+      ? "MeshCore"
+      : (protocol === "meshtastic" ? "Meshtastic" : "lora20");
+    const response = await requestDevice("set_boot_target", { protocol, reboot: true }, 30000);
+    state.bootInfo = response.boot || state.bootInfo;
+    addLog(
+      "device",
+      txt(
+        `Ustawiono restart do ${protocolLabel}. Po chwili urządzenie powinno uruchomić wybrany slot.`,
+        `Restart scheduled into ${protocolLabel}. The device should boot the selected slot in a moment.`
+      ),
+      response
+    );
+    renderAll();
   }
 
   async function prepareDeploy() {
@@ -3507,7 +3640,15 @@
     }
 
     if (parsed.type === "boot") {
+      if (parsed.bootControl) {
+        state.bootInfo = parsed.bootControl;
+        renderAll();
+      }
       addLog("device", txt("Zdarzenie boot", "Boot event"), parsed);
+      return;
+    }
+    if (parsed.type === "boot_switch" || parsed.type === "boot_switch_hint") {
+      addLog("device", txt("Przełączanie boot", "Boot switch"), parsed);
       return;
     }
     if (parsed.ok === false) {
