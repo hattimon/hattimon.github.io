@@ -522,9 +522,6 @@
     requestId: 1,
     audioContext: null,
     deviceRequestChain: Promise.resolve(),
-    lorawanJoinMonitorRunId: 0,
-    lorawanJoinMonitorTimer: 0,
-    lorawanJoinMonitorStartedAt: 0,
     mintMatrixHoldUntil: 0,
     mintMatrixHover: false,
     mintMatrixTopEventId: null,
@@ -2356,100 +2353,17 @@
     if (refs.backupJsonTextarea) refs.backupJsonTextarea.value = prettyJson(backup);
   }
 
-  function stopLorawanJoinMonitor() {
-    if (state.lorawanJoinMonitorTimer) {
-      window.clearTimeout(state.lorawanJoinMonitorTimer);
-      state.lorawanJoinMonitorTimer = 0;
-    }
-  }
-
-  function scheduleLorawanJoinMonitor(runId, attemptsLeft) {
-    stopLorawanJoinMonitor();
-    if (attemptsLeft <= 0) return;
-    state.lorawanJoinMonitorTimer = window.setTimeout(() => {
-      state.lorawanJoinMonitorTimer = 0;
-      void pollLorawanJoinMonitor(runId, attemptsLeft);
-    }, 4000);
-  }
-
-  async function pollLorawanJoinMonitor(runId, attemptsLeft) {
-    if (runId !== state.lorawanJoinMonitorRunId) return;
-
-    let info;
-    try {
-      info = await refreshLorawanInfo();
-    } catch (error) {
-      if (runId !== state.lorawanJoinMonitorRunId) return;
-      addLog("warn", error instanceof Error ? error.message : String(error));
-      if (attemptsLeft > 1) {
-        scheduleLorawanJoinMonitor(runId, attemptsLeft - 1);
-      }
-      return;
-    }
-
-    if (runId !== state.lorawanJoinMonitorRunId) return;
-
-    const runtime = info?.runtime || info?.lorawanRuntime || {};
-    if (runtime.joined) {
-      stopLorawanJoinMonitor();
-      addLog("device", txt("Dołączenie LoRaWAN zakończone.", "LoRaWAN join completed."));
-      return;
-    }
-
-    const lastEvent = String(runtime.lastEvent || "");
-    if (!runtime.joining) {
-      stopLorawanJoinMonitor();
-      addLog(
-        "warn",
-        txt(
-          `Join zakończył się bez joined=true. Ostatnie zdarzenie radia: ${lastEvent || "brak"}.`,
-          `Join ended without joined=true. Last radio event: ${lastEvent || "none"}.`
-        )
-      );
-      return;
-    }
-
-    if (attemptsLeft <= 1) {
-      stopLorawanJoinMonitor();
-      addLog(
-        "warn",
-        txt(
-          "Join uruchomiony, ale joined=true jeszcze się nie pojawiło. Panel nie blokuje już kolejnych RPC, więc możesz dalej sprawdzać radio bez wieszania prepare_mint.",
-          "Join started, but joined=true did not appear yet. The dashboard is no longer blocking later RPCs, so you can keep checking the radio without stalling prepare_mint."
-        )
-      );
-      return;
-    }
-
-    scheduleLorawanJoinMonitor(runId, attemptsLeft - 1);
-  }
-
   async function joinLorawan() {
-    const runtime = state.lorawanInfo?.runtime || state.deviceInfo?.lorawanRuntime || null;
-    const joinStillFresh =
-      runtime?.joining &&
-      !runtime?.joined &&
-      state.lorawanJoinMonitorStartedAt > 0 &&
-      (Date.now() - state.lorawanJoinMonitorStartedAt) < 45000;
-
-    const runId = state.lorawanJoinMonitorRunId + 1;
-    state.lorawanJoinMonitorRunId = runId;
-    state.lorawanJoinMonitorStartedAt = Date.now();
-
-    if (joinStillFresh) {
-      addLog(
-        "device",
-        txt(
-          "Join jest już w toku. Kontynuuję monitorowanie bez wymuszania kolejnej próby i bez spalania dodatkowych DC.",
-          "A join is already in progress. Continuing to monitor it without forcing another attempt or burning extra DC."
-        )
-      );
-      scheduleLorawanJoinMonitor(runId, 10);
-      return;
-    }
-
     await requestDevice("join_lorawan", { force: true }, TIMEOUTS.join_lorawan);
-    scheduleLorawanJoinMonitor(runId, 10);
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await delay(4000);
+      const info = await refreshLorawanInfo();
+      if (info.runtime?.joined) {
+        addLog("device", txt("Dołączenie LoRaWAN zakończone.", "LoRaWAN join completed."));
+        return;
+      }
+    }
+    addLog("warn", txt("Join uruchomiony, ale joined=true jeszcze sie nie pojawilo. Sprawdz JoinAccept i downlink w ChirpStack/gateway. Indexer nie bierze udziału w joinie OTAA.", "Join started, but joined=true did not appear yet. Check JoinAccept and downlink in ChirpStack/gateway. The indexer is not part of OTAA join."));
   }
 
   async function prepareDeploy() {
@@ -2952,7 +2866,6 @@
   }
 
   function cleanupPortState() {
-    stopLorawanJoinMonitor();
     state.port = null;
     state.reader = null;
     state.disconnecting = false;
