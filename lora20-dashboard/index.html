@@ -204,6 +204,28 @@
                 </div>
               </div>
               <div id="knownDevicesList" class="card-list"></div>
+              <div class="chat-panel">
+                <div class="section-head section-head--compact">
+                  <div>
+                    <p class="section-kicker" data-i18n="chat.kicker">LoRa chat</p>
+                    <h3 data-i18n="chat.title">Rozmowy między urządzeniami</h3>
+                  </div>
+                  <div class="button-row">
+                    <button id="chatRefreshButton" class="button button--ghost" type="button" data-i18n="actions.reloadChat">Odśwież chat</button>
+                  </div>
+                </div>
+                <div id="chatStatusNote" class="callout callout--neutral"></div>
+                <div id="chatPeerSummary" class="chat-peer-summary"></div>
+                <div id="chatThread" class="chat-thread"></div>
+                <label class="field">
+                  <span data-i18n="chat.compose">Wiadomość</span>
+                  <textarea id="chatMessageInput" rows="4" maxlength="120" placeholder="Halo z Helteca"></textarea>
+                </label>
+                <p id="chatComposerHint" class="helper"></p>
+                <div class="button-row">
+                  <button id="chatSendButton" class="button button--secondary" type="button" data-i18n="actions.sendChat">Wyślij LoRa</button>
+                </div>
+              </div>
             </article>
           </div>
         </section>
@@ -515,6 +537,6 @@
       </div>
     </div>
 
-    <script defer src="./app.js?v=20260329-03" charset="utf-8"></script>
+    <script defer src="./app.js?v=20260330-12" charset="utf-8"></script>
   </body>
 </html>

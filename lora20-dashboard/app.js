@@ -55,11 +55,17 @@
     set_config: 60000,
     prepare_deploy: 30000,
     prepare_mint: 30000,
+    prepare_message: 30000,
     prepare_transfer: 30000,
     prepare_config: 30000,
     join_lorawan: 70000,
     lorawan_send: 90000
   };
+
+  const CHAT_ALPHABET = " abcdefghijklmnopqrstuvwxyz0123456789.,!?-_/:@+#()[]'\";%&=*<>\n|$";
+  const CHAT_MAX_PACKED_BYTES = 24;
+  const CHAT_MAX_CHAR_COUNT = Math.floor((CHAT_MAX_PACKED_BYTES * 8) / 6);
+  const CHAT_INDEX = new Map(Array.from(CHAT_ALPHABET).map((char, index) => [char, index]));
 
   const SECRET_KEYS = new Set([
     "appKeyHex",
@@ -125,6 +131,7 @@
     "actions.join": "Join LoRaWAN",
     "actions.reloadPortfolio": "Refresh portfolio",
     "actions.reloadHistory": "Refresh history",
+    "actions.reloadChat": "Refresh chat",
     "actions.reloadTokens": "Refresh tokens",
     "actions.checkHealth": "Check indexer",
     "actions.prepareMint": "Prepare mint",
@@ -133,6 +140,7 @@
     "actions.sendDeploy": "Prepare and send",
     "actions.prepareTransfer": "Prepare transfer",
     "actions.sendTransfer": "Prepare and send",
+    "actions.sendChat": "Send over LoRa",
     "actions.prepareConfig": "Prepare config",
     "actions.sendConfig": "Prepare and send",
     "actions.saveLicense": "Save license",
@@ -159,6 +167,9 @@
     "sections.deviceTitle": "Current node and known devices",
     "sections.knownDevicesKicker": "Remembered",
     "sections.knownDevicesTitle": "Configured devices",
+    "chat.kicker": "LoRa chat",
+    "chat.title": "Device-to-device chat",
+    "chat.compose": "Message",
     "sections.radioKicker": "Radio",
     "sections.radioTitle": "LoRaWAN readiness",
     "sections.portfolioKicker": "Portfolio",
@@ -294,6 +305,7 @@
     "actions.join": "Join LoRaWAN",
     "actions.reloadPortfolio": "Odśwież portfolio",
     "actions.reloadHistory": "Odśwież historię",
+    "actions.reloadChat": "Odśwież chat",
     "actions.reloadTokens": "Odśwież tokeny",
     "actions.checkHealth": "Sprawdź indexer",
     "actions.prepareMint": "Przygotuj mint",
@@ -302,6 +314,7 @@
     "actions.sendDeploy": "Przygotuj i wyślij",
     "actions.prepareTransfer": "Przygotuj transfer",
     "actions.sendTransfer": "Przygotuj i wyślij",
+    "actions.sendChat": "Wyślij LoRa",
     "actions.prepareConfig": "Przygotuj config",
     "actions.sendConfig": "Przygotuj i wyślij",
     "actions.saveLicense": "Zapisz licencję",
@@ -328,6 +341,9 @@
     "sections.deviceTitle": "Aktualny node i znane urządzenia",
     "sections.knownDevicesKicker": "Zapamiętane",
     "sections.knownDevicesTitle": "Skonfigurowane urządzenia",
+    "chat.kicker": "LoRa chat",
+    "chat.title": "Rozmowy między urządzeniami",
+    "chat.compose": "Wiadomość",
     "sections.radioKicker": "Radio",
     "sections.radioTitle": "Gotowość LoRaWAN",
     "sections.portfolioKicker": "Portfolio",
@@ -436,7 +452,7 @@
     "backupPassphraseInput", "backupImportPassphraseInput", "backupJsonTextarea", "deviceIdValue",
     "nextNonceValue", "autoMintValue", "defaultMintValue", "lorawanJoinedValue", "lorawanPortValue",
     "lorawanEventValue", "lorawanDevEuiValue", "deviceSummaryOutput", "lorawanSummaryOutput",
-    "deviceReadinessBanner", "radioActionHint", "knownDevicesList", "tokenSearchInput", "tokenQuickPick",
+    "deviceReadinessBanner", "radioActionHint", "knownDevicesList", "chatRefreshButton", "chatStatusNote", "chatPeerSummary", "chatThread", "chatMessageInput", "chatComposerHint", "chatSendButton", "tokenSearchInput", "tokenQuickPick",
     "tokenLibraryList", "portfolioList", "recentTransactionsList", "loadPortfolioButton",
     "reloadTokensButton", "selectedTokenSummary", "operationWarnings", "estimatedPayloadValue",
     "estimatedDcValue", "protocolVersionValue", "transportStatusNote", "preparedOutput",
@@ -481,6 +497,7 @@
     tokenCatalog: [],
     portfolio: [],
     recentTransactions: [],
+    chatMessages: [],
     tokenCatalogError: "",
     tokenCatalogErrorRaw: "",
     deviceInfo: null,
@@ -508,7 +525,9 @@
     mintMatrixProgrammaticScroll: false,
     activeWitnessEventId: null,
     configFormDirty: false,
-    configDirtyAt: 0
+    configDirtyAt: 0,
+    chatPeerDeviceId: "",
+    postSendRefreshToken: 0
   };
 
   function normalizePreset(value, presets, fallback) {
@@ -528,6 +547,88 @@
 
   function formatSecondsPresetLabel(seconds) {
     return formatMinutesPresetLabel(Math.max(1, Math.round(Number(seconds || 0) / 60)));
+  }
+
+  function getChatPackedByteLength(charCount) {
+    return Math.ceil((charCount * 6) / 8);
+  }
+
+  function normalizeChatText(input) {
+    const ascii = String(input || "")
+      .replace(/\r\n?/g, "\n")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\t/g, " ");
+
+    const normalized = Array.from(ascii, (char) => {
+      if (CHAT_INDEX.has(char)) return char;
+      if (/\s/.test(char)) return " ";
+      return "?";
+    }).join("");
+
+    return normalized
+      .split("\n")
+      .map((line) => line.replace(/ {2,}/g, " ").trim())
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  function encodeChatMessage(text) {
+    const normalized = normalizeChatText(text);
+    if (!normalized) {
+      throw new Error(txt("Wiadomość nie może być pusta.", "Message cannot be empty."));
+    }
+    if (normalized.length > CHAT_MAX_CHAR_COUNT) {
+      throw new Error(
+        txt(
+          `Wiadomość jest za długa po kompresji. Limit to ${CHAT_MAX_CHAR_COUNT} znaków po normalizacji.`,
+          `Message is too long after compression. The limit is ${CHAT_MAX_CHAR_COUNT} normalized characters.`
+        )
+      );
+    }
+
+    const packed = [];
+    let bitBuffer = 0;
+    let bitCount = 0;
+
+    for (const char of normalized) {
+      const code = CHAT_INDEX.get(char);
+      if (code === undefined) {
+        throw new Error(txt(`Nieobsługiwany znak chatu: ${char}`, `Unsupported chat character: ${char}`));
+      }
+
+      bitBuffer = (bitBuffer << 6) | code;
+      bitCount += 6;
+
+      while (bitCount >= 8) {
+        const shift = bitCount - 8;
+        packed.push((bitBuffer >> shift) & 0xff);
+        bitBuffer &= (1 << shift) - 1;
+        bitCount = shift;
+      }
+    }
+
+    if (bitCount > 0) {
+      packed.push((bitBuffer << (8 - bitCount)) & 0xff);
+    }
+
+    if (packed.length > CHAT_MAX_PACKED_BYTES) {
+      throw new Error(
+        txt(
+          `Wiadomość przekracza budżet LoRa po spakowaniu (${packed.length} B > ${CHAT_MAX_PACKED_BYTES} B).`,
+          `Message exceeds the LoRa budget after packing (${packed.length} B > ${CHAT_MAX_PACKED_BYTES} B).`
+        )
+      );
+    }
+
+    return {
+      normalized,
+      messageLength: normalized.length,
+      packedBytes: packed.length,
+      packedHex: packed.map((byte) => byte.toString(16).padStart(2, "0")).join("")
+    };
   }
 
   function getEnabledProfiles() {
@@ -808,8 +909,11 @@
     wireAction(refs.syncProfilesButton, () => syncProfiles(false));
     wireAction(refs.syncProfilesBroadcastButton, () => syncProfiles(true));
     wireAction(refs.stopProfilesButton, () => stopProfiles());
+    wireAction(refs.chatRefreshButton, () => loadChatMessages());
+    wireAction(refs.chatSendButton, () => sendChatMessage());
     refs.tokenSearchInput?.addEventListener("input", renderTokenLibrary);
     refs.tokenQuickPick?.addEventListener("change", handleQuickPickChange);
+    refs.chatMessageInput?.addEventListener("input", renderChat);
     refs.mintTickInput?.addEventListener("input", renderOperations);
     refs.mintAmountInput?.addEventListener("input", renderOperations);
     refs.allowRiskySendInput?.addEventListener("change", renderOperations);
@@ -1573,6 +1677,16 @@
 
   function renderDevice() {
     const device = state.deviceInfo;
+    const activeDeviceId = getCurrentDeviceId();
+    const chatPeerCandidates = state.knownDevices.filter((entry) => entry.deviceId !== activeDeviceId);
+
+    if (state.chatPeerDeviceId && !chatPeerCandidates.some((entry) => entry.deviceId === state.chatPeerDeviceId)) {
+      state.chatPeerDeviceId = chatPeerCandidates[0]?.deviceId || "";
+      state.chatMessages = [];
+    } else if (!state.chatPeerDeviceId && chatPeerCandidates.length) {
+      state.chatPeerDeviceId = chatPeerCandidates[0].deviceId;
+    }
+
     setText(refs.deviceIdValue, device?.deviceId || "-");
     setText(refs.nextNonceValue, device?.nextNonce == null ? "-" : String(device.nextNonce));
     setText(refs.autoMintValue, device?.config?.autoMintEnabled ? "on" : "off");
@@ -1590,23 +1704,111 @@
     if (!refs.knownDevicesList) return;
     if (!state.knownDevices.length) {
       refs.knownDevicesList.innerHTML = `<div class="known-device"><h3>${escapeHtml(txt("Brak zapisanych urządzeń", "No saved devices"))}</h3><p class="helper">${escapeHtml(txt("Po udanym odczycie info lub rejestracji w indexerze urządzenie pojawi się tutaj.", "After successful info read or indexer registration, the device will appear here."))}</p></div>`;
+      renderChat();
       return;
     }
 
     refs.knownDevicesList.innerHTML = state.knownDevices.map((deviceEntry) => `
-      <article class="known-device">
+      <article class="known-device ${deviceEntry.deviceId === activeDeviceId ? "known-device--active" : ""} ${deviceEntry.deviceId === state.chatPeerDeviceId ? "known-device--peer" : ""}">
         <div class="known-device__head">
           <div>
             <h3 class="mono">${escapeHtml(deviceEntry.deviceId)}</h3>
             <p class="helper">${escapeHtml(maskSecret(deviceEntry.publicKeyHex || ""))}</p>
+            <div class="known-device__meta">
+              ${deviceEntry.deviceId === activeDeviceId ? `<span class="hero-chip">${escapeHtml(txt("aktywny node", "active node"))}</span>` : ""}
+              ${deviceEntry.deviceId === state.chatPeerDeviceId ? `<span class="hero-chip">${escapeHtml(txt("chat", "chat"))}</span>` : ""}
+            </div>
           </div>
           <div class="button-row">
-          <button class="button button--ghost" type="button" data-action="use-device" data-id="${escapeHtml(deviceEntry.deviceId)}">${escapeHtml(txt("Użyj", "Use"))}</button>
+            <button class="button button--ghost" type="button" data-action="use-device" data-id="${escapeHtml(deviceEntry.deviceId)}">${escapeHtml(txt("Użyj", "Use"))}</button>
+            <button class="button button--ghost" type="button" data-action="chat-device" data-id="${escapeHtml(deviceEntry.deviceId)}">${escapeHtml(txt("Chat", "Chat"))}</button>
             <button class="button button--ghost" type="button" data-action="remove-device" data-id="${escapeHtml(deviceEntry.deviceId)}">${escapeHtml(txt("Usun", "Remove"))}</button>
           </div>
         </div>
       </article>
     `).join("");
+
+    renderChat();
+  }
+
+  function renderChat() {
+    if (!refs.chatStatusNote || !refs.chatPeerSummary || !refs.chatThread || !refs.chatComposerHint || !refs.chatMessageInput) return;
+
+    const activeDeviceId = getCurrentDeviceId();
+    const peer = state.knownDevices.find((entry) => entry.deviceId === state.chatPeerDeviceId) || null;
+    const canChat = Boolean(activeDeviceId && peer && peer.deviceId !== activeDeviceId);
+    const draftText = refs.chatMessageInput.value || "";
+    const draftInfo = draftText ? (() => {
+      try {
+        return { ok: true, ...encodeChatMessage(draftText) };
+      } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : String(error) };
+      }
+    })() : null;
+
+    if (!activeDeviceId) {
+      renderCallout(
+        refs.chatStatusNote,
+        "warn",
+        txt("Najpierw wybierz lub odczytaj aktywny node, żeby otworzyć rozmowę.", "Pick or fetch the active node first to open a conversation.")
+      );
+    } else if (!peer) {
+      renderCallout(
+        refs.chatStatusNote,
+        "warn",
+        txt("Wybierz peer z listy zapamiętanych urządzeń. Nadawca to aktywny node, odbiorca to wybrane urządzenie.", "Choose a peer from remembered devices. The active node is the sender and the selected device is the receiver.")
+      );
+    } else {
+      renderCallout(
+        refs.chatStatusNote,
+        "ok",
+        txt(
+          `Rozmowa LoRa: ${activeDeviceId} -> ${peer.deviceId}. Wiadomości są kompresowane do zwartego payloadu i indeksowane po uplinku.`,
+          `LoRa conversation: ${activeDeviceId} -> ${peer.deviceId}. Messages are packed into a compact payload and indexed after uplink.`
+        )
+      );
+    }
+
+    refs.chatPeerSummary.innerHTML = canChat
+      ? `
+        <span class="hero-chip">${escapeHtml(txt("Nadawca", "Sender"))}: ${escapeHtml(activeDeviceId)}</span>
+        <span class="hero-chip">${escapeHtml(txt("Odbiorca", "Recipient"))}: ${escapeHtml(peer.deviceId)}</span>
+      `
+      : "";
+
+    if (!state.chatMessages.length) {
+      refs.chatThread.innerHTML = `<div class="chat-thread__empty">${escapeHtml(txt("Brak wiadomości dla wybranej pary urządzeń.", "No messages for the selected device pair yet."))}</div>`;
+    } else {
+      const chronological = [...state.chatMessages].reverse();
+      refs.chatThread.innerHTML = chronological.map((message) => {
+        const outgoing = message.deviceId === activeDeviceId;
+        const label = outgoing ? txt("Ty", "You") : (peer?.deviceId || message.deviceId || txt("peer", "peer"));
+        const text = message.messageText || message.config?.messageText || "";
+        return `
+          <article class="chat-message ${outgoing ? "chat-message--outgoing" : "chat-message--incoming"}">
+            <div class="chat-message__meta">
+              <strong>${escapeHtml(label)}</strong>
+              <span>${escapeHtml(formatDateTime(message.receivedAt || message.createdAt))}</span>
+            </div>
+            <p class="chat-message__body">${escapeHtml(text || txt("(pusta wiadomość)", "(empty message)"))}</p>
+          </article>
+        `;
+      }).join("");
+    }
+
+    refs.chatMessageInput.disabled = !canChat;
+    if (refs.chatSendButton) refs.chatSendButton.disabled = !canChat;
+    refs.chatComposerHint.textContent = draftInfo
+      ? (draftInfo.ok
+          ? txt(
+              `Po normalizacji: ${draftInfo.normalized.length} znaków, ${draftInfo.packedBytes}/${CHAT_MAX_PACKED_BYTES} B pakietu. Diakrytyki są spłaszczane do ASCII.`,
+              `After normalization: ${draftInfo.normalized.length} chars, ${draftInfo.packedBytes}/${CHAT_MAX_PACKED_BYTES} packed bytes. Diacritics are flattened to ASCII.`
+            )
+          : draftInfo.error)
+      : txt(
+          `Budżet chatu: do ${CHAT_MAX_CHAR_COUNT} znaków po normalizacji, maks. ${CHAT_MAX_PACKED_BYTES} B spakowanego tekstu.`,
+          `Chat budget: up to ${CHAT_MAX_CHAR_COUNT} normalized characters, max ${CHAT_MAX_PACKED_BYTES} packed bytes.`
+        );
   }
 
   function renderRadio() {
@@ -2031,6 +2233,11 @@
       await loadPortfolioAndHistory().catch((error) => {
         addLog("error", error.message);
       });
+      if (state.chatPeerDeviceId) {
+        await loadChatMessages().catch((error) => {
+          addLog("error", error.message);
+        });
+      }
     }
 
     renderAll();
@@ -2129,6 +2336,26 @@
     state.recentTransactions = Array.isArray(response.transactions) ? response.transactions : [];
     setText(refs.transactionsOutput, prettyJson(response));
     renderAll();
+  }
+
+  async function loadChatMessages(peerDeviceId = state.chatPeerDeviceId) {
+    const deviceId = getCurrentDeviceId();
+    if (!deviceId) throw new Error(txt("Brak aktywnego deviceId do pobrania rozmów.", "No active deviceId to load conversations."));
+    if (!peerDeviceId) {
+      state.chatMessages = [];
+      renderChat();
+      return;
+    }
+
+    const query = new URLSearchParams({
+      deviceId,
+      peerDeviceId,
+      limit: "60"
+    });
+    const response = await fetchJson(`/messages?${query.toString()}`);
+    state.chatMessages = Array.isArray(response.messages) ? response.messages : [];
+    renderChat();
+    return response;
   }
 
   async function saveHeltecLicense() {
@@ -2324,7 +2551,7 @@
     });
     state.lastPrepared = { type: "deploy", ...prepared };
     renderAll();
-    await sendPreparedPayload(prepared);
+    await sendPreparedPayload(prepared, { operationType: "deploy" });
   }
 
   async function prepareMint() {
@@ -2349,7 +2576,7 @@
     });
     state.lastPrepared = { type: "mint", ...prepared };
     renderAll();
-    await sendPreparedPayload(prepared);
+    await sendPreparedPayload(prepared, { operationType: "mint" });
   }
 
   async function prepareTransfer() {
@@ -2376,7 +2603,7 @@
     });
     state.lastPrepared = { type: "transfer", ...prepared };
     renderAll();
-    await sendPreparedPayload(prepared);
+    await sendPreparedPayload(prepared, { operationType: "transfer" });
   }
 
   async function prepareConfig() {
@@ -2403,10 +2630,41 @@
     state.lastPrepared = { type: "config", mode: configParams.mode, targetConfig: configParams, deviceConfig: appliedConfig, ...prepared };
     clearConfigDirty();
     renderAll();
-    await sendPreparedPayload(prepared);
+    await sendPreparedPayload(prepared, { operationType: "config" });
   }
 
-  async function sendPreparedPayload(prepared) {
+  async function sendChatMessage() {
+    const activeDeviceId = getCurrentDeviceId();
+    const peerDeviceId = state.chatPeerDeviceId;
+    if (!activeDeviceId) {
+      throw new Error(txt("Brak aktywnego node'a do wysłania wiadomości.", "No active node selected for sending a message."));
+    }
+    if (!peerDeviceId) {
+      throw new Error(txt("Wybierz odbiorcę z listy zapamiętanych urządzeń.", "Choose a recipient from remembered devices."));
+    }
+
+    const encoded = encodeChatMessage(refs.chatMessageInput?.value || "");
+    const prepared = await requestDevice("prepare_message", {
+      toDeviceId: peerDeviceId,
+      messageLength: encoded.messageLength,
+      messageHex: encoded.packedHex,
+      commit: false
+    });
+
+    state.lastPrepared = {
+      type: "message",
+      recipientDeviceId: peerDeviceId,
+      normalizedMessage: encoded.normalized,
+      packedBytes: encoded.packedBytes,
+      ...prepared
+    };
+    renderAll();
+    await sendPreparedPayload(prepared, { operationType: "message", peerDeviceId });
+    if (refs.chatMessageInput) refs.chatMessageInput.value = "";
+    renderChat();
+  }
+
+  async function sendPreparedPayload(prepared, options = {}) {
     const radio = await refreshLorawanInfo();
     const runtime = radio.runtime || radio.lorawanRuntime;
     const config = radio.config || state.deviceInfo?.lorawan;
@@ -2425,11 +2683,33 @@
     state.lastSendAt = new Date().toISOString();
     writeStorage(STORAGE.lastSendAt, state.lastSendAt);
     addLog("tx", "lorawan_send accepted", response);
+    void refreshDeviceInfo().catch(() => {});
     renderAll();
+    schedulePostSendRefresh(options);
+  }
 
-    setTimeout(() => {
-      void Promise.allSettled([refreshLorawanInfo(), loadPortfolioAndHistory(), loadTokens()]);
-    }, 4000);
+  function schedulePostSendRefresh({ operationType = "mint", peerDeviceId = "" } = {}) {
+    const refreshToken = Date.now();
+    state.postSendRefreshToken = refreshToken;
+    const delays = operationType === "message" ? [3500, 8000] : [2500, 6000, 12000];
+
+    delays.forEach((delayMs) => {
+      window.setTimeout(() => {
+        if (state.postSendRefreshToken !== refreshToken) return;
+
+        const tasks = [refreshLorawanInfo(), refreshDeviceInfo()];
+        if (operationType === "message") {
+          tasks.push(loadChatMessages(peerDeviceId || state.chatPeerDeviceId));
+        } else {
+          tasks.push(loadPortfolioAndHistory());
+          if (operationType === "deploy" || operationType === "mint") {
+            tasks.push(loadTokens());
+          }
+        }
+
+        void Promise.allSettled(tasks);
+      }, delayMs);
+    });
   }
 
   async function sendRawCommand() {
@@ -2578,8 +2858,22 @@
         nextNonce: state.deviceInfo?.nextNonce ?? null,
         config: state.deviceInfo?.config || null
       };
+      if (state.chatPeerDeviceId === deviceId) {
+        state.chatPeerDeviceId = state.knownDevices.find((item) => item.deviceId !== deviceId)?.deviceId || "";
+        state.chatMessages = [];
+      }
       renderAll();
       void loadPortfolioAndHistory();
+      if (state.chatPeerDeviceId) void loadChatMessages();
+      return;
+    }
+
+    if (button.dataset.action === "chat-device") {
+      if (deviceId === getCurrentDeviceId()) return;
+      state.chatPeerDeviceId = deviceId;
+      state.chatMessages = [];
+      renderChat();
+      void loadChatMessages(deviceId);
     }
   }
 
