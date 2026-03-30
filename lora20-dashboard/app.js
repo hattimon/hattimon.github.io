@@ -2354,7 +2354,7 @@
   }
 
   async function joinLorawan() {
-    await requestDevice("join_lorawan", {}, TIMEOUTS.join_lorawan);
+    await requestDevice("join_lorawan", { force: true }, TIMEOUTS.join_lorawan);
     for (let attempt = 0; attempt < 10; attempt += 1) {
       await delay(4000);
       const info = await refreshLorawanInfo();
@@ -2363,7 +2363,7 @@
         return;
       }
     }
-    addLog("warn", txt("Join uruchomiony, ale joined=true jeszcze sie nie pojawilo. Sprawdz ChirpStack i stan radia.", "Join started, but joined=true did not appear yet. Check ChirpStack and radio status."));
+    addLog("warn", txt("Join uruchomiony, ale joined=true jeszcze sie nie pojawilo. Sprawdz JoinAccept i downlink w ChirpStack/gateway. Indexer nie bierze udziału w joinie OTAA.", "Join started, but joined=true did not appear yet. Check JoinAccept and downlink in ChirpStack/gateway. The indexer is not part of OTAA join."));
   }
 
   async function prepareDeploy() {
