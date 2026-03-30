@@ -66,6 +66,9 @@
   const CHAT_MAX_PACKED_BYTES = 24;
   const CHAT_MAX_CHAR_COUNT = Math.floor((CHAT_MAX_PACKED_BYTES * 8) / 6);
   const CHAT_INDEX = new Map(Array.from(CHAT_ALPHABET).map((char, index) => [char, index]));
+  const PUBLIC_CHAT_DEVICE_ID = "0000000000000000";
+  const CHAT_SCOPE_DIRECT = "direct";
+  const CHAT_SCOPE_PUBLIC = "public";
 
   const SECRET_KEYS = new Set([
     "appKeyHex",
@@ -132,6 +135,7 @@
     "actions.reloadPortfolio": "Refresh portfolio",
     "actions.reloadHistory": "Refresh history",
     "actions.reloadChat": "Refresh chat",
+    "actions.publicChat": "Public channel",
     "actions.reloadTokens": "Refresh tokens",
     "actions.checkHealth": "Check indexer",
     "actions.prepareMint": "Prepare mint",
@@ -170,6 +174,7 @@
     "chat.kicker": "LoRa chat",
     "chat.title": "Device-to-device chat",
     "chat.compose": "Message",
+    "chat.public": "Public channel",
     "sections.radioKicker": "Radio",
     "sections.radioTitle": "LoRaWAN readiness",
     "sections.portfolioKicker": "Portfolio",
@@ -306,6 +311,7 @@
     "actions.reloadPortfolio": "Odśwież portfolio",
     "actions.reloadHistory": "Odśwież historię",
     "actions.reloadChat": "Odśwież chat",
+    "actions.publicChat": "Kanał publiczny",
     "actions.reloadTokens": "Odśwież tokeny",
     "actions.checkHealth": "Sprawdź indexer",
     "actions.prepareMint": "Przygotuj mint",
@@ -344,6 +350,7 @@
     "chat.kicker": "LoRa chat",
     "chat.title": "Rozmowy między urządzeniami",
     "chat.compose": "Wiadomość",
+    "chat.public": "Kanał publiczny",
     "sections.radioKicker": "Radio",
     "sections.radioTitle": "Gotowość LoRaWAN",
     "sections.portfolioKicker": "Portfolio",
@@ -452,7 +459,7 @@
     "backupPassphraseInput", "backupImportPassphraseInput", "backupJsonTextarea", "deviceIdValue",
     "nextNonceValue", "autoMintValue", "defaultMintValue", "lorawanJoinedValue", "lorawanPortValue",
     "lorawanEventValue", "lorawanDevEuiValue", "deviceSummaryOutput", "lorawanSummaryOutput",
-    "deviceReadinessBanner", "radioActionHint", "knownDevicesList", "chatRefreshButton", "chatStatusNote", "chatPeerSummary", "chatThread", "chatMessageInput", "chatComposerHint", "chatSendButton", "tokenSearchInput", "tokenQuickPick",
+    "deviceReadinessBanner", "radioActionHint", "knownDevicesList", "chatPublicButton", "chatRefreshButton", "chatStatusNote", "chatPeerSummary", "chatThread", "chatMessageInput", "chatComposerHint", "chatSendButton", "tokenSearchInput", "tokenQuickPick",
     "tokenLibraryList", "portfolioList", "recentTransactionsList", "loadPortfolioButton",
     "reloadTokensButton", "selectedTokenSummary", "operationWarnings", "estimatedPayloadValue",
     "estimatedDcValue", "protocolVersionValue", "transportStatusNote", "preparedOutput",
@@ -498,6 +505,7 @@
     portfolio: [],
     recentTransactions: [],
     chatMessages: [],
+    chatRetention: null,
     tokenCatalogError: "",
     tokenCatalogErrorRaw: "",
     deviceInfo: null,
@@ -526,6 +534,7 @@
     activeWitnessEventId: null,
     configFormDirty: false,
     configDirtyAt: 0,
+    chatScope: CHAT_SCOPE_PUBLIC,
     chatPeerDeviceId: "",
     postSendRefreshToken: 0
   };
@@ -909,6 +918,12 @@
     wireAction(refs.syncProfilesButton, () => syncProfiles(false));
     wireAction(refs.syncProfilesBroadcastButton, () => syncProfiles(true));
     wireAction(refs.stopProfilesButton, () => stopProfiles());
+    wireAction(refs.chatPublicButton, () => {
+      state.chatScope = CHAT_SCOPE_PUBLIC;
+      state.chatMessages = [];
+      renderChat();
+      void loadChatMessages({ scope: CHAT_SCOPE_PUBLIC });
+    });
     wireAction(refs.chatRefreshButton, () => loadChatMessages());
     wireAction(refs.chatSendButton, () => sendChatMessage());
     refs.tokenSearchInput?.addEventListener("input", renderTokenLibrary);
@@ -1680,9 +1695,10 @@
     const activeDeviceId = getCurrentDeviceId();
     const chatPeerCandidates = state.knownDevices.filter((entry) => entry.deviceId !== activeDeviceId);
 
-    if (state.chatPeerDeviceId && !chatPeerCandidates.some((entry) => entry.deviceId === state.chatPeerDeviceId)) {
+    if (state.chatScope === CHAT_SCOPE_DIRECT && state.chatPeerDeviceId && !chatPeerCandidates.some((entry) => entry.deviceId === state.chatPeerDeviceId)) {
       state.chatPeerDeviceId = chatPeerCandidates[0]?.deviceId || "";
       state.chatMessages = [];
+      if (!state.chatPeerDeviceId) state.chatScope = CHAT_SCOPE_PUBLIC;
     } else if (!state.chatPeerDeviceId && chatPeerCandidates.length) {
       state.chatPeerDeviceId = chatPeerCandidates[0].deviceId;
     }
@@ -1709,14 +1725,14 @@
     }
 
     refs.knownDevicesList.innerHTML = state.knownDevices.map((deviceEntry) => `
-      <article class="known-device ${deviceEntry.deviceId === activeDeviceId ? "known-device--active" : ""} ${deviceEntry.deviceId === state.chatPeerDeviceId ? "known-device--peer" : ""}">
+      <article class="known-device ${deviceEntry.deviceId === activeDeviceId ? "known-device--active" : ""} ${state.chatScope === CHAT_SCOPE_DIRECT && deviceEntry.deviceId === state.chatPeerDeviceId ? "known-device--peer" : ""}">
         <div class="known-device__head">
           <div>
             <h3 class="mono">${escapeHtml(deviceEntry.deviceId)}</h3>
             <p class="helper">${escapeHtml(maskSecret(deviceEntry.publicKeyHex || ""))}</p>
             <div class="known-device__meta">
               ${deviceEntry.deviceId === activeDeviceId ? `<span class="hero-chip">${escapeHtml(txt("aktywny node", "active node"))}</span>` : ""}
-              ${deviceEntry.deviceId === state.chatPeerDeviceId ? `<span class="hero-chip">${escapeHtml(txt("chat", "chat"))}</span>` : ""}
+              ${state.chatScope === CHAT_SCOPE_DIRECT && deviceEntry.deviceId === state.chatPeerDeviceId ? `<span class="hero-chip">${escapeHtml(txt("chat", "chat"))}</span>` : ""}
             </div>
           </div>
           <div class="button-row">
@@ -1736,8 +1752,15 @@
 
     const activeDeviceId = getCurrentDeviceId();
     const peer = state.knownDevices.find((entry) => entry.deviceId === state.chatPeerDeviceId) || null;
-    const canChat = Boolean(activeDeviceId && peer && peer.deviceId !== activeDeviceId);
+    const isPublicChat = state.chatScope === CHAT_SCOPE_PUBLIC;
+    const canChat = Boolean(activeDeviceId && (isPublicChat || (peer && peer.deviceId !== activeDeviceId)));
     const draftText = refs.chatMessageInput.value || "";
+    const retentionInfo = state.chatRetention?.mode === "soft"
+      ? txt(
+          `Przy dużej liczbie wpisów chat usuwa wiadomości starsze niż ${state.chatRetention.retentionDays} dni dopiero po przekroczeniu ${state.chatRetention.softLimit} wpisów.`,
+          `If chat volume grows, messages older than ${state.chatRetention.retentionDays} days are trimmed only after ${state.chatRetention.softLimit} entries.`
+        )
+      : "";
     const draftInfo = draftText ? (() => {
       try {
         return { ok: true, ...encodeChatMessage(draftText) };
@@ -1752,44 +1775,72 @@
         "warn",
         txt("Najpierw wybierz lub odczytaj aktywny node, żeby otworzyć rozmowę.", "Pick or fetch the active node first to open a conversation.")
       );
+    } else if (isPublicChat) {
+      renderCallout(
+        refs.chatStatusNote,
+        "ok",
+        txt(
+          `Kanał publiczny LoRa. Każda wiadomość zapisuje datę, godzinę i deviceId nadawcy. ${retentionInfo}`.trim(),
+          `Public LoRa channel. Every message stores the timestamp and sender deviceId. ${retentionInfo}`.trim()
+        )
+      );
     } else if (!peer) {
       renderCallout(
         refs.chatStatusNote,
         "warn",
-        txt("Wybierz peer z listy zapamiętanych urządzeń. Nadawca to aktywny node, odbiorca to wybrane urządzenie.", "Choose a peer from remembered devices. The active node is the sender and the selected device is the receiver.")
+        txt("Wybierz peer z listy zapamiętanych urządzeń albo przełącz się na kanał publiczny.", "Choose a peer from remembered devices or switch to the public channel.")
       );
     } else {
       renderCallout(
         refs.chatStatusNote,
         "ok",
         txt(
-          `Rozmowa LoRa: ${activeDeviceId} -> ${peer.deviceId}. Wiadomości są kompresowane do zwartego payloadu i indeksowane po uplinku.`,
-          `LoRa conversation: ${activeDeviceId} -> ${peer.deviceId}. Messages are packed into a compact payload and indexed after uplink.`
+          `Rozmowa LoRa: ${activeDeviceId} -> ${peer.deviceId}. Wiadomości są kompresowane do zwartego payloadu i indeksowane po uplinku. ${retentionInfo}`.trim(),
+          `LoRa conversation: ${activeDeviceId} -> ${peer.deviceId}. Messages are packed into a compact payload and indexed after uplink. ${retentionInfo}`.trim()
         )
       );
     }
 
     refs.chatPeerSummary.innerHTML = canChat
-      ? `
-        <span class="hero-chip">${escapeHtml(txt("Nadawca", "Sender"))}: ${escapeHtml(activeDeviceId)}</span>
-        <span class="hero-chip">${escapeHtml(txt("Odbiorca", "Recipient"))}: ${escapeHtml(peer.deviceId)}</span>
-      `
-      : "";
+      ? (isPublicChat
+          ? `
+            <span class="hero-chip">${escapeHtml(txt("Nadawca", "Sender"))}: ${escapeHtml(activeDeviceId)}</span>
+            <span class="hero-chip hero-chip--public">${escapeHtml(txt("Kanał", "Channel"))}: ${escapeHtml(txt("publiczny", "public"))}</span>
+          `
+          : `
+            <span class="hero-chip">${escapeHtml(txt("Nadawca", "Sender"))}: ${escapeHtml(activeDeviceId)}</span>
+            <span class="hero-chip">${escapeHtml(txt("Odbiorca", "Recipient"))}: ${escapeHtml(peer.deviceId)}</span>
+          `)
+      : (activeDeviceId
+          ? `
+            <span class="hero-chip">${escapeHtml(txt("Nadawca", "Sender"))}: ${escapeHtml(activeDeviceId)}</span>
+            <span class="hero-chip hero-chip--public">${escapeHtml(txt("Kanał publiczny jest zawsze dostępny", "Public channel is always available"))}</span>
+          `
+          : "");
 
     if (!state.chatMessages.length) {
-      refs.chatThread.innerHTML = `<div class="chat-thread__empty">${escapeHtml(txt("Brak wiadomości dla wybranej pary urządzeń.", "No messages for the selected device pair yet."))}</div>`;
+      refs.chatThread.innerHTML = `<div class="chat-thread__empty">${escapeHtml(
+        isPublicChat
+          ? txt("Brak wiadomości w kanale publicznym.", "No public-channel messages yet.")
+          : txt("Brak wiadomości dla wybranej pary urządzeń.", "No messages for the selected device pair yet.")
+      )}</div>`;
     } else {
       const chronological = [...state.chatMessages].reverse();
       refs.chatThread.innerHTML = chronological.map((message) => {
         const outgoing = message.deviceId === activeDeviceId;
-        const label = outgoing ? txt("Ty", "You") : (peer?.deviceId || message.deviceId || txt("peer", "peer"));
+        const isPublicMessage = message.messageScope === CHAT_SCOPE_PUBLIC || message.recipientDeviceId === PUBLIC_CHAT_DEVICE_ID;
         const text = message.messageText || message.config?.messageText || "";
+        const senderLabel = `${message.deviceId || txt("nieznany", "unknown")}${outgoing ? ` · ${txt("Ty", "You")}` : ""}`;
+        const routeLabel = isPublicMessage
+          ? txt("Kanał publiczny", "Public channel")
+          : `${txt("Do", "To")}: ${message.recipientDeviceId || peer?.deviceId || "-"}`;
         return `
           <article class="chat-message ${outgoing ? "chat-message--outgoing" : "chat-message--incoming"}">
             <div class="chat-message__meta">
-              <strong>${escapeHtml(label)}</strong>
+              <strong>${escapeHtml(senderLabel)}</strong>
               <span>${escapeHtml(formatDateTime(message.receivedAt || message.createdAt))}</span>
             </div>
+            <div class="chat-message__route">${escapeHtml(routeLabel)}</div>
             <p class="chat-message__body">${escapeHtml(text || txt("(pusta wiadomość)", "(empty message)"))}</p>
           </article>
         `;
@@ -1797,7 +1848,11 @@
     }
 
     refs.chatMessageInput.disabled = !canChat;
+    refs.chatMessageInput.placeholder = isPublicChat
+      ? txt("Halo do wszystkich z Helteca", "Hello everyone from Heltec")
+      : txt("Halo do wybranego urządzenia", "Hello to the selected device");
     if (refs.chatSendButton) refs.chatSendButton.disabled = !canChat;
+    if (refs.chatPublicButton) refs.chatPublicButton.setAttribute("aria-pressed", isPublicChat ? "true" : "false");
     refs.chatComposerHint.textContent = draftInfo
       ? (draftInfo.ok
           ? txt(
@@ -2233,7 +2288,7 @@
       await loadPortfolioAndHistory().catch((error) => {
         addLog("error", error.message);
       });
-      if (state.chatPeerDeviceId) {
+      if (state.chatScope === CHAT_SCOPE_PUBLIC || state.chatPeerDeviceId) {
         await loadChatMessages().catch((error) => {
           addLog("error", error.message);
         });
@@ -2338,22 +2393,29 @@
     renderAll();
   }
 
-  async function loadChatMessages(peerDeviceId = state.chatPeerDeviceId) {
+  async function loadChatMessages(target = {}) {
     const deviceId = getCurrentDeviceId();
     if (!deviceId) throw new Error(txt("Brak aktywnego deviceId do pobrania rozmów.", "No active deviceId to load conversations."));
-    if (!peerDeviceId) {
+    const scope = typeof target === "string" ? CHAT_SCOPE_DIRECT : (target.scope ?? state.chatScope);
+    const peerDeviceId = typeof target === "string" ? target : (target.peerDeviceId ?? state.chatPeerDeviceId);
+
+    if (scope === CHAT_SCOPE_DIRECT && !peerDeviceId) {
       state.chatMessages = [];
       renderChat();
       return;
     }
 
-    const query = new URLSearchParams({
-      deviceId,
-      peerDeviceId,
-      limit: "60"
-    });
+    const query = new URLSearchParams({ limit: "60" });
+    if (scope === CHAT_SCOPE_PUBLIC) {
+      query.set("scope", CHAT_SCOPE_PUBLIC);
+    } else {
+      query.set("deviceId", deviceId);
+      query.set("peerDeviceId", peerDeviceId);
+    }
+
     const response = await fetchJson(`/messages?${query.toString()}`);
     state.chatMessages = Array.isArray(response.messages) ? response.messages : [];
+    state.chatRetention = response.retention || state.chatRetention;
     renderChat();
     return response;
   }
@@ -2636,16 +2698,17 @@
   async function sendChatMessage() {
     const activeDeviceId = getCurrentDeviceId();
     const peerDeviceId = state.chatPeerDeviceId;
+    const isPublicChat = state.chatScope === CHAT_SCOPE_PUBLIC;
     if (!activeDeviceId) {
       throw new Error(txt("Brak aktywnego node'a do wysłania wiadomości.", "No active node selected for sending a message."));
     }
-    if (!peerDeviceId) {
+    if (!isPublicChat && !peerDeviceId) {
       throw new Error(txt("Wybierz odbiorcę z listy zapamiętanych urządzeń.", "Choose a recipient from remembered devices."));
     }
 
     const encoded = encodeChatMessage(refs.chatMessageInput?.value || "");
     const prepared = await requestDevice("prepare_message", {
-      toDeviceId: peerDeviceId,
+      toDeviceId: isPublicChat ? PUBLIC_CHAT_DEVICE_ID : peerDeviceId,
       messageLength: encoded.messageLength,
       messageHex: encoded.packedHex,
       commit: false
@@ -2653,13 +2716,18 @@
 
     state.lastPrepared = {
       type: "message",
-      recipientDeviceId: peerDeviceId,
+      recipientDeviceId: isPublicChat ? PUBLIC_CHAT_DEVICE_ID : peerDeviceId,
+      messageScope: isPublicChat ? CHAT_SCOPE_PUBLIC : CHAT_SCOPE_DIRECT,
       normalizedMessage: encoded.normalized,
       packedBytes: encoded.packedBytes,
       ...prepared
     };
     renderAll();
-    await sendPreparedPayload(prepared, { operationType: "message", peerDeviceId });
+    await sendPreparedPayload(prepared, {
+      operationType: "message",
+      peerDeviceId,
+      chatScope: isPublicChat ? CHAT_SCOPE_PUBLIC : CHAT_SCOPE_DIRECT
+    });
     if (refs.chatMessageInput) refs.chatMessageInput.value = "";
     renderChat();
   }
@@ -2688,7 +2756,7 @@
     schedulePostSendRefresh(options);
   }
 
-  function schedulePostSendRefresh({ operationType = "mint", peerDeviceId = "" } = {}) {
+  function schedulePostSendRefresh({ operationType = "mint", peerDeviceId = "", chatScope = state.chatScope } = {}) {
     const refreshToken = Date.now();
     state.postSendRefreshToken = refreshToken;
     const delays = operationType === "message" ? [3500, 8000] : [2500, 6000, 12000];
@@ -2699,7 +2767,10 @@
 
         const tasks = [refreshLorawanInfo(), refreshDeviceInfo()];
         if (operationType === "message") {
-          tasks.push(loadChatMessages(peerDeviceId || state.chatPeerDeviceId));
+          tasks.push(loadChatMessages({
+            scope: chatScope || state.chatScope,
+            peerDeviceId: peerDeviceId || state.chatPeerDeviceId
+          }));
         } else {
           tasks.push(loadPortfolioAndHistory());
           if (operationType === "deploy" || operationType === "mint") {
@@ -2843,8 +2914,14 @@
 
     if (button.dataset.action === "remove-device") {
       state.knownDevices = state.knownDevices.filter((item) => item.deviceId !== deviceId);
+      if (state.chatPeerDeviceId === deviceId) {
+        state.chatPeerDeviceId = state.knownDevices.find((item) => item.deviceId !== getCurrentDeviceId())?.deviceId || "";
+        state.chatMessages = [];
+        if (!state.chatPeerDeviceId) state.chatScope = CHAT_SCOPE_PUBLIC;
+      }
       saveJson(STORAGE.knownDevices, state.knownDevices);
       renderAll();
+      if (state.chatScope === CHAT_SCOPE_PUBLIC || state.chatPeerDeviceId) void loadChatMessages();
       return;
     }
 
@@ -2861,19 +2938,21 @@
       if (state.chatPeerDeviceId === deviceId) {
         state.chatPeerDeviceId = state.knownDevices.find((item) => item.deviceId !== deviceId)?.deviceId || "";
         state.chatMessages = [];
+        if (!state.chatPeerDeviceId) state.chatScope = CHAT_SCOPE_PUBLIC;
       }
       renderAll();
       void loadPortfolioAndHistory();
-      if (state.chatPeerDeviceId) void loadChatMessages();
+      if (state.chatScope === CHAT_SCOPE_PUBLIC || state.chatPeerDeviceId) void loadChatMessages();
       return;
     }
 
     if (button.dataset.action === "chat-device") {
       if (deviceId === getCurrentDeviceId()) return;
+      state.chatScope = CHAT_SCOPE_DIRECT;
       state.chatPeerDeviceId = deviceId;
       state.chatMessages = [];
       renderChat();
-      void loadChatMessages(deviceId);
+      void loadChatMessages({ scope: CHAT_SCOPE_DIRECT, peerDeviceId: deviceId });
     }
   }
 

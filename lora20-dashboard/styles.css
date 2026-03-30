@@ -841,6 +841,16 @@ body[data-theme="dark"] .surface {
   gap: 8px;
 }
 
+.chat-peer-summary .hero-chip--public {
+  background: rgba(120, 166, 214, 0.16);
+  border-color: rgba(120, 166, 214, 0.28);
+}
+
+.chat-panel .button[aria-pressed="true"] {
+  border-color: rgba(120, 166, 214, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(120, 166, 214, 0.16);
+}
+
 .chat-thread {
   min-height: 320px;
   max-height: min(56vh, 620px);
@@ -887,6 +897,11 @@ body[data-theme="dark"] .surface {
   display: flex;
   justify-content: space-between;
   gap: 10px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.chat-message__route {
   font-size: 0.76rem;
   color: var(--muted);
 }
