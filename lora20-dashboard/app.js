@@ -1549,6 +1549,7 @@
   function syncDashboardLayout() {
     syncHeroMintStreamHeight();
     syncPortfolioListHeight();
+    syncRecentTransactionsHeight();
   }
 
   function syncHeroMintStreamHeight() {
@@ -1580,6 +1581,26 @@
     if (targetHeight <= 0) return;
     list.style.maxHeight = `${targetHeight}px`;
     list.style.overflowY = cards.length > 4 ? "auto" : "visible";
+  }
+
+  function syncRecentTransactionsHeight() {
+    const list = refs.recentTransactionsList;
+    const portfolioSurface = list?.closest('.surface[data-panel="portfolio"]');
+    if (!list || !portfolioSurface) return;
+    list.style.removeProperty("height");
+    list.style.removeProperty("maxHeight");
+    list.style.removeProperty("overflowY");
+
+    const surfaceRect = portfolioSurface.getBoundingClientRect();
+    const listRect = list.getBoundingClientRect();
+    const surfaceStyles = window.getComputedStyle(portfolioSurface);
+    const paddingBottom = parseFloat(surfaceStyles.paddingBottom || "0") || 0;
+    const availableHeight = Math.max(0, Math.floor(surfaceRect.bottom - paddingBottom - listRect.top));
+    if (availableHeight <= 0) return;
+
+    list.style.height = `${availableHeight}px`;
+    list.style.maxHeight = `${availableHeight}px`;
+    list.style.overflowY = "auto";
   }
 
   function isDeviceConnected() {
