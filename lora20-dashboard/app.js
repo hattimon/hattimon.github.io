@@ -523,6 +523,7 @@
     reader: null,
     disconnecting: false,
     serialRpcAvailable: null,
+    serialTriBootAvailable: null,
     serialProtocolHint: "",
     lastSerialPortInfo: null,
     serialAutoReconnectEnabled: false,
@@ -2026,8 +2027,9 @@
   }
 
   function getBootControlSourceProtocol() {
-    if (state.deviceTransport === "serial" && state.serialRpcAvailable === false && state.serialProtocolHint) {
-      return state.serialProtocolHint;
+    if (state.deviceTransport === "serial" && state.serialRpcAvailable === false) {
+      if (state.bootInfo?.currentProtocol) return state.bootInfo.currentProtocol;
+      if (state.serialProtocolHint) return state.serialProtocolHint;
     }
     return state.bootInfo?.currentProtocol || state.serialProtocolHint || "";
   }
@@ -2069,7 +2071,9 @@
     const currentProtocol = getBootControlSourceProtocol() || "-";
     const bootProtocol = boot?.bootProtocol || "-";
     const slots = Array.isArray(boot?.slots) ? boot.slots : [];
-    const serialGuidedMode = state.deviceTransport === "serial" && state.serialRpcAvailable === false && Boolean(state.port);
+    const serialExternalMode = state.deviceTransport === "serial" && state.serialRpcAvailable === false && Boolean(state.port);
+    const serialDirectMode = serialExternalMode && state.serialTriBootAvailable === true;
+    const serialGuidedMode = serialExternalMode && !serialDirectMode;
 
     const policyLines = [
       txt("Tri-boot PRG/RESET:", "Tri-boot PRG/RESET:"),
@@ -2124,7 +2128,12 @@
       renderCallout(
         refs.bootControlNote,
         serialGuidedMode ? "warn" : (missingTargets.length ? "warn" : "ok"),
-        serialGuidedMode
+        serialDirectMode
+          ? txt(
+              `USB jest teraz podłączone do ${getProtocolLabel(currentProtocol)} i wykryto sterowanie tri-boot po serialu. Przyciski poniżej przełączają system jednym kliknięciem, a dashboard spróbuje sam odzyskać USB po restarcie.`,
+              `USB is currently attached to ${getProtocolLabel(currentProtocol)} and the serial tri-boot control channel is available. The buttons below can switch systems with one click and the dashboard will try to recover USB automatically after the reboot.`
+            )
+          : serialGuidedMode
           ? txt(
               `USB jest teraz podłączone do ${getProtocolLabel(currentProtocol)} bez JSON RPC lora20. Przyciski poniżej przechodzą w tryb instrukcji PRG/RESET i dashboard będzie próbował sam odzyskać USB po restarcie.`,
               `USB is currently attached to ${getProtocolLabel(currentProtocol)} without the lora20 JSON RPC. The buttons below switch to PRG/RESET guidance mode and the dashboard will try to recover USB automatically after the reboot.`
@@ -2165,10 +2174,18 @@
       if (!button) return;
       const slot = getBootSlot(protocol);
       const manualMode = getBootTransitionMode(currentProtocol, protocol);
-      const enabled = serialGuidedMode
+      const enabled = serialDirectMode
+        ? Boolean(connected && slot?.partitionPresent && slot?.validImage && currentProtocol !== protocol)
+        : serialGuidedMode
         ? Boolean(manualMode || (protocol === "lora20" && currentProtocol !== "lora20"))
         : (connected && Boolean(boot?.supported) && Boolean(slot?.partitionPresent) && Boolean(slot?.validImage) && bootProtocol !== protocol);
       button.disabled = !enabled;
+      if (serialDirectMode) {
+        button.title = enabled
+          ? txt(`Wyślij komendę tri-boot po USB i zrestartuj urządzenie do ${protocol}.`, `Send the USB tri-boot command and reboot the device into ${protocol}.`)
+          : txt("To już jest aktualny system albo slot nie ma poprawnego obrazu.", "This is already the current system or the slot does not contain a valid image.");
+        return;
+      }
       if (serialGuidedMode) {
         button.title = enabled
           ? getGuidedBootMessage(currentProtocol, protocol)
@@ -2471,6 +2488,10 @@
 
   async function refreshDeviceState() {
     if (state.deviceTransport === "serial" && state.serialRpcAvailable === false) {
+      if (state.serialTriBootAvailable) {
+        await refreshTriBootInfo();
+        return;
+      }
       addLog(
         "warn",
         txt(
@@ -2493,6 +2514,7 @@
 
   function applyDeviceInfoResult(result) {
     state.serialRpcAvailable = true;
+    state.serialTriBootAvailable = false;
     state.deviceInfo = result.device || null;
     state.bootInfo = result.boot || state.bootInfo;
     state.serialProtocolHint = result.boot?.currentProtocol || "lora20";
@@ -2513,6 +2535,31 @@
   async function refreshDeviceInfo() {
     const result = await requestDevice("get_info", {});
     applyDeviceInfoResult(result);
+    renderAll();
+    return result;
+  }
+
+  function applyTriBootInfoResult(result) {
+    state.serialRpcAvailable = false;
+    state.serialTriBootAvailable = true;
+    state.deviceInfo = null;
+    state.bootInfo = result ? {
+      supported: Boolean(result.supported ?? true),
+      currentProtocol: String(result.currentProtocol || state.serialProtocolHint || ""),
+      bootProtocol: String(result.bootProtocol || result.currentProtocol || state.serialProtocolHint || ""),
+      runningPartitionLabel: String(result.runningPartitionLabel || ""),
+      bootPartitionLabel: String(result.bootPartitionLabel || ""),
+      buttonHint: String(result.buttonHint || ""),
+      slots: Array.isArray(result.slots) ? result.slots : []
+    } : state.bootInfo;
+    if (state.bootInfo?.currentProtocol) {
+      noteSerialProtocolHint(state.bootInfo.currentProtocol);
+    }
+  }
+
+  async function refreshTriBootInfo() {
+    const result = await sendTriBootSerialCommand("info", "", 3500);
+    applyTriBootInfoResult(result);
     renderAll();
     return result;
   }
@@ -2977,8 +3024,26 @@
       ? "MeshCore"
       : (protocol === "meshtastic" ? "Meshtastic" : "lora20");
     if (state.deviceTransport === "serial" && state.serialRpcAvailable === false) {
+      if (state.serialTriBootAvailable) {
+        const response = await sendTriBootSerialCommand("switch", protocol, 6000);
+        applyTriBootInfoResult(response);
+        state.bootInfo = {
+          ...(state.bootInfo || {}),
+          bootProtocol: protocol
+        };
+        state.serialAutoReconnectEnabled = true;
+        addLog(
+          "device",
+          txt(
+            `Wysłano przełączenie tri-boot do ${protocolLabel}. Dashboard poczeka na restart USB i spróbuje połączyć się ponownie automatycznie.`,
+            `Sent the tri-boot switch to ${protocolLabel}. The dashboard will wait for the USB reboot and try to reconnect automatically.`
+          ),
+          response
+        );
+        renderAll();
+        return;
+      }
       const guidedMessage = getGuidedBootMessage(currentProtocol, protocol);
-      state.serialProtocolHint = protocol;
       state.serialAutoReconnectEnabled = true;
       addLog("device", guidedMessage);
       renderAll();
@@ -3413,6 +3478,19 @@
     }
   }
 
+  async function probeTriBootSerial() {
+    try {
+      const result = await sendTriBootSerialCommand("info", "", 3000);
+      applyTriBootInfoResult(result);
+      renderAll();
+      return true;
+    } catch (_error) {
+      state.serialTriBootAvailable = false;
+      renderAll();
+      return false;
+    }
+  }
+
   async function openSerialPortSession(port, autoReconnect = false) {
     if (!port) throw new Error(txt("Nie znaleziono autoryzowanego portu USB.", "No authorized USB port was found."));
     await port.open({ baudRate: 115200, bufferSize: 4096 });
@@ -3433,6 +3511,19 @@
     const rpcReady = await probeSerialRpc();
     if (rpcReady) {
       await applyConnectivityMode("usb");
+      return;
+    }
+
+    const triBootReady = await probeTriBootSerial();
+    if (triBootReady) {
+      addLog(
+        "device",
+        txt(
+          `USB połączyło się z ${getProtocolLabel(state.bootInfo?.currentProtocol || state.serialProtocolHint)}. Panel wykrył kanał tri-boot i może rozpoznać aktualny system oraz przełączać go jednym kliknięciem.`,
+          `USB is attached to ${getProtocolLabel(state.bootInfo?.currentProtocol || state.serialProtocolHint)}. The dashboard detected the tri-boot control channel and can identify the current system and switch it with one click.`
+        ),
+        state.bootInfo
+      );
       return;
     }
 
@@ -3645,6 +3736,7 @@
     state.reader = null;
     state.disconnecting = false;
     state.serialRpcAvailable = null;
+    state.serialTriBootAvailable = null;
     if (state.deviceTransport === "serial") {
       state.deviceTransport = null;
     }
@@ -3753,6 +3845,46 @@
     }
 
     return responsePromise;
+  }
+
+  async function sendSerialTextPayload(line, requestId, timeout, label, logPayload) {
+    if (!state.port?.writable) throw new Error(txt("Urządzenie nie jest podłączone.", "Device is not connected."));
+    const writer = state.port.writable.getWriter();
+    const encoder = new TextEncoder();
+    const serialized = String(line || "").endsWith("\n") ? String(line || "") : `${String(line || "")}\n`;
+    addLog("tx", label || "serial", logPayload || serialized.trim());
+
+    const responsePromise = new Promise((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        state.pending.delete(requestId);
+        reject(new Error(`Timeout waiting for ${label || "response"}`));
+      }, timeout || TIMEOUTS.default);
+      state.pending.set(requestId, { resolve, reject, timer, label: label || "serial" });
+    });
+
+    try {
+      await writer.write(encoder.encode(serialized));
+    } finally {
+      writer.releaseLock();
+    }
+
+    return responsePromise;
+  }
+
+  async function sendTriBootSerialCommand(command, protocol = "", timeout = 3500) {
+    if (state.deviceTransport !== "serial" || !state.port) {
+      throw new Error(txt("Tri-boot po USB wymaga aktywnego połączenia szeregowego.", "USB tri-boot requires an active serial connection."));
+    }
+    const requestId = `triboot-${state.requestId++}`;
+    const parts = ["@lora20-triboot", command, requestId];
+    if (protocol) parts.push(String(protocol).toLowerCase());
+    const response = await sendSerialTextPayload(parts.join(" "), requestId, timeout, `triboot_${command}`, { command, protocol });
+    if (response.ok === false) {
+      const error = new Error(response.error?.message || `Tri-boot ${command} failed`);
+      error.code = response.error?.code || "triboot_command_failed";
+      throw error;
+    }
+    return response.result || {};
   }
 
   async function sendBlePayload(payload, timeout, label) {
@@ -3933,12 +4065,19 @@
 
     if (parsed.type === "boot") {
       state.serialRpcAvailable = true;
+      state.serialTriBootAvailable = false;
       noteSerialProtocolHint(parsed.bootControl?.currentProtocol || "lora20");
       if (parsed.bootControl) {
         state.bootInfo = parsed.bootControl;
         renderAll();
       }
       addLog("device", txt("Zdarzenie boot", "Boot event"), parsed);
+      return;
+    }
+    if (parsed.type === "triboot_boot") {
+      applyTriBootInfoResult(parsed.result || parsed);
+      addLog("device", txt("Zdarzenie tri-boot", "Tri-boot event"), parsed.result || parsed);
+      renderAll();
       return;
     }
     if (parsed.type === "boot_switch" || parsed.type === "boot_switch_hint") {
