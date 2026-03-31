@@ -164,6 +164,7 @@ body[data-theme="dark"] .surface {
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.82fr) minmax(320px, 460px);
+  align-items: stretch;
   gap: 22px;
   border-radius: 32px;
   padding: 24px;
@@ -332,6 +333,7 @@ body[data-theme="dark"] .surface {
   display: grid;
   gap: 14px;
   align-content: start;
+  min-height: 100%;
   padding: 18px;
   background: linear-gradient(180deg, var(--panel-strong), var(--panel-soft));
   border-radius: var(--radius-xl);
@@ -343,6 +345,8 @@ body[data-theme="dark"] .surface {
   grid-template-rows: auto auto 1fr;
   gap: 10px;
   min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   padding: 18px;
   background:
     radial-gradient(circle at 20% 10%, rgba(20, 198, 183, 0.09), transparent 42%),
@@ -491,9 +495,9 @@ body[data-theme="dark"] .surface {
 }
 
 .mint-matrix {
-  min-height: 360px;
+  min-height: 0;
   height: 100%;
-  max-height: none;
+  max-height: 100%;
   overflow-y: auto;
   border-radius: var(--radius-md);
   border: 1px solid rgba(120, 166, 214, 0.24);
@@ -773,6 +777,7 @@ body[data-theme="dark"] .surface {
 }
 
 #portfolioList.token-grid {
+  min-height: 424px;
   max-height: 520px;
   overflow-y: auto;
   align-content: start;
@@ -781,8 +786,8 @@ body[data-theme="dark"] .surface {
 
 #recentTransactionsList.timeline {
   min-height: 420px;
-  height: 100%;
-  max-height: none;
+  height: min(68vh, 760px);
+  max-height: min(68vh, 760px);
   overflow-y: auto;
   align-content: start;
   padding-right: 4px;
@@ -1285,6 +1290,32 @@ body[data-theme="light"] .timeline-card .hero-chip {
   color: #eef7ff;
 }
 
+body[data-theme="light"] .witness-modal__dialog,
+body[data-theme="light"] .witness-modal__dialog h2,
+body[data-theme="light"] .witness-modal__dialog .section-kicker,
+body[data-theme="light"] #witnessModalSubtitle,
+body[data-theme="light"] .witness-meta-card__name {
+  color: #f4f9ff;
+}
+
+body[data-theme="light"] .signal-title {
+  fill: #ffffff;
+}
+
+body[data-theme="light"] .signal-subtitle,
+body[data-theme="light"] .witness-meta-card__id {
+  color: rgba(233, 242, 252, 0.98);
+  fill: rgba(233, 242, 252, 0.98);
+}
+
+body[data-theme="light"] .signal-node-name {
+  color: #f7fbff;
+}
+
+body[data-theme="light"] .signal-node-id {
+  color: rgba(226, 237, 248, 0.96);
+}
+
 body[data-theme="light"] .chat-thread {
   background: linear-gradient(180deg, rgba(11, 21, 34, 0.84), rgba(14, 27, 42, 0.92));
   border-color: rgba(120, 166, 214, 0.22);
@@ -1362,5 +1393,10 @@ body[data-theme="light"] .chat-message__body {
     min-height: 280px;
     height: 420px;
     max-height: 420px;
+  }
+
+  #portfolioList.token-grid {
+    min-height: 280px;
+    max-height: 360px;
   }
 }

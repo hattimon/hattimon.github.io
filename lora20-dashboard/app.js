@@ -23,7 +23,7 @@
 
   const DEFAULTS = {
     language: "pl",
-    theme: "dark",
+    theme: "medium",
     indexerUrl: "https://lora20.hattimon.pl",
     deviceBridgeUrl: "",
     deviceWifiSsid: "",
@@ -62,6 +62,9 @@
     lorawan_send: 90000
   };
   const SERIAL_RECONNECT_DELAY_MS = 1200;
+  const SOUND_ASSETS = {
+    loraConfirmed: "./audio/data.wav?v=20260401-01"
+  };
 
   const CHAT_ALPHABET = " abcdefghijklmnopqrstuvwxyz0123456789.,!?-_/:@+#()[]'\";%&=*<>\n|$";
   const CHAT_MAX_PACKED_BYTES = 24;
@@ -552,7 +555,8 @@
     lorawanAutoJoinInFlight: false,
     lorawanAutoJoinTimer: 0,
     lorawanAutoJoinToken: 0,
-    lorawanAutoJoinCooldownUntil: 0
+    lorawanAutoJoinCooldownUntil: 0,
+    lorawanSoundPrimed: false
   };
 
   function normalizePreset(value, presets, fallback) {
@@ -1281,8 +1285,10 @@
   }
 
   function applyLorawanInfoResult(result, options = {}) {
+    const previousRuntime = getLorawanRuntimeState(state.lorawanInfo);
     state.lorawanInfo = result || null;
     const runtime = getLorawanRuntimeState(result);
+    maybePlayLorawanRadioSound(previousRuntime, runtime);
     if (runtime?.joined) {
       clearLorawanJoinPoll();
       state.lorawanAutoJoinStatus = "joined";
@@ -1298,6 +1304,28 @@
     if (!state.lorawanAutoJoinInFlight) {
       clearLorawanJoinPoll();
       state.lorawanAutoJoinStatus = hasLorawanOtaaConfig(result) ? "idle" : "not-configured";
+    }
+  }
+
+  function maybePlayLorawanRadioSound(previousRuntime, runtime) {
+    if (!runtime) return;
+    if (!state.lorawanSoundPrimed) {
+      state.lorawanSoundPrimed = true;
+      return;
+    }
+
+    const previousJoinAttempt = Number(previousRuntime?.lastJoinAttemptMs || 0);
+    const nextJoinAttempt = Number(runtime?.lastJoinAttemptMs || 0);
+    const previousAcceptedSend = Number(previousRuntime?.lastAcceptedSendMs || 0);
+    const nextAcceptedSend = Number(runtime?.lastAcceptedSendMs || 0);
+
+    const joinConfirmed = Boolean(runtime.joined) && (!previousRuntime?.joined || nextJoinAttempt > previousJoinAttempt);
+    const confirmedLoRaAck = String(runtime?.lastEvent || "").toLowerCase() === "downlink_ack"
+      && nextAcceptedSend > 0
+      && nextAcceptedSend > previousAcceptedSend;
+
+    if (joinConfirmed || confirmedLoRaAck) {
+      playSoundFor("lora-confirmed");
     }
   }
 
@@ -2756,6 +2784,7 @@
     state.deviceInfo = null;
     state.lorawanInfo = null;
     state.connectivityInfo = null;
+    state.lorawanSoundPrimed = false;
     state.bootInfo = result ? {
       supported: Boolean(result.supported ?? true),
       currentProtocol: String(result.currentProtocol || state.serialProtocolHint || ""),
@@ -3885,6 +3914,7 @@
       flushPendingDeviceRequests(txt("Bluetooth rozlaczony.", "Bluetooth disconnected."));
       clearLorawanJoinPoll();
       state.lorawanAutoJoinStatus = "idle";
+      state.lorawanSoundPrimed = false;
       if (state.ble?.device?.gatt?.connected) {
         state.ble.device.gatt.disconnect();
       }
@@ -3899,6 +3929,7 @@
       flushPendingDeviceRequests(txt("Wi‑Fi bridge rozlaczony.", "Wi‑Fi bridge disconnected."));
       clearLorawanJoinPoll();
       state.lorawanAutoJoinStatus = "idle";
+      state.lorawanSoundPrimed = false;
       state.deviceTransport = null;
       state.wifiConnected = false;
       state.activeWifiAuthToken = "";
@@ -3950,6 +3981,7 @@
     state.serialTriBootAvailable = null;
     clearLorawanJoinPoll();
     state.lorawanAutoJoinStatus = "idle";
+    state.lorawanSoundPrimed = false;
     if (state.deviceTransport === "serial") {
       state.deviceTransport = null;
     }
@@ -4543,6 +4575,10 @@
 
   function playSoundFor(kind) {
     if (!state.soundEnabled) return;
+    if (kind === "lora-confirmed") {
+      playAudioAsset(SOUND_ASSETS.loraConfirmed, 0.9);
+      return;
+    }
     const presets = { error: [220, 0.18], warn: [320, 0.12], tx: [660, 0.08], rx: [560, 0.08], device: [480, 0.06], indexer: [520, 0.06] };
     const [frequency, duration] = presets[kind] || [420, 0.05];
     try {
@@ -4560,6 +4596,18 @@
       gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       oscillator.start(now);
       oscillator.stop(now + duration + 0.02);
+    } catch (_error) {
+      // ignore
+    }
+  }
+
+  function playAudioAsset(url, volume = 1) {
+    try {
+      const audio = new Audio(url);
+      audio.preload = "auto";
+      audio.volume = Math.max(0, Math.min(1, Number(volume) || 1));
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === "function") playPromise.catch(() => {});
     } catch (_error) {
       // ignore
     }
