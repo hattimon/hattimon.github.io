@@ -557,7 +557,9 @@
     lorawanAutoJoinTimer: 0,
     lorawanAutoJoinToken: 0,
     lorawanAutoJoinCooldownUntil: 0,
-    lorawanSoundPrimed: false
+    lorawanSoundPrimed: false,
+    recentTransactionsSoundPrimed: false,
+    recentTransactionsSoundDeviceId: ""
   };
 
   function normalizePreset(value, presets, fallback) {
@@ -1331,6 +1333,41 @@
     if (joinConfirmed || confirmedLoRaAck) {
       playSoundFor("lora-confirmed");
     }
+  }
+
+  function maybePlayConfirmedTransactionSound(previousTransactions, nextTransactions, previousDeviceId, nextDeviceId) {
+    const activeDeviceId = String(nextDeviceId || "").toLowerCase();
+    if (!activeDeviceId) return;
+
+    if (!state.recentTransactionsSoundPrimed || String(previousDeviceId || "").toLowerCase() !== activeDeviceId) {
+      state.recentTransactionsSoundPrimed = true;
+      state.recentTransactionsSoundDeviceId = activeDeviceId;
+      return;
+    }
+
+    const previousKeys = new Set(getConfirmedTransactionKeys(previousTransactions));
+    const nextKeys = getConfirmedTransactionKeys(nextTransactions);
+    const hasNewConfirmed = nextKeys.some((key) => !previousKeys.has(key));
+    if (hasNewConfirmed) {
+      playSoundFor("lora-confirmed");
+    }
+    state.recentTransactionsSoundDeviceId = activeDeviceId;
+  }
+
+  function getConfirmedTransactionKeys(list) {
+    return (Array.isArray(list) ? list : [])
+      .filter((event) => String(event?.status || "").toLowerCase() === "accepted")
+      .map((event, index) => getTransactionEventKey(event, index));
+  }
+
+  function getTransactionEventKey(event, index = 0) {
+    if (event?.id) return `id:${String(event.id)}`;
+    const op = String(event?.opName || event?.op || "").toUpperCase();
+    const tick = normalizeTick(event?.tick || "");
+    const amount = event?.amount == null ? "" : String(event.amount);
+    const nonce = event?.nonce == null ? "" : String(event.nonce);
+    const ts = event?.receivedAt || event?.createdAt || event?.timestamp || event?.time || "";
+    return `${op}|${tick}|${amount}|${nonce}|${ts}|${index}`;
   }
 
   function scheduleLorawanJoinPoll(reason = "join", attempt = 0) {
@@ -3101,7 +3138,10 @@
     if (!deviceId) throw new Error(txt("Brak aktywnego deviceId do pobrania historii.", "No active deviceId to load history."));
     const query = new URLSearchParams({ deviceId, limit: String(Number(refs.transactionsLimitInput?.value || 20)) });
     const response = await fetchJson(`/transactions?${query.toString()}`);
+    const previousTransactions = state.recentTransactions;
+    const previousDeviceId = state.recentTransactionsSoundDeviceId;
     state.recentTransactions = Array.isArray(response.transactions) ? response.transactions : [];
+    maybePlayConfirmedTransactionSound(previousTransactions, state.recentTransactions, previousDeviceId, deviceId);
     setText(refs.transactionsOutput, prettyJson(response));
     renderAll();
   }
