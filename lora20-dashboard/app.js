@@ -61,6 +61,7 @@
     join_lorawan: 70000,
     lorawan_send: 90000
   };
+  const SERIAL_RECONNECT_DELAY_MS = 1200;
 
   const CHAT_ALPHABET = " abcdefghijklmnopqrstuvwxyz0123456789.,!?-_/:@+#()[]'\";%&=*<>\n|$";
   const CHAT_MAX_PACKED_BYTES = 24;
@@ -521,6 +522,12 @@
     port: null,
     reader: null,
     disconnecting: false,
+    serialRpcAvailable: null,
+    serialProtocolHint: "",
+    lastSerialPortInfo: null,
+    serialAutoReconnectEnabled: false,
+    serialReconnectTimer: 0,
+    serialReconnectBusy: false,
     pending: new Map(),
     lastBackupRaw: null,
     lastBackupRawText: "",
@@ -854,6 +861,7 @@
     applyLanguage();
     renderAll();
     updateSerialSupport();
+    setupSerialReconnectHooks();
     window.addEventListener("beforeunload", () => {
       if (state.deviceTransport) {
         void disconnectDevice(false);
@@ -1192,6 +1200,82 @@
           : "Web Serial nie jest dostępny w tej przeglądarce. Użyj Bluetooth albo mostka Wi‑Fi.");
   }
 
+  function setupSerialReconnectHooks() {
+    if (!("serial" in navigator) || !navigator.serial?.addEventListener) return;
+    navigator.serial.addEventListener("connect", () => {
+      if (state.serialAutoReconnectEnabled && !state.port) {
+        queueSerialReconnect(txt("USB wróciło po restarcie urządzenia.", "USB reappeared after the device reboot."));
+      }
+    });
+  }
+
+  function getSerialPortInfo(port) {
+    if (!port?.getInfo) return null;
+    try {
+      const info = port.getInfo();
+      if (!info || (info.usbVendorId == null && info.usbProductId == null)) return null;
+      return {
+        usbVendorId: info.usbVendorId ?? null,
+        usbProductId: info.usbProductId ?? null
+      };
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function sameSerialPortInfo(left, right) {
+    if (!left || !right) return false;
+    return left.usbVendorId === right.usbVendorId && left.usbProductId === right.usbProductId;
+  }
+
+  async function findPreferredSerialPort(autoOnly = false) {
+    if (!("serial" in navigator) || !navigator.serial?.getPorts) return null;
+    const ports = await navigator.serial.getPorts();
+    if (!Array.isArray(ports) || !ports.length) return null;
+
+    if (state.lastSerialPortInfo) {
+      const matched = ports.find((port) => sameSerialPortInfo(getSerialPortInfo(port), state.lastSerialPortInfo));
+      if (matched) return matched;
+    }
+
+    if (ports.length === 1) return ports[0];
+    return null;
+  }
+
+  function stopSerialReconnect() {
+    if (state.serialReconnectTimer) {
+      window.clearTimeout(state.serialReconnectTimer);
+      state.serialReconnectTimer = 0;
+    }
+    state.serialReconnectBusy = false;
+  }
+
+  function queueSerialReconnect(reason = "") {
+    if (!state.serialAutoReconnectEnabled || state.port || state.serialReconnectTimer || !("serial" in navigator)) return;
+    state.serialReconnectTimer = window.setTimeout(() => {
+      state.serialReconnectTimer = 0;
+      void trySerialReconnect(reason);
+    }, SERIAL_RECONNECT_DELAY_MS);
+  }
+
+  async function trySerialReconnect(reason = "") {
+    if (!state.serialAutoReconnectEnabled || state.port || state.serialReconnectBusy) return;
+    state.serialReconnectBusy = true;
+    try {
+      const port = await findPreferredSerialPort(true);
+      if (!port) {
+        queueSerialReconnect(reason);
+        return;
+      }
+      await openSerialPortSession(port, true);
+      if (reason) addLog("device", reason);
+    } catch (_error) {
+      queueSerialReconnect(reason);
+    } finally {
+      state.serialReconnectBusy = false;
+    }
+  }
+
   function renderAll() {
     renderBadges();
     renderConnectivityHint();
@@ -1220,7 +1304,11 @@
 
   function getConnectionBadgeLabel() {
     if (state.deviceTransport === "serial") {
-      return state.port ? txt("USB podłączony", "USB connected") : txt("USB offline", "USB offline");
+      if (!state.port) return txt("USB offline", "USB offline");
+      if (state.serialRpcAvailable === false && state.serialProtocolHint) {
+        return txt(`USB: ${getProtocolLabel(state.serialProtocolHint)}`, `USB: ${getProtocolLabel(state.serialProtocolHint)}`);
+      }
+      return txt("USB podłączony", "USB connected");
     }
     if (state.deviceTransport === "ble") {
       return state.ble?.connected ? txt("Bluetooth podłączony", "Bluetooth connected") : txt("Bluetooth offline", "Bluetooth offline");
@@ -1908,6 +1996,69 @@
     return slots.find((slot) => String(slot?.protocol || "").toLowerCase() === String(protocol || "").toLowerCase()) || null;
   }
 
+  function getProtocolLabel(protocol) {
+    if (protocol === "meshcore") return "MeshCore";
+    if (protocol === "meshtastic") return "Meshtastic";
+    if (protocol === "lora20") return "lora20";
+    return protocol || "-";
+  }
+
+  function getBootTransitionMode(sourceProtocol, targetProtocol) {
+    const source = String(sourceProtocol || "").toLowerCase();
+    const target = String(targetProtocol || "").toLowerCase();
+    if (!source || !target || source === target) return "";
+    if (source === "lora20") {
+      if (target === "meshcore") return "short";
+      if (target === "meshtastic") return "long";
+      return "";
+    }
+    if (source === "meshcore") {
+      if (target === "lora20") return "short";
+      if (target === "meshtastic") return "long";
+      return "";
+    }
+    if (source === "meshtastic") {
+      if (target === "lora20") return "short";
+      if (target === "meshcore") return "long";
+      return "";
+    }
+    return "";
+  }
+
+  function getBootControlSourceProtocol() {
+    if (state.deviceTransport === "serial" && state.serialRpcAvailable === false && state.serialProtocolHint) {
+      return state.serialProtocolHint;
+    }
+    return state.bootInfo?.currentProtocol || state.serialProtocolHint || "";
+  }
+
+  function getGuidedBootMessage(sourceProtocol, targetProtocol) {
+    const mode = getBootTransitionMode(sourceProtocol, targetProtocol);
+    const targetLabel = getProtocolLabel(targetProtocol);
+    if (mode === "short") {
+      return txt(
+        `Na ${getProtocolLabel(sourceProtocol)} przytrzymaj PRG 3-5.9 s, puść, a potem naciśnij RESET, żeby uruchomić ${targetLabel}. Kolejne naciśnięcie PRG kasuje uzbrojenie. Dashboard będzie próbował odzyskać USB automatycznie po restarcie.`,
+        `While running ${getProtocolLabel(sourceProtocol)}, hold PRG for 3-5.9 s, release it, then press RESET to boot ${targetLabel}. Pressing PRG again cancels the arm. The dashboard will keep trying to reconnect USB automatically after the reboot.`
+      );
+    }
+    if (mode === "long") {
+      return txt(
+        `Na ${getProtocolLabel(sourceProtocol)} przytrzymaj PRG co najmniej 6 s, puść, a potem naciśnij RESET, żeby uruchomić ${targetLabel}. Kolejne naciśnięcie PRG kasuje uzbrojenie. Dashboard będzie próbował odzyskać USB automatycznie po restarcie.`,
+        `While running ${getProtocolLabel(sourceProtocol)}, hold PRG for at least 6 s, release it, then press RESET to boot ${targetLabel}. Pressing PRG again cancels the arm. The dashboard will keep trying to reconnect USB automatically after the reboot.`
+      );
+    }
+    if (targetProtocol === "lora20") {
+      return txt(
+        "Aby wrócić do lora20 z MeshCore albo Meshtastic, przytrzymaj PRG 3-5.9 s, puść i naciśnij RESET. Dashboard będzie próbował odzyskać USB automatycznie po restarcie.",
+        "To get back to lora20 from MeshCore or Meshtastic, hold PRG for 3-5.9 s, release it, then press RESET. The dashboard will keep trying to reconnect USB automatically after the reboot."
+      );
+    }
+    return txt(
+      "Ten kierunek wymaga znajomości bieżącego systemu. Jeśli jesteś na lora20, 3-5.9 s prowadzi do MeshCore, a 6 s+ do Meshtastic. Jeśli jesteś na Meshtastic, 6 s+ prowadzi do MeshCore.",
+      "This direction depends on the currently running system. From lora20, 3-5.9 s leads to MeshCore and 6 s+ to Meshtastic. From Meshtastic, 6 s+ leads to MeshCore."
+    );
+  }
+
   function renderBootControl() {
     if (refs.switchToLora20Button) refs.switchToLora20Button.textContent = txt("Przełącz na lora20", "Switch to lora20");
     if (refs.switchToMeshCoreButton) refs.switchToMeshCoreButton.textContent = txt("Przełącz na MeshCore", "Switch to MeshCore");
@@ -1915,9 +2066,18 @@
 
     const boot = state.bootInfo;
     const connected = isDeviceConnected();
-    const currentProtocol = boot?.currentProtocol || "-";
+    const currentProtocol = getBootControlSourceProtocol() || "-";
     const bootProtocol = boot?.bootProtocol || "-";
     const slots = Array.isArray(boot?.slots) ? boot.slots : [];
+    const serialGuidedMode = state.deviceTransport === "serial" && state.serialRpcAvailable === false && Boolean(state.port);
+
+    const policyLines = [
+      txt("Tri-boot PRG/RESET:", "Tri-boot PRG/RESET:"),
+      `lora20: 3-5.9 s -> MeshCore, 6 s+ -> Meshtastic`,
+      `MeshCore: 3-5.9 s -> lora20, 6 s+ -> Meshtastic`,
+      `Meshtastic: 3-5.9 s -> lora20, 6 s+ -> MeshCore`,
+      txt("Po puszczeniu PRG wybór się uzbraja. RESET uruchamia wybrany system, a kolejne PRG kasuje uzbrojenie.", "After releasing PRG the target is armed. RESET boots the selected system, and pressing PRG again cancels the arm.")
+    ];
 
     if (!boot) {
       renderCallout(
@@ -1930,10 +2090,14 @@
       );
       setText(
         refs.bootSlotSummary,
-        txt(
-          "Brak danych boot-control z urządzenia. Najpierw pobierz info z firmware triboot.",
-          "No boot-control data from the device yet. Fetch info from the triboot firmware first."
-        )
+        [
+          txt(
+            "Brak danych boot-control z urządzenia. Najpierw pobierz info z firmware triboot.",
+            "No boot-control data from the device yet. Fetch info from the triboot firmware first."
+          ),
+          "",
+          ...policyLines
+        ].join("\n")
       );
     } else if (!boot.supported) {
       renderCallout(
@@ -1949,7 +2113,9 @@
         [
           `${txt("Aktualny protokół", "Current protocol")}: ${currentProtocol}`,
           `${txt("Cel po restarcie", "Boot target")}: ${bootProtocol}`,
-          boot.buttonHint ? `${txt("PRG", "PRG")}: ${boot.buttonHint}` : ""
+          boot.buttonHint ? `${txt("PRG", "PRG")}: ${boot.buttonHint}` : "",
+          "",
+          ...policyLines
         ].filter(Boolean).join("\n")
       );
     } else {
@@ -1957,15 +2123,20 @@
       const missingTargets = slots.filter((slot) => !slot.partitionPresent || !slot.validImage).map((slot) => slot.protocol);
       renderCallout(
         refs.bootControlNote,
-        missingTargets.length ? "warn" : "ok",
-        missingTargets.length
+        serialGuidedMode ? "warn" : (missingTargets.length ? "warn" : "ok"),
+        serialGuidedMode
+          ? txt(
+              `USB jest teraz podłączone do ${getProtocolLabel(currentProtocol)} bez JSON RPC lora20. Przyciski poniżej przechodzą w tryb instrukcji PRG/RESET i dashboard będzie próbował sam odzyskać USB po restarcie.`,
+              `USB is currently attached to ${getProtocolLabel(currentProtocol)} without the lora20 JSON RPC. The buttons below switch to PRG/RESET guidance mode and the dashboard will try to recover USB automatically after the reboot.`
+            )
+          : missingTargets.length
           ? txt(
               `Tri-boot jest aktywny, ale nie wszystkie sloty mają obraz: ${missingTargets.join(", ")}. Najpierw wgraj brakujące firmware.`,
               `Tri-boot is active, but not all slots contain a valid image: ${missingTargets.join(", ")}. Flash the missing firmware first.`
             )
           : txt(
-              `Tri-boot jest gotowy. Dostępne cele: ${readyTargets.join(", ")}.`,
-              `Tri-boot is ready. Available targets: ${readyTargets.join(", ")}.`
+              `Tri-boot jest gotowy. Przyciski dashboardu restartują bezpośrednio tylko z lora20; w MeshCore i Meshtastic pokazują instrukcję PRG/RESET i czekają na automatyczny powrót USB.`,
+              `Tri-boot is ready. Dashboard buttons reboot directly only from lora20; in MeshCore and Meshtastic they show PRG/RESET guidance and wait for USB to come back automatically.`
             )
       );
       setText(
@@ -1974,6 +2145,8 @@
           `${txt("Aktualny protokół", "Current protocol")}: ${currentProtocol}`,
           `${txt("Cel po restarcie", "Boot target")}: ${bootProtocol}`,
           boot.buttonHint ? `${txt("PRG", "PRG")}: ${boot.buttonHint}` : "",
+          "",
+          ...policyLines,
           "",
           ...slots.map((slot) => {
             const flags = [
@@ -1991,10 +2164,19 @@
     const applyButtonState = (button, protocol) => {
       if (!button) return;
       const slot = getBootSlot(protocol);
-      const enabled = connected && Boolean(boot?.supported) && Boolean(slot?.partitionPresent) && Boolean(slot?.validImage) && bootProtocol !== protocol;
+      const manualMode = getBootTransitionMode(currentProtocol, protocol);
+      const enabled = serialGuidedMode
+        ? Boolean(manualMode || (protocol === "lora20" && currentProtocol !== "lora20"))
+        : (connected && Boolean(boot?.supported) && Boolean(slot?.partitionPresent) && Boolean(slot?.validImage) && bootProtocol !== protocol);
       button.disabled = !enabled;
+      if (serialGuidedMode) {
+        button.title = enabled
+          ? getGuidedBootMessage(currentProtocol, protocol)
+          : txt("To już jest aktywny system albo panel nie zna jeszcze właściwej mapy PRG dla tego kierunku.", "This is already the active system or the dashboard does not yet know the correct PRG mapping for this direction.");
+        return;
+      }
       button.title = enabled
-        ? txt(`Przełącz i zrestartuj do ${protocol}.`, `Switch and reboot into ${protocol}.`)
+        ? txt(`Wyślij RPC i zrestartuj urządzenie do ${protocol}.`, `Send RPC and reboot the device into ${protocol}.`)
         : (!connected
             ? txt("Najpierw podłącz urządzenie po USB/BLE/Wi‑Fi.", "Connect the device over USB/BLE/Wi‑Fi first.")
             : (!boot?.supported
@@ -2288,6 +2470,16 @@
   }
 
   async function refreshDeviceState() {
+    if (state.deviceTransport === "serial" && state.serialRpcAvailable === false) {
+      addLog(
+        "warn",
+        txt(
+          "To USB jest teraz podłączone do MeshCore albo Meshtastic, więc dashboard nie ma jeszcze JSON RPC lora20. Użyj PRG + RESET, a panel spróbuje odzyskać połączenie automatycznie po powrocie na lora20.",
+          "This USB session is currently attached to MeshCore or Meshtastic, so the dashboard does not have the lora20 JSON RPC here. Use PRG + RESET and the dashboard will try to reconnect automatically once lora20 comes back."
+        )
+      );
+      return;
+    }
     if (state.deviceTransport === "ble") {
       await refreshDeviceInfo();
       await delay(240);
@@ -2299,10 +2491,11 @@
     await Promise.allSettled([refreshDeviceInfo(), refreshLorawanInfo(), refreshConnectivity()]);
   }
 
-  async function refreshDeviceInfo() {
-    const result = await requestDevice("get_info", {});
+  function applyDeviceInfoResult(result) {
+    state.serialRpcAvailable = true;
     state.deviceInfo = result.device || null;
     state.bootInfo = result.boot || state.bootInfo;
+    state.serialProtocolHint = result.boot?.currentProtocol || "lora20";
     if (result.lorawanRuntime) {
       state.lorawanInfo = {
         ...(state.lorawanInfo || {}),
@@ -2314,8 +2507,13 @@
     if (result.device?.deviceId) {
       upsertKnownDevice({ deviceId: result.device.deviceId, publicKeyHex: result.device.publicKeyHex || state.publicKeyInfo?.publicKeyHex || "" });
     }
-    renderAll();
     clearConfigDirty();
+  }
+
+  async function refreshDeviceInfo() {
+    const result = await requestDevice("get_info", {});
+    applyDeviceInfoResult(result);
+    renderAll();
     return result;
   }
 
@@ -2774,11 +2972,23 @@
       throw new Error(txt("Najpierw podłącz urządzenie, żeby zmienić target boot.", "Connect the device first to change the boot target."));
     }
 
+    const currentProtocol = getBootControlSourceProtocol();
     const protocolLabel = protocol === "meshcore"
       ? "MeshCore"
       : (protocol === "meshtastic" ? "Meshtastic" : "lora20");
+    if (state.deviceTransport === "serial" && state.serialRpcAvailable === false) {
+      const guidedMessage = getGuidedBootMessage(currentProtocol, protocol);
+      state.serialProtocolHint = protocol;
+      state.serialAutoReconnectEnabled = true;
+      addLog("device", guidedMessage);
+      renderAll();
+      return;
+    }
+
     const response = await requestDevice("set_boot_target", { protocol, reboot: true }, 30000);
     state.bootInfo = response.boot || state.bootInfo;
+    state.serialProtocolHint = protocol;
+    state.serialAutoReconnectEnabled = (state.deviceTransport === "serial");
     addLog(
       "device",
       txt(
@@ -3189,6 +3399,57 @@
     syncSchedulerInputsToState();
   }
 
+  async function probeSerialRpc() {
+    try {
+      const result = await requestDevice("get_info", {}, 3500);
+      applyDeviceInfoResult(result);
+      renderAll();
+      await Promise.allSettled([refreshLorawanInfo(), refreshConnectivity()]);
+      return true;
+    } catch (_error) {
+      state.serialRpcAvailable = false;
+      renderAll();
+      return false;
+    }
+  }
+
+  async function openSerialPortSession(port, autoReconnect = false) {
+    if (!port) throw new Error(txt("Nie znaleziono autoryzowanego portu USB.", "No authorized USB port was found."));
+    await port.open({ baudRate: 115200, bufferSize: 4096 });
+    state.port = port;
+    state.disconnecting = false;
+    state.deviceTransport = "serial";
+    state.wifiConnected = false;
+    state.serialAutoReconnectEnabled = true;
+    state.lastSerialPortInfo = getSerialPortInfo(port);
+    stopSerialReconnect();
+    addLog("device", autoReconnect
+      ? txt("Port szeregowy odzyskany automatycznie.", "Serial port reconnected automatically.")
+      : txt("Port szeregowy podłączony.", "Serial port connected."));
+    renderAll();
+    void startReadLoop();
+    await delay(1200);
+
+    const rpcReady = await probeSerialRpc();
+    if (rpcReady) {
+      await applyConnectivityMode("usb");
+      return;
+    }
+
+    const protocolLabel = state.serialProtocolHint
+      ? (state.serialProtocolHint === "meshcore"
+          ? "MeshCore"
+          : (state.serialProtocolHint === "meshtastic" ? "Meshtastic" : state.serialProtocolHint))
+      : txt("innego systemu", "another system");
+    addLog(
+      "device",
+      txt(
+        `USB połączyło się z ${protocolLabel}. Panel nie ma tu JSON RPC lora20, więc przechodzi w tryb obserwacji i spróbuje wrócić automatycznie po kolejnym restarcie USB.`,
+        `USB is attached to ${protocolLabel}. The dashboard does not have the lora20 JSON RPC here, so it stays in watch mode and will try to reconnect automatically after the next USB reboot.`
+      )
+    );
+  }
+
   function moveProfile(profileId, delta) {
     const index = state.profiles.findIndex((item) => item.id === profileId);
     if (index < 0) return;
@@ -3204,18 +3465,9 @@
       addLog("device", txt("Urządzenie jest już podłączone.", "Device is already connected."));
       return;
     }
-    const port = await navigator.serial.requestPort();
-    await port.open({ baudRate: 115200, bufferSize: 4096 });
-    state.port = port;
-    state.disconnecting = false;
-    state.deviceTransport = "serial";
-    state.wifiConnected = false;
-    addLog("device", txt("Port szeregowy podłączony.", "Serial port connected."));
-    renderAll();
-    void startReadLoop();
-    await delay(1200);
-    await refreshDeviceState();
-    await applyConnectivityMode("usb");
+    const knownPort = await findPreferredSerialPort(false);
+    const port = knownPort || await navigator.serial.requestPort();
+    await openSerialPortSession(port, false);
   }
 
   async function connectBleDevice() {
@@ -3272,6 +3524,8 @@
     });
 
     state.ble = bleState;
+    state.serialAutoReconnectEnabled = false;
+    stopSerialReconnect();
     state.deviceTransport = "ble";
     state.wifiConnected = false;
     addLog("device", txt("Bluetooth podłączony. BLE nie wymaga tokena urządzenia.", "Bluetooth connected. BLE does not require the device token."));
@@ -3283,6 +3537,8 @@
   async function connectWifiDevice() {
     handleSaveDeviceBridgeUrl();
     if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres urządzenia w sieci lokalnej.", "Provide the local device URL."));
+    state.serialAutoReconnectEnabled = false;
+    stopSerialReconnect();
     state.deviceTransport = "wifi";
     try {
       const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 8000, "ping");
@@ -3302,6 +3558,8 @@
   async function disconnectDevice(logIt) {
     if (state.deviceTransport === "serial") {
       if (!state.port) return;
+      state.serialAutoReconnectEnabled = false;
+      stopSerialReconnect();
       state.disconnecting = true;
       for (const pending of state.pending.values()) {
         clearTimeout(pending.timer);
@@ -3386,8 +3644,12 @@
     state.port = null;
     state.reader = null;
     state.disconnecting = false;
+    state.serialRpcAvailable = null;
     if (state.deviceTransport === "serial") {
       state.deviceTransport = null;
+    }
+    if (state.serialAutoReconnectEnabled) {
+      queueSerialReconnect(txt("USB rozłączyło się; dashboard czeka na ponowne pojawienie się urządzenia.", "USB disconnected; the dashboard is waiting for the device to reappear."));
     }
   }
 
@@ -3400,6 +3662,15 @@
   }
 
   async function requestDevice(command, params, timeout) {
+    if (state.deviceTransport === "serial" && state.port && state.serialRpcAvailable === false) {
+      const error = new Error(txt(
+        "To USB jest teraz podłączone do MeshCore albo Meshtastic, więc komendy JSON RPC lora20 są chwilowo niedostępne. Użyj PRG + RESET i poczekaj na automatyczny powrót USB do lora20.",
+        "This USB session is currently attached to MeshCore or Meshtastic, so the lora20 JSON RPC commands are temporarily unavailable. Use PRG + RESET and wait for USB to return automatically to lora20."
+      ));
+      error.code = "serial_rpc_unavailable";
+      throw error;
+    }
+
     const run = async () => {
       const payload = { id: `req-${state.requestId++}`, command, params: params || {} };
       const response = await sendDevicePayload(payload, timeout || TIMEOUTS[command] || TIMEOUTS.default, command);
@@ -3625,6 +3896,27 @@
     return objects;
   }
 
+  function noteSerialProtocolHint(protocol) {
+    if (!protocol) return;
+    state.serialProtocolHint = String(protocol).toLowerCase();
+  }
+
+  function maybeDetectSerialProtocolFromLine(line) {
+    const normalized = String(line || "").toLowerCase();
+    if (!normalized) return;
+    if (normalized.includes("meshtastic")) {
+      noteSerialProtocolHint("meshtastic");
+      return;
+    }
+    if (normalized.includes("meshcore") || normalized.includes("[triboot] meshcore")) {
+      noteSerialProtocolHint("meshcore");
+      return;
+    }
+    if (normalized.includes("lora20-device")) {
+      noteSerialProtocolHint("lora20");
+    }
+  }
+
   function processDeviceMessage(parsed, source) {
 
     if (parsed.id && state.pending.has(parsed.id)) {
@@ -3640,6 +3932,8 @@
     }
 
     if (parsed.type === "boot") {
+      state.serialRpcAvailable = true;
+      noteSerialProtocolHint(parsed.bootControl?.currentProtocol || "lora20");
       if (parsed.bootControl) {
         state.bootInfo = parsed.bootControl;
         renderAll();
@@ -3661,6 +3955,7 @@
 
   function handleDeviceLine(line, source) {
     if (!line) return;
+    if (source === "serial") maybeDetectSerialProtocolFromLine(line);
     try {
       processDeviceMessage(JSON.parse(line), source);
       return;
