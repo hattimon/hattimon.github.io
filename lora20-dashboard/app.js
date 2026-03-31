@@ -547,7 +547,12 @@
     configDirtyAt: 0,
     chatScope: CHAT_SCOPE_PUBLIC,
     chatPeerDeviceId: "",
-    postSendRefreshToken: 0
+    postSendRefreshToken: 0,
+    lorawanAutoJoinStatus: "idle",
+    lorawanAutoJoinInFlight: false,
+    lorawanAutoJoinTimer: 0,
+    lorawanAutoJoinToken: 0,
+    lorawanAutoJoinCooldownUntil: 0
   };
 
   function normalizePreset(value, presets, fallback) {
@@ -1249,6 +1254,208 @@
       state.serialReconnectTimer = 0;
     }
     state.serialReconnectBusy = false;
+  }
+
+  function clearLorawanJoinPoll() {
+    if (state.lorawanAutoJoinTimer) {
+      window.clearTimeout(state.lorawanAutoJoinTimer);
+      state.lorawanAutoJoinTimer = 0;
+    }
+  }
+
+  function getLorawanRuntimeState(info = state.lorawanInfo) {
+    return info?.runtime || info?.lorawanRuntime || state.deviceInfo?.lorawanRuntime || null;
+  }
+
+  function getLorawanConfigState(info = state.lorawanInfo) {
+    return info?.config || state.deviceInfo?.lorawan || null;
+  }
+
+  function hasLorawanOtaaConfig(info = state.lorawanInfo) {
+    const config = getLorawanConfigState(info);
+    return Boolean(config?.hasJoinEui && config?.hasAppKey);
+  }
+
+  function canUseLorawanRpcSession() {
+    return isDeviceConnected() && !(state.deviceTransport === "serial" && state.serialRpcAvailable === false);
+  }
+
+  function applyLorawanInfoResult(result, options = {}) {
+    state.lorawanInfo = result || null;
+    const runtime = getLorawanRuntimeState(result);
+    if (runtime?.joined) {
+      clearLorawanJoinPoll();
+      state.lorawanAutoJoinStatus = "joined";
+      return;
+    }
+    if (runtime?.joining) {
+      if (!state.lorawanAutoJoinInFlight) state.lorawanAutoJoinStatus = "polling";
+      if (options.monitor !== false && !state.lorawanAutoJoinTimer) {
+        scheduleLorawanJoinPoll(options.reason || "runtime");
+      }
+      return;
+    }
+    if (!state.lorawanAutoJoinInFlight) {
+      clearLorawanJoinPoll();
+      state.lorawanAutoJoinStatus = hasLorawanOtaaConfig(result) ? "idle" : "not-configured";
+    }
+  }
+
+  function scheduleLorawanJoinPoll(reason = "join", attempt = 0) {
+    clearLorawanJoinPoll();
+    const token = ++state.lorawanAutoJoinToken;
+    const delayMs = attempt === 0 ? 2200 : 3200;
+    state.lorawanAutoJoinTimer = window.setTimeout(() => {
+      state.lorawanAutoJoinTimer = 0;
+      void pollLorawanJoinStatus(token, attempt, reason);
+    }, delayMs);
+  }
+
+  async function pollLorawanJoinStatus(token, attempt, reason) {
+    if (token !== state.lorawanAutoJoinToken || !canUseLorawanRpcSession()) return;
+    const hadPendingJoin = state.lorawanAutoJoinStatus === "joining" || state.lorawanAutoJoinStatus === "polling";
+    try {
+      const info = await requestDevice("get_lorawan", {}, TIMEOUTS.get_lorawan);
+      applyLorawanInfoResult(info, { monitor: false, reason });
+      renderAll();
+      const runtime = getLorawanRuntimeState(info);
+      if (runtime?.joined) {
+        if (hadPendingJoin) {
+          addLog(
+            "device",
+            txt(
+              "LoRaWAN potwierdził join. Panel odświeżył status radia automatycznie.",
+              "LoRaWAN join is confirmed. The dashboard refreshed the radio status automatically."
+            ),
+            info
+          );
+          void refreshDeviceInfo().catch(() => {});
+        }
+        return;
+      }
+      if (attempt >= 18) {
+        clearLorawanJoinPoll();
+        state.lorawanAutoJoinStatus = hasLorawanOtaaConfig(info) ? "idle" : "not-configured";
+        renderAll();
+        addLog(
+          "warn",
+          txt(
+            "Join został uruchomiony, ale panel nie dostał jeszcze joined=true. Spróbuj ponownie za chwilę albo sprawdź stan radia.",
+            "Join was started, but the panel still has not received joined=true. Try again in a moment or inspect the radio state."
+          )
+        );
+        return;
+      }
+      if (runtime?.joining || hadPendingJoin) {
+        state.lorawanAutoJoinStatus = "polling";
+        renderAll();
+        scheduleLorawanJoinPoll(reason, attempt + 1);
+        return;
+      }
+      clearLorawanJoinPoll();
+      state.lorawanAutoJoinStatus = hasLorawanOtaaConfig(info) ? "idle" : "not-configured";
+      renderAll();
+    } catch (_error) {
+      if (attempt < 12 && canUseLorawanRpcSession()) {
+        scheduleLorawanJoinPoll(reason, attempt + 1);
+        return;
+      }
+      clearLorawanJoinPoll();
+      state.lorawanAutoJoinStatus = hasLorawanOtaaConfig() ? "idle" : "not-configured";
+      renderAll();
+    }
+  }
+
+  async function startLorawanJoinFlow(options = {}) {
+    const { auto = false, reason = "manual", suppressErrors = false } = options;
+    if (!canUseLorawanRpcSession()) {
+      if (suppressErrors) return null;
+      throw new Error(txt("Najpierw podłącz lora20, żeby uruchomić join.", "Connect lora20 first to run the join."));
+    }
+
+    const info = state.lorawanInfo;
+    const runtime = getLorawanRuntimeState(info);
+
+    if (!hasLorawanOtaaConfig(info)) {
+      if (suppressErrors) return null;
+      throw new Error(txt("Brakuje pełnej konfiguracji OTAA. Najpierw zapisz LoRaWAN.", "Full OTAA configuration is missing. Save LoRaWAN first."));
+    }
+    if (runtime?.joined) {
+      state.lorawanAutoJoinStatus = "joined";
+      renderAll();
+      return info;
+    }
+    if (runtime?.joining) {
+      state.lorawanAutoJoinStatus = "polling";
+      renderAll();
+      scheduleLorawanJoinPoll(reason, 0);
+      return info;
+    }
+    if (state.lorawanAutoJoinInFlight || Date.now() < state.lorawanAutoJoinCooldownUntil) {
+      return info;
+    }
+
+    state.lorawanAutoJoinInFlight = true;
+    state.lorawanAutoJoinStatus = "joining";
+    state.lorawanAutoJoinCooldownUntil = Date.now() + 15000;
+    renderAll();
+
+    addLog(
+      "device",
+      auto
+        ? txt(
+            "Panel automatycznie uruchamia join LoRaWAN po połączeniu z lora20 i będzie sam odświeżał status radia.",
+            "The dashboard is automatically starting the LoRaWAN join after connecting to lora20 and will keep refreshing the radio status."
+          )
+        : txt(
+            "Uruchamiam join LoRaWAN i przechodzę w automatyczne odświeżanie statusu radia.",
+            "Starting the LoRaWAN join and switching into automatic radio-status refresh."
+          )
+    );
+
+    try {
+      await requestDevice("join_lorawan", {}, TIMEOUTS.join_lorawan);
+      state.lorawanAutoJoinStatus = "polling";
+      renderAll();
+      scheduleLorawanJoinPoll(reason, 0);
+      return info;
+    } catch (error) {
+      clearLorawanJoinPoll();
+      state.lorawanAutoJoinStatus = hasLorawanOtaaConfig() ? "idle" : "not-configured";
+      renderAll();
+      addLog(
+        "error",
+        auto
+          ? txt(
+              `Automatyczny join LoRaWAN nie wystartował: ${error instanceof Error ? error.message : String(error)}`,
+              `Automatic LoRaWAN join did not start: ${error instanceof Error ? error.message : String(error)}`
+            )
+          : (error instanceof Error ? error.message : String(error))
+      );
+      if (!suppressErrors) throw error;
+      return null;
+    } finally {
+      state.lorawanAutoJoinInFlight = false;
+      renderAll();
+    }
+  }
+
+  function maybeAutoJoinLorawan(reason = "refresh") {
+    if (!canUseLorawanRpcSession()) return;
+    if (!hasLorawanOtaaConfig()) return;
+    const runtime = getLorawanRuntimeState();
+    if (runtime?.joined) {
+      state.lorawanAutoJoinStatus = "joined";
+      renderAll();
+      return;
+    }
+    if (runtime?.joining) {
+      state.lorawanAutoJoinStatus = "polling";
+      renderAll();
+      if (!state.lorawanAutoJoinTimer) scheduleLorawanJoinPoll(reason, 0);
+      return;
+    }
+    void startLorawanJoinFlow({ auto: true, reason, suppressErrors: true });
   }
 
   function queueSerialReconnect(reason = "") {
@@ -2210,8 +2417,8 @@
 
   function renderRadio() {
     const info = state.lorawanInfo;
-    const runtime = info?.runtime || info?.lorawanRuntime;
-    const config = info?.config || state.deviceInfo?.lorawan;
+    const runtime = getLorawanRuntimeState(info);
+    const config = getLorawanConfigState(info);
 
     setText(refs.lorawanJoinedValue, runtime ? String(Boolean(runtime.joined)) : "-");
     setText(refs.lorawanPortValue, config?.appPort == null ? "-" : String(config.appPort));
@@ -2221,6 +2428,8 @@
 
     const messages = [];
     if (!config?.hasAppKey || !config?.hasJoinEui) messages.push(txt("Brakuje pelnej konfiguracji OTAA.", "Full OTAA configuration is missing."));
+    if (state.lorawanAutoJoinStatus === "joining") messages.unshift(txt("Panel automatycznie uruchamia join LoRaWAN po połączeniu z lora20.", "The dashboard is automatically starting LoRaWAN join after connecting to lora20."));
+    if (state.lorawanAutoJoinStatus === "polling") messages.unshift(txt("Join trwa. Panel sam odświeża radio i zaktualizuje joined=true po potwierdzeniu.", "Join is in progress. The dashboard is polling the radio and will update joined=true once it is confirmed."));
     if (runtime && !runtime.hardwareReady) messages.push(txt("hardwareReady=false. Po restarcie Helteca odczekaj chwilę i dopiero odczytaj radio lub wykonaj join.", "hardwareReady=false. After Heltec restart, wait a moment, then refresh radio state or run join."));
     if (runtime && !runtime.initialized) messages.push(txt("initialized=false. Radio nie jest gotowe do wysyłki.", "initialized=false. Radio is not ready to send yet."));
     if (runtime && !runtime.joined) messages.push(txt("joined=false. Wykonaj join przed wysyłką.", "joined=false. Run join before sending."));
@@ -2507,9 +2716,11 @@
       await refreshLorawanInfo();
       await delay(240);
       await refreshConnectivity();
+      maybeAutoJoinLorawan("ble-refresh");
       return;
     }
     await Promise.allSettled([refreshDeviceInfo(), refreshLorawanInfo(), refreshConnectivity()]);
+    maybeAutoJoinLorawan("refresh-state");
   }
 
   function applyDeviceInfoResult(result) {
@@ -2519,12 +2730,12 @@
     state.bootInfo = result.boot || state.bootInfo;
     state.serialProtocolHint = result.boot?.currentProtocol || "lora20";
     if (result.lorawanRuntime) {
-      state.lorawanInfo = {
+      applyLorawanInfoResult({
         ...(state.lorawanInfo || {}),
         config: state.lorawanInfo?.config || result.device?.lorawan || null,
         runtime: result.lorawanRuntime,
         heltec: state.lorawanInfo?.heltec || { hasLicense: Boolean(result.device?.heltecLicensePresent) }
-      };
+      }, { monitor: true, reason: "device-info" });
     }
     if (result.device?.deviceId) {
       upsertKnownDevice({ deviceId: result.device.deviceId, publicKeyHex: result.device.publicKeyHex || state.publicKeyInfo?.publicKeyHex || "" });
@@ -2543,6 +2754,8 @@
     state.serialRpcAvailable = false;
     state.serialTriBootAvailable = true;
     state.deviceInfo = null;
+    state.lorawanInfo = null;
+    state.connectivityInfo = null;
     state.bootInfo = result ? {
       supported: Boolean(result.supported ?? true),
       currentProtocol: String(result.currentProtocol || state.serialProtocolHint || ""),
@@ -2560,6 +2773,8 @@
   async function refreshTriBootInfo() {
     const result = await sendTriBootSerialCommand("info", "", 3500);
     applyTriBootInfoResult(result);
+    clearLorawanJoinPoll();
+    state.lorawanAutoJoinStatus = "idle";
     renderAll();
     return result;
   }
@@ -2616,7 +2831,7 @@
 
   async function refreshLorawanInfo() {
     const result = await requestDevice("get_lorawan", {});
-    state.lorawanInfo = result;
+    applyLorawanInfoResult(result, { monitor: true, reason: "radio-refresh" });
     renderAll();
     return result;
   }
@@ -3002,16 +3217,7 @@
   }
 
   async function joinLorawan() {
-    await requestDevice("join_lorawan", {}, TIMEOUTS.join_lorawan);
-    for (let attempt = 0; attempt < 10; attempt += 1) {
-      await delay(4000);
-      const info = await refreshLorawanInfo();
-      if (info.runtime?.joined) {
-        addLog("device", txt("Dołączenie LoRaWAN zakończone.", "LoRaWAN join completed."));
-        return;
-      }
-    }
-    addLog("warn", txt("Join uruchomiony, ale joined=true jeszcze sie nie pojawilo. Sprawdz ChirpStack i stan radia.", "Join started, but joined=true did not appear yet. Check ChirpStack and radio status."));
+    await startLorawanJoinFlow({ auto: false, reason: "manual", suppressErrors: false });
   }
 
   async function switchBootTarget(protocol) {
@@ -3511,6 +3717,7 @@
     const rpcReady = await probeSerialRpc();
     if (rpcReady) {
       await applyConnectivityMode("usb");
+      maybeAutoJoinLorawan(autoReconnect ? "serial-reconnect" : "serial-connect");
       return;
     }
 
@@ -3622,7 +3829,7 @@
     addLog("device", txt("Bluetooth podłączony. BLE nie wymaga tokena urządzenia.", "Bluetooth connected. BLE does not require the device token."));
     renderAll();
     await delay(400);
-    await refreshDeviceInfo();
+    await refreshDeviceState();
   }
 
   async function connectWifiDevice() {
@@ -3676,6 +3883,8 @@
 
     if (state.deviceTransport === "ble") {
       flushPendingDeviceRequests(txt("Bluetooth rozlaczony.", "Bluetooth disconnected."));
+      clearLorawanJoinPoll();
+      state.lorawanAutoJoinStatus = "idle";
       if (state.ble?.device?.gatt?.connected) {
         state.ble.device.gatt.disconnect();
       }
@@ -3688,6 +3897,8 @@
 
     if (state.deviceTransport === "wifi") {
       flushPendingDeviceRequests(txt("Wi‑Fi bridge rozlaczony.", "Wi‑Fi bridge disconnected."));
+      clearLorawanJoinPoll();
+      state.lorawanAutoJoinStatus = "idle";
       state.deviceTransport = null;
       state.wifiConnected = false;
       state.activeWifiAuthToken = "";
@@ -3737,6 +3948,8 @@
     state.disconnecting = false;
     state.serialRpcAvailable = null;
     state.serialTriBootAvailable = null;
+    clearLorawanJoinPoll();
+    state.lorawanAutoJoinStatus = "idle";
     if (state.deviceTransport === "serial") {
       state.deviceTransport = null;
     }

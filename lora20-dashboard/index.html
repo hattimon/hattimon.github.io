@@ -274,9 +274,15 @@
               <button id="transactionsButton" class="button button--ghost" type="button" data-i18n="actions.reloadHistory">Odśwież historię</button>
             </div>
           </div>
-          <div class="stack">
-            <div><h3 data-i18n="portfolio.balancesTitle">Tokeny w portfelu</h3><div id="portfolioList" class="token-grid"></div></div>
-            <div><h3 data-i18n="portfolio.historyTitle">Ostatnie zdarzenia</h3><div id="recentTransactionsList" class="timeline"></div></div>
+          <div class="portfolio-stack">
+            <section class="portfolio-panel portfolio-panel--balances">
+              <h3 data-i18n="portfolio.balancesTitle">Tokeny w portfelu</h3>
+              <div id="portfolioList" class="token-grid"></div>
+            </section>
+            <section class="portfolio-panel portfolio-panel--history">
+              <h3 data-i18n="portfolio.historyTitle">Ostatnie zdarzenia</h3>
+              <div id="recentTransactionsList" class="timeline"></div>
+            </section>
           </div>
           <div class="visually-hidden">
             <input id="balanceDeviceIdInput" type="text" />
@@ -369,7 +375,7 @@
                   </div>
                 </div>
               </details>
-              <details class="accordion">
+              <details class="accordion" open>
                 <summary><span data-i18n="operations.transferTitle">Transfer tokena</span></summary>
                 <div class="accordion__body">
                   <div class="field-grid">
@@ -545,6 +551,6 @@
       </div>
     </div>
 
-    <script defer src="./app.js?v=20260331-17" charset="utf-8"></script>
+    <script defer src="./app.js?v=20260331-18" charset="utf-8"></script>
   </body>
 </html>
