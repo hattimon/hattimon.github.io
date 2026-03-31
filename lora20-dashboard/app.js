@@ -65,6 +65,7 @@
   const SOUND_ASSETS = {
     loraConfirmed: "./audio/data.wav?v=20260401-01"
   };
+  let dashboardLayoutSyncFrame = 0;
 
   const CHAT_ALPHABET = " abcdefghijklmnopqrstuvwxyz0123456789.,!?-_/:@+#()[]'\";%&=*<>\n|$";
   const CHAT_MAX_PACKED_BYTES = 24;
@@ -870,8 +871,11 @@
     applyTheme();
     applyLanguage();
     renderAll();
+    queueDashboardLayoutSync();
     updateSerialSupport();
     setupSerialReconnectHooks();
+    window.addEventListener("resize", queueDashboardLayoutSync, { passive: true });
+    window.addEventListener("load", queueDashboardLayoutSync, { passive: true });
     window.addEventListener("beforeunload", () => {
       if (state.deviceTransport) {
         void disconnectDevice(false);
@@ -1529,6 +1533,53 @@
     renderEducation();
     renderOperations();
     applyLogDockState();
+    queueDashboardLayoutSync();
+  }
+
+  function queueDashboardLayoutSync() {
+    if (dashboardLayoutSyncFrame) {
+      window.cancelAnimationFrame(dashboardLayoutSyncFrame);
+    }
+    dashboardLayoutSyncFrame = window.requestAnimationFrame(() => {
+      dashboardLayoutSyncFrame = 0;
+      syncDashboardLayout();
+    });
+  }
+
+  function syncDashboardLayout() {
+    syncHeroMintStreamHeight();
+    syncPortfolioListHeight();
+  }
+
+  function syncHeroMintStreamHeight() {
+    const hero = document.querySelector(".hero");
+    const mintStream = hero?.querySelector(".hero__mint-stream");
+    const controls = hero?.querySelector(".hero__controls");
+    if (!mintStream) return;
+    if (!hero || !controls || window.innerWidth <= 1220) {
+      hero?.style.removeProperty("--hero-stream-height");
+      return;
+    }
+    const controlsHeight = Math.ceil(controls.getBoundingClientRect().height);
+    if (controlsHeight > 0) {
+      hero.style.setProperty("--hero-stream-height", `${controlsHeight}px`);
+    }
+  }
+
+  function syncPortfolioListHeight() {
+    const list = refs.portfolioList;
+    if (!list) return;
+    list.style.removeProperty("maxHeight");
+    list.style.removeProperty("overflowY");
+    const cards = Array.from(list.children).filter((node) => node instanceof HTMLElement);
+    if (!cards.length) return;
+    const visibleCards = cards.slice(0, Math.min(4, cards.length));
+    const listTop = list.getBoundingClientRect().top;
+    const maxBottom = Math.max(...visibleCards.map((card) => card.getBoundingClientRect().bottom));
+    const targetHeight = Math.max(0, Math.ceil(maxBottom - listTop + 4));
+    if (targetHeight <= 0) return;
+    list.style.maxHeight = `${targetHeight}px`;
+    list.style.overflowY = cards.length > 4 ? "auto" : "visible";
   }
 
   function isDeviceConnected() {
