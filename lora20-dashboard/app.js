@@ -588,6 +588,8 @@
     configDirtyAt: 0,
     chatScope: CHAT_SCOPE_PUBLIC,
     chatPeerDeviceId: "",
+    chatLastRenderedSignature: "",
+    chatForceScrollToLatest: false,
     postSendRefreshToken: 0,
     connectivityApplyInFlight: false,
     lorawanAutoJoinStatus: "idle",
@@ -630,6 +632,33 @@
 
   function formatSecondsPresetLabel(seconds) {
     return formatMinutesPresetLabel(Math.max(1, Math.round(Number(seconds || 0) / 60)));
+  }
+
+  function getChatLatestMessageSignature(messages) {
+    if (!Array.isArray(messages) || !messages.length) return "";
+    const chronological = [...messages].reverse();
+    const latest = chronological[chronological.length - 1];
+    if (!latest) return "";
+    return [
+      latest.deviceId || "",
+      latest.recipientDeviceId || "",
+      latest.messageScope || "",
+      latest.messageText || latest.config?.messageText || "",
+      latest.receivedAt || "",
+      latest.createdAt || ""
+    ].join("|");
+  }
+
+  function scrollChatToLatest() {
+    if (!refs.chatThread) return;
+    window.requestAnimationFrame(() => {
+      if (!refs.chatThread) return;
+      refs.chatThread.scrollTop = refs.chatThread.scrollHeight;
+      window.requestAnimationFrame(() => {
+        if (!refs.chatThread) return;
+        refs.chatThread.scrollTop = refs.chatThread.scrollHeight;
+      });
+    });
   }
 
   function getChatPackedByteLength(charCount) {
@@ -2315,6 +2344,7 @@
     const canChat = Boolean(activeDeviceId && (isPublicChat || (peer && peer.deviceId !== activeDeviceId)));
     const chatBackendMissing = state.chatEndpointAvailable === false;
     const canSendChat = canChat && !chatBackendMissing;
+    const latestChatSignature = getChatLatestMessageSignature(state.chatMessages);
     const draftText = refs.chatMessageInput.value || "";
     const retentionInfo = state.chatRetention?.mode === "soft"
       ? txt(
@@ -2448,6 +2478,16 @@
           `Budżet chatu: do ${CHAT_MAX_CHAR_COUNT} znaków po normalizacji, maks. ${CHAT_MAX_PACKED_BYTES} B spakowanego tekstu.`,
           `Chat budget: up to ${CHAT_MAX_CHAR_COUNT} normalized characters, max ${CHAT_MAX_PACKED_BYTES} packed bytes.`
         ));
+
+    const shouldScrollToLatest = Boolean(
+      state.chatMessages.length && (
+        state.chatForceScrollToLatest ||
+        latestChatSignature !== state.chatLastRenderedSignature
+      )
+    );
+    state.chatLastRenderedSignature = latestChatSignature;
+    state.chatForceScrollToLatest = false;
+    if (shouldScrollToLatest) scrollChatToLatest();
   }
 
   function getBootSlot(protocol) {
@@ -3713,6 +3753,7 @@
       chatScope: isPublicChat ? CHAT_SCOPE_PUBLIC : CHAT_SCOPE_DIRECT
     });
     if (refs.chatMessageInput) refs.chatMessageInput.value = "";
+    state.chatForceScrollToLatest = true;
     renderChat();
   }
 
