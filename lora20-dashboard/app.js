@@ -589,7 +589,9 @@
     chatScope: CHAT_SCOPE_PUBLIC,
     chatPeerDeviceId: "",
     chatLastRenderedSignature: "",
+    chatAutoFollow: true,
     chatForceScrollToLatest: false,
+    chatProgrammaticScroll: false,
     postSendRefreshToken: 0,
     connectivityApplyInFlight: false,
     lorawanAutoJoinStatus: "idle",
@@ -677,14 +679,30 @@
 
   function scrollChatToLatest() {
     if (!refs.chatThread) return;
+    state.chatProgrammaticScroll = true;
     window.requestAnimationFrame(() => {
       if (!refs.chatThread) return;
       refs.chatThread.scrollTop = refs.chatThread.scrollHeight;
       window.requestAnimationFrame(() => {
         if (!refs.chatThread) return;
         refs.chatThread.scrollTop = refs.chatThread.scrollHeight;
+        state.chatAutoFollow = true;
+        window.requestAnimationFrame(() => {
+          state.chatProgrammaticScroll = false;
+        });
       });
     });
+  }
+
+  function isChatNearLatest() {
+    if (!refs.chatThread) return true;
+    const distance = refs.chatThread.scrollHeight - refs.chatThread.scrollTop - refs.chatThread.clientHeight;
+    return distance <= 28;
+  }
+
+  function handleChatThreadScroll() {
+    if (state.chatProgrammaticScroll) return;
+    state.chatAutoFollow = isChatNearLatest();
   }
 
   function getChatPackedByteLength(charCount) {
@@ -1059,11 +1077,13 @@
     wireAction(refs.chatPublicButton, () => {
       state.chatScope = CHAT_SCOPE_PUBLIC;
       state.chatMessages = [];
+      state.chatAutoFollow = true;
       renderChat();
-      void loadChatMessages({ scope: CHAT_SCOPE_PUBLIC });
+      void loadChatMessages({ scope: CHAT_SCOPE_PUBLIC, scrollToLatest: true });
     });
-    wireAction(refs.chatRefreshButton, () => loadChatMessages({ forceReload: true }));
+    wireAction(refs.chatRefreshButton, () => loadChatMessages({ forceReload: true, scrollToLatest: true }));
     wireAction(refs.chatSendButton, () => sendChatMessage());
+    refs.chatThread?.addEventListener("scroll", handleChatThreadScroll, { passive: true });
     refs.tokenSearchInput?.addEventListener("input", renderTokenLibrary);
     refs.tokenQuickPick?.addEventListener("change", handleQuickPickChange);
     refs.chatMessageInput?.addEventListener("input", renderChat);
@@ -2513,10 +2533,11 @@
           `Chat budget: up to ${CHAT_MAX_CHAR_COUNT} normalized characters, max ${CHAT_MAX_PACKED_BYTES} packed bytes.`
         ));
 
+    const latestMessageChanged = latestChatSignature !== state.chatLastRenderedSignature;
     const shouldScrollToLatest = Boolean(
       state.chatMessages.length && (
         state.chatForceScrollToLatest ||
-        latestChatSignature !== state.chatLastRenderedSignature
+        (latestMessageChanged && state.chatAutoFollow)
       )
     );
     state.chatLastRenderedSignature = latestChatSignature;
@@ -3376,6 +3397,7 @@
     const scope = typeof target === "string" ? CHAT_SCOPE_DIRECT : (target.scope ?? state.chatScope);
     const peerDeviceId = typeof target === "string" ? target : (target.peerDeviceId ?? state.chatPeerDeviceId);
     const forceReload = typeof target === "object" && Boolean(target.forceReload);
+    const scrollToLatest = typeof target === "object" && Boolean(target.scrollToLatest);
 
     if (state.chatEndpointAvailable === false && !forceReload) {
       renderChat();
@@ -3401,6 +3423,7 @@
       state.chatEndpointAvailable = true;
       state.chatMessages = Array.isArray(response.messages) ? response.messages : [];
       state.chatRetention = response.retention || state.chatRetention;
+      if (scrollToLatest) state.chatForceScrollToLatest = true;
       renderChat();
       return response;
     } catch (error) {
@@ -3976,11 +3999,12 @@
       if (state.chatPeerDeviceId === deviceId) {
         state.chatPeerDeviceId = state.knownDevices.find((item) => item.deviceId !== getCurrentDeviceId())?.deviceId || "";
         state.chatMessages = [];
+        state.chatAutoFollow = true;
         if (!state.chatPeerDeviceId) state.chatScope = CHAT_SCOPE_PUBLIC;
       }
       saveJson(STORAGE.knownDevices, state.knownDevices);
       renderAll();
-      if (state.chatScope === CHAT_SCOPE_PUBLIC || state.chatPeerDeviceId) void loadChatMessages();
+      if (state.chatScope === CHAT_SCOPE_PUBLIC || state.chatPeerDeviceId) void loadChatMessages({ scrollToLatest: true });
       return;
     }
 
@@ -3997,11 +4021,12 @@
       if (state.chatPeerDeviceId === deviceId) {
         state.chatPeerDeviceId = state.knownDevices.find((item) => item.deviceId !== deviceId)?.deviceId || "";
         state.chatMessages = [];
+        state.chatAutoFollow = true;
         if (!state.chatPeerDeviceId) state.chatScope = CHAT_SCOPE_PUBLIC;
       }
       renderAll();
       void loadPortfolioAndHistory();
-      if (state.chatScope === CHAT_SCOPE_PUBLIC || state.chatPeerDeviceId) void loadChatMessages();
+      if (state.chatScope === CHAT_SCOPE_PUBLIC || state.chatPeerDeviceId) void loadChatMessages({ scrollToLatest: true });
       return;
     }
 
@@ -4010,8 +4035,9 @@
       state.chatScope = CHAT_SCOPE_DIRECT;
       state.chatPeerDeviceId = deviceId;
       state.chatMessages = [];
+      state.chatAutoFollow = true;
       renderChat();
-      void loadChatMessages({ scope: CHAT_SCOPE_DIRECT, peerDeviceId: deviceId });
+      void loadChatMessages({ scope: CHAT_SCOPE_DIRECT, peerDeviceId: deviceId, scrollToLatest: true });
     }
   }
 
