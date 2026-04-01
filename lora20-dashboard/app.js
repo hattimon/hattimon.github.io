@@ -114,8 +114,22 @@
     "hero.chipThree": "Sticky log dock",
     "setup.eyebrow": "Device setup",
     "setup.title": "Heltec V4 connectivity setup",
-    "setup.lead": "Save Wi-Fi settings over USB or Bluetooth, then control the device over BLE or the local Wi-Fi address.",
+    "setup.lead": "Provision the device over USB or Bluetooth. The dashboard will detect the DHCP Wi-Fi address automatically, and you can still force a manual URL when your network needs it.",
     "setup.back": "Back to dashboard",
+    "setup.quickTitle": "Recommended order",
+    "setup.quickLead": "1. Connect over USB or Bluetooth. 2. Save Wi-Fi, BLE and token settings. 3. Wait for DHCP. 4. Use the detected device URL or enter a manual override only if your network requires it.",
+    "setup.accessKicker": "Access",
+    "setup.accessTitle": "USB, Bluetooth and local Wi-Fi",
+    "setup.accessLead": "Use USB or BLE for provisioning. Once the device gets a DHCP address, the dashboard can switch to the local Wi-Fi RPC automatically.",
+    "setup.bluetoothKicker": "Bluetooth",
+    "setup.bluetoothTitle": "Pairing and local control",
+    "setup.bluetoothLead": "Bluetooth stays available for provisioning and local RPC. The pairing PIN is set here and shown on the OLED only while pairing is active.",
+    "setup.wifiKicker": "Wi-Fi client",
+    "setup.wifiTitle": "Join the user's local network",
+    "setup.wifiLead": "The device connects as a DHCP client. Leave the manual URL empty to use automatic IP detection from the device runtime.",
+    "setup.powerKicker": "Security and power",
+    "setup.powerTitle": "RPC token, display sleep and power save",
+    "setup.powerLead": "The Wi-Fi token protects the local /rpc endpoint. Display sleep and power-save levels stay device-side and survive reboot.",
     "mintStream.kicker": "Mint stream",
     "mintStream.title": "Latest mint operations",
     "mintStream.hint": "Click an entry to open witness details and the signal-flow diagram.",
@@ -124,6 +138,10 @@
     "settings.sound": "Sounds",
     "settings.indexerUrl": "Public indexer URL",
     "settings.deviceBridgeUrl": "Device URL on your local network",
+    "settings.deviceBridgeDetected": "Detected device URL",
+    "settings.deviceBridgeDetectedEmpty": "Waiting for a DHCP IP from the device.",
+    "settings.deviceBridgeOverride": "Manual URL override (optional)",
+    "settings.deviceBridgeOverrideHint": "Leave this empty to use the DHCP IP reported by the device. Fill it only when you need to force a custom URL.",
     "settings.deviceBluetoothEnabled": "Bluetooth enabled",
     "settings.deviceBluetoothName": "Bluetooth device name",
     "settings.deviceBluetoothPin": "Bluetooth pairing PIN",
@@ -134,7 +152,8 @@
     "settings.deviceWifiReconnect": "Auto reconnect Wi-Fi",
     "settings.deviceAuthToken": "Device auth token (Wi-Fi)",
     "settings.deviceAuthTokenHint": "This token protects device RPC over Wi-Fi. USB and Bluetooth do not need it.",
-    "settings.deviceWifiApFallback": "Allow AP fallback",
+    "settings.deviceWifiApFallback": "Fallback setup hotspot preference",
+    "settings.deviceWifiApFallbackHint": "This build only stores the fallback hotspot preference. It does not automatically start a provisioning access point yet.",
     "settings.displaySleepSeconds": "Display sleep (seconds)",
     "settings.displaySleepAlwaysOn": "Always on",
     "settings.bridgeWindowSeconds": "Bridge window after reboot (seconds)",
@@ -298,8 +317,22 @@
     "hero.chipThree": "Sticky log dock",
     "setup.eyebrow": "Konfiguracja urządzenia",
     "setup.title": "Konfiguracja łączności Heltec V4",
-    "setup.lead": "Zapisz Wi‑Fi przez USB lub Bluetooth, a potem obsługuj urządzenie po BLE albo lokalnym adresie Wi‑Fi.",
+    "setup.lead": "Skonfiguruj urządzenie przez USB albo Bluetooth. Panel sam wykryje adres DHCP po Wi‑Fi, a ręczny URL pozostaje tylko jako override dla specyficznych sieci.",
     "setup.back": "Powrót do panelu",
+    "setup.quickTitle": "Najkrótsza ścieżka",
+    "setup.quickLead": "1. Połącz USB albo Bluetooth. 2. Zapisz BLE, Wi‑Fi i token. 3. Poczekaj na DHCP. 4. Użyj wykrytego adresu urządzenia albo wpisz własny tylko wtedy, gdy Twoja sieć tego wymaga.",
+    "setup.accessKicker": "Dostęp",
+    "setup.accessTitle": "USB, Bluetooth i lokalne Wi‑Fi",
+    "setup.accessLead": "USB i BLE służą do konfiguracji. Gdy urządzenie dostanie adres z DHCP, dashboard może przejść na lokalne RPC po Wi‑Fi bez ręcznego wpisywania IP.",
+    "setup.bluetoothKicker": "Bluetooth",
+    "setup.bluetoothTitle": "Parowanie i lokalna obsługa",
+    "setup.bluetoothLead": "Bluetooth pozostaje kanałem provisioningowym i lokalnym RPC. PIN ustawiasz tutaj, a na OLED pojawia się tylko podczas aktywnego parowania.",
+    "setup.wifiKicker": "Klient Wi‑Fi",
+    "setup.wifiTitle": "Połączenie z siecią użytkownika",
+    "setup.wifiLead": "Urządzenie łączy się jako klient DHCP. Zostaw ręczny URL pusty, żeby panel używał automatycznie adresu zgłoszonego przez urządzenie.",
+    "setup.powerKicker": "Bezpieczeństwo i zasilanie",
+    "setup.powerTitle": "Token RPC, ekran i oszczędzanie energii",
+    "setup.powerLead": "Token Wi‑Fi chroni lokalne /rpc. Uśpienie ekranu i poziom oszczędzania energii zapisują się w urządzeniu i przetrwają restart.",
     "mintStream.kicker": "Mint stream",
     "mintStream.title": "Ostatnie operacje mint",
     "mintStream.hint": "Kliknij wpis, aby otworzyć szczegóły witness i diagram przepływu sygnału.",
@@ -308,6 +341,10 @@
     "settings.sound": "Dźwięki",
     "settings.indexerUrl": "Publiczny adres indexera",
     "settings.deviceBridgeUrl": "Adres urządzenia w sieci lokalnej",
+    "settings.deviceBridgeDetected": "Wykryty adres urządzenia",
+    "settings.deviceBridgeDetectedEmpty": "Czekam na adres DHCP z urządzenia.",
+    "settings.deviceBridgeOverride": "Ręczny override URL (opcjonalnie)",
+    "settings.deviceBridgeOverrideHint": "Zostaw puste, aby używać adresu DHCP zgłoszonego przez urządzenie. Wypełnij tylko wtedy, gdy chcesz wymusić własny URL.",
     "settings.deviceBluetoothEnabled": "Bluetooth włączony",
     "settings.deviceBluetoothName": "Nazwa urządzenia Bluetooth",
     "settings.deviceBluetoothPin": "PIN parowania Bluetooth",
@@ -318,7 +355,8 @@
     "settings.deviceWifiReconnect": "Automatyczne ponawianie Wi‑Fi",
     "settings.deviceAuthToken": "Token urządzenia (Wi‑Fi)",
     "settings.deviceAuthTokenHint": "Ten token chroni RPC po Wi‑Fi. USB i Bluetooth go nie wymagają.",
-    "settings.deviceWifiApFallback": "Pozwól na fallback AP",
+    "settings.deviceWifiApFallback": "Preferencja awaryjnego hotspotu konfiguracji",
+    "settings.deviceWifiApFallbackHint": "Ten build tylko zapamiętuje preferencję hotspotu awaryjnego. Nie uruchamia jeszcze automatycznie własnego punktu dostępowego.",
     "settings.displaySleepSeconds": "Uśpienie ekranu (sekundy)",
     "settings.displaySleepAlwaysOn": "Zawsze włączony",
     "settings.bridgeWindowSeconds": "Okno łączności po restarcie (sekundy)",
@@ -475,7 +513,7 @@
 
   const refs = {};
   const refNames = [
-    "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput", "deviceBridgeHint",
+    "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput", "deviceBridgeHint", "deviceBridgeDetectedValue",
     "deviceBluetoothEnabledInput", "deviceBluetoothNameInput", "deviceBluetoothPinInput", "deviceWifiEnabledInput",
     "deviceWifiSsidInput", "deviceWifiPasswordInput", "deviceWifiHostnameInput", "deviceWifiReconnectInput",
     "deviceAuthTokenInput", "generateAuthTokenButton",
@@ -625,6 +663,49 @@
     if (parsed <= 120) return 120;
     if (parsed <= 240) return 240;
     return 480;
+  }
+
+  function getConnectivityRuntimeInfo() {
+    return state.connectivityInfo?.runtime || state.connectivityInfo || state.deviceInfo?.connectivity || null;
+  }
+
+  function getDetectedDeviceBridgeUrl() {
+    const info = getConnectivityRuntimeInfo();
+    const wifiIp = String(info?.wifiIp || info?.wifi?.ipAddress || "").trim();
+    if (wifiIp) {
+      return normalizeUrl(wifiIp);
+    }
+
+    const wifiHostname = String(info?.wifiHostname || info?.wifi?.hostname || "").trim();
+    if (wifiHostname) {
+      return normalizeUrl(`${wifiHostname}.local`);
+    }
+
+    return "";
+  }
+
+  function getActiveDeviceBridgeUrl() {
+    return normalizeUrl(state.deviceBridgeUrl) || getDetectedDeviceBridgeUrl() || "";
+  }
+
+  function syncDeviceBridgeControls() {
+    const detectedUrl = getDetectedDeviceBridgeUrl();
+    const manualUrl = normalizeUrl(state.deviceBridgeUrl) || "";
+
+    if (refs.deviceBridgeDetectedValue) {
+      refs.deviceBridgeDetectedValue.textContent = detectedUrl || txt(
+        "Czekam na DHCP IP z urządzenia.",
+        "Waiting for the device DHCP IP."
+      );
+    }
+
+    if (refs.deviceBridgeUrlInput) {
+      if (document.activeElement !== refs.deviceBridgeUrlInput) {
+        refs.deviceBridgeUrlInput.value = manualUrl;
+      }
+      refs.deviceBridgeUrlInput.placeholder = detectedUrl || "http://192.168.0.50";
+      refs.deviceBridgeUrlInput.dataset.bridgeMode = manualUrl ? "manual" : (detectedUrl ? "auto" : "pending");
+    }
   }
 
   function detectDeviceMode() {
@@ -1171,6 +1252,7 @@
       if (refs.configAutoMintTickInput) refs.configAutoMintTickInput.value = state.scheduler.singleTick || "LORA";
       if (refs.configAutoMintAmountInput) refs.configAutoMintAmountInput.value = state.scheduler.singleAmount || "100";
       if (refs.protocolVersionValue) refs.protocolVersionValue.textContent = "v1 / Ed25519 / LoRaWAN";
+      syncDeviceBridgeControls();
       applyLogDockState();
     }
 
@@ -1212,6 +1294,8 @@
     state.deviceBridgeUrl = normalizeUrl(refs.deviceBridgeUrlInput?.value) || DEFAULTS.deviceBridgeUrl;
     if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
     writeStorage(STORAGE.deviceBridgeUrl, state.deviceBridgeUrl);
+    syncDeviceBridgeControls();
+    renderConnectivityHint();
   }
 
   function handleSaveConnectivity() {
@@ -1297,7 +1381,7 @@
     try {
       const result = await requestDevice("set_connectivity", params, TIMEOUTS.set_config);
       state.connectivityRpcUnsupported = false;
-      if (state.deviceTransport === "wifi" && params.rpcToken) {
+      if (params.rpcToken) {
         state.activeWifiAuthToken = params.rpcToken;
       }
       await refreshConnectivity();
@@ -1735,6 +1819,7 @@
 
   function renderAll() {
     renderBadges();
+    syncDeviceBridgeControls();
     renderConnectivityHint();
     renderOverview();
     renderMintMatrix();
@@ -1873,18 +1958,32 @@
 
   function renderConnectivityHint() {
     if (!refs.deviceBridgeHint) return;
-    const info = state.connectivityInfo || {};
+    const info = getConnectivityRuntimeInfo() || {};
     const parts = [];
+    const manualUrl = normalizeUrl(state.deviceBridgeUrl) || "";
+    const detectedUrl = getDetectedDeviceBridgeUrl();
+
+    if (manualUrl) {
+      parts.push(txt(`Ręczny URL: ${manualUrl}`, `Manual URL: ${manualUrl}`));
+    } else if (detectedUrl) {
+      parts.push(txt(`Auto URL: ${detectedUrl}`, `Auto URL: ${detectedUrl}`));
+    } else {
+      parts.push(txt(
+        "Auto URL: czekam na adres DHCP z urządzenia.",
+        "Auto URL: waiting for the device DHCP address."
+      ));
+    }
+
     if (typeof info.bluetoothState === "string" && info.bluetoothState.length) {
       parts.push(txt(`Bluetooth: ${info.bluetoothState}`, `Bluetooth: ${info.bluetoothState}`));
     }
     if (info.tokenSet === true) {
-      parts.push(txt("Token auth ustawiony", "Auth token set"));
+      parts.push(txt("Token Wi‑Fi ustawiony", "Wi-Fi token set"));
     }
     if (Number.isFinite(Number(info.powerSaveLevel))) {
       parts.push(txt(`Oszczędzanie energii: L${Number(info.powerSaveLevel)}`, `Power save: L${Number(info.powerSaveLevel)}`));
     }
-    if (info.wifiIp) {
+    if (info.wifiIp && !detectedUrl.includes(String(info.wifiIp))) {
       parts.push(txt(`Wi‑Fi IP: ${info.wifiIp}`, `Wi‑Fi IP: ${info.wifiIp}`));
     }
     if (info.wifiHostname) {
@@ -1898,11 +1997,11 @@
           : txt(`Ekran: ${sleepSeconds}s`, `Display: ${sleepSeconds}s`)
       );
     }
-    if (!parts.length && state.deviceBridgeUrl) {
-      parts.push(txt("Użyj lokalnego adresu IP z DHCP lub ekranu urządzenia.", "Use the local DHCP IP or the device screen."));
-    }
-    if (!parts.length) {
-      parts.push(txt("Podłącz przez USB/Bluetooth i skonfiguruj Wi‑Fi na stronie ustawień.", "Connect over USB/Bluetooth and configure Wi‑Fi on the setup page."));
+    if (state.deviceWifiApFallback) {
+      parts.push(txt(
+        "Hotspot awaryjny: preferencja zapisana, ten build go jeszcze nie uruchamia automatycznie.",
+        "Fallback hotspot: preference saved, this build does not auto-start it yet."
+      ));
     }
     refs.deviceBridgeHint.textContent = parts.join(" · ");
   }
@@ -3073,6 +3172,9 @@
     state.serialRpcAvailable = true;
     state.serialTriBootAvailable = false;
     state.deviceInfo = result.device || null;
+    if (result.connectivity) {
+      state.connectivityInfo = result.connectivity;
+    }
     state.bootInfo = result.boot || state.bootInfo;
     state.serialProtocolHint = result.boot?.currentProtocol || "lora20";
     if (result.lorawanRuntime) {
@@ -3167,8 +3269,11 @@
         writeStorage(STORAGE.deviceWifiReconnect, state.deviceWifiReconnect ? "1" : "0");
         if (refs.deviceWifiReconnectInput) refs.deviceWifiReconnectInput.checked = state.deviceWifiReconnect;
       }
-      if (typeof result?.wifiApFallback === "boolean") {
-        state.deviceWifiApFallback = result.wifiApFallback;
+      const wifiApFallback = typeof result?.wifiApFallback === "boolean"
+        ? result.wifiApFallback
+        : config.wifiApFallback;
+      if (typeof wifiApFallback === "boolean") {
+        state.deviceWifiApFallback = wifiApFallback;
         writeStorage(STORAGE.deviceWifiApFallback, state.deviceWifiApFallback ? "1" : "0");
         if (refs.deviceWifiApFallbackInput) refs.deviceWifiApFallbackInput.checked = state.deviceWifiApFallback;
       }
@@ -3190,14 +3295,7 @@
         writeStorage(STORAGE.powerSaveLevel, String(state.powerSaveLevel));
         if (refs.powerSaveLevelInput) refs.powerSaveLevelInput.value = String(state.powerSaveLevel);
       }
-      if (result?.wifiIp && (!state.deviceBridgeUrl || state.deviceBridgeUrl.includes("192.168.4.1") || state.deviceBridgeUrl.includes("127.0.0.1") || state.deviceBridgeUrl.includes("localhost"))) {
-        const nextUrl = normalizeUrl(`http://${result.wifiIp}`);
-        if (nextUrl) {
-          state.deviceBridgeUrl = nextUrl;
-          writeStorage(STORAGE.deviceBridgeUrl, state.deviceBridgeUrl);
-          if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
-        }
-      }
+      syncDeviceBridgeControls();
       renderAll();
       return result;
     } catch (error) {
@@ -4226,8 +4324,14 @@
 
   async function connectWifiDevice() {
     handleSaveDeviceBridgeUrl();
-    if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres urządzenia w sieci lokalnej.", "Provide the local device URL."));
-    const wifiRuntime = state.connectivityInfo?.runtime || state.connectivityInfo || null;
+    const bridgeUrl = getActiveDeviceBridgeUrl();
+    const wifiRuntime = getConnectivityRuntimeInfo();
+    if (!bridgeUrl) {
+      throw new Error(txt(
+        "Panel nie ma jeszcze lokalnego adresu urządzenia. Najpierw zapisz poprawny SSID i hasło przez USB albo BLE, poczekaj na DHCP i spróbuj ponownie. Jeśli Twoja sieć wymaga własnej ścieżki, wpisz ręczny override URL.",
+        "The dashboard does not have the device local address yet. First save a valid SSID and password over USB or BLE, wait for DHCP, and try again. If your network needs a custom route, enter a manual override URL."
+      ));
+    }
     if (state.deviceTransport !== "wifi" && wifiRuntime?.wifiEnabled && !wifiRuntime?.wifiConnected && !wifiRuntime?.wifiIp) {
       throw new Error(txt(
         "Urządzenie nie ma jeszcze lokalnego adresu IP. Najpierw zapisz poprawny SSID i hasło przez USB albo BLE, potem poczekaj aż Wi‑Fi połączy się z DHCP.",
@@ -4240,7 +4344,12 @@
     state.serialAutoReconnectEnabled = false;
     stopSerialReconnect();
     try {
-      const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 8000, "ping");
+      const response = await sendWifiPayload(
+        withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }, "wifi"),
+        8000,
+        "ping",
+        bridgeUrl
+      );
       state.deviceTransport = "wifi";
       state.wifiConnected = true;
       state.activeWifiAuthToken = getDesiredDeviceAuthToken();
@@ -4422,16 +4531,16 @@
     );
   }
 
-  function withAuth(payload) {
+  function withAuth(payload, transport = state.deviceTransport) {
     const authToken = state.activeWifiAuthToken || getDesiredDeviceAuthToken();
-    if (state.deviceTransport === "wifi" && authToken) {
+    if (transport === "wifi" && authToken) {
       return { ...payload, auth: authToken };
     }
     return payload;
   }
 
   async function sendDevicePayload(payload, timeout, label) {
-    const securedPayload = withAuth(payload);
+    const securedPayload = withAuth(payload, state.deviceTransport);
     if (state.deviceTransport === "wifi") {
       return sendWifiPayload(securedPayload, timeout, label);
     }
@@ -4571,11 +4680,12 @@
     }
   }
 
-  async function sendWifiPayload(payload, timeout, label) {
-    if (!state.deviceBridgeUrl) throw new Error(txt("Brak adresu mostka Wi‑Fi.", "Missing Wi-Fi bridge URL."));
+  async function sendWifiPayload(payload, timeout, label, bridgeUrlOverride = "") {
+    const bridgeUrl = normalizeUrl(bridgeUrlOverride) || getActiveDeviceBridgeUrl();
+    if (!bridgeUrl) throw new Error(txt("Brak adresu mostka Wi‑Fi.", "Missing Wi-Fi bridge URL."));
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), timeout || TIMEOUTS.default);
-    const url = `${state.deviceBridgeUrl.replace(/\/$/, "")}/rpc`;
+    const url = `${bridgeUrl.replace(/\/$/, "")}/rpc`;
     addLog("tx", label || payload.command || payload.method || "raw", payload);
     try {
       const response = await fetch(url, {
@@ -4588,12 +4698,20 @@
       const trimmed = String(text || "").trim();
       if (trimmed && !trimmed.startsWith("{") && !trimmed.startsWith("[")) {
         throw new Error(txt(
-          `Adres ${state.deviceBridgeUrl} nie zwrócił JSON RPC urządzenia. Odpowiedź wygląda jak HTML, więc to najpewniej zły URL albo urządzenie nie jest jeszcze pod tym adresem.`,
-          `The URL ${state.deviceBridgeUrl} did not return the device JSON RPC. The response looks like HTML, so this is most likely the wrong URL or the device is not reachable there yet.`
+          `Adres ${bridgeUrl} nie zwrócił JSON RPC urządzenia. Odpowiedź wygląda jak HTML, więc to najpewniej zły URL albo urządzenie nie jest jeszcze pod tym adresem.`,
+          `The URL ${bridgeUrl} did not return the device JSON RPC. The response looks like HTML, so this is most likely the wrong URL or the device is not reachable there yet.`
         ));
       }
       const data = text ? JSON.parse(text) : {};
-      if (!response.ok) throw new Error(data?.error?.message || `${response.status} ${response.statusText}`);
+      if (!response.ok) {
+        if (response.status === 401 || data?.error?.code === "unauthorized") {
+          throw new Error(txt(
+            "Token Wi‑Fi jest nieprawidłowy. Zapisz ten sam token do urządzenia przez USB/Bluetooth i spróbuj ponownie po Wi‑Fi.",
+            "The Wi-Fi auth token is invalid. Save the same token to the device over USB/Bluetooth and try again over Wi-Fi."
+          ));
+        }
+        throw new Error(data?.error?.message || `${response.status} ${response.statusText}`);
+      }
       return data;
     } catch (error) {
       throw error;

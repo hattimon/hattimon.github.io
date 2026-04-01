@@ -6,7 +6,7 @@
     <title>lora20 Device Setup</title>
     <meta
       name="description"
-      content="Konfiguracja łączności Heltec V4: USB, Bluetooth i Wi-Fi."
+      content="Konfiguracja łączności Heltec V4: USB, Bluetooth i Wi‑Fi."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260401-06" />
+    <link rel="stylesheet" href="./styles.css?v=20260401-08" />
   </head>
   <body data-theme="medium" data-page="setup">
     <div class="backdrop backdrop--left"></div>
@@ -25,11 +25,12 @@
           <p class="eyebrow" data-i18n="setup.eyebrow">Konfiguracja urządzenia</p>
           <h1 data-i18n="setup.title">Konfiguracja łączności Heltec V4</h1>
           <p class="lead" data-i18n="setup.lead">
-            Skonfiguruj Wi‑Fi przez USB lub Bluetooth, potem łącz się z urządzeniem po lokalnym adresie IP z DHCP.
+            Skonfiguruj urządzenie przez USB albo Bluetooth. Panel sam wykryje adres DHCP po Wi‑Fi, a ręczny URL pozostaje tylko jako override dla specyficznych sieci.
           </p>
           <div class="hero__chips">
             <span class="hero-chip">USB / BLE provisioning</span>
-            <span class="hero-chip">STA Wi‑Fi only</span>
+            <span class="hero-chip">DHCP auto-detect</span>
+            <span class="hero-chip">Manual override</span>
           </div>
           <div class="button-row">
             <a class="button button--ghost" href="./index.html" data-i18n="setup.back">Powrót do panelu</a>
@@ -59,95 +60,172 @@
             </label>
           </div>
 
-          <label class="field">
-            <span data-i18n="settings.deviceBridgeUrl">Adres urządzenia w sieci lokalnej</span>
-            <input id="deviceBridgeUrlInput" type="url" placeholder="http://192.168.0.50" />
-            <p id="deviceBridgeHint" class="helper"></p>
-          </label>
+          <div class="callout callout--neutral">
+            <strong data-i18n="setup.quickTitle">Najkrótsza ścieżka</strong>
+            <p data-i18n="setup.quickLead">
+              1. Połącz USB albo Bluetooth. 2. Zapisz BLE, Wi‑Fi i token. 3. Poczekaj na DHCP. 4. Użyj wykrytego adresu urządzenia albo wpisz własny tylko wtedy, gdy Twoja sieć tego wymaga.
+            </p>
+          </div>
 
-          <div class="field-grid device-wifi-fields">
-            <label class="field field--checkbox">
-              <input id="deviceBluetoothEnabledInput" type="checkbox" />
-              <span data-i18n="settings.deviceBluetoothEnabled">Bluetooth włączony</span>
-            </label>
-            <label class="field">
-              <span data-i18n="settings.deviceBluetoothName">Nazwa urządzenia Bluetooth</span>
-              <input id="deviceBluetoothNameInput" type="text" maxlength="31" placeholder="LoRa20-7090" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.deviceBluetoothPin">PIN parowania Bluetooth</span>
-              <input id="deviceBluetoothPinInput" type="number" min="100000" max="999999" step="1" placeholder="671954" />
-            </label>
-            <label class="field field--checkbox">
-              <input id="deviceWifiEnabledInput" type="checkbox" />
-              <span data-i18n="settings.deviceWifiEnabled">Klient Wi‑Fi włączony</span>
-            </label>
-            <label class="field">
-              <span data-i18n="settings.deviceWifiSsid">SSID Wi‑Fi urządzenia</span>
-              <input id="deviceWifiSsidInput" type="text" placeholder="Twoja sieć Wi‑Fi" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.deviceWifiPassword">Hasło Wi‑Fi urządzenia</span>
-              <input id="deviceWifiPasswordInput" type="password" placeholder="••••••••" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.deviceWifiHostname">Hostname Wi‑Fi</span>
-              <input id="deviceWifiHostnameInput" type="text" maxlength="32" placeholder="lora20-7090" />
-            </label>
-            <label class="field field--checkbox">
-              <input id="deviceWifiReconnectInput" type="checkbox" checked />
-              <span data-i18n="settings.deviceWifiReconnect">Automatyczne ponawianie Wi‑Fi</span>
-            </label>
-            <label class="field">
-              <span data-i18n="settings.deviceAuthToken">Token urządzenia (Wi‑Fi)</span>
-              <div class="field-inline">
-                <input id="deviceAuthTokenInput" type="password" placeholder="••••••••" />
-                <button id="generateAuthTokenButton" class="button button--ghost button--tiny" type="button" data-i18n="actions.generateAuthToken">Wygeneruj token</button>
+          <div class="setup-config-grid">
+            <section class="panel panel--soft setup-card">
+              <div class="section-head section-head--compact">
+                <div>
+                  <p class="section-kicker" data-i18n="setup.accessKicker">Dostęp</p>
+                  <h3 data-i18n="setup.accessTitle">USB, Bluetooth i lokalne Wi‑Fi</h3>
+                </div>
               </div>
-            </label>
-            <label class="field field--checkbox">
-              <input id="deviceWifiApFallbackInput" type="checkbox" />
-              <span data-i18n="settings.deviceWifiApFallback">Pozwól na fallback AP</span>
-            </label>
-            <label class="field">
-              <span data-i18n="settings.displaySleepSeconds">Uśpienie ekranu (sekundy)</span>
-              <select id="displaySleepSecondsInput">
-                <option value="60">60 s</option>
-                <option value="120">120 s</option>
-                <option value="240">240 s</option>
-                <option value="480">480 s</option>
-                <option value="0" data-i18n="settings.displaySleepAlwaysOn">Zawsze włączony</option>
-              </select>
-            </label>
-            <label class="field">
-              <span data-i18n="settings.bridgeWindowSeconds">Okno łączności po restarcie (sekundy)</span>
-              <input id="bridgeWindowSecondsInput" type="number" min="30" max="3600" step="30" value="300" />
-            </label>
-            <label class="field">
-              <span data-i18n="settings.powerSaveLevel">Poziom oszczędzania energii</span>
-              <select id="powerSaveLevelInput">
-                <option value="0" data-i18n="settings.powerSaveLevel0">Poziom 0 - wydajność</option>
-                <option value="1" data-i18n="settings.powerSaveLevel1">Poziom 1 - balans</option>
-                <option value="2" data-i18n="settings.powerSaveLevel2">Poziom 2 - max oszczędzanie</option>
-              </select>
-            </label>
+              <p class="helper" data-i18n="setup.accessLead">
+                USB i BLE służą do konfiguracji. Gdy urządzenie dostanie adres z DHCP, dashboard może przejść na lokalne RPC po Wi‑Fi bez ręcznego wpisywania IP.
+              </p>
+
+              <div class="field">
+                <span data-i18n="settings.deviceBridgeDetected">Wykryty adres urządzenia</span>
+                <div id="deviceBridgeDetectedValue" class="setup-readout" data-i18n="settings.deviceBridgeDetectedEmpty">
+                  Czekam na adres DHCP z urządzenia.
+                </div>
+              </div>
+
+              <label class="field">
+                <span data-i18n="settings.deviceBridgeOverride">Ręczny override URL (opcjonalnie)</span>
+                <input id="deviceBridgeUrlInput" type="url" placeholder="http://192.168.0.50" />
+                <p class="helper" data-i18n="settings.deviceBridgeOverrideHint">
+                  Zostaw puste, aby używać adresu DHCP zgłoszonego przez urządzenie. Wypełnij tylko wtedy, gdy chcesz wymusić własny URL.
+                </p>
+                <p id="deviceBridgeHint" class="helper"></p>
+              </label>
+
+              <div class="button-row">
+                <button id="connectUsbButton" class="button button--ghost" type="button" data-i18n="actions.connectUsb">Połącz USB</button>
+                <button id="connectBleButton" class="button button--ghost" type="button" data-i18n="actions.connectBle">Połącz Bluetooth</button>
+                <button id="connectWifiButton" class="button button--secondary" type="button" data-i18n="actions.connectWifi">Połącz Wi‑Fi</button>
+                <button id="disconnectButton" class="button button--ghost" type="button" data-i18n="actions.disconnect">Rozłącz</button>
+                <button id="refreshButton" class="button button--ghost" type="button" data-i18n="actions.refresh">Odśwież stan</button>
+              </div>
+
+              <div class="status-stack">
+                <div class="status-row">
+                  <span id="connectionBadge" class="badge badge--warn">USB offline</span>
+                  <span id="radioBadge" class="badge badge--warn">LoRa idle</span>
+                </div>
+                <p id="serialSupportNotice" class="helper"></p>
+              </div>
+            </section>
+
+            <section class="panel panel--soft setup-card device-wifi-fields">
+              <div class="section-head section-head--compact">
+                <div>
+                  <p class="section-kicker" data-i18n="setup.bluetoothKicker">Bluetooth</p>
+                  <h3 data-i18n="setup.bluetoothTitle">Parowanie i lokalna obsługa</h3>
+                </div>
+              </div>
+              <p class="helper" data-i18n="setup.bluetoothLead">
+                Bluetooth pozostaje kanałem provisioningowym i lokalnym RPC. PIN ustawiasz tutaj, a na OLED pojawia się tylko podczas aktywnego parowania.
+              </p>
+
+              <label class="field field--checkbox">
+                <input id="deviceBluetoothEnabledInput" type="checkbox" />
+                <span data-i18n="settings.deviceBluetoothEnabled">Bluetooth włączony</span>
+              </label>
+              <label class="field">
+                <span data-i18n="settings.deviceBluetoothName">Nazwa urządzenia Bluetooth</span>
+                <input id="deviceBluetoothNameInput" type="text" maxlength="31" placeholder="lora20-7090" />
+              </label>
+              <label class="field">
+                <span data-i18n="settings.deviceBluetoothPin">PIN parowania Bluetooth</span>
+                <input id="deviceBluetoothPinInput" type="number" min="100000" max="999999" step="1" placeholder="671954" />
+              </label>
+            </section>
+
+            <section class="panel panel--soft setup-card device-wifi-fields">
+              <div class="section-head section-head--compact">
+                <div>
+                  <p class="section-kicker" data-i18n="setup.wifiKicker">Klient Wi‑Fi</p>
+                  <h3 data-i18n="setup.wifiTitle">Połączenie z siecią użytkownika</h3>
+                </div>
+              </div>
+              <p class="helper" data-i18n="setup.wifiLead">
+                Urządzenie łączy się jako klient DHCP. Zostaw ręczny URL pusty, żeby panel używał automatycznie adresu zgłoszonego przez urządzenie.
+              </p>
+
+              <label class="field field--checkbox">
+                <input id="deviceWifiEnabledInput" type="checkbox" />
+                <span data-i18n="settings.deviceWifiEnabled">Klient Wi‑Fi włączony</span>
+              </label>
+              <label class="field">
+                <span data-i18n="settings.deviceWifiSsid">SSID Wi‑Fi urządzenia</span>
+                <input id="deviceWifiSsidInput" type="text" placeholder="Twoja sieć Wi‑Fi" />
+              </label>
+              <label class="field">
+                <span data-i18n="settings.deviceWifiPassword">Hasło Wi‑Fi urządzenia</span>
+                <input id="deviceWifiPasswordInput" type="password" placeholder="••••••••" />
+              </label>
+              <label class="field">
+                <span data-i18n="settings.deviceWifiHostname">Hostname Wi‑Fi</span>
+                <input id="deviceWifiHostnameInput" type="text" maxlength="32" placeholder="lora20-7090" />
+              </label>
+              <label class="field field--checkbox">
+                <input id="deviceWifiReconnectInput" type="checkbox" checked />
+                <span data-i18n="settings.deviceWifiReconnect">Automatyczne ponawianie Wi‑Fi</span>
+              </label>
+            </section>
+
+            <section class="panel panel--soft setup-card device-wifi-fields">
+              <div class="section-head section-head--compact">
+                <div>
+                  <p class="section-kicker" data-i18n="setup.powerKicker">Bezpieczeństwo i zasilanie</p>
+                  <h3 data-i18n="setup.powerTitle">Token RPC, ekran i oszczędzanie energii</h3>
+                </div>
+              </div>
+              <p class="helper" data-i18n="setup.powerLead">
+                Token Wi‑Fi chroni lokalne /rpc. Uśpienie ekranu i poziom oszczędzania energii zapisują się w urządzeniu i przetrwają restart.
+              </p>
+
+              <label class="field">
+                <span data-i18n="settings.deviceAuthToken">Token urządzenia (Wi‑Fi)</span>
+                <div class="field-inline">
+                  <input id="deviceAuthTokenInput" type="password" placeholder="••••••••" />
+                  <button id="generateAuthTokenButton" class="button button--ghost button--tiny" type="button" data-i18n="actions.generateAuthToken">Wygeneruj token</button>
+                </div>
+              </label>
+
+              <label class="field field--checkbox">
+                <input id="deviceWifiApFallbackInput" type="checkbox" />
+                <span data-i18n="settings.deviceWifiApFallback">Preferencja awaryjnego hotspotu konfiguracji</span>
+              </label>
+              <p class="helper" data-i18n="settings.deviceWifiApFallbackHint">
+                Ten build tylko zapamiętuje preferencję hotspotu awaryjnego. Nie uruchamia jeszcze automatycznie własnego punktu dostępowego.
+              </p>
+
+              <label class="field">
+                <span data-i18n="settings.displaySleepSeconds">Uśpienie ekranu (sekundy)</span>
+                <select id="displaySleepSecondsInput">
+                  <option value="60">60 s</option>
+                  <option value="120">120 s</option>
+                  <option value="240">240 s</option>
+                  <option value="480">480 s</option>
+                  <option value="0" data-i18n="settings.displaySleepAlwaysOn">Zawsze włączony</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span data-i18n="settings.bridgeWindowSeconds">Okno łączności po restarcie (sekundy)</span>
+                <input id="bridgeWindowSecondsInput" type="number" min="30" max="3600" step="30" value="300" />
+              </label>
+
+              <label class="field">
+                <span data-i18n="settings.powerSaveLevel">Poziom oszczędzania energii</span>
+                <select id="powerSaveLevelInput">
+                  <option value="0" data-i18n="settings.powerSaveLevel0">Poziom 0 - wydajność</option>
+                  <option value="1" data-i18n="settings.powerSaveLevel1">Poziom 1 - balans</option>
+                  <option value="2" data-i18n="settings.powerSaveLevel2">Poziom 2 - max oszczędzanie</option>
+                </select>
+              </label>
+            </section>
           </div>
 
-          <div class="button-row">
-            <button id="saveConnectivityButton" class="button button--ghost" type="button" data-i18n="actions.saveConnectivity">Zastosuj łączność</button>
-            <button id="connectUsbButton" class="button button--ghost" type="button" data-i18n="actions.connectUsb">Połącz USB</button>
-            <button id="connectBleButton" class="button button--ghost" type="button" data-i18n="actions.connectBle">Połącz Bluetooth</button>
-            <button id="connectWifiButton" class="button button--secondary" type="button" data-i18n="actions.connectWifi">Połącz Wi‑Fi</button>
-            <button id="disconnectButton" class="button button--ghost" type="button" data-i18n="actions.disconnect">Rozłącz</button>
-            <button id="refreshButton" class="button button--secondary" type="button" data-i18n="actions.refresh">Odśwież stan</button>
-          </div>
-
-          <div class="status-stack">
-            <div class="status-row">
-              <span id="connectionBadge" class="badge badge--warn">USB offline</span>
-              <span id="radioBadge" class="badge badge--warn">LoRa idle</span>
-            </div>
-            <p id="serialSupportNotice" class="helper"></p>
+          <div class="button-row setup-actions">
+            <button id="saveConnectivityButton" class="button button--secondary" type="button" data-i18n="actions.saveConnectivity">Zastosuj łączność</button>
           </div>
         </div>
       </header>
@@ -181,6 +259,6 @@
       <div id="activityLog" class="log"></div>
     </aside>
 
-    <script defer src="./app.js?v=20260401-07" charset="utf-8"></script>
+    <script defer src="./app.js?v=20260401-08" charset="utf-8"></script>
   </body>
 </html>
