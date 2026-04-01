@@ -1420,3 +1420,162 @@ body[data-theme="light"] .chat-message__body {
     max-height: 360px;
   }
 }
+
+body[data-device="mobile"] {
+  padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+body[data-device="mobile"][data-log-dock="collapsed"] {
+  padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+}
+
+body[data-device="mobile"] .backdrop {
+  filter: blur(56px);
+  opacity: 0.4;
+}
+
+body[data-device="mobile"] .app-shell {
+  width: min(calc(100vw - 12px), 100%);
+  margin: 8px auto 16px;
+}
+
+body[data-device="mobile"] .hero,
+body[data-device="mobile"] .surface {
+  padding: 14px;
+  border-radius: 24px;
+}
+
+body[data-device="mobile"] .hero {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+body[data-device="mobile"] .hero__copy h1 {
+  max-width: none;
+  font-size: clamp(1.85rem, 8.6vw, 2.9rem);
+  line-height: 0.96;
+}
+
+body[data-device="mobile"] .lead {
+  max-width: none;
+  margin-top: 12px;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+body[data-device="mobile"] .hero__controls,
+body[data-device="mobile"] .hero__mint-stream,
+body[data-device="mobile"] .panel {
+  padding: 14px;
+  border-radius: 20px;
+}
+
+body[data-device="mobile"] .layout,
+body[data-device="mobile"] .overview-grid,
+body[data-device="mobile"] .operations-grid,
+body[data-device="mobile"] .profile-layout,
+body[data-device="mobile"] .field-grid,
+body[data-device="mobile"] .library-head,
+body[data-device="mobile"] .token-grid,
+body[data-device="mobile"] .card-list,
+body[data-device="mobile"] .guide-grid {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+body[data-device="mobile"] .surface,
+body[data-device="mobile"] .surface--full {
+  grid-column: 1 / -1;
+}
+
+body[data-device="mobile"] .section-head,
+body[data-device="mobile"] .token-card__head,
+body[data-device="mobile"] .timeline-card__head,
+body[data-device="mobile"] .known-device__head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+body[data-device="mobile"] .surface[data-panel] > .section-head > div:first-child h2::before,
+body[data-device="mobile"] .surface[data-panel] > .section-head > div:first-child h3::before {
+  min-width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  font-size: 0.68rem;
+}
+
+body[data-device="mobile"] .hero__chips,
+body[data-device="mobile"] .button-row,
+body[data-device="mobile"] .toolbar,
+body[data-device="mobile"] .status-row,
+body[data-device="mobile"] .section-tags,
+body[data-device="mobile"] .stats {
+  gap: 8px;
+}
+
+body[data-device="mobile"] .stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body[data-device="mobile"] .stat,
+body[data-device="mobile"] .metric,
+body[data-device="mobile"] .guide-card,
+body[data-device="mobile"] .token-card,
+body[data-device="mobile"] .timeline-card,
+body[data-device="mobile"] .known-device,
+body[data-device="mobile"] .profile-card {
+  padding: 12px;
+}
+
+body[data-device="mobile"] .field-inline {
+  flex-direction: column;
+}
+
+body[data-device="mobile"] .field-inline > .button,
+body[data-device="mobile"] .button-row > .button,
+body[data-device="mobile"] .button-row > a.button {
+  width: 100%;
+  justify-content: center;
+}
+
+body[data-device="mobile"] .toolbar > .field {
+  min-width: 0;
+}
+
+body[data-device="mobile"] .mint-matrix {
+  max-height: min(48svh, 460px);
+}
+
+body[data-device="mobile"] .chat-thread {
+  min-height: 260px;
+  max-height: min(48svh, 460px);
+  padding: 12px;
+}
+
+body[data-device="mobile"] .chat-message {
+  max-width: 100%;
+}
+
+body[data-device="mobile"] .chat-message__meta {
+  flex-wrap: wrap;
+}
+
+body[data-device="mobile"] #portfolioList.token-grid {
+  max-height: none;
+}
+
+body[data-device="mobile"] #recentTransactionsList.timeline {
+  height: auto;
+  max-height: min(50svh, 420px);
+}
+
+body[data-device="mobile"] .log-dock {
+  left: 6px;
+  right: 6px;
+  bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  padding: 12px;
+  border-radius: 20px;
+}

@@ -625,6 +625,32 @@
     return 480;
   }
 
+  function detectDeviceMode() {
+    const userAgent = String(navigator.userAgent || "");
+    const userAgentMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    const userAgentDataMobile = navigator.userAgentData?.mobile === true;
+    const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches === true;
+    const noHover = window.matchMedia?.("(hover: none)")?.matches === true;
+    const viewportWidth = Math.min(window.innerWidth || 0, window.screen?.width || window.innerWidth || 0);
+    return (userAgentMobile || userAgentDataMobile || coarsePointer || noHover) && viewportWidth <= 980
+      ? "mobile"
+      : "desktop";
+  }
+
+  function applyDeviceMode() {
+    const nextMode = detectDeviceMode();
+    const nextOrientation = window.innerHeight > window.innerWidth ? "portrait" : "landscape";
+    if (document.body.dataset.device === nextMode && document.body.dataset.orientation === nextOrientation) return false;
+    document.body.dataset.device = nextMode;
+    document.body.dataset.orientation = nextOrientation;
+    return true;
+  }
+
+  function handleViewportChange() {
+    applyDeviceMode();
+    queueDashboardLayoutSync();
+  }
+
   function formatMinutesPresetLabel(minutes) {
     if (minutes >= 60 && minutes % 60 === 0) return `${minutes / 60} h`;
     return `${minutes} min`;
@@ -944,6 +970,7 @@
       refs[name] = document.getElementById(name);
     }
 
+    applyDeviceMode();
     mountDynamicUi();
     captureDefaultTexts();
     bindEvents();
@@ -956,8 +983,9 @@
     queueDashboardLayoutSync();
     updateSerialSupport();
     setupSerialReconnectHooks();
-    window.addEventListener("resize", queueDashboardLayoutSync, { passive: true });
-    window.addEventListener("load", queueDashboardLayoutSync, { passive: true });
+    window.addEventListener("resize", handleViewportChange, { passive: true });
+    window.addEventListener("orientationchange", handleViewportChange, { passive: true });
+    window.addEventListener("load", handleViewportChange, { passive: true });
     window.addEventListener("beforeunload", () => {
       if (state.deviceTransport) {
         void disconnectDevice(false);
@@ -1726,7 +1754,7 @@
     const mintStream = hero?.querySelector(".hero__mint-stream");
     const controls = hero?.querySelector(".hero__controls");
     if (!mintStream) return;
-    if (!hero || !controls || window.innerWidth <= 1220) {
+    if (!hero || !controls || window.innerWidth <= 1220 || document.body.dataset.device === "mobile") {
       hero?.style.removeProperty("--hero-stream-height");
       return;
     }
@@ -1759,6 +1787,12 @@
     list.style.removeProperty("height");
     list.style.removeProperty("maxHeight");
     list.style.removeProperty("overflowY");
+
+    if (document.body.dataset.device === "mobile") {
+      list.style.maxHeight = "min(50svh, 420px)";
+      list.style.overflowY = "auto";
+      return;
+    }
 
     const surfaceRect = portfolioSurface.getBoundingClientRect();
     const listRect = list.getBoundingClientRect();
