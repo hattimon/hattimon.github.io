@@ -584,11 +584,14 @@
     chatScope: CHAT_SCOPE_PUBLIC,
     chatPeerDeviceId: "",
     postSendRefreshToken: 0,
+    connectivityApplyInFlight: false,
     lorawanAutoJoinStatus: "idle",
     lorawanAutoJoinInFlight: false,
     lorawanAutoJoinTimer: 0,
+    lorawanAutoJoinDeferredTimer: 0,
     lorawanAutoJoinToken: 0,
     lorawanAutoJoinCooldownUntil: 0,
+    lorawanAutoJoinSuppressedUntil: 0,
     lorawanSoundPrimed: false,
     recentTransactionsSoundPrimed: false,
     recentTransactionsSoundDeviceId: ""
@@ -1156,6 +1159,8 @@
     writeStorage(STORAGE.displaySleepSeconds, String(state.displaySleepSeconds));
     writeStorage(STORAGE.bridgeWindowSeconds, String(state.bridgeWindowSeconds));
     writeStorage(STORAGE.powerSaveLevel, String(state.powerSaveLevel));
+    suppressLorawanAutoJoin(30000);
+    clearLorawanJoinPoll();
     if (isDeviceConnected() && state.deviceTransport === "serial") {
       addLog("device", txt("Zapisano ustawienia łączności i wysyłam je teraz po USB.", "Connectivity settings saved and sending them over USB now."));
       void applyConnectivityMode();
@@ -1200,12 +1205,14 @@
     if (!isDeviceConnected()) return;
     const params = buildConnectivityParams(modeOverride);
     if (!Object.keys(params).length) return;
+    state.connectivityApplyInFlight = true;
     try {
       const result = await requestDevice("set_connectivity", params, TIMEOUTS.set_config);
       state.connectivityRpcUnsupported = false;
       if (state.deviceTransport === "wifi" && params.rpcToken) {
         state.activeWifiAuthToken = params.rpcToken;
       }
+      await refreshConnectivity();
       addLog("device", txt("Zaktualizowano tryb łączności.", "Connectivity mode updated."), result);
     } catch (error) {
       if (isUnsupportedDeviceCommand(error, "set_connectivity")) {
@@ -1214,6 +1221,8 @@
         return;
       }
       addLog("error", error instanceof Error ? error.message : String(error));
+    } finally {
+      state.connectivityApplyInFlight = false;
     }
   }
 
@@ -1331,6 +1340,27 @@
       window.clearTimeout(state.lorawanAutoJoinTimer);
       state.lorawanAutoJoinTimer = 0;
     }
+  }
+
+  function clearDeferredLorawanAutoJoin() {
+    if (state.lorawanAutoJoinDeferredTimer) {
+      window.clearTimeout(state.lorawanAutoJoinDeferredTimer);
+      state.lorawanAutoJoinDeferredTimer = 0;
+    }
+  }
+
+  function suppressLorawanAutoJoin(delayMs = 30000) {
+    state.lorawanAutoJoinSuppressedUntil = Date.now() + Math.max(0, Number(delayMs) || 0);
+    clearDeferredLorawanAutoJoin();
+  }
+
+  function scheduleDeferredLorawanAutoJoin(reason = "refresh", delayMs = 3500) {
+    clearDeferredLorawanAutoJoin();
+    if (!canUseLorawanRpcSession()) return;
+    state.lorawanAutoJoinDeferredTimer = window.setTimeout(() => {
+      state.lorawanAutoJoinDeferredTimer = 0;
+      maybeAutoJoinLorawan(reason);
+    }, Math.max(0, Number(delayMs) || 0));
   }
 
   function getLorawanRuntimeState(info = state.lorawanInfo) {
@@ -1572,6 +1602,8 @@
   function maybeAutoJoinLorawan(reason = "refresh") {
     if (!canUseLorawanRpcSession()) return;
     if (!hasLorawanOtaaConfig()) return;
+    if (state.connectivityApplyInFlight) return;
+    if (Date.now() < state.lorawanAutoJoinSuppressedUntil) return;
     const runtime = getLorawanRuntimeState();
     if (runtime?.joined) {
       state.lorawanAutoJoinStatus = "joined";
@@ -3050,7 +3082,7 @@
         writeStorage(STORAGE.powerSaveLevel, String(state.powerSaveLevel));
         if (refs.powerSaveLevelInput) refs.powerSaveLevelInput.value = String(state.powerSaveLevel);
       }
-      if (result?.wifiIp && (!state.deviceBridgeUrl || state.deviceBridgeUrl.includes("192.168.4.1"))) {
+      if (result?.wifiIp && (!state.deviceBridgeUrl || state.deviceBridgeUrl.includes("192.168.4.1") || state.deviceBridgeUrl.includes("127.0.0.1") || state.deviceBridgeUrl.includes("localhost"))) {
         const nextUrl = normalizeUrl(`http://${result.wifiIp}`);
         if (nextUrl) {
           state.deviceBridgeUrl = nextUrl;
@@ -3963,8 +3995,7 @@
 
     const rpcReady = await probeSerialRpc();
     if (rpcReady) {
-      await applyConnectivityMode("usb");
-      maybeAutoJoinLorawan(autoReconnect ? "serial-reconnect" : "serial-connect");
+      scheduleDeferredLorawanAutoJoin(autoReconnect ? "serial-reconnect" : "serial-connect", 15000);
       return;
     }
 
@@ -4082,6 +4113,13 @@
   async function connectWifiDevice() {
     handleSaveDeviceBridgeUrl();
     if (!state.deviceBridgeUrl) throw new Error(txt("Podaj adres urządzenia w sieci lokalnej.", "Provide the local device URL."));
+    const wifiRuntime = state.connectivityInfo?.runtime || state.connectivityInfo || null;
+    if (state.deviceTransport !== "wifi" && wifiRuntime?.wifiEnabled && !wifiRuntime?.wifiConnected && !wifiRuntime?.wifiIp) {
+      throw new Error(txt(
+        "Urządzenie nie ma jeszcze lokalnego adresu IP. Najpierw zapisz poprawny SSID i hasło przez USB albo BLE, potem poczekaj aż Wi‑Fi połączy się z DHCP.",
+        "The device does not have a local IP address yet. First save a valid SSID and password over USB or BLE, then wait until Wi-Fi gets DHCP."
+      ));
+    }
     state.serialAutoReconnectEnabled = false;
     stopSerialReconnect();
     state.deviceTransport = "wifi";
@@ -4432,6 +4470,13 @@
         signal: controller.signal
       });
       const text = await response.text();
+      const trimmed = String(text || "").trim();
+      if (trimmed && !trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+        throw new Error(txt(
+          `Adres ${state.deviceBridgeUrl} nie zwrócił JSON RPC urządzenia. Odpowiedź wygląda jak HTML, więc to najpewniej zły URL albo urządzenie nie jest jeszcze pod tym adresem.`,
+          `The URL ${state.deviceBridgeUrl} did not return the device JSON RPC. The response looks like HTML, so this is most likely the wrong URL or the device is not reachable there yet.`
+        ));
+      }
       const data = text ? JSON.parse(text) : {};
       if (!response.ok) throw new Error(data?.error?.message || `${response.status} ${response.statusText}`);
       return data;
