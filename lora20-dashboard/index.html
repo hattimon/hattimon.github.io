@@ -77,6 +77,18 @@
             <p id="deviceBridgeHint" class="helper"></p>
           </label>
           <div class="field-grid device-wifi-fields">
+            <label class="field field--checkbox">
+              <input id="deviceBluetoothEnabledInput" type="checkbox" />
+              <span data-i18n="settings.deviceBluetoothEnabled">Bluetooth włączony</span>
+            </label>
+            <label class="field">
+              <span data-i18n="settings.deviceBluetoothName">Nazwa urządzenia Bluetooth</span>
+              <input id="deviceBluetoothNameInput" type="text" maxlength="31" placeholder="LoRa20-7090" />
+            </label>
+            <label class="field field--checkbox">
+              <input id="deviceWifiEnabledInput" type="checkbox" />
+              <span data-i18n="settings.deviceWifiEnabled">Klient Wi‑Fi włączony</span>
+            </label>
             <label class="field">
               <span data-i18n="settings.deviceWifiSsid">SSID Wi‑Fi urządzenia</span>
               <input id="deviceWifiSsidInput" type="text" placeholder="Twoja sieć Wi‑Fi" />
@@ -84,6 +96,14 @@
             <label class="field">
               <span data-i18n="settings.deviceWifiPassword">Hasło Wi‑Fi urządzenia</span>
               <input id="deviceWifiPasswordInput" type="password" placeholder="••••••••" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.deviceWifiHostname">Hostname Wi‑Fi</span>
+              <input id="deviceWifiHostnameInput" type="text" maxlength="32" placeholder="lora20-7090" />
+            </label>
+            <label class="field field--checkbox">
+              <input id="deviceWifiReconnectInput" type="checkbox" checked />
+              <span data-i18n="settings.deviceWifiReconnect">Automatyczne ponawianie Wi‑Fi</span>
             </label>
             <label class="field">
               <span data-i18n="settings.deviceAuthToken">Token urządzenia (Wi‑Fi)</span>
@@ -98,7 +118,13 @@
             </label>
             <label class="field">
               <span data-i18n="settings.displaySleepSeconds">Uśpienie ekranu (sekundy)</span>
-              <input id="displaySleepSecondsInput" type="number" min="0" max="3600" step="30" value="60" />
+              <select id="displaySleepSecondsInput">
+                <option value="60">60 s</option>
+                <option value="120">120 s</option>
+                <option value="240">240 s</option>
+                <option value="480">480 s</option>
+                <option value="0" data-i18n="settings.displaySleepAlwaysOn">Zawsze włączony</option>
+              </select>
             </label>
             <label class="field">
               <span data-i18n="settings.bridgeWindowSeconds">Okno łączności po restarcie (sekundy)</span>
@@ -487,6 +513,23 @@
               <label class="field"><span data-i18n="advanced.appKey">AppKey</span><input id="lorawanAppKeyInput" type="text" placeholder="32 hex chars" /></label>
               <label class="field"><span data-i18n="advanced.appPort">App port</span><input id="lorawanAppPortInput" type="number" min="1" max="223" value="1" /></label>
               <label class="field"><span data-i18n="advanced.dataRate">Data rate</span><input id="lorawanDataRateInput" type="number" min="0" max="15" value="3" /></label>
+              <label class="field"><span data-i18n="advanced.region">Region / frequency plan</span>
+                <select id="lorawanRegionInput">
+                  <option value="EU868">EU868 · Europe</option>
+                  <option value="EU433">EU433 · Europe 433</option>
+                  <option value="US915">US915 · USA</option>
+                  <option value="US915_HYBRID">US915_HYBRID · USA hybrid</option>
+                  <option value="AU915">AU915 · Australia</option>
+                  <option value="AS923">AS923 · Asia Pacific</option>
+                  <option value="AS923_AS1">AS923_AS1 · Asia sub-band 1</option>
+                  <option value="AS923_AS2">AS923_AS2 · Asia sub-band 2</option>
+                  <option value="KR920">KR920 · Korea</option>
+                  <option value="IN865">IN865 · India</option>
+                  <option value="CN470">CN470 · China</option>
+                  <option value="CN779">CN779 · China 779</option>
+                  <option value="RU864">RU864 · Russia</option>
+                </select>
+              </label>
             </div>
             <button id="setLorawanButton" class="button button--secondary" type="button" data-i18n="actions.saveRadio">Zapisz radio</button>
           </div></details>
@@ -551,6 +594,6 @@
       </div>
     </div>
 
-    <script defer src="./app.js?v=20260401-02" charset="utf-8"></script>
+    <script defer src="./app.js?v=20260401-03" charset="utf-8"></script>
   </body>
 </html>

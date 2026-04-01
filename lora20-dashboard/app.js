@@ -8,8 +8,13 @@
     logDockCollapsed: "lora20.dashboard.logDockCollapsed",
     indexerUrl: "lora20.dashboard.indexerBaseUrl",
     deviceBridgeUrl: "lora20.dashboard.deviceBridgeUrl",
+    deviceBluetoothEnabled: "lora20.dashboard.deviceBluetoothEnabled",
+    deviceBluetoothName: "lora20.dashboard.deviceBluetoothName",
+    deviceWifiEnabled: "lora20.dashboard.deviceWifiEnabled",
     deviceWifiSsid: "lora20.dashboard.deviceWifiSsid",
     deviceWifiPassword: "lora20.dashboard.deviceWifiPassword",
+    deviceWifiHostname: "lora20.dashboard.deviceWifiHostname",
+    deviceWifiReconnect: "lora20.dashboard.deviceWifiReconnect",
     deviceAuthToken: "lora20.dashboard.deviceAuthToken",
     deviceWifiApFallback: "lora20.dashboard.deviceWifiApFallback",
     displaySleepSeconds: "lora20.dashboard.displaySleepSeconds",
@@ -26,8 +31,13 @@
     theme: "medium",
     indexerUrl: "https://lora20.hattimon.pl",
     deviceBridgeUrl: "",
+    deviceBluetoothEnabled: false,
+    deviceBluetoothName: "",
+    deviceWifiEnabled: false,
     deviceWifiSsid: "",
     deviceWifiPassword: "",
+    deviceWifiHostname: "",
+    deviceWifiReconnect: true,
     deviceAuthToken: "",
     deviceWifiApFallback: false,
     displaySleepSeconds: 60,
@@ -47,6 +57,7 @@
   const PLATFORM_COPY_COUNT = 2;
   const INTERVAL_PRESET_MINUTES = [1, 5, 15, 30, 60, 240, 480, 960, 1440];
   const INTERVAL_PRESET_SECONDS = INTERVAL_PRESET_MINUTES.map((value) => value * 60);
+  const DISPLAY_SLEEP_PRESET_SECONDS = [0, 60, 120, 240, 480];
 
   const TIMEOUTS = {
     default: 15000,
@@ -111,12 +122,18 @@
     "settings.sound": "Sounds",
     "settings.indexerUrl": "Public indexer URL",
     "settings.deviceBridgeUrl": "Device URL on your local network",
+    "settings.deviceBluetoothEnabled": "Bluetooth enabled",
+    "settings.deviceBluetoothName": "Bluetooth device name",
+    "settings.deviceWifiEnabled": "Wi-Fi client enabled",
     "settings.deviceWifiSsid": "Device Wi-Fi SSID",
     "settings.deviceWifiPassword": "Device Wi-Fi password",
+    "settings.deviceWifiHostname": "Wi-Fi hostname",
+    "settings.deviceWifiReconnect": "Auto reconnect Wi-Fi",
     "settings.deviceAuthToken": "Device auth token (Wi-Fi)",
     "settings.deviceAuthTokenHint": "This token protects device RPC over Wi-Fi. USB and Bluetooth do not need it.",
     "settings.deviceWifiApFallback": "Allow AP fallback",
     "settings.displaySleepSeconds": "Display sleep (seconds)",
+    "settings.displaySleepAlwaysOn": "Always on",
     "settings.bridgeWindowSeconds": "Bridge window after reboot (seconds)",
     "settings.powerSaveLevel": "Power save level",
     "settings.powerSaveLevel0": "Level 0 - performance",
@@ -250,6 +267,7 @@
     "advanced.appKey": "AppKey",
     "advanced.appPort": "App port",
     "advanced.dataRate": "Data rate",
+    "advanced.region": "Region / frequency plan",
     "advanced.indexerBinding": "DevEUI linking",
     "advanced.devEuiLink": "DevEUI to link",
     "advanced.backupTitle": "Backup and restore",
@@ -287,12 +305,18 @@
     "settings.sound": "Dźwięki",
     "settings.indexerUrl": "Publiczny adres indexera",
     "settings.deviceBridgeUrl": "Adres urządzenia w sieci lokalnej",
+    "settings.deviceBluetoothEnabled": "Bluetooth włączony",
+    "settings.deviceBluetoothName": "Nazwa urządzenia Bluetooth",
+    "settings.deviceWifiEnabled": "Klient Wi‑Fi włączony",
     "settings.deviceWifiSsid": "SSID Wi‑Fi urządzenia",
     "settings.deviceWifiPassword": "Hasło Wi‑Fi urządzenia",
+    "settings.deviceWifiHostname": "Hostname Wi‑Fi",
+    "settings.deviceWifiReconnect": "Automatyczne ponawianie Wi‑Fi",
     "settings.deviceAuthToken": "Token urządzenia (Wi‑Fi)",
     "settings.deviceAuthTokenHint": "Ten token chroni RPC po Wi‑Fi. USB i Bluetooth go nie wymagają.",
     "settings.deviceWifiApFallback": "Pozwól na fallback AP",
     "settings.displaySleepSeconds": "Uśpienie ekranu (sekundy)",
+    "settings.displaySleepAlwaysOn": "Zawsze włączony",
     "settings.bridgeWindowSeconds": "Okno łączności po restarcie (sekundy)",
     "settings.powerSaveLevel": "Poziom oszczędzania energii",
     "settings.powerSaveLevel0": "Poziom 0 - wydajność",
@@ -426,6 +450,7 @@
     "advanced.appKey": "AppKey",
     "advanced.appPort": "App port",
     "advanced.dataRate": "Data rate",
+    "advanced.region": "Region / plan częstotliwości",
     "advanced.indexerBinding": "Powiązanie DevEUI",
     "advanced.devEuiLink": "DevEUI do powiązania",
     "advanced.backupTitle": "Backup i restore",
@@ -447,7 +472,9 @@
   const refs = {};
   const refNames = [
     "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput", "deviceBridgeHint",
-    "deviceWifiSsidInput", "deviceWifiPasswordInput", "deviceAuthTokenInput", "generateAuthTokenButton",
+    "deviceBluetoothEnabledInput", "deviceBluetoothNameInput", "deviceWifiEnabledInput",
+    "deviceWifiSsidInput", "deviceWifiPasswordInput", "deviceWifiHostnameInput", "deviceWifiReconnectInput",
+    "deviceAuthTokenInput", "generateAuthTokenButton",
     "deviceWifiApFallbackInput", "displaySleepSecondsInput", "bridgeWindowSecondsInput", "powerSaveLevelInput",
     "saveConnectivityButton", "saveIndexerButton",
     "connectUsbButton", "connectBleButton", "connectWifiButton", "disconnectButton", "refreshButton", "connectionBadge", "indexerBadge", "radioBadge",
@@ -458,7 +485,7 @@
     "getLorawanButton", "generateKeyButton", "getPublicKeyButton", "registerDeviceButton",
     "joinLorawanButton", "heltecLicenseInput", "setLicenseButton", "lorawanAutoDevEuiInput",
     "lorawanAdrInput", "lorawanConfirmedInput", "lorawanDevEuiInput", "lorawanJoinEuiInput",
-    "lorawanAppKeyInput", "lorawanAppPortInput", "lorawanDataRateInput", "setLorawanButton",
+    "lorawanAppKeyInput", "lorawanAppPortInput", "lorawanDataRateInput", "lorawanRegionInput", "setLorawanButton",
     "linkDevEuiInput", "linkDevEuiButton", "exportBackupButton", "importBackupButton",
     "saveBackupFileButton", "loadBackupFileButton", "showFullBackupButton", "remaskBackupButton", "showFullBackupConfirm", "backupFileInput",
     "backupPassphraseInput", "backupImportPassphraseInput", "backupJsonTextarea", "deviceIdValue",
@@ -491,8 +518,13 @@
       soundEnabled: readStorage(STORAGE.sound, "1") !== "0",
       indexerBaseUrl: normalizeUrl(readStorage(STORAGE.indexerUrl, DEFAULTS.indexerUrl)) || DEFAULTS.indexerUrl,
       deviceBridgeUrl: normalizeUrl(readStorage(STORAGE.deviceBridgeUrl, DEFAULTS.deviceBridgeUrl)) || DEFAULTS.deviceBridgeUrl,
+      deviceBluetoothEnabled: readStorage(STORAGE.deviceBluetoothEnabled, DEFAULTS.deviceBluetoothEnabled ? "1" : "0") === "1",
+      deviceBluetoothName: readStorage(STORAGE.deviceBluetoothName, DEFAULTS.deviceBluetoothName),
+      deviceWifiEnabled: readStorage(STORAGE.deviceWifiEnabled, DEFAULTS.deviceWifiEnabled ? "1" : "0") === "1",
       deviceWifiSsid: readStorage(STORAGE.deviceWifiSsid, DEFAULTS.deviceWifiSsid),
       deviceWifiPassword: readStorage(STORAGE.deviceWifiPassword, DEFAULTS.deviceWifiPassword),
+      deviceWifiHostname: readStorage(STORAGE.deviceWifiHostname, DEFAULTS.deviceWifiHostname),
+      deviceWifiReconnect: readStorage(STORAGE.deviceWifiReconnect, DEFAULTS.deviceWifiReconnect ? "1" : "0") === "1",
       deviceAuthToken: readStorage(STORAGE.deviceAuthToken, DEFAULTS.deviceAuthToken),
       deviceWifiApFallback: readStorage(STORAGE.deviceWifiApFallback, DEFAULTS.deviceWifiApFallback ? "1" : "0") === "1",
       displaySleepSeconds: parseBoundedInt(readStorage(STORAGE.displaySleepSeconds, String(DEFAULTS.displaySleepSeconds)), 0, 3600, DEFAULTS.displaySleepSeconds),
@@ -570,6 +602,17 @@
       if (parsed < preset) return preset;
     }
     return presets[presets.length - 1];
+  }
+
+  function normalizeDisplaySleepPreset(value) {
+    const parsed = Number.parseInt(String(value ?? ""), 10);
+    if (!Number.isFinite(parsed)) return DEFAULTS.displaySleepSeconds;
+    if (DISPLAY_SLEEP_PRESET_SECONDS.includes(parsed)) return parsed;
+    if (parsed <= 0) return 0;
+    if (parsed <= 60) return 60;
+    if (parsed <= 120) return 120;
+    if (parsed <= 240) return 240;
+    return 480;
   }
 
   function formatMinutesPresetLabel(minutes) {
@@ -1022,11 +1065,16 @@
       if (refs.soundEnabledInput) refs.soundEnabledInput.checked = state.soundEnabled;
       if (refs.indexerBaseUrlInput) refs.indexerBaseUrlInput.value = state.indexerBaseUrl;
       if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
+      if (refs.deviceBluetoothEnabledInput) refs.deviceBluetoothEnabledInput.checked = Boolean(state.deviceBluetoothEnabled);
+      if (refs.deviceBluetoothNameInput) refs.deviceBluetoothNameInput.value = state.deviceBluetoothName || "";
+      if (refs.deviceWifiEnabledInput) refs.deviceWifiEnabledInput.checked = Boolean(state.deviceWifiEnabled);
       if (refs.deviceWifiSsidInput) refs.deviceWifiSsidInput.value = state.deviceWifiSsid || "";
       if (refs.deviceWifiPasswordInput) refs.deviceWifiPasswordInput.value = state.deviceWifiPassword || "";
+      if (refs.deviceWifiHostnameInput) refs.deviceWifiHostnameInput.value = state.deviceWifiHostname || "";
+      if (refs.deviceWifiReconnectInput) refs.deviceWifiReconnectInput.checked = Boolean(state.deviceWifiReconnect);
       if (refs.deviceAuthTokenInput) refs.deviceAuthTokenInput.value = state.deviceAuthToken || "";
       if (refs.deviceWifiApFallbackInput) refs.deviceWifiApFallbackInput.checked = Boolean(state.deviceWifiApFallback);
-      if (refs.displaySleepSecondsInput) refs.displaySleepSecondsInput.value = String(state.displaySleepSeconds);
+      if (refs.displaySleepSecondsInput) refs.displaySleepSecondsInput.value = String(normalizeDisplaySleepPreset(state.displaySleepSeconds));
       if (refs.bridgeWindowSecondsInput) refs.bridgeWindowSecondsInput.value = String(state.bridgeWindowSeconds);
       if (refs.powerSaveLevelInput) refs.powerSaveLevelInput.value = String(state.powerSaveLevel);
       if (refs.profileQueueEnabledInput) refs.profileQueueEnabledInput.checked = Boolean(state.scheduler.enabled);
@@ -1081,18 +1129,28 @@
   }
 
   function handleSaveConnectivity() {
+    state.deviceBluetoothEnabled = Boolean(refs.deviceBluetoothEnabledInput?.checked);
+    state.deviceBluetoothName = refs.deviceBluetoothNameInput?.value?.trim() || "";
+    state.deviceWifiEnabled = Boolean(refs.deviceWifiEnabledInput?.checked);
     state.deviceWifiSsid = refs.deviceWifiSsidInput?.value?.trim() || "";
     state.deviceWifiPassword = refs.deviceWifiPasswordInput?.value || "";
+    state.deviceWifiHostname = refs.deviceWifiHostnameInput?.value?.trim() || "";
+    state.deviceWifiReconnect = Boolean(refs.deviceWifiReconnectInput?.checked);
     state.deviceAuthToken = refs.deviceAuthTokenInput?.value || "";
     state.deviceWifiApFallback = Boolean(refs.deviceWifiApFallbackInput?.checked);
-    state.displaySleepSeconds = parseBoundedInt(refs.displaySleepSecondsInput?.value, 0, 3600, DEFAULTS.displaySleepSeconds);
+    state.displaySleepSeconds = normalizeDisplaySleepPreset(refs.displaySleepSecondsInput?.value);
     state.bridgeWindowSeconds = parseBoundedInt(refs.bridgeWindowSecondsInput?.value, 30, 3600, DEFAULTS.bridgeWindowSeconds);
     state.powerSaveLevel = parseBoundedInt(refs.powerSaveLevelInput?.value, 0, 2, DEFAULTS.powerSaveLevel);
     if (refs.displaySleepSecondsInput) refs.displaySleepSecondsInput.value = String(state.displaySleepSeconds);
     if (refs.bridgeWindowSecondsInput) refs.bridgeWindowSecondsInput.value = String(state.bridgeWindowSeconds);
     if (refs.powerSaveLevelInput) refs.powerSaveLevelInput.value = String(state.powerSaveLevel);
+    writeStorage(STORAGE.deviceBluetoothEnabled, state.deviceBluetoothEnabled ? "1" : "0");
+    writeStorage(STORAGE.deviceBluetoothName, state.deviceBluetoothName);
+    writeStorage(STORAGE.deviceWifiEnabled, state.deviceWifiEnabled ? "1" : "0");
     writeStorage(STORAGE.deviceWifiSsid, state.deviceWifiSsid);
     writeStorage(STORAGE.deviceWifiPassword, state.deviceWifiPassword);
+    writeStorage(STORAGE.deviceWifiHostname, state.deviceWifiHostname);
+    writeStorage(STORAGE.deviceWifiReconnect, state.deviceWifiReconnect ? "1" : "0");
     writeStorage(STORAGE.deviceAuthToken, state.deviceAuthToken);
     writeStorage(STORAGE.deviceWifiApFallback, state.deviceWifiApFallback ? "1" : "0");
     writeStorage(STORAGE.displaySleepSeconds, String(state.displaySleepSeconds));
@@ -1123,13 +1181,15 @@
   function buildConnectivityParams(modeOverride) {
     const params = {};
     if (modeOverride) params.mode = modeOverride;
-    if (state.deviceWifiSsid) params.wifiSsid = state.deviceWifiSsid;
-    if (state.deviceWifiPassword) params.wifiPassword = state.deviceWifiPassword;
-    const desiredToken = getDesiredDeviceAuthToken();
-    if (desiredToken) params.rpcToken = desiredToken;
-    if (state.deviceWifiApFallback !== null && state.deviceWifiApFallback !== undefined) {
-      params.wifiApFallback = Boolean(state.deviceWifiApFallback);
-    }
+    params.bluetoothEnabled = Boolean(state.deviceBluetoothEnabled);
+    params.bluetoothName = state.deviceBluetoothName || "";
+    params.wifiEnabled = Boolean(state.deviceWifiEnabled);
+    params.wifiSsid = state.deviceWifiSsid || "";
+    params.wifiPassword = state.deviceWifiPassword || "";
+    params.wifiHostname = state.deviceWifiHostname || "";
+    params.rpcToken = getDesiredDeviceAuthToken() || "";
+    params.wifiReconnect = Boolean(state.deviceWifiReconnect);
+    params.wifiApFallback = Boolean(state.deviceWifiApFallback);
     params.displaySleepSeconds = state.displaySleepSeconds;
     params.bridgeWindowSeconds = state.bridgeWindowSeconds;
     params.powerSaveLevel = state.powerSaveLevel;
@@ -1689,6 +1749,12 @@
     if (!refs.deviceBridgeHint) return;
     const info = state.connectivityInfo || {};
     const parts = [];
+    if (typeof info.bluetoothState === "string" && info.bluetoothState.length) {
+      parts.push(txt(`Bluetooth: ${info.bluetoothState}`, `Bluetooth: ${info.bluetoothState}`));
+    }
+    if (info.bluetoothPin && (info.bluetoothPairing || info.activeInterface === "bluetooth")) {
+      parts.push(txt(`PIN BLE: ${info.bluetoothPin}`, `BLE PIN: ${info.bluetoothPin}`));
+    }
     if (info.tokenSet === true) {
       parts.push(txt("Token auth ustawiony", "Auth token set"));
     }
@@ -1700,6 +1766,14 @@
     }
     if (info.wifiHostname) {
       parts.push(txt(`mDNS: ${info.wifiHostname}.local`, `mDNS: ${info.wifiHostname}.local`));
+    }
+    if (typeof info.displaySleepSeconds !== "undefined") {
+      const sleepSeconds = normalizeDisplaySleepPreset(info.displaySleepSeconds);
+      parts.push(
+        sleepSeconds === 0
+          ? txt("Ekran: zawsze włączony", "Display: always on")
+          : txt(`Ekran: ${sleepSeconds}s`, `Display: ${sleepSeconds}s`)
+      );
     }
     if (!parts.length && state.deviceBridgeUrl) {
       parts.push(txt("Użyj lokalnego adresu IP z DHCP lub ekranu urządzenia.", "Use the local DHCP IP or the device screen."));
@@ -2922,14 +2996,45 @@
       const result = await requestDevice("get_connectivity", {});
       state.connectivityRpcUnsupported = false;
       state.connectivityInfo = result || null;
+      const config = result?.config || {};
+      if (typeof config.bluetoothEnabled === "boolean") {
+        state.deviceBluetoothEnabled = config.bluetoothEnabled;
+        writeStorage(STORAGE.deviceBluetoothEnabled, state.deviceBluetoothEnabled ? "1" : "0");
+        if (refs.deviceBluetoothEnabledInput) refs.deviceBluetoothEnabledInput.checked = state.deviceBluetoothEnabled;
+      }
+      if (typeof config.bluetoothName === "string") {
+        state.deviceBluetoothName = config.bluetoothName;
+        writeStorage(STORAGE.deviceBluetoothName, state.deviceBluetoothName);
+        if (refs.deviceBluetoothNameInput) refs.deviceBluetoothNameInput.value = state.deviceBluetoothName;
+      }
+      if (typeof config.wifiEnabled === "boolean") {
+        state.deviceWifiEnabled = config.wifiEnabled;
+        writeStorage(STORAGE.deviceWifiEnabled, state.deviceWifiEnabled ? "1" : "0");
+        if (refs.deviceWifiEnabledInput) refs.deviceWifiEnabledInput.checked = state.deviceWifiEnabled;
+      }
+      if (typeof config.wifiSsid === "string") {
+        state.deviceWifiSsid = config.wifiSsid;
+        writeStorage(STORAGE.deviceWifiSsid, state.deviceWifiSsid);
+        if (refs.deviceWifiSsidInput) refs.deviceWifiSsidInput.value = state.deviceWifiSsid;
+      }
+      if (typeof config.wifiHostname === "string") {
+        state.deviceWifiHostname = config.wifiHostname;
+        writeStorage(STORAGE.deviceWifiHostname, state.deviceWifiHostname);
+        if (refs.deviceWifiHostnameInput) refs.deviceWifiHostnameInput.value = state.deviceWifiHostname;
+      }
+      if (typeof config.wifiReconnect === "boolean") {
+        state.deviceWifiReconnect = config.wifiReconnect;
+        writeStorage(STORAGE.deviceWifiReconnect, state.deviceWifiReconnect ? "1" : "0");
+        if (refs.deviceWifiReconnectInput) refs.deviceWifiReconnectInput.checked = state.deviceWifiReconnect;
+      }
       if (typeof result?.wifiApFallback === "boolean") {
         state.deviceWifiApFallback = result.wifiApFallback;
         writeStorage(STORAGE.deviceWifiApFallback, state.deviceWifiApFallback ? "1" : "0");
         if (refs.deviceWifiApFallbackInput) refs.deviceWifiApFallbackInput.checked = state.deviceWifiApFallback;
       }
-      const displaySleepSeconds = parseBoundedInt(result?.displaySleepSeconds, 0, 3600, null);
-      if (displaySleepSeconds !== null) {
-        state.displaySleepSeconds = displaySleepSeconds;
+      const displaySleepSeconds = result?.displaySleepSeconds;
+      if (displaySleepSeconds !== null && typeof displaySleepSeconds !== "undefined") {
+        state.displaySleepSeconds = normalizeDisplaySleepPreset(displaySleepSeconds);
         writeStorage(STORAGE.displaySleepSeconds, String(state.displaySleepSeconds));
         if (refs.displaySleepSecondsInput) refs.displaySleepSecondsInput.value = String(state.displaySleepSeconds);
       }
@@ -3214,7 +3319,8 @@
       adr: Boolean(refs.lorawanAdrInput?.checked),
       confirmedUplink: Boolean(refs.lorawanConfirmedInput?.checked),
       appPort: Number(refs.lorawanAppPortInput?.value || 1),
-      defaultDataRate: Number(refs.lorawanDataRateInput?.value || 3)
+      defaultDataRate: Number(refs.lorawanDataRateInput?.value || 3),
+      region: refs.lorawanRegionInput?.value || "EU868"
     };
     const devEuiHex = refs.lorawanDevEuiInput?.value?.trim();
     const joinEuiHex = refs.lorawanJoinEuiInput?.value?.trim();
@@ -4514,6 +4620,7 @@
     if (refs.lorawanJoinEuiInput && !refs.lorawanJoinEuiInput.value && lorawanConfig?.joinEuiHex) refs.lorawanJoinEuiInput.value = lorawanConfig.joinEuiHex;
     if (refs.lorawanAppPortInput && lorawanConfig?.appPort != null) refs.lorawanAppPortInput.value = String(lorawanConfig.appPort);
     if (refs.lorawanDataRateInput && lorawanConfig?.defaultDataRate != null) refs.lorawanDataRateInput.value = String(lorawanConfig.defaultDataRate);
+    if (refs.lorawanRegionInput) refs.lorawanRegionInput.value = lorawanConfig?.region || "EU868";
     if (refs.lorawanAutoDevEuiInput) refs.lorawanAutoDevEuiInput.checked = Boolean(lorawanConfig?.autoDevEui);
     if (refs.lorawanAdrInput) refs.lorawanAdrInput.checked = Boolean(lorawanConfig?.adr);
     if (refs.lorawanConfirmedInput) refs.lorawanConfirmedInput.checked = Boolean(lorawanConfig?.confirmedUplink);

@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260401-02" />
+    <link rel="stylesheet" href="./styles.css?v=20260401-03" />
   </head>
   <body data-theme="medium" data-page="setup">
     <div class="backdrop backdrop--left"></div>
@@ -66,6 +66,18 @@
           </label>
 
           <div class="field-grid device-wifi-fields">
+            <label class="field field--checkbox">
+              <input id="deviceBluetoothEnabledInput" type="checkbox" />
+              <span data-i18n="settings.deviceBluetoothEnabled">Bluetooth włączony</span>
+            </label>
+            <label class="field">
+              <span data-i18n="settings.deviceBluetoothName">Nazwa urządzenia Bluetooth</span>
+              <input id="deviceBluetoothNameInput" type="text" maxlength="31" placeholder="LoRa20-7090" />
+            </label>
+            <label class="field field--checkbox">
+              <input id="deviceWifiEnabledInput" type="checkbox" />
+              <span data-i18n="settings.deviceWifiEnabled">Klient Wi‑Fi włączony</span>
+            </label>
             <label class="field">
               <span data-i18n="settings.deviceWifiSsid">SSID Wi‑Fi urządzenia</span>
               <input id="deviceWifiSsidInput" type="text" placeholder="Twoja sieć Wi‑Fi" />
@@ -73,6 +85,14 @@
             <label class="field">
               <span data-i18n="settings.deviceWifiPassword">Hasło Wi‑Fi urządzenia</span>
               <input id="deviceWifiPasswordInput" type="password" placeholder="••••••••" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.deviceWifiHostname">Hostname Wi‑Fi</span>
+              <input id="deviceWifiHostnameInput" type="text" maxlength="32" placeholder="lora20-7090" />
+            </label>
+            <label class="field field--checkbox">
+              <input id="deviceWifiReconnectInput" type="checkbox" checked />
+              <span data-i18n="settings.deviceWifiReconnect">Automatyczne ponawianie Wi‑Fi</span>
             </label>
             <label class="field">
               <span data-i18n="settings.deviceAuthToken">Token urządzenia (Wi‑Fi)</span>
@@ -87,7 +107,13 @@
             </label>
             <label class="field">
               <span data-i18n="settings.displaySleepSeconds">Uśpienie ekranu (sekundy)</span>
-              <input id="displaySleepSecondsInput" type="number" min="0" max="3600" step="30" value="60" />
+              <select id="displaySleepSecondsInput">
+                <option value="60">60 s</option>
+                <option value="120">120 s</option>
+                <option value="240">240 s</option>
+                <option value="480">480 s</option>
+                <option value="0" data-i18n="settings.displaySleepAlwaysOn">Zawsze włączony</option>
+              </select>
             </label>
             <label class="field">
               <span data-i18n="settings.bridgeWindowSeconds">Okno łączności po restarcie (sekundy)</span>
@@ -151,6 +177,6 @@
       <div id="activityLog" class="log"></div>
     </aside>
 
-    <script defer src="./app.js?v=20260401-02" charset="utf-8"></script>
+    <script defer src="./app.js?v=20260401-03" charset="utf-8"></script>
   </body>
 </html>
