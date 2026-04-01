@@ -10,6 +10,7 @@
     deviceBridgeUrl: "lora20.dashboard.deviceBridgeUrl",
     deviceBluetoothEnabled: "lora20.dashboard.deviceBluetoothEnabled",
     deviceBluetoothName: "lora20.dashboard.deviceBluetoothName",
+    deviceBluetoothPin: "lora20.dashboard.deviceBluetoothPin",
     deviceWifiEnabled: "lora20.dashboard.deviceWifiEnabled",
     deviceWifiSsid: "lora20.dashboard.deviceWifiSsid",
     deviceWifiPassword: "lora20.dashboard.deviceWifiPassword",
@@ -33,6 +34,7 @@
     deviceBridgeUrl: "",
     deviceBluetoothEnabled: false,
     deviceBluetoothName: "",
+    deviceBluetoothPin: 671954,
     deviceWifiEnabled: false,
     deviceWifiSsid: "",
     deviceWifiPassword: "",
@@ -124,6 +126,7 @@
     "settings.deviceBridgeUrl": "Device URL on your local network",
     "settings.deviceBluetoothEnabled": "Bluetooth enabled",
     "settings.deviceBluetoothName": "Bluetooth device name",
+    "settings.deviceBluetoothPin": "Bluetooth pairing PIN",
     "settings.deviceWifiEnabled": "Wi-Fi client enabled",
     "settings.deviceWifiSsid": "Device Wi-Fi SSID",
     "settings.deviceWifiPassword": "Device Wi-Fi password",
@@ -307,6 +310,7 @@
     "settings.deviceBridgeUrl": "Adres urządzenia w sieci lokalnej",
     "settings.deviceBluetoothEnabled": "Bluetooth włączony",
     "settings.deviceBluetoothName": "Nazwa urządzenia Bluetooth",
+    "settings.deviceBluetoothPin": "PIN parowania Bluetooth",
     "settings.deviceWifiEnabled": "Klient Wi‑Fi włączony",
     "settings.deviceWifiSsid": "SSID Wi‑Fi urządzenia",
     "settings.deviceWifiPassword": "Hasło Wi‑Fi urządzenia",
@@ -472,7 +476,7 @@
   const refs = {};
   const refNames = [
     "languageSelect", "themeSelect", "soundEnabledInput", "indexerBaseUrlInput", "deviceBridgeUrlInput", "deviceBridgeHint",
-    "deviceBluetoothEnabledInput", "deviceBluetoothNameInput", "deviceWifiEnabledInput",
+    "deviceBluetoothEnabledInput", "deviceBluetoothNameInput", "deviceBluetoothPinInput", "deviceWifiEnabledInput",
     "deviceWifiSsidInput", "deviceWifiPasswordInput", "deviceWifiHostnameInput", "deviceWifiReconnectInput",
     "deviceAuthTokenInput", "generateAuthTokenButton",
     "deviceWifiApFallbackInput", "displaySleepSecondsInput", "bridgeWindowSecondsInput", "powerSaveLevelInput",
@@ -520,6 +524,7 @@
       deviceBridgeUrl: normalizeUrl(readStorage(STORAGE.deviceBridgeUrl, DEFAULTS.deviceBridgeUrl)) || DEFAULTS.deviceBridgeUrl,
       deviceBluetoothEnabled: readStorage(STORAGE.deviceBluetoothEnabled, DEFAULTS.deviceBluetoothEnabled ? "1" : "0") === "1",
       deviceBluetoothName: readStorage(STORAGE.deviceBluetoothName, DEFAULTS.deviceBluetoothName),
+      deviceBluetoothPin: parseBoundedInt(readStorage(STORAGE.deviceBluetoothPin, String(DEFAULTS.deviceBluetoothPin)), 100000, 999999, DEFAULTS.deviceBluetoothPin),
       deviceWifiEnabled: readStorage(STORAGE.deviceWifiEnabled, DEFAULTS.deviceWifiEnabled ? "1" : "0") === "1",
       deviceWifiSsid: readStorage(STORAGE.deviceWifiSsid, DEFAULTS.deviceWifiSsid),
       deviceWifiPassword: readStorage(STORAGE.deviceWifiPassword, DEFAULTS.deviceWifiPassword),
@@ -1070,6 +1075,7 @@
       if (refs.deviceBridgeUrlInput) refs.deviceBridgeUrlInput.value = state.deviceBridgeUrl;
       if (refs.deviceBluetoothEnabledInput) refs.deviceBluetoothEnabledInput.checked = Boolean(state.deviceBluetoothEnabled);
       if (refs.deviceBluetoothNameInput) refs.deviceBluetoothNameInput.value = state.deviceBluetoothName || "";
+      if (refs.deviceBluetoothPinInput) refs.deviceBluetoothPinInput.value = String(state.deviceBluetoothPin || DEFAULTS.deviceBluetoothPin);
       if (refs.deviceWifiEnabledInput) refs.deviceWifiEnabledInput.checked = Boolean(state.deviceWifiEnabled);
       if (refs.deviceWifiSsidInput) refs.deviceWifiSsidInput.value = state.deviceWifiSsid || "";
       if (refs.deviceWifiPasswordInput) refs.deviceWifiPasswordInput.value = state.deviceWifiPassword || "";
@@ -1134,6 +1140,7 @@
   function handleSaveConnectivity() {
     state.deviceBluetoothEnabled = Boolean(refs.deviceBluetoothEnabledInput?.checked);
     state.deviceBluetoothName = refs.deviceBluetoothNameInput?.value?.trim() || "";
+    state.deviceBluetoothPin = parseBoundedInt(refs.deviceBluetoothPinInput?.value, 100000, 999999, DEFAULTS.deviceBluetoothPin);
     state.deviceWifiEnabled = Boolean(refs.deviceWifiEnabledInput?.checked);
     state.deviceWifiSsid = refs.deviceWifiSsidInput?.value?.trim() || "";
     state.deviceWifiPassword = refs.deviceWifiPasswordInput?.value || "";
@@ -1147,8 +1154,10 @@
     if (refs.displaySleepSecondsInput) refs.displaySleepSecondsInput.value = String(state.displaySleepSeconds);
     if (refs.bridgeWindowSecondsInput) refs.bridgeWindowSecondsInput.value = String(state.bridgeWindowSeconds);
     if (refs.powerSaveLevelInput) refs.powerSaveLevelInput.value = String(state.powerSaveLevel);
+    if (refs.deviceBluetoothPinInput) refs.deviceBluetoothPinInput.value = String(state.deviceBluetoothPin);
     writeStorage(STORAGE.deviceBluetoothEnabled, state.deviceBluetoothEnabled ? "1" : "0");
     writeStorage(STORAGE.deviceBluetoothName, state.deviceBluetoothName);
+    writeStorage(STORAGE.deviceBluetoothPin, String(state.deviceBluetoothPin));
     writeStorage(STORAGE.deviceWifiEnabled, state.deviceWifiEnabled ? "1" : "0");
     writeStorage(STORAGE.deviceWifiSsid, state.deviceWifiSsid);
     writeStorage(STORAGE.deviceWifiPassword, state.deviceWifiPassword);
@@ -1188,6 +1197,7 @@
     if (modeOverride) params.mode = modeOverride;
     params.bluetoothEnabled = Boolean(state.deviceBluetoothEnabled);
     params.bluetoothName = state.deviceBluetoothName || "";
+    params.bluetoothPin = parseBoundedInt(state.deviceBluetoothPin, 100000, 999999, DEFAULTS.deviceBluetoothPin);
     params.wifiEnabled = Boolean(state.deviceWifiEnabled);
     params.wifiSsid = state.deviceWifiSsid || "";
     params.wifiPassword = state.deviceWifiPassword || "";
@@ -1198,6 +1208,7 @@
     params.displaySleepSeconds = state.displaySleepSeconds;
     params.bridgeWindowSeconds = state.bridgeWindowSeconds;
     params.powerSaveLevel = state.powerSaveLevel;
+    params.utcOffsetMinutes = -new Date().getTimezoneOffset();
     return params;
   }
 
@@ -1783,9 +1794,6 @@
     const parts = [];
     if (typeof info.bluetoothState === "string" && info.bluetoothState.length) {
       parts.push(txt(`Bluetooth: ${info.bluetoothState}`, `Bluetooth: ${info.bluetoothState}`));
-    }
-    if (info.bluetoothPin && (info.bluetoothPairing || info.activeInterface === "bluetooth")) {
-      parts.push(txt(`PIN BLE: ${info.bluetoothPin}`, `BLE PIN: ${info.bluetoothPin}`));
     }
     if (info.tokenSet === true) {
       parts.push(txt("Token auth ustawiony", "Auth token set"));
@@ -3039,6 +3047,11 @@
         writeStorage(STORAGE.deviceBluetoothName, state.deviceBluetoothName);
         if (refs.deviceBluetoothNameInput) refs.deviceBluetoothNameInput.value = state.deviceBluetoothName;
       }
+      if (Number.isFinite(Number(config.bluetoothPin))) {
+        state.deviceBluetoothPin = parseBoundedInt(config.bluetoothPin, 100000, 999999, DEFAULTS.deviceBluetoothPin);
+        writeStorage(STORAGE.deviceBluetoothPin, String(state.deviceBluetoothPin));
+        if (refs.deviceBluetoothPinInput) refs.deviceBluetoothPinInput.value = String(state.deviceBluetoothPin);
+      }
       if (typeof config.wifiEnabled === "boolean") {
         state.deviceWifiEnabled = config.wifiEnabled;
         writeStorage(STORAGE.deviceWifiEnabled, state.deviceWifiEnabled ? "1" : "0");
@@ -4104,7 +4117,7 @@
     stopSerialReconnect();
     state.deviceTransport = "ble";
     state.wifiConnected = false;
-    addLog("device", txt("Bluetooth podłączony. BLE nie wymaga tokena urządzenia.", "Bluetooth connected. BLE does not require the device token."));
+    addLog("device", txt("Bluetooth podłączony. Parowanie BLE może poprosić o PIN ustawiony w konfiguracji urządzenia.", "Bluetooth connected. BLE pairing may ask for the PIN configured on the device."));
     renderAll();
     await delay(400);
     await refreshDeviceState();
@@ -4120,20 +4133,23 @@
         "The device does not have a local IP address yet. First save a valid SSID and password over USB or BLE, then wait until Wi-Fi gets DHCP."
       ));
     }
+    const previousTransport = state.deviceTransport;
+    const previousWifiConnected = state.wifiConnected;
+    const previousActiveWifiAuthToken = state.activeWifiAuthToken;
     state.serialAutoReconnectEnabled = false;
     stopSerialReconnect();
-    state.deviceTransport = "wifi";
     try {
       const response = await sendWifiPayload(withAuth({ id: `req-${state.requestId++}`, command: "ping", params: {} }), 8000, "ping");
+      state.deviceTransport = "wifi";
       state.wifiConnected = true;
       state.activeWifiAuthToken = getDesiredDeviceAuthToken();
       addLog("device", txt("Wi‑Fi bridge połączony.", "Wi‑Fi bridge connected."), response);
       renderAll();
       await refreshDeviceState();
     } catch (error) {
-      state.wifiConnected = false;
-      state.activeWifiAuthToken = "";
-      state.deviceTransport = null;
+      state.wifiConnected = previousWifiConnected;
+      state.activeWifiAuthToken = previousActiveWifiAuthToken;
+      state.deviceTransport = previousTransport;
       throw error;
     }
   }
@@ -4392,12 +4408,13 @@
     if (!state.ble?.rxChar) throw new Error(txt("Bluetooth nie jest podłączony.", "Bluetooth is not connected."));
     const serialized = JSON.stringify(payload);
     addLog("tx", label || payload.command || payload.method || "raw", payload);
+    const effectiveTimeout = Math.max(timeout || TIMEOUTS.default, label === "get_info" ? 60000 : 30000);
 
     const responsePromise = new Promise((resolve, reject) => {
       const timer = window.setTimeout(() => {
         state.pending.delete(payload.id);
         reject(new Error(`Timeout waiting for ${label || payload.command || "response"}`));
-      }, timeout || TIMEOUTS.default);
+      }, effectiveTimeout);
       state.pending.set(payload.id, { resolve, reject, timer, label: label || payload.command || payload.method || "raw" });
     });
 
@@ -4431,27 +4448,24 @@
         if (!state.ble.buffer) return;
       }
 
-      const extracted = extractJsonObjects(state.ble.buffer);
-      if (extracted.length > 0) {
-        const first = extracted[0];
-        const prefix = state.ble.buffer.slice(0, first.start).trim();
-        if (prefix) addLog("ble", prefix);
-        try {
-          processDeviceMessage(JSON.parse(first.json), "ble");
-        } catch (_error) {
-          addLog("ble", first.json);
-        }
-        state.ble.buffer = state.ble.buffer.slice(first.end);
-        madeProgress = true;
-        continue;
-      }
-
       const newlineIndex = state.ble.buffer.indexOf("\n");
       if (newlineIndex >= 0) {
         const line = state.ble.buffer.slice(0, newlineIndex).replace(/\r$/, "");
         state.ble.buffer = state.ble.buffer.slice(newlineIndex + 1);
         handleDeviceLine(line, "ble");
         madeProgress = true;
+        continue;
+      }
+
+      const extracted = extractJsonObjects(state.ble.buffer);
+      if (extracted.length === 1 && extracted[0].start === 0 && extracted[0].end === state.ble.buffer.length) {
+        try {
+          processDeviceMessage(JSON.parse(extracted[0].json), "ble");
+          state.ble.buffer = "";
+          madeProgress = true;
+        } catch (_error) {
+          // wait for more data
+        }
       }
     }
   }
@@ -4947,7 +4961,10 @@
   }
 
   function normalizeUrl(value) {
-    return String(value || "").trim().replace(/\/+$/, "");
+    const trimmed = String(value || "").trim().replace(/\/+$/, "");
+    if (!trimmed) return "";
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) return trimmed;
+    return `http://${trimmed}`;
   }
 
   function normalizeTick(value) {

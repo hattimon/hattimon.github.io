@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260401-04" />
+    <link rel="stylesheet" href="./styles.css?v=20260401-05" />
   </head>
   <body data-theme="medium" data-page="dashboard">
     <div class="backdrop backdrop--left"></div>
@@ -84,6 +84,10 @@
             <label class="field">
               <span data-i18n="settings.deviceBluetoothName">Nazwa urządzenia Bluetooth</span>
               <input id="deviceBluetoothNameInput" type="text" maxlength="31" placeholder="LoRa20-7090" />
+            </label>
+            <label class="field">
+              <span data-i18n="settings.deviceBluetoothPin">PIN parowania Bluetooth</span>
+              <input id="deviceBluetoothPinInput" type="number" min="100000" max="999999" step="1" placeholder="671954" />
             </label>
             <label class="field field--checkbox">
               <input id="deviceWifiEnabledInput" type="checkbox" />
@@ -594,6 +598,6 @@
       </div>
     </div>
 
-    <script defer src="./app.js?v=20260401-04" charset="utf-8"></script>
+    <script defer src="./app.js?v=20260401-05" charset="utf-8"></script>
   </body>
 </html>
