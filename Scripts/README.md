@@ -26,7 +26,7 @@ Wykorzystuje standardowe narzędzia systemd i Linux (`journalctl`, `dmesg`, `/va
 
 > ⚠️ **Uwaga:** obecna wersja skryptu **nie modyfikuje systemu** – tylko zbiera informacje i pakuje je do katalogu / archiwum.
    
-![Ubuntu Freeze Diagnostic](menu.jpg)
+![Ubuntu Freeze Diagnostic](menu.png)
 ---
 
 ## ✅ Wymagania
