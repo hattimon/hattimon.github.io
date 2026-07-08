@@ -1,50 +1,47 @@
-# Ubuntu Freeze Diagnostic (`ubuntu_freeze_diag.sh`)
+# 🧊 Ubuntu Freeze Diagnostic (`ubuntu_freeze_diag.sh`)
 
 Skrypt diagnostyczny do zbierania logów i informacji o sprzęcie na Ubuntu 26.04 (GNOME 50, Wayland) w sytuacjach zawieszania się środowiska graficznego lub całego systemu.  
 Wykorzystuje standardowe narzędzia systemd i Linux (`journalctl`, `dmesg`, `/var/log`, `lspci`, `lsusb`, `inxi` itd.), zgodnie z typowymi praktykami analizy logów na nowoczesnych dystrybucjach. [web:19][web:20][web:26]
 
 ---
 
-## Funkcje skryptu
+## ✨ Co robi ten skrypt?
 
-- Zbiera pełne logi systemowe z bieżącego i poprzedniego uruchomienia:
+- 📜 Zbiera pełne logi systemowe z bieżącego i poprzedniego uruchomienia:
   - `journalctl -b`, `journalctl -b -1`
   - logi kernela: `journalctl -k`, `dmesg` w kilku wariantach.
-- Zapisuje wycinki z `/var/log` (np. `syslog`, `kern.log`, `dmesg`).
-- Zbiera szczegółowe informacje o sprzęcie:
+- 💾 Zapisuje wycinki z `/var/log` (np. `syslog`, `kern.log`, `dmesg`). [web:23]
+- 🧩 Zbiera szczegółowe informacje o sprzęcie:
   - CPU, RAM, dyski (`lscpu`, `free -h`, `lsblk`)
   - GPU i sterowniki (`lspci -nnk`, `lsmod`, opcjonalnie `inxi -Faz`). [web:22][web:25]
-- Zapisuje informacje o środowisku graficznym:
+- 🖥️ Zapisuje informacje o środowisku graficznym:
   - typ sesji (Wayland/X11), GDM, GNOME Shell, rozszerzenia GNOME.
-- Tworzy katalog diagnostyczny z czytelną strukturą oraz archiwum `.tar.gz` gotowe do wysłania.
-- Posiada proste menu tekstowe z kolorami:
-  - `1` – pełne zbieranie logów (rekomendowane),
+- 📦 Tworzy katalog diagnostyczny z czytelną strukturą oraz archiwum `.tar.gz` gotowe do wysłania.
+- 🎛️ Posiada proste menu tekstowe z kolorami:
+  - `1` – pełne zbieranie logów (**rekomendowane**),
   - `2` – szybkie podsumowanie sprzętu/GPU,
   - `3` – tworzenie archiwum `.tar.gz`,
   - `4` – informacja o planowanej automatycznej naprawie (placeholder).
 
-> **Uwaga:** obecna wersja skryptu **nie modyfikuje systemu** – tylko zbiera informacje i pakuje je do katalogu / archiwum.
+> ⚠️ **Uwaga:** obecna wersja skryptu **nie modyfikuje systemu** – tylko zbiera informacje i pakuje je do katalogu / archiwum.
 
 ---
 
-## Wymagania
+## ✅ Wymagania
 
-- System:
+- 🐧 **System:**
   - Ubuntu 26.04 lub inny Debian/Ubuntu z `systemd` i `journalctl`. [web:19]
-- Uprawnienia:
-  - **Wymagane jest uruchomienie z `sudo`** (część logów i informacji o sprzęcie wymaga uprawnień administratora).
-- Narzędzia (standardowo dostępne na Ubuntu, ale na wszelki wypadek podane komendy instalacyjne):
+- 🔐 **Uprawnienia:**
+  - Wymagane jest uruchomienie z `sudo` (część logów i informacji o sprzęcie wymaga uprawnień administratora).
+- 🛠️ **Narzędzia (standardowo dostępne na Ubuntu, ale na wszelki wypadek komendy instalacyjne):**
   - `bash`, `journalctl`, `dmesg`, `lsblk`, `lsusb`, `lspci`, `lsmod`, `loginctl`, `gsettings`.
-  - opcjonalnie: `inxi` (dla pełnego raportu sprzętowego).
+  - Opcjonalnie: `inxi` (dla pełnego raportu sprzętowego).
 
 ---
 
-## Instalacja – użytkownik bez Git, curl, wget
+## 🧰 Instalacja – użytkownik bez Git, curl, wget
 
-Jeśli **nie masz zainstalowanego gita / curl / wget**, możesz:
-
-1. Zainstalować potrzebne narzędzia przez `apt`.
-2. Albo skopiować zawartość skryptu ręcznie do pliku.
+Ten fragment jest dla osób **totalnie zielonych** w terminalu – wszystko krok po kroku.
 
 ### 1. Aktualizacja listy pakietów
 
@@ -54,79 +51,87 @@ Najpierw zaktualizuj listę pakietów:
 sudo apt update
 ```
 
-### 2. Instalacja Git (opcjonalnie, jeśli chcesz używać repozytorium)
+### 2. Instalacja Git (opcjonalnie)
 
-Git nie jest wymagany do samego działania skryptu, ale ułatwia pobieranie aktualizacji. [web:31][web:34][web:41]
+Git nie jest wymagany do samego działania skryptu, ale ułatwia pobieranie aktualizacji z repozytorium. [web:32][web:34][web:41]
 
 ```bash
 sudo apt install git
-# Sprawdzenie wersji:
 git --version
 ```
 
-### 3. Instalacja curl (opcjonalnie, jeśli chcesz pobierać pliki przez HTTP)
+### 3. Instalacja curl (opcjonalnie)
 
-Jeśli system zgłasza: `curl: command not found`, możesz go zainstalować: [web:36][web:39][web:45]
+Jeśli system zgłasza:
+
+```text
+curl: command not found
+```
+
+Zainstaluj curl: [web:36][web:39][web:45]
 
 ```bash
 sudo apt install curl
-# Sprawdzenie wersji:
 curl --version
 ```
 
-### 4. Instalacja wget (opcjonalnie, jeśli wolisz wget zamiast curl)
+### 4. Instalacja wget (opcjonalnie)
 
-Jeśli system zgłasza: `wget: command not found`, możesz go zainstalować: [web:37][web:40][web:43]
+Jeśli system zgłasza:
+
+```text
+wget: command not found
+```
+
+Zainstaluj wget: [web:37][web:40][web:43]
 
 ```bash
 sudo apt install wget
-# Sprawdzenie:
 wget --version
 ```
 
 ---
 
-## Pobranie skryptu – kilka wariantów
+## 📥 Pobranie skryptu – kilka prostych wariantów
 
-### Wariant A: ręczne skopiowanie skryptu (najprostsze)
+### 🖱️ Wariant A: ręczne skopiowanie skryptu (dla osób bez Git/curl/wget)
 
-1. Otwórz stronę z kodem skryptu w przeglądarce (np. GitHub).
-2. Skopiuj całą zawartość do schowka.
-3. Na maszynie z Ubuntu w terminalu wykonaj:
+1. Otwórz w przeglądarce stronę z kodem skryptu (np. GitHub).
+2. Skopiuj całą zawartość pliku do schowka.
+3. Na maszynie z Ubuntu w terminalu wpisz:
 
-```bash
-nano ubuntu_freeze_diag.sh
-```
+   ```bash
+   nano ubuntu_freeze_diag.sh
+   ```
 
-4. Wklej zawartość (np. `Ctrl+Shift+V` w terminalu).
-5. Zapisz plik w `nano` (`Ctrl+O`, Enter, potem `Ctrl+X`).
+4. Wklej zawartość (zwykle `Ctrl+Shift+V` w terminalu).
+5. Zapisz plik:
+   - `Ctrl+O` → Enter,
+   - `Ctrl+X` (wyjście z `nano`).
 
 6. Nadaj prawa wykonywania:
 
-```bash
-chmod +x ubuntu_freeze_diag.sh
-```
-
-Gotowe – możesz przejść do sekcji „Szybki start”.
+   ```bash
+   chmod +x ubuntu_freeze_diag.sh
+   ```
 
 ---
 
-### Wariant B: pobranie przez wget
+### 🌐 Wariant B: pobranie przez `wget`
 
-Jeżeli masz `wget` (albo go właśnie zainstalowałeś):
+Jeżeli masz `wget` (albo właśnie go zainstalowałeś):
 
 ```bash
-# w katalogu, w którym chcesz mieć skrypt:
 wget https://raw.githubusercontent.com/hattimon/hattimon.github.io/main/Scripts/ubuntu_freeze_diag.sh
 
 chmod +x ubuntu_freeze_diag.sh
 ```
 
-Adres URL musisz dopasować do rzeczywistej ścieżki pliku w repozytorium (raw plik z GitHub).
+> ℹ️ Upewnij się, że adres URL odpowiada **surowej** (raw) wersji pliku w repozytorium.
 
 ---
 
-### Wariant C: pobranie przez curl
+### 🌐 Wariant C: pobranie przez `curl`
 
 Jeśli wolisz `curl`:
 
@@ -138,9 +143,9 @@ chmod +x ubuntu_freeze_diag.sh
 
 ---
 
-### Wariant D: użycie Git (dla zaawansowanych)
+### 🧱 Wariant D: użycie Git (dla bardziej zaawansowanych)
 
-Jeżeli masz git i chcesz mieć całe repozytorium:
+Jeżeli masz Git i chcesz mieć całe repozytorium:
 
 ```bash
 git clone https://github.com/hattimon/hattimon.github.io.git
@@ -150,12 +155,12 @@ chmod +x ubuntu_freeze_diag.sh
 
 ---
 
-## Szybki start (uruchomienie skryptu)
+## 🚀 Szybki start (uruchomienie skryptu)
 
 Skrypt należy uruchomić z uprawnieniami administratora:
 
 ```bash
-# jeśli skrypt leży np. w katalogu domowym:
+# jeśli skrypt jest w katalogu domowym:
 cd ~
 sudo ./ubuntu_freeze_diag.sh
 ```
@@ -168,15 +173,36 @@ Po uruchomieniu zobaczysz kolorowe menu:
 - `4` – Informacja o planowanej automatycznej naprawie  
 - `0` – Wyjście  
 
-Najczęstszy scenariusz:
+---
 
-1. Wybierz opcję `1`, żeby skrypt zebrał pełny zestaw logów i informacji.
-2. Następnie wybierz opcję `3`, aby utworzyć archiwum `.tar.gz`.
-3. Archiwum możesz dołączyć do zgłoszenia na forum / GitHub issue / wysłać osobie analizującej problem.
+## 🔄 Typowy scenariusz debugowania zawieszek
+
+> 👤 Scenariusz dla „nie‐linuxowca” – krok po kroku:
+
+1. **System się zawiesił**  
+   - zapamiętaj przybliżony czas (np. „zawieszenie ok. 09:05”);
+   - wymuś restart laptopa / PC.
+
+2. **Po restarcie:**
+   - otwórz terminal,
+   - przejdź do katalogu, gdzie jest skrypt,
+   - uruchom:
+
+     ```bash
+     sudo ./ubuntu_freeze_diag.sh
+     ```
+
+   - wybierz `1` (zbierz logi), poczekaj aż skrypt zakończy pracę;
+   - wybierz `3`, aby spakować wszystko do `.tar.gz`.
+
+3. **Analiza / wysyłka:**
+   - przejrzyj pliki w katalogu diagnostycznym,
+   - ewentualnie zanonimizuj dane (nazwy hostów, użytkowników),
+   - wyślij archiwum lub kluczowe pliki (`journal_errors_current.log`, `gpu_info.txt`, `gdm_gnome_shell_tail.log`) do osoby, która pomoże z analizą.
 
 ---
 
-## Gdzie trafiają zebrane dane?
+## 📁 Gdzie trafiają zebrane dane?
 
 Skrypt tworzy katalog w Twoim katalogu domowym, np.:
 
@@ -184,7 +210,7 @@ Skrypt tworzy katalog w Twoim katalogu domowym, np.:
 /home/<użytkownik>/ubuntu_freeze_diag_20260708_091500
 ```
 
-W środku znajdziesz m.in.:
+Struktura:
 
 - `README_DIAG.txt` – krótkie wyjaśnienie zawartości i jak używać logów.
 - `system/` – logi systemowe:
@@ -217,24 +243,7 @@ Gotowe do wysłania lub zachowania jako backup.
 
 ---
 
-## Typowy workflow przy debugowaniu zawieszek
-
-1. **Wystąpiło zawieszenie:**  
-   - zapamiętaj przybliżony czas (np. „zawieszenie koło 09:05”);
-   - zrestartuj laptop / PC.
-
-2. **Po restarcie:**  
-   - uruchom `sudo ./ubuntu_freeze_diag.sh`;  
-   - wybierz `1` (zbierz logi), poczekaj aż skrypt zakończy pracę;  
-   - wybierz `3`, aby spakować wszystko do `.tar.gz`.
-
-3. **Analiza / wysyłka:**  
-   - przejrzyj pliki w katalogu diagnostycznym, ewentualnie zanonimizuj dane (nazwy hostów, użytkowników);
-   - wyślij archiwum lub kluczowe pliki (`journal_errors_current.log`, `gpu_info.txt`, `gdm_gnome_shell_tail.log`) do osoby, która pomoże z analizą.
-
----
-
-## Automatyczna naprawa (planowana)
+## 🛠️ Automatyczna naprawa (planowana)
 
 Menu zawiera opcję `4`, która na ten moment **nie wykonuje żadnych zmian** w systemie – wyświetla jedynie informację, że:
 
@@ -242,7 +251,7 @@ Menu zawiera opcję `4`, która na ten moment **nie wykonuje żadnych zmian** w 
 - dopiero po analizie logów zostanie przygotowana część „auto‑fix”, dopasowana do:
   - konkretnego GPU (Intel / AMD / NVIDIA),
   - wersji sterowników,
-  - problemów widocznych w logach (`journalctl`, `dmesg`).
+  - problemów widocznych w logach (`journalctl`, `dmesg`). [web:30]
 
 Docelowo może się pojawić np. opcja:
 
@@ -253,7 +262,7 @@ Docelowo może się pojawić np. opcja:
 
 ---
 
-## Wkład / modyfikacje
+## 🤝 Wkład / modyfikacje
 
 Jeżeli chcesz:
 
@@ -261,11 +270,11 @@ Jeżeli chcesz:
 - rozszerzyć część auto‑naprawy,
 - dopasować skrypt pod inne dystrybucje (np. Mint, Fedora, Arch),
 
-możesz edytować `ubuntu_freeze_diag.sh` i zgłosić pull request w tym repozytorium.
+mile widziane są pull requesty z usprawnieniami.
 
 ---
 
-## Zastrzeżenie
+## ⚖️ Zastrzeżenie
 
 Skrypt jest narzędziem pomocniczym do diagnostyki.  
 Twórcy nie ponoszą odpowiedzialności za skutki użycia – zwłaszcza przyszłej części „auto‑fix”.  
