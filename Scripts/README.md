@@ -25,7 +25,8 @@ Wykorzystuje standardowe narzędzia systemd i Linux (`journalctl`, `dmesg`, `/va
   - `4` – informacja o planowanej automatycznej naprawie (placeholder).
 
 > ⚠️ **Uwaga:** obecna wersja skryptu **nie modyfikuje systemu** – tylko zbiera informacje i pakuje je do katalogu / archiwum.
-
+   
+![Ubuntu Freeze Diagnostic](menu.jpg)
 ---
 
 ## ✅ Wymagania
