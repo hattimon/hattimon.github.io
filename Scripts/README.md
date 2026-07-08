@@ -1,7 +1,7 @@
 # 🧊 Ubuntu Freeze Diagnostic (`ubuntu_freeze_diag.sh`)
 
 Skrypt diagnostyczny do zbierania logów i informacji o sprzęcie na Ubuntu 26.04 (GNOME 50, Wayland) w sytuacjach zawieszania się środowiska graficznego lub całego systemu.  
-Wykorzystuje standardowe narzędzia systemd i Linux (`journalctl`, `dmesg`, `/var/log`, `lspci`, `lsusb`, `inxi` itd.), zgodnie z typowymi praktykami analizy logów na nowoczesnych dystrybucjach. [web:19][web:20][web:26]
+Wykorzystuje standardowe narzędzia systemd i Linux (`journalctl`, `dmesg`, `/var/log`, `lspci`, `lsusb`, `inxi` itd.), zgodnie z typowymi praktykami analizy logów na nowoczesnych dystrybucjach. 
 
 ---
 
@@ -10,10 +10,10 @@ Wykorzystuje standardowe narzędzia systemd i Linux (`journalctl`, `dmesg`, `/va
 - 📜 Zbiera pełne logi systemowe z bieżącego i poprzedniego uruchomienia:
   - `journalctl -b`, `journalctl -b -1`
   - logi kernela: `journalctl -k`, `dmesg` w kilku wariantach.
-- 💾 Zapisuje wycinki z `/var/log` (np. `syslog`, `kern.log`, `dmesg`). [web:23]
+- 💾 Zapisuje wycinki z `/var/log` (np. `syslog`, `kern.log`, `dmesg`). 
 - 🧩 Zbiera szczegółowe informacje o sprzęcie:
   - CPU, RAM, dyski (`lscpu`, `free -h`, `lsblk`)
-  - GPU i sterowniki (`lspci -nnk`, `lsmod`, opcjonalnie `inxi -Faz`). [web:22][web:25]
+  - GPU i sterowniki (`lspci -nnk`, `lsmod`, opcjonalnie `inxi -Faz`). 
 - 🖥️ Zapisuje informacje o środowisku graficznym:
   - typ sesji (Wayland/X11), GDM, GNOME Shell, rozszerzenia GNOME.
 - 📦 Tworzy katalog diagnostyczny z czytelną strukturą oraz archiwum `.tar.gz` gotowe do wysłania.
@@ -30,7 +30,7 @@ Wykorzystuje standardowe narzędzia systemd i Linux (`journalctl`, `dmesg`, `/va
 ## ✅ Wymagania
 
 - 🐧 **System:**
-  - Ubuntu 26.04 lub inny Debian/Ubuntu z `systemd` i `journalctl`. [web:19]
+  - Ubuntu 26.04 lub inny Debian/Ubuntu z `systemd` i `journalctl`. 
 - 🔐 **Uprawnienia:**
   - Wymagane jest uruchomienie z `sudo` (część logów i informacji o sprzęcie wymaga uprawnień administratora).
 - 🛠️ **Narzędzia (standardowo dostępne na Ubuntu, ale na wszelki wypadek komendy instalacyjne):**
@@ -53,7 +53,7 @@ sudo apt update
 
 ### 2. Instalacja Git (opcjonalnie)
 
-Git nie jest wymagany do samego działania skryptu, ale ułatwia pobieranie aktualizacji z repozytorium. [web:32][web:34][web:41]
+Git nie jest wymagany do samego działania skryptu, ale ułatwia pobieranie aktualizacji z repozytorium. 
 
 ```bash
 sudo apt install git
@@ -68,7 +68,7 @@ Jeśli system zgłasza:
 curl: command not found
 ```
 
-Zainstaluj curl: [web:36][web:39][web:45]
+Zainstaluj curl: 
 
 ```bash
 sudo apt install curl
@@ -83,7 +83,7 @@ Jeśli system zgłasza:
 wget: command not found
 ```
 
-Zainstaluj wget: [web:37][web:40][web:43]
+Zainstaluj wget: 
 
 ```bash
 sudo apt install wget
@@ -221,13 +221,13 @@ Struktura:
   - `dmesg_full.log`
   - `dmesg_err_warn.log`
   - `dmesg_human_timestamp.log`
-  - wycinki z `/var/log` (`syslog_tail_500.log`, `kernlog_tail_500.log`, itp.). [web:19][web:23][web:26]
+  - wycinki z `/var/log` (`syslog_tail_500.log`, `kernlog_tail_500.log`, itp.). 
 - `hardware/` – informacje o sprzęcie:
   - `system_info_basic.txt`
   - `cpu_mem_disk.txt`
   - `gpu_info.txt`
   - `usb_devices.txt`
-  - `inxi_full.txt` (jeżeli `inxi` jest dostępne). [web:22]
+  - `inxi_full.txt` (jeżeli `inxi` jest dostępne). 
 - `desktop/` – informacje o środowisku graficznym:
   - `session_info.txt`
   - `gdm_gnome_shell_tail.log`
@@ -251,7 +251,7 @@ Menu zawiera opcję `4`, która na ten moment **nie wykonuje żadnych zmian** w 
 - dopiero po analizie logów zostanie przygotowana część „auto‑fix”, dopasowana do:
   - konkretnego GPU (Intel / AMD / NVIDIA),
   - wersji sterowników,
-  - problemów widocznych w logach (`journalctl`, `dmesg`). [web:30]
+  - problemów widocznych w logach (`journalctl`, `dmesg`). 
 
 Docelowo może się pojawić np. opcja:
 
