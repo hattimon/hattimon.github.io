@@ -2,7 +2,8 @@
 
 Skrypt diagnostyczny do zbierania logów i informacji o sprzęcie na Ubuntu 26.04 (GNOME 50, Wayland) w sytuacjach zawieszania się środowiska graficznego lub całego systemu.  
 Wykorzystuje standardowe narzędzia systemd i Linux (`journalctl`, `dmesg`, `/var/log`, `lspci`, `lsusb`, `inxi` itd.), zgodnie z typowymi praktykami analizy logów na nowoczesnych dystrybucjach. 
-
+    
+![Ubuntu Freeze Diagnostic](ubuntu_freeze-diag.jpg)
 ---
 
 ## ✨ Co robi ten skrypt?
