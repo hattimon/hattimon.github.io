@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="B20 — natywny standard tokenów na Base. Kompleksowy przewodnik techniczny, porównania, use-case'y, architektura MVP i gotowe ścieżki dla issuerów, builderów i traderów. Dowiedz się jak emitować stablecoiny, RWA i aktywa z wbudowanymi kontrolami.">
+    <meta name="keywords" content="B20, Base chain, Beryl upgrade, native token standard, ERC-20, stablecoin, RWA, token issuance, precompile, B20Factory, Base documentation">
+    <meta property="og:title" content="B20 | Natywny Standard Tokenów na Base">
+    <meta property="og:description" content="Profesjonalny przewodnik po standardzie B20: jak działa, różnice vs ERC-20 i BRC-20, zalety dla regulated assets, architektura MVP launchpada i pełny flow emisji.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://b20.base.dev">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="B20 | Natywny Standard Tokenów na Base">
+    <meta name="twitter:description" content="B20 to nie jeden token — to natywny standard emisji na Base z precompilami, rolami, politykami transferu i pełną kompatybilnością ERC-20.">
+    <title>B20 | Natywny Standard Tokenów na Base</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --accent: #3b82f6;
+        }
+        
+        .dark {
+            color-scheme: dark;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .section-header {
+            font-size: 2.25rem;
+            line-height: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .nav-active {
+            color: #3b82f6;
+            border-bottom: 2px solid #3b82f6;
+        }
+
+        .card {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+                        box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .tech-card {
+            background-color: #0f172a;
+            border: 1px solid #1e2937;
+        }
+
+        .callout {
+            border-left: 4px solid;
+        }
+
+        .callout-risk {
+            border-color: #ef4444;
+            background-color: #450a0a;
+        }
+
+        .callout-opportunity {
+            border-color: #22c55e;
+            background-color: #052e16;
+        }
+
+        .callout-dev {
+            border-color: #8b5cf6;
+            background-color: #1e1135;
+        }
+
+        .callout-trader {
+            border-color: #eab308;
+            background-color: #3f2a0f;
+        }
+
+        .b20-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
+        }
+
+        .nav-scrolled {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .step {
+            position: relative;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 1.25rem;
+            top: 3rem;
+            bottom: -1.5rem;
+            width: 2px;
+            background: linear-gradient(to bottom, #3b82f6, #1e40af);
+        }
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+        }
+        
+        details[open] .accordion-content {
+            max-height: 500px;
+        }
+
+        .comparison-table th {
+            background-color: #0f172a;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+        
+        .comparison-table td {
+            border-color: #1e2937;
+        }
+
+        .metric {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .token-address {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.875rem;
+        }
+
+        .prose-custom {
+            color: #cbd5e1;
+        }
+
+        .prose-custom strong {
+            color: #f1f5f9;
+        }
+
+        .flow-step {
+            transition: all 0.2s ease;
+        }
+
+        .flow-step:hover {
+            transform: translateX(4px);
+        }
+
+        .stat-number {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .modern-shadow {
+            box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.2),
+                        0 4px 6px -4px rgb(15 23 42 / 0.2);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 antialiased">
+    <!-- NAV -->
+    <nav id="nav" class="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-lg border-b border-slate-800 transition-all">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-6 lg:px-8 flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center gap-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+                        <span class="text-white font-bold text-xl tracking-tighter">B20</span>
+                    </div>
+                    <div>
+                        <span class="font-display text-2xl font-semibold tracking-tighter">B20</span>
+                        <span class="text-xs text-slate-500 font-mono ml-1">BASE</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden lg:flex items-center gap-x-8 text-sm">
+                    <a href="#czym-jest" class="nav-link hover:text-blue-400 transition-colors">Czym jest B20</a>
+                    <a href="#jak-dziala" class="nav-link hover:text-blue-400 transition-colors">Jak działa</a>
+                    <a href="#warianty" class="nav-link hover:text-blue-400 transition-colors">Warianty</a>
+                    <a href="#porownania" class="nav-link hover:text-blue-400 transition-colors">Porównania</a>
+                    <a href="#zalety" class="nav-link hover:text-blue-400 transition-colors">Zalety</a>
+                    <a href="#ryzyka" class="nav-link hover:text-blue-400 transition-colors">Ryzyka</a>
+                    <a href="#dla-kogo" class="nav-link hover:text-blue-400 transition-colors">Dla kogo</a>
+                    <a href="#co-zbudowac" class="nav-link hover:text-blue-400 transition-colors">Co zbudować</a>
+                    <a href="#dla-dewelopera" class="nav-link hover:text-blue-400 transition-colors">Developer</a>
+                </div>
+
+                <div class="flex items-center gap-x-3">
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" 
+                            class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-900 transition-colors border border-slate-800"
+                            aria-label="Przełącz tryb jasny/ciemny">
+                        <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                        <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn"
+                            class="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-900 border border-slate-800"
+                            aria-label="Menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+
+                    <a href="#cta" 
+                       class="hidden sm:flex items-center px-5 py-2 text-sm font-semibold rounded-2xl bg-white text-slate-950 hover:bg-slate-100 transition-all active:scale-[0.985]">
+                        Rozpocznij
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-800 bg-slate-950">
+            <div class="px-6 py-4 flex flex-col gap-y-1 text-sm">
+                <a href="#czym-jest" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Czym jest B20</a>
+                <a href="#jak-dziala" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Jak działa technicznie</a>
+                <a href="#warianty" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Warianty tokenów</a>
+                <a href="#porownania" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Porównania standardów</a>
+                <a href="#zalety" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Zalety</a>
+                <a href="#ryzyka" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Wady i zagrożenia</a>
+                <a href="#plynnosc" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Płynność</a>
+                <a href="#dla-kogo" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Dla kogo ma sens</a>
+                <a href="#co-zbudowac" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Co można zbudować</a>
+                <a href="#dla-dewelopera" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">Dla dewelopera</a>
+                <a href="#faq" class="mobile-nav-link py-2.5 px-3 rounded-xl hover:bg-slate-900">FAQ</a>
+                <div class="pt-3 border-t border-slate-800 mt-2">
+                    <a href="#cta" class="block w-full text-center py-3 rounded-2xl bg-white text-slate-950 font-semibold">Rozpocznij z B20</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header id="hero" class="max-w-screen-2xl mx-auto px-6 lg:px-8 pt-16 pb-20">
+        <div class="max-w-4xl">
+            <div class="inline-flex items-center gap-x-2 px-4 py-1.5 rounded-3xl bg-slate-900 border border-slate-800 text-xs font-mono tracking-[1px] mb-6">
+                <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span class="text-emerald-400">MAINNET LIVE</span>
+                <span class="text-slate-500">• Beryl • lipiec 2026</span>
+            </div>
+
+            <h1 class="text-6xl lg:text-7xl font-display tracking-tighter leading-none mb-6">
+                B20.<br>
+                <span class="text-blue-400">Natywny standard</span><br>
+                tokenów na Base.
+            </h1>
+            
+            <p class="max-w-2xl text-2xl text-slate-400 leading-tight mb-10">
+                Nie jeden coin. Standard emisji dla stablecoinów, RWA i regulowanych aktywów.<br>
+                Wbudowane role, polityki transferu, memo i permit. Pełna kompatybilność z ERC-20.
+            </p>
+
+            <div class="flex flex-wrap gap-4 mb-12">
+                <a href="#jak-dziala" 
+                   class="inline-flex items-center justify-center gap-x-2 px-8 h-14 rounded-3xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all active:scale-[0.985]">
+                    Jak to działa technicznie
+                </a>
+                <a href="#co-zbudowac" 
+                   class="inline-flex items-center justify-center gap-x-2 px-8 h-14 rounded-3xl border border-slate-700 hover:bg-slate-900 font-semibold transition-all">
+                    Co można na tym zbudować
+                </a>
+            </div>
+
+            <!-- 3 Key Differentiators -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl">
+                <div class="flex gap-3 p-4 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="mt-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-semibold">Native on Base</div>
+                        <div class="text-sm text-slate-400">Rust precompiles zamiast EVM contractów. Szybciej i taniej.</div>
+                    </div>
+                </div>
+                <div class="flex gap-3 p-4 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="mt-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 8.945 11.922.5.077.68-.222.68-.465 0-.237-.01-.975-.014-1.76-3.342.726-4.033-1.61-4.033-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.085 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.375-.54-1.88.105-3.91 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 2.03.24 3.535.12 3.91.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-semibold">ERC-20 Compatible</div>
+                        <div class="text-sm text-slate-400">Działa z istniejącymi walletami, DEX-ami, indexerami bez zmian.</div>
+                    </div>
+                </div>
+                <div class="flex gap-3 p-4 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="mt-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V9a4 4 0 00-8 0v2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="font-semibold">Built-in Issuer Controls</div>
+                        <div class="text-sm text-slate-400">Role, polityki transferu, supply cap, memo, permit — od razu.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CZYM JEST B20 -->
+    <section id="czym-jest" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-6">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-slate-900 border border-slate-700 rounded-2xl">01</div>
+                <h2 class="section-header tracking-tighter">Czym jest B20?</h2>
+            </div>
+            
+            <div class="prose-custom text-lg max-w-3xl">
+                <p class="mb-6"><strong>B20 to natywny standard tokenów na Base Chain</strong>, wprowadzony w ramach upgrade'u sieci <strong>Beryl</strong> (aktywacja mainnet czerwiec/lipiec 2026).</p>
+                
+                <p class="mb-6">Nie jest to pojedynczy token inwestycyjny ani „oficjalny coin Base”. To <strong>standard emisji</strong> — szablon, dzięki któremu issuerzy mogą tworzyć własne tokeny fungible (stablecoiny, RWA, tokenized equity, utility assets) w sposób znormalizowany, bezpieczniejszy i bardziej efektywny niż klasyczny deploy kontraktu ERC-20.</p>
+            </div>
+
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="uppercase text-xs tracking-[1.5px] text-slate-500 mb-3">KLUCZOWA RÓŻNICA</div>
+                    <div class="text-xl font-semibold mb-2">Zamiast deployować pełny kontrakt ERC-20 za każdym razem...</div>
+                    <div class="text-slate-400">...tworzysz token przez singleton <span class="font-mono text-blue-400">B20Factory</span> (precompile). Adres jest deterministyczny, a logika tokena jest natywnie zaimplementowana w Rust w węźle Base.</div>
+                </div>
+                <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="uppercase text-xs tracking-[1.5px] text-slate-500 mb-3">DO KOGO SKIEROWANY</div>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex gap-2"><span class="text-emerald-400">→</span> Stablecoin issuerzy (fiat-backed)</li>
+                        <li class="flex gap-2"><span class="text-emerald-400">→</span> RWA / Tokenizowane aktywa realne</li>
+                        <li class="flex gap-2"><span class="text-emerald-400">→</span> Tokenizowane equity i fundusze</li>
+                        <li class="flex gap-2"><span class="text-emerald-400">→</span> Projekty wymagające silnych kontroli compliance</li>
+                        <li class="flex gap-2"><span class="text-emerald-400">→</span> Builderzy tworzący narzędzia wokół emisji</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- JAK TO DZIAŁA TECHNICZNIE -->
+    <section id="jak-dziala" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800 bg-slate-900/50">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-slate-800 border border-slate-700 rounded-2xl">02</div>
+                <h2 class="section-header tracking-tighter">Jak to działa technicznie</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Core Components -->
+                <div class="lg:col-span-5">
+                    <div class="sticky top-20">
+                        <h3 class="font-semibold text-xl mb-4">Główne komponenty architektury</h3>
+                        
+                        <div class="space-y-3">
+                            <div class="p-5 rounded-3xl bg-slate-950 border border-slate-800">
+                                <div class="flex items-center gap-x-3 mb-2">
+                                    <div class="font-mono text-xs px-2.5 py-px bg-blue-600/20 text-blue-400 rounded">PRECOMPILE</div>
+                                    <span class="font-semibold">B20Factory</span>
+                                </div>
+                                <div class="text-sm text-slate-400">Adres: <span class="font-mono text-blue-400">0xB20f000000000000000000000000000000000000</span><br>
+                                Singleton. Tworzy wszystkie tokeny B20 poprzez funkcję <span class="font-mono">createB20(variant, salt, params, initCalls)</span>.</div>
+                            </div>
+
+                            <div class="p-5 rounded-3xl bg-slate-950 border border-slate-800">
+                                <div class="flex items-center gap-x-3 mb-2">
+                                    <div class="font-mono text-xs px-2.5 py-px bg-violet-600/20 text-violet-400 rounded">REGISTRY</div>
+                                    <span class="font-semibold">Activation Registry</span>
+                                </div>
+                                <div class="text-sm text-slate-400">Adres: <span class="font-mono">0x8453000000000000000000000000000000000001</span><br>
+                                Włącza/wyłącza warianty B20 i funkcjonalności. Przed deployem sprawdź <span class="font-mono">isActivated</span>.</div>
+                            </div>
+
+                            <div class="p-5 rounded-3xl bg-slate-950 border border-slate-800">
+                                <div class="flex items-center gap-x-3 mb-2">
+                                    <div class="font-mono text-xs px-2.5 py-px bg-violet-600/20 text-violet-400 rounded">REGISTRY</div>
+                                    <span class="font-semibold">Policy Registry</span>
+                                </div>
+                                <div class="text-sm text-slate-400">Adres: <span class="font-mono">0x8453000000000000000000000000000000000002</span><br>
+                                Przechowuje allowlisty i blocklisty (uint64 ID). Stosowane do transferów i mintów.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flow -->
+                <div class="lg:col-span-7">
+                    <h3 class="font-semibold text-xl mb-4">Flow tworzenia tokena B20</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flow-step flex gap-4 p-5 rounded-3xl bg-slate-950 border border-slate-800">
+                            <div class="w-8 h-8 flex-shrink-0 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-mono text-sm font-bold">1</div>
+                            <div>
+                                <div class="font-semibold">Wybierz wariant i przygotuj parametry</div>
+                                <div class="text-sm text-slate-400 mt-1">Asset (decimals 6–18) lub Stablecoin (fixed 6 decimals + currency code). Użyj helperów <span class="font-mono text-xs">B20FactoryLib.encodeAssetCreateParams</span> lub <span class="font-mono text-xs">encodeStablecoinCreateParams</span>.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flow-step flex gap-4 p-5 rounded-3xl bg-slate-950 border border-slate-800">
+                            <div class="w-8 h-8 flex-shrink-0 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-mono text-sm font-bold">2</div>
+                            <div>
+                                <div class="font-semibold">Wygeneruj salt (deterministyczny adres)</div>
+                                <div class="text-sm text-slate-400 mt-1">Dowolny bytes32. Ten sam salt + caller = ten sam adres tokena. Ułatwia przewidywanie adresu przed deployem.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flow-step flex gap-4 p-5 rounded-3xl bg-slate-950 border border-slate-800">
+                            <div class="w-8 h-8 flex-shrink-0 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-mono text-sm font-bold">3</div>
+                            <div>
+                                <div class="font-semibold">Przygotuj initCalls (opcjonalnie, ale zalecane)</div>
+                                <div class="text-sm text-slate-400 mt-1">Tablica wywołań wykonywanych atomowo przy tworzeniu: grant ról (MINT_ROLE, PAUSE_ROLE itp.), ustawienie supply cap, konfiguracja polityk transferu. Działa w oknie bootstrap bez pełnych sprawdzeń ról.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flow-step flex gap-4 p-5 rounded-3xl bg-slate-950 border border-slate-800">
+                            <div class="w-8 h-8 flex-shrink-0 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-mono text-sm font-bold">4</div>
+                            <div>
+                                <div class="font-semibold">Wywołaj createB20 na B20Factory</div>
+                                <div class="text-sm text-slate-400 mt-1">Przez Foundry script (base-forge + base-cast) lub frontend (viem/ethers + wallet). Otrzymujesz deterministyczny adres tokena zaczynający się od <span class="font-mono">0xB200...</span>.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flow-step flex gap-4 p-5 rounded-3xl bg-slate-950 border border-slate-800">
+                            <div class="w-8 h-8 flex-shrink-0 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-mono text-sm font-bold">5</div>
+                            <div>
+                                <div class="font-semibold">Mint, weryfikacja, bootstrap płynności</div>
+                                <div class="text-sm text-slate-400 mt-1">Nadaj role przez initCalls lub później. Mintuj supply. Weryfikuj na Basescan. Dodaj płynność na Aerodrome. Skonfiguruj metadata i komunikację.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional technical features -->
+            <div class="mt-12">
+                <h3 class="font-semibold mb-4">Dodatkowe wbudowane mechanizmy</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                        <span class="font-semibold block mb-1">Roles (AccessControl)</span>
+                        <span class="text-xs text-slate-400">DEFAULT_ADMIN, MINT_ROLE, BURN_ROLE, BURN_BLOCKED_ROLE, PAUSE_ROLE, UNPAUSE_ROLE, METADATA_ROLE (+ OPERATOR_ROLE dla Asset)</span>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                        <span class="font-semibold block mb-1">Policy Registry</span>
+                        <span class="text-xs text-slate-400">Allowlist / Blocklist dla TRANSFER_SENDER/RECEIVER/EXECUTOR i MINT_RECEIVER. Dwa typy polityk.</span>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                        <span class="font-semibold block mb-1">Memo + Permit</span>
+                        <span class="text-xs text-slate-400">transferWithMemo / mintWithMemo. Pełny ERC-2612 Permit (EIP-712) z domain separator.</span>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                        <span class="font-semibold block mb-1">Granular Pause + Supply Cap</span>
+                        <span class="text-xs text-slate-400">Pauza osobno TRANSFER / MINT / BURN. Opcjonalny limit podaży (updateSupplyCap).</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WARIANTY TOKENÓW -->
+    <section id="warianty" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-slate-900 border border-slate-700 rounded-2xl">03</div>
+                <h2 class="section-header tracking-tighter">Warianty tokenów B20</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Asset -->
+                <div class="rounded-3xl border border-slate-700 bg-slate-900 p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <span class="px-4 py-1 text-xs font-bold tracking-widest bg-emerald-600 text-white rounded-3xl">ASSET</span>
+                        </div>
+                        <div class="text-xs font-mono text-emerald-400">0x00 w adresie</div>
+                    </div>
+                    <h3 class="text-3xl font-semibold tracking-tight mb-3">Wariant Asset</h3>
+                    <p class="text-slate-400 mb-6">Uniwersalny wariant dla większości aktywów — RWA, equity, utility, gaming assets, tokenized funds.</p>
+                    
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between border-b border-slate-800 pb-3">
+                            <span class="text-slate-400">Decimals</span>
+                            <span class="font-medium">6 – 18 (konfigurowalne, immutable)</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-800 pb-3">
+                            <span class="text-slate-400">Dodatkowe funkcje</span>
+                            <span class="font-medium">Rebase multiplier, on-chain announcements, batched issuance</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-800 pb-3">
+                            <span class="text-slate-400">Specjalna rola</span>
+                            <span class="font-medium">OPERATOR_ROLE (aktualizacja multiplier + announcements)</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-2">Typowe zastosowania</span>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="text-xs px-3 py-1 bg-slate-800 rounded-2xl">Tokenizowane nieruchomości</span>
+                                <span class="text-xs px-3 py-1 bg-slate-800 rounded-2xl">Equity / fundusze</span>
+                                <span class="text-xs px-3 py-1 bg-slate-800 rounded-2xl">Gaming / in-game assets</span>
+                                <span class="text-xs px-3 py-1 bg-slate-800 rounded-2xl">RWA credit</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stablecoin -->
+                <div class="rounded-3xl border border-slate-700 bg-slate-900 p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <span class="px-4 py-1 text-xs font-bold tracking-widest bg-sky-600 text-white rounded-3xl">STABLECOIN</span>
+                        </div>
+                        <div class="text-xs font-mono text-sky-400">0x01 w adresie</div>
+                    </div>
+                    <h3 class="text-3xl font-semibold tracking-tight mb-3">Wariant Stablecoin</h3>
+                    <p class="text-slate-400 mb-6">Zoptymalizowany pod stablecoiny fiat-backed. Uproszczony, z wbudowanym kodem waluty.</p>
+                    
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between border-b border-slate-800 pb-3">
+                            <span class="text-slate-400">Decimals</span>
+                            <span class="font-medium">Zawsze 6 (fixed)</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-800 pb-3">
+                            <span class="text-slate-400">Currency Code</span>
+                            <span class="font-medium">self-declared, uppercase A-Z (np. "USD", "EUR", "PLN")</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-800 pb-3">
+                            <span class="text-slate-400">Funkcje specjalne</span>
+                            <span class="font-medium">currency() — metoda zwracająca kod waluty</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block mb-2">Typowe zastosowania</span>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="text-xs px-3 py-1 bg-slate-800 rounded-2xl">USD stablecoin</span>
+                                <span class="text-xs px-3 py-1 bg-slate-800 rounded-2xl">EUR stablecoin</span>
+                                <span class="text-xs px-3 py-1 bg-slate-800 rounded-2xl">Lokalne waluty fiat</span>
+                                <span class="text-xs px-3 py-1 bg-slate-800 rounded-2xl">Synthetic stable assets</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 p-5 rounded-3xl bg-slate-900 border border-slate-700 text-sm text-slate-400">
+                <strong class="text-slate-300">Uwaga:</strong> Oba warianty mają identyczną logikę ról, polityk, memo, permit i supply cap. Różnica leży głównie w precyzji dziesiętnej, metadanych i dodatkowych funkcjach Asset (rebase/announcements).
+            </div>
+        </div>
+    </section>
+
+    <!-- PORÓWNANIA -->
+    <section id="porownania" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-slate-900 border border-slate-700 rounded-2xl">04</div>
+                <h2 class="section-header tracking-tighter">Porównania standardów</h2>
+            </div>
+
+            <!-- B20 vs ERC-20 -->
+            <div class="mb-10">
+                <h3 class="font-semibold text-xl mb-4 flex items-center gap-x-2">
+                    B20 vs klasyczny ERC-20 na Base
+                </h3>
+                <div class="overflow-x-auto rounded-3xl border border-slate-800">
+                    <table class="comparison-table w-full min-w-[800px] text-sm">
+                        <thead>
+                            <tr>
+                                <th class="text-left p-4 font-normal w-1/4">Aspekt</th>
+                                <th class="text-left p-4 font-normal">B20 (natywny)</th>
+                                <th class="text-left p-4 font-normal">Klasyczny ERC-20</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                            <tr>
+                                <td class="p-4 font-medium">Sposób wdrożenia</td>
+                                <td class="p-4">Przez B20Factory (precompile) + salt → deterministyczny adres</td>
+                                <td class="p-4">Pełny deploy kontraktu Solidity (nowy bytecode za każdym razem)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Wydajność &amp; koszt</td>
+                                <td class="p-4 text-emerald-400">Natywna egzekucja w Rust → tańsze transfery, wyższa przepustowość</td>
+                                <td class="p-4">Standardowa egzekucja EVM</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Wbudowane funkcje</td>
+                                <td class="p-4">Role, granular pause, policies (allow/block), memo, permit, supply cap — od razu</td>
+                                <td class="p-4">Tylko podstawowy ERC-20. Resztę trzeba implementować samemu</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Elastyczność</td>
+                                <td class="p-4">Wysoka standaryzacja, ale ograniczona możliwość custom logiki poza wbudowanymi mechanizmami</td>
+                                <td class="p-4">Pełna dowolność — można dodać dowolną logikę</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Compliance / regulacje</td>
+                                <td class="p-4 text-emerald-400">Znakomicie przygotowany (policies, burn blocked, roles, memo do reconcilacji)</td>
+                                <td class="p-4">Trzeba budować od zera — większe ryzyko błędów</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Integracja z DEX / Wallet</td>
+                                <td class="p-4">Pełna kompatybilność ERC-20 + dodatkowe eventy</td>
+                                <td class="p-4">Standardowa</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Koszt wdrożenia</td>
+                                <td class="p-4 text-emerald-400">Znacznie niższy (brak pełnego deployu kontraktu)</td>
+                                <td class="p-4">Wyższy (gas za bytecode + storage)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- B20 vs BRC-20 -->
+            <div class="mb-10">
+                <h3 class="font-semibold text-xl mb-4 flex items-center gap-x-2">
+                    B20 vs BRC-20 (Bitcoin)
+                </h3>
+                <div class="overflow-x-auto rounded-3xl border border-slate-800">
+                    <table class="comparison-table w-full min-w-[800px] text-sm">
+                        <thead>
+                            <tr>
+                                <th class="text-left p-4 font-normal w-1/4">Aspekt</th>
+                                <th class="text-left p-4 font-normal">B20 na Base</th>
+                                <th class="text-left p-4 font-normal">BRC-20 na Bitcoin</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                            <tr>
+                                <td class="p-4 font-medium">Architektura</td>
+                                <td class="p-4">Precompiles w Rust + EVM compatibility</td>
+                                <td class="p-4">Inskrypcje + ordinals (JSON w witness data)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Kompatybilność</td>
+                                <td class="p-4 text-emerald-400">Pełna ERC-20 — działa z każdym walletem i DEX-em na Base/Ethereum</td>
+                                <td class="p-4">Ograniczona — wymaga specjalnych narzędzi (Unisat, OKX Wallet itp.)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Funkcjonalność</td>
+                                <td class="p-4">Pełne role, polityki, memo, permit, supply controls, granular pause</td>
+                                <td class="p-4">Podstawowe: deploy, mint, transfer. Bardzo ograniczone</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Płynność &amp; handel</td>
+                                <td class="p-4">Natychmiastowa na Aerodrome i innych Base DEX-ach</td>
+                                <td class="p-4">Głównie na dedykowanych marketplace'ach Bitcoin (niższa płynność, wyższe spready)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Złożoność techniczna</td>
+                                <td class="p-4">Znana deweloperom EVM / Solidity</td>
+                                <td class="p-4">Inny stack (Bitcoin Script + ordinals indexery)</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-medium">Zastosowanie</td>
+                                <td class="p-4">Profesjonalne stablecoiny, RWA, regulated assets</td>
+                                <td class="p-4">Głównie memecoins i eksperymenty</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="p-6 rounded-3xl bg-slate-900 border border-slate-700 text-sm">
+                <strong>B20 vs inne L2 Ethereum:</strong> Na innych L2 (Arbitrum, Optimism, zkSync) nadal dominuje klasyczny ERC-20. B20 daje Base przewagę w standaryzacji emisji regulowanych aktywów i obniżeniu bariery wejścia dla issuerów — podobną do tego, co Circle i Tether robią na wielu chainach, ale z natywnymi optymalizacjami i narzędziami compliance wbudowanymi w protokół.
+            </div>
+        </div>
+    </section>
+
+    <!-- ZALETY -->
+    <section id="zalety" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800 bg-slate-900/50">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-emerald-900/30 border border-emerald-800 rounded-2xl text-emerald-400">05</div>
+                <h2 class="section-header tracking-tighter">Zalety B20</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="card p-6 rounded-3xl bg-slate-950 border border-slate-800">
+                    <div class="text-emerald-400 mb-3">⚡</div>
+                    <h4 class="font-semibold mb-2">Brak potrzeby deployu własnego kontraktu</h4>
+                    <p class="text-sm text-slate-400">Oszczędność gas, prostsza weryfikacja, mniejsze ryzyko błędów w kodzie tokena. Token tworzony jest przez sprawdzony, audytowany precompile.</p>
+                </div>
+                
+                <div class="card p-6 rounded-3xl bg-slate-950 border border-slate-800">
+                    <div class="text-emerald-400 mb-3">🛡️</div>
+                    <h4 class="font-semibold mb-2">Gotowe role i polityki compliance</h4>
+                    <p class="text-sm text-slate-400">MINT/BURN/PAUSE/METADATA + granularne polityki transferu i mintu. Idealne dla regulated assets i RWA bez budowania wszystkiego od zera.</p>
+                </div>
+                
+                <div class="card p-6 rounded-3xl bg-slate-950 border border-slate-800">
+                    <div class="text-emerald-400 mb-3">📉</div>
+                    <h4 class="font-semibold mb-2">Tańsza i szybsza egzekucja</h4>
+                    <p class="text-sm text-slate-400">Natywna implementacja w Rust w węźle Base. Oczekiwane niższe koszty transferów i wyższa przepustowość w porównaniu do standardowych kontraktów EVM.</p>
+                </div>
+                
+                <div class="card p-6 rounded-3xl bg-slate-950 border border-slate-800">
+                    <div class="text-emerald-400 mb-3">🏛️</div>
+                    <h4 class="font-semibold mb-2">Łatwiejsze wdrożenie regulated assets</h4>
+                    <p class="text-sm text-slate-400">Wbudowane mechanizmy freeze-and-seize (burnBlocked), allow/block listy, memo do rozliczeń i audytu. Znacznie zmniejsza ryzyko prawne i operacyjne.</p>
+                </div>
+                
+                <div class="card p-6 rounded-3xl bg-slate-950 border border-slate-800">
+                    <div class="text-emerald-400 mb-3">🔄</div>
+                    <h4 class="font-semibold mb-2">Lepsza standaryzacja</h4>
+                    <p class="text-sm text-slate-400">Wszyscy issuerzy używają tego samego, sprawdzonego wzorca. Łatwiejsze budowanie narzędzi, dashboardów, indexerów i integracji.</p>
+                </div>
+                
+                <div class="card p-6 rounded-3xl bg-slate-950 border border-slate-800">
+                    <div class="text-emerald-400 mb-3">🔗</div>
+                    <h4 class="font-semibold mb-2">Prostsza ścieżka integracji</h4>
+                    <p class="text-sm text-slate-400">Pełna kompatybilność ERC-20 oznacza, że existing tooling (wallets, DEXes, bridges, oracles) działa od razu. Permit upraszcza UX.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WADY I ZAGROŻENIA -->
+    <section id="ryzyka" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-red-900/30 border border-red-800 rounded-2xl text-red-400">06</div>
+                <h2 class="section-header tracking-tighter">Wady i zagrożenia — szczerze</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="callout callout-risk p-6 rounded-3xl">
+                    <div class="font-semibold text-red-400 mb-2">Mniejsza elastyczność niż custom contract</div>
+                    <p class="text-sm">Nie możesz dodać dowolnej custom logiki (np. zaawansowane vesting, dynamiczne opłaty, złożone mechaniki rebase poza wbudowanym). Jeśli potrzebujesz czegoś bardzo nietypowego — klasyczny ERC-20 może być lepszy.</p>
+                </div>
+                
+                <div class="callout callout-risk p-6 rounded-3xl">
+                    <div class="font-semibold text-red-400 mb-2">Ryzyko złej konfiguracji polityk</div>
+                    <p class="text-sm">Źle ustawiona allow/block lista lub rola może zablokować transfery lub minty dla legit użytkowników. Polityki są potężne — trzeba je dobrze przetestować.</p>
+                </div>
+                
+                <div class="callout callout-risk p-6 rounded-3xl">
+                    <div class="font-semibold text-red-400 mb-2">Ryzyko centralizacji uprawnień</div>
+                    <p class="text-sm">DEFAULT_ADMIN ma ogromną władzę. Jeśli klucze admina wyciekną lub zostaną skompromitowane — problem. RenounceLastAdmin jest nieodwracalne i blokuje dalsze admin operacje.</p>
+                </div>
+                
+                <div class="callout callout-risk p-6 rounded-3xl">
+                    <div class="font-semibold text-red-400 mb-2">Brak automatycznej płynności</div>
+                    <p class="text-sm">Standard sam w sobie nie tworzy rynku ani LP. Płynność trzeba budować ręcznie (Aerodrome, market makerzy, dystrybucja). To nie jest „fair launch” memecoina.</p>
+                </div>
+                
+                <div class="callout callout-risk p-6 rounded-3xl">
+                    <div class="font-semibold text-red-400 mb-2">Świeżość standardu</div>
+                    <p class="text-sm">B20 jest bardzo nowy (mainnet ~lipiec 2026). Nie wszystkie DEX-y, wallet y i indexery mają jeszcze pełną, zoptymalizowaną obsługę. Ekosystem dopiero dojrzewa.</p>
+                </div>
+                
+                <div class="callout callout-risk p-6 rounded-3xl">
+                    <div class="font-semibold text-red-400 mb-2">Zależność od adopcji</div>
+                    <p class="text-sm">Aby B20 odniósł sukces, DEX-y, bridge'e, oracles i narzędzia muszą go dobrze wspierać. Na razie kompatybilność ERC-20 pomaga, ale dodatkowe funkcje (memo, policies) mogą wymagać custom integracji.</p>
+                </div>
+            </div>
+
+            <div class="mt-6 text-xs text-slate-500 px-1">Podsumowując: B20 to świetne narzędzie dla poważnych issuerów regulowanych aktywów. Dla czysto spekulacyjnych memecoinów lub projektów wymagających ekstremalnie customowej logiki — klasyczny ERC-20 może być wciąż lepszym wyborem.</div>
+        </div>
+    </section>
+
+    <!-- PŁYNNOŚĆ -->
+    <section id="plynnosc" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800 bg-slate-900/50">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-6">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-amber-900/30 border border-amber-800 rounded-2xl text-amber-400">07</div>
+                <h2 class="section-header tracking-tighter">Czy B20 ma wrodzoną płynność?</h2>
+            </div>
+            
+            <div class="callout callout-trader p-8 rounded-3xl mb-8">
+                <div class="font-bold text-amber-400 text-xl mb-3">NIE. B20 nie tworzy automatycznie rynku ani płynności.</div>
+                <p class="text-slate-300">Standard definiuje tylko sposób emisji i zarządzania tokenem. Płynność trzeba zbudować samodzielnie — dokładnie tak samo jak w przypadku zwykłego ERC-20.</p>
+            </div>
+
+            <h3 class="font-semibold mb-4">Gdzie handluje się tokenami B20?</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800">
+                    <div class="font-semibold mb-2 flex items-center gap-x-2">
+                        <span>Aerodrome</span>
+                        <span class="text-xs px-2 py-px bg-emerald-900 text-emerald-400 rounded">Główny hub</span>
+                    </div>
+                    <p class="text-sm text-slate-400">Najgłębsza płynność na Base. Najlepsze miejsce do bootstrappingu LP dla nowych tokenów B20. Wspiera standardowe pairy ERC-20.</p>
+                    <a href="https://aerodrome.finance/" target="_blank" class="inline-block mt-3 text-xs text-blue-400 hover:underline">aerodrome.finance →</a>
+                </div>
+                
+                <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800">
+                    <div class="font-semibold mb-2">Inne DEX-y na Base</div>
+                    <p class="text-sm text-slate-400">Uniswap V3 (jeśli pool istnieje), inne AMM-y. Ponieważ B20 jest w 100% kompatybilny z ERC-20, każdy DEX wspierający Base ERC-20 powinien działać.</p>
+                </div>
+                
+                <div class="p-6 rounded-3xl bg-slate-950 border border-slate-800">
+                    <div class="font-semibold mb-2">Discovery &amp; Explorer</div>
+                    <p class="text-sm text-slate-400">Basescan.org — wyszukaj tokeny zaczynające się od 0xB200... lub filtruj po zdarzeniach B20Factory. Pojawiają się też dedykowane narzędzia do discovery B20 (Solvr, Echo i inne).</p>
+                    <a href="https://basescan.org/" target="_blank" class="inline-block mt-3 text-xs text-blue-400 hover:underline">basescan.org →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DLA KOGO MA SENS -->
+    <section id="dla-kogo" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-slate-900 border border-slate-700 rounded-2xl">08</div>
+                <h2 class="section-header tracking-tighter">Dla kogo B20 ma sens?</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-900/50">
+                    <div class="uppercase tracking-widest text-xs text-emerald-400 mb-2">STABLECOIN ISSUER</div>
+                    <h4 class="font-semibold mb-3">Idealny przypadek użycia</h4>
+                    <p class="text-sm text-slate-400">Wbudowany currency code, 6 decimals, roles + policies, memo do reconcilacji płatności. Znacznie łatwiejsze spełnienie wymagań regulacyjnych niż custom ERC-20.</p>
+                </div>
+                
+                <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-900/50">
+                    <div class="uppercase tracking-widest text-xs text-emerald-400 mb-2">RWA / TOKENIZED ASSETS</div>
+                    <h4 class="font-semibold mb-3">Bardzo dobry</h4>
+                    <p class="text-sm text-slate-400">Asset variant z rebase, announcements, operator role. Policies pozwalają na compliance (KYC/AML gating via allowlist). Burn blocked do freeze-and-seize.</p>
+                </div>
+                
+                <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-900/50">
+                    <div class="uppercase tracking-widest text-xs text-emerald-400 mb-2">FINTECH / PAYMENTS</div>
+                    <h4 class="font-semibold mb-3">Dobry</h4>
+                    <p class="text-sm text-slate-400">Memo do tagowania transakcji, permit do lepszego UX, granularne kontrole. Łatwa integracja z existing payment rails.</p>
+                </div>
+                
+                <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-900/50">
+                    <div class="uppercase tracking-widest text-xs text-emerald-400 mb-2">LAUNCHPAD / CREATOR ECONOMY</div>
+                    <h4 class="font-semibold mb-3">Perspektywiczny</h4>
+                    <p class="text-sm text-slate-400">Możesz zbudować platformę do łatwej emisji B20 dla creatorów i małych projektów. Standaryzacja ułatwia tooling.</p>
+                </div>
+                
+                <div class="p-6 rounded-3xl bg-slate-900 border border-emerald-900/50">
+                    <div class="uppercase tracking-widest text-xs text-emerald-400 mb-2">BUILDER / PRODUCT</div>
+                    <h4 class="font-semibold mb-3">Bardzo dobry</h4>
+                    <p class="text-sm text-slate-400">Tworzenie launchera, mint panelu, issuer dashboardu, compliance tooli, analytics dla B20. Dużo białych plam w ekosystemie.</p>
+                </div>
+                
+                <div class="p-6 rounded-3xl bg-slate-900 border border-amber-900/50">
+                    <div class="uppercase tracking-widest text-xs text-amber-400 mb-2">SPEKULACYJNE MEMECOINS</div>
+                    <h4 class="font-semibold mb-3">Ograniczony sens</h4>
+                    <p class="text-sm text-slate-400">Technicznie możliwe, ale standard jest zoptymalizowany pod poważne aktywa. Brak „fair launch” mechaniki, mniejsza elastyczność custom logiki, wczesny ekosystem. Dla czystych memów często lepszy zwykły ERC-20.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DLA KOGO NIE MA SENSU -->
+    <section id="nie-dla-kogo" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800 bg-slate-900/50">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-red-900/30 border border-red-800 rounded-2xl text-red-400">09</div>
+                <h2 class="section-header tracking-tighter">Dla kogo B20 NIE ma sensu?</h2>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex gap-4 p-6 rounded-3xl bg-slate-950 border border-red-900/30">
+                    <div class="text-red-400 mt-1">✕</div>
+                    <div>
+                        <div class="font-semibold">Projekty wymagające ekstremalnie customowej logiki</div>
+                        <div class="text-sm text-slate-400">Zaawansowane vesting z cliffami i vesting schedule, dynamiczne opłaty, złożone mechaniki stakingu/rebase poza wbudowanymi — wtedy lepszy custom ERC-20.</div>
+                    </div>
+                </div>
+                <div class="flex gap-4 p-6 rounded-3xl bg-slate-950 border border-red-900/30">
+                    <div class="text-red-400 mt-1">✕</div>
+                    <div>
+                        <div class="font-semibold">Projekty chcące pełnej kontroli nad kodem tokena</div>
+                        <div class="text-sm text-slate-400">Jeśli zespół chce audytować i modyfikować każdy aspekt logiki tokena — klasyczny kontrakt daje pełną kontrolę.</div>
+                    </div>
+                </div>
+                <div class="flex gap-4 p-6 rounded-3xl bg-slate-950 border border-red-900/30">
+                    <div class="text-red-400 mt-1">✕</div>
+                    <div>
+                        <div class="font-semibold">Projekty, dla których standardowe compliance controls są zbędne</div>
+                        <div class="text-sm text-slate-400">Czysto spekulacyjne tokeny bez regulacyjnych wymagań — dodatkowa warstwa może być overkillem.</div>
+                    </div>
+                </div>
+                <div class="flex gap-4 p-6 rounded-3xl bg-slate-950 border border-red-900/30">
+                    <div class="text-red-400 mt-1">✕</div>
+                    <div>
+                        <div class="font-semibold">Produkty wymagające niestandardowej mechaniki</div>
+                        <div class="text-sm text-slate-400">Np. tokeny z wbudowanym bonding curve, dynamic supply w oparciu o oracle, złożone interakcje z innymi protokołami na poziomie tokena.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CO MOŻNA ZBUDOWAĆ -->
+    <section id="co-zbudowac" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <div class="px-3 py-1 text-xs font-mono tracking-widest bg-violet-900/30 border border-violet-800 rounded-2xl text-violet-400 inline-block mb-3">10</div>
+                    <h2 class="section-header tracking-tighter">Co można na tym zbudować?</h2>
+                </div>
+                <div class="text-xs text-slate-500 hidden md:block">15+ pomysłów produktowych</div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 15 ideas -->
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">B20 Launcher</div>
+                    <p class="text-xs text-slate-400">Prosty interfejs do emisji tokena B20. Formularz → konfiguracja ról/politik → deploy przez wallet. Idealny onboarding dla nowych issuerów.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Mint Panel dla Issuerów</div>
+                    <p class="text-xs text-slate-400">Dashboard do mintowania/burnowania z podglądem ról, supply cap i aktualnych polityk. Z memo support i audit logiem.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Issuer Dashboard</div>
+                    <p class="text-xs text-slate-400">Centralne miejsce dla emitenta: zarządzanie wszystkimi tokenami B20, role assignment, policy updates, monitoring aktywności.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">B20 Explorer / Discovery</div>
+                    <p class="text-xs text-slate-400">Dedykowana wyszukiwarka tokenów B20 z filtrami (wariant, issuer, supply, policies). Pokazuje metadane i linki do pooli.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Compliance / Policy Dashboard</div>
+                    <p class="text-xs text-slate-400">Narzędzie do zarządzania Policy Registry: tworzenie allow/block list, przeglądanie kto jest zablokowany, eksport do compliance team.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Memo-based Payments Dashboard</div>
+                    <p class="text-xs text-slate-400">Interfejs do wysyłania transferów z memo (np. invoice ID, settlement reference). Przydatne dla fintech i płatności B2B.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">LP Bootstrap Panel</div>
+                    <p class="text-xs text-slate-400">Uproszczony flow dodawania płynności na Aerodrome dla nowo wyemitowanych tokenów B20. Kalkulator impermanent loss + auto-routing.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Marketplace Nowych Emisji</div>
+                    <p class="text-xs text-slate-400">Platforma, na której nowe tokeny B20 mogą być „listed” i dystrybuowane (whitelist sale, Dutch auction, bonding curve wrapper).</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Discovery Terminal</div>
+                    <p class="text-xs text-slate-400">Zaawansowany terminal dla traderów i analityków: filtruj B20 tokeny po metrykach on-chain, politykach, aktywności.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Analytics Panel</div>
+                    <p class="text-xs text-slate-400">Dane o tokenach B20: holder distribution, transfer volume z memo, policy changes, supply dynamics. Integracja z Dune lub custom indexer.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Alerts Bot</div>
+                    <p class="text-xs text-slate-400">Telegram/Discord bot powiadamiający o nowych emisjach B20, zmianach w politykach, dużych mintach/burnach.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Token Config Simulator</div>
+                    <p class="text-xs text-slate-400">Narzędzie do symulacji konfiguracji tokena przed deployem: jak wpłynie zmiana ról/politik na bezpieczeństwo i UX.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Issuance Wizard</div>
+                    <p class="text-xs text-slate-400">Krok-po-kroku kreator emisji z rekomendacjami najlepszych praktyk (np. „dla stablecoina użyj tych polityk”).</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Treasury Console</div>
+                    <p class="text-xs text-slate-400">Narzędzie dla treasury: zarządzanie rolami, mint/burn, monitoring supply cap, generowanie raportów dla audytorów.</p>
+                </div>
+                <div class="card p-5 rounded-3xl bg-slate-900 border border-slate-800">
+                    <div class="font-semibold mb-1">Token Lifecycle Monitor</div>
+                    <p class="text-xs text-slate-400">Monitorowanie pełnego cyklu życia tokena B20: od creation przez minty, transfery z memo, zmiany polityk, aż po ewentualny renounce admin.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DLA DEVELOPERA -->
+    <section id="dla-dewelopera" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800 bg-slate-900/50">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-blue-900/30 border border-blue-800 rounded-2xl text-blue-400">11</div>
+                <h2 class="section-header tracking-tighter">Sekcja dla dewelopera</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-5">
+                    <h3 class="font-semibold mb-4">Co trzeba umieć?</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex gap-2"><span class="text-blue-400">•</span> Solidity (0.8.20+)</li>
+                        <li class="flex gap-2"><span class="text-blue-400">•</span> Foundry (specjalnie base-forge / base-cast / base-anvil)</li>
+                        <li class="flex gap-2"><span class="text-blue-400">•</span> Zrozumienie precompiles i deterministic deployment</li>
+                        <li class="flex gap-2"><span class="text-blue-400">•</span> Podstawy AccessControl i policy-based permissions</li>
+                        <li class="flex gap-2"><span class="text-blue-400">•</span> viem / ethers.js do integracji frontend</li>
+                        <li class="flex gap-2"><span class="text-blue-400">•</span> Event indexing (precompiles emitują standardowe ERC-20 events + dodatkowe)</li>
+                    </ul>
+
+                    <div class="mt-8">
+                        <h3 class="font-semibold mb-3">Minimalny stack</h3>
+                        <div class="text-xs bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono">
+                            base-foundryup<br>
+                            base-forge init project<br>
+                            base-forge install base/base-std<br>
+                            viem + wagmi (frontend)<br>
+                            Base RPC (mainnet / sepolia)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7">
+                    <h3 class="font-semibold mb-4">Ścieżka lokalnego developmentu</h3>
+                    
+                    <div class="space-y-3 text-sm">
+                        <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800">
+                            <span class="font-mono text-xs text-blue-400">1. Instalacja narzędzi Base</span><br>
+                            Zainstaluj <span class="font-mono">base-foundryup</span> z oficjalnego repo Base. Używasz base-forge i base-cast zamiast standardowego Foundry — one wspierają precompiles B20.
+                        </div>
+                        <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800">
+                            <span class="font-mono text-xs text-blue-400">2. Inicjalizacja projektu</span><br>
+                            <span class="font-mono">base-forge init b20-project && cd b20-project</span><br>
+                            Dodaj remappingi i <span class="font-mono">base = true</span> w foundry.toml. Zainstaluj <span class="font-mono">base/base-std</span>.
+                        </div>
+                        <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800">
+                            <span class="font-mono text-xs text-blue-400">3. Testy lokalne</span><br>
+                            Uruchom <span class="font-mono">base-anvil</span>. Użyj pre-funded konta. Sprawdź Activation Registry przed testami.
+                        </div>
+                        <div class="p-4 bg-slate-950 rounded-2xl border border-slate-800">
+                            <span class="font-mono text-xs text-blue-400">4. Deploy na Sepolia / Vibes</span><br>
+                            Użyj base-cast do deployu scriptu. Zawsze testuj na testnecie przed mainnetem.
+                        </div>
+                    </div>
+
+                    <div class="mt-6 p-5 rounded-3xl border border-blue-900/50 bg-blue-950/20 text-xs">
+                        <strong class="text-blue-400">Wskazówka:</strong> Wszystkie przykłady deployment scriptów znajdziesz w oficjalnym <a href="https://docs.base.org/get-started/launch-b20-token" target="_blank" class="underline">Launch B20 Token guide</a>. Używaj helperów z <span class="font-mono">B20FactoryLib</span> i <span class="font-mono">B20Constants</span>.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ARCHITEKTURA MVP -->
+    <section id="architektura-mvp" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-slate-900 border border-slate-700 rounded-2xl">12</div>
+                <h2 class="section-header tracking-tighter">Architektura MVP — B20 Launchpad / Mint Site</h2>
+            </div>
+
+            <div class="mb-8">
+                <h3 class="font-semibold mb-4">Diagram blokowy architektury</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+                    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-700 text-center">
+                        <div class="font-bold mb-1">Frontend</div>
+                        <div class="text-[10px] text-slate-400">Next.js / React<br>+ Tailwind + wagmi/viem</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-700 text-center">
+                        <div class="font-bold mb-1">Wallet Connect</div>
+                        <div class="text-[10px] text-slate-400">Coinbase Wallet SDK<br>MetaMask / WalletConnect</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-700 text-center">
+                        <div class="font-bold mb-1">Token Creation Flow</div>
+                        <div class="text-[10px] text-slate-400">Formularze → encode params<br>→ createB20 call</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-700 text-center">
+                        <div class="font-bold mb-1">Indexer / Listener</div>
+                        <div class="text-[10px] text-slate-400">Custom (viem watchEvent)<br>lub Subgraph / Goldsky</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-700 text-center">
+                        <div class="font-bold mb-1">LP Bootstrap</div>
+                        <div class="text-[10px] text-slate-400">Aerodrome Router<br>integration</div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900 border border-slate-700 text-center">
+                        <div class="font-bold mb-1">Analytics &amp; Monitoring</div>
+                        <div class="text-[10px] text-slate-400">Dune + custom<br>event processing</div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="font-semibold mb-4">Checklist wdrożenia MVP</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Research + zrozumienie specyfikacji B20 (docs.base.org)</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Setup base-forge + base-anvil + testnet deployment</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Implementacja formularza parametrów tokena (name, symbol, variant, decimals/currency)</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> UI do konfiguracji ról (multi-select z grant/revoke)</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> UI do konfiguracji polityk (Policy Registry integration)</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Podpisanie i wysłanie createB20 transakcji</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Odczyt deterministycznego adresu z eventu / return value</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Weryfikacja tokena na Basescan (automatyczna lub manualna)</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Integracja mint flow (dla issuerów z rolą)</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Podstawowy indexer eventów B20Factory i token events</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Integracja z Aerodrome do szybkiego dodania LP</div>
+                    <div class="flex gap-2"><span class="text-emerald-400 font-mono">✓</span> Security checklist (renounce admin warning, test policies, key management)</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FLOW EMISJI KROK PO KROKU -->
+    <section id="flow-emisji" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-slate-900 border border-slate-700 rounded-2xl">13</div>
+                <h2 class="section-header tracking-tighter">Flow emisji tokena B20 — krok po kroku</h2>
+            </div>
+
+            <div class="space-y-6">
+                <div class="step flex gap-5">
+                    <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-blue-600 flex items-center justify-center text-sm font-bold">1</div>
+                    <div>
+                        <div class="font-semibold">Wybór wariantu i parametrów podstawowych</div>
+                        <div class="text-sm text-slate-400">Zdecyduj: Asset czy Stablecoin? Nazwa, symbol, decimals (dla Asset) lub currency code (dla Stablecoin), initial admin address.</div>
+                    </div>
+                </div>
+                <div class="step flex gap-5">
+                    <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-blue-600 flex items-center justify-center text-sm font-bold">2</div>
+                    <div>
+                        <div class="font-semibold">Przygotowanie salt</div>
+                        <div class="text-sm text-slate-400">Wygeneruj unikalny bytes32 (np. keccak256("moj-projekt-2026")). Ten sam salt + ten sam caller = ten sam adres.</div>
+                    </div>
+                </div>
+                <div class="step flex gap-5">
+                    <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-blue-600 flex items-center justify-center text-sm font-bold">3</div>
+                    <div>
+                        <div class="font-semibold">Przygotowanie initCalls</div>
+                        <div class="text-sm text-slate-400">Zdefiniuj tablicę wywołań: grant MINT_ROLE, PAUSE_ROLE, METADATA_ROLE, ustaw supply cap, skonfiguruj początkowe polityki (np. ALWAYS_ALLOW lub custom allowlist).</div>
+                    </div>
+                </div>
+                <div class="step flex gap-5">
+                    <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-blue-600 flex items-center justify-center text-sm font-bold">4</div>
+                    <div>
+                        <div class="font-semibold">Wywołanie createB20</div>
+                        <div class="text-sm text-slate-400">Przez Foundry script lub frontend (viem). Otrzymujesz adres tokena (zaczyna się od 0xB200...).</div>
+                    </div>
+                </div>
+                <div class="step flex gap-5">
+                    <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-blue-600 flex items-center justify-center text-sm font-bold">5</div>
+                    <div>
+                        <div class="font-semibold">Weryfikacja i zapis adresu</div>
+                        <div class="text-sm text-slate-400">Sprawdź na Basescan, czy token istnieje i ma poprawne parametry. Zapisz adres w swoim systemie / dashboardzie.</div>
+                    </div>
+                </div>
+                <div class="step flex gap-5">
+                    <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-blue-600 flex items-center justify-center text-sm font-bold">6</div>
+                    <div>
+                        <div class="font-semibold">Mint initial supply (jeśli wymagane)</div>
+                        <div class="text-sm text-slate-400">Użyj mint lub mintWithMemo (jeśli masz MINT_ROLE z initCalls).</div>
+                    </div>
+                </div>
+                <div class="step flex gap-5">
+                    <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-blue-600 flex items-center justify-center text-sm font-bold">7</div>
+                    <div>
+                        <div class="font-semibold">Bootstrap płynności</div>
+                        <div class="text-sm text-slate-400">Utwórz pool na Aerodrome (np. B20 / USDC), dodaj LP. Rozważ incentivy dla liquidity providerów.</div>
+                    </div>
+                </div>
+                <div class="step flex gap-5">
+                    <div class="w-9 h-9 flex-shrink-0 rounded-2xl bg-blue-600 flex items-center justify-center text-sm font-bold">8</div>
+                    <div>
+                        <div class="font-semibold">Monitoring i komunikacja</div>
+                        <div class="text-sm text-slate-400">Skonfiguruj alerty, metadata (contractURI), stronę projektu. Informuj holderów o politykach i rolach.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 p-5 bg-amber-950/30 border border-amber-900 rounded-3xl text-xs text-amber-300">
+                <strong>Zalecenie:</strong> Zawsze testuj pełny flow na Sepolia lub Vibes przed mainnet deployem. Szczególnie dokładnie przetestuj polityki i renounce admin.
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800 bg-slate-900/50">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-slate-900 border border-slate-700 rounded-2xl">14</div>
+                <h2 class="section-header tracking-tighter">FAQ — Najczęściej zadawane pytania</h2>
+            </div>
+
+            <div class="space-y-3">
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy B20 to oficjalny token Base, który można kupić?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Nie. B20 to standard emisji tokenów, a nie pojedynczy asset inwestycyjny. Nie ma jednego „B20 coin”. Możesz emitować własne tokeny w standardzie B20.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy B20 zastępuje ETH jako gas token?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Nie na obecnym etapie. W przyszłości (Cobalt upgrade i później) planowane jest wsparcie płatności gas w tokenach B20, ale obecnie gas płacisz w ETH (lub wrapped ETH).</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy da się zrobić memecoina w standardzie B20?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Technicznie tak, ale standard jest zaprojektowany przede wszystkim pod stablecoiny i RWA. Dla memecoinów często prostszy jest klasyczny ERC-20. B20 nie ma wbudowanego mechanizmu fair launch.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy B20 daje automatyczną płynność?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Nie. Płynność trzeba budować samodzielnie na Aerodrome lub innych DEX-ach na Base, dokładnie jak przy zwykłym ERC-20.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy B20 jest w 100% kompatybilny z ERC-20?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Tak. Wszystkie standardowe funkcje (transfer, approve, balanceOf, allowance) i eventy działają identycznie. Existing tooling działa bez zmian. Dodatkowe funkcje (memo, permit, policies) są rozszerzeniem.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy można handlować tokenami B20 na zwykłych DEX-ach?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Tak — na każdym DEX-ie wspierającym Base i ERC-20 (Aerodrome, Uniswap V3 na Base itp.). Nie wymaga specjalnych integracji.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy to jest to samo co BRC-20 na Bitcoinie?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Nie. To zupełnie inne standardy. BRC-20 to inskrypcje na Bitcoinie. B20 to natywny standard na Base z pełną kompatybilnością EVM i zaawansowanymi funkcjami issuer controls.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy można używać B20 do stablecoinów?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Tak — to jeden z głównych przypadków użycia. Wariant Stablecoin ma fixed 6 decimals i currency() method. Idealny do fiat-backed stablecoinów.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy można zbudować marketplace dla tokenów B20?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Tak. To jeden z najbardziej perspektywicznych produktów. Możesz zbudować launchpad + marketplace + discovery tool wokół standardu B20.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy B20 wymaga napisania własnego smart contractu?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Nie — tworzysz token przez B20Factory. Nie deployujesz własnego kodu logiki tokena. Możesz jednak napisać dodatkowe kontrakty integrujące się z B20 (np. vesting, staking wrapper).</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Jakie są największe ryzyka przy korzystaniu z B20?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Głównie: błędy w konfiguracji polityk i ról, centralizacja uprawnień admina, wczesny ekosystem (nie wszystkie narzędzia w pełni wspierają dodatkowe funkcje), brak automatycznej płynności.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy permit (ERC-2612) działa w B20?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Tak — pełna implementacja EIP-712 permit jest wbudowana. Umożliwia gasless approvals, co znacznie poprawia UX w DeFi.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy istniejące wallet y i DEX-y wspierają B20?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Tak — dzięki pełnej kompatybilności ERC-20. Coinbase Wallet, MetaMask, Aerodrome i inne działają od razu. Dodatkowe funkcje (memo, policies) mogą wymagać dedykowanego UI w przyszłości.</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Czy można migrować istniejący ERC-20 na B20?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Nie bezpośrednio (to inny standard). Można jednak wydać nowy token B20 i zrobić migration/bridge z istniejącego ERC-20 (lock + mint lub swap).</div>
+                </details>
+                
+                <details class="group bg-slate-950 border border-slate-800 rounded-3xl px-6 py-1">
+                    <summary class="cursor-pointer py-4 font-medium flex justify-between items-center">Gdzie znaleźć oficjalną dokumentację i przykłady?</summary>
+                    <div class="accordion-content text-sm text-slate-400 pb-4">Główne źródła: <a href="https://docs.base.org/base-chain/specs/upgrades/beryl/b20" target="_blank" class="text-blue-400 underline">B20 Spec</a>, <a href="https://docs.base.org/get-started/launch-b20-token" target="_blank" class="text-blue-400 underline">Launch Guide</a>, <a href="https://blog.base.dev/introducing-base-beryl" target="_blank" class="text-blue-400 underline">Beryl Announcement</a>.</div>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- LINKI I NARZĘDZIA -->
+    <section id="linki" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-16 border-t border-slate-800">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-center gap-x-3 mb-8">
+                <div class="px-3 py-1 text-xs font-mono tracking-widest bg-slate-900 border border-slate-700 rounded-2xl">15</div>
+                <h2 class="section-header tracking-tighter">Linki i narzędzia</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <a href="https://docs.base.org/base-chain/specs/upgrades/beryl/b20" target="_blank" class="group block p-6 rounded-3xl bg-slate-900 border border-slate-800 hover:border-blue-600 transition-colors">
+                    <div class="font-semibold group-hover:text-blue-400">Oficjalna specyfikacja B20</div>
+                    <div class="text-xs text-slate-400 mt-1">Pełna dokumentacja techniczna precompiles, ról, polityk i wariantów.</div>
+                </a>
+                <a href="https://docs.base.org/get-started/launch-b20-token" target="_blank" class="group block p-6 rounded-3xl bg-slate-900 border border-slate-800 hover:border-blue-600 transition-colors">
+                    <div class="font-semibold group-hover:text-blue-400">Launch B20 Token — przewodnik</div>
+                    <div class="text-xs text-slate-400 mt-1">Krok po kroku jak wyemitować token B20 z Foundry. Przykłady kodu.</div>
+                </a>
+                <a href="https://blog.base.dev/introducing-base-beryl" target="_blank" class="group block p-6 rounded-3xl bg-slate-900 border border-slate-800 hover:border-blue-600 transition-colors">
+                    <div class="font-semibold group-hover:text-blue-400">Wprowadzenie do Beryl (blog Base)</div>
+                    <div class="text-xs text-slate-400 mt-1">Kontekst upgrade'u, cele B20, plany na przyszłość (gas w B20, virtual addresses itp.).</div>
+                </a>
+                <a href="https://docs.base.org/" target="_blank" class="group block p-6 rounded-3xl bg-slate-900 border border-slate-800 hover:border-blue-600 transition-colors">
+                    <div class="font-semibold group-hover:text-blue-400">Base Documentation</div>
+                    <div class="text-xs text-slate-400 mt-1">Główna dokumentacja Base Chain — node setup, bridging, builders resources.</div>
+                </a>
+                <a href="https://basescan.org/" target="_blank" class="group block p-6 rounded-3xl bg-slate-900 border border-slate-800 hover:border-blue-600 transition-colors">
+                    <div class="font-semibold group-hover:text-blue-400">Basescan</div>
+                    <div class="text-xs text-slate-400 mt-1">Explorer do weryfikacji tokenów B20, transakcji i eventów.</div>
+                </a>
+                <a href="https://aerodrome.finance/" target="_blank" class="group block p-6 rounded-3xl bg-slate-900 border border-slate-800 hover:border-blue-600 transition-colors">
+                    <div class="font-semibold group-hover:text-blue-400">Aerodrome Finance</div>
+                    <div class="text-xs text-slate-400 mt-1">Główny DEX na Base. Miejsce do bootstrappingu płynności dla tokenów B20.</div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA KOŃCOWE -->
+    <section id="cta" class="max-w-screen-2xl mx-auto px-6 lg:px-8 py-20 border-t border-slate-800">
+        <div class="max-w-5xl mx-auto text-center">
+            <h2 class="text-4xl font-display tracking-tighter mb-4">Co chcesz zrobić dalej?</h2>
+            <p class="text-xl text-slate-400 mb-12">Wybierz swoją ścieżkę</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                <!-- Path 1 -->
+                <div class="p-8 rounded-3xl bg-slate-900 border border-slate-700">
+                    <div class="uppercase text-xs tracking-[2px] text-blue-400 mb-3">ŚCIEŻKA 1</div>
+                    <h3 class="font-semibold text-2xl mb-4">Chcę zrozumieć standard głębiej</h3>
+                    <ul class="text-sm space-y-2 text-slate-400 mb-6">
+                        <li>→ Przeczytaj pełną specyfikację B20</li>
+                        <li>→ Zapoznaj się z launch guide</li>
+                        <li>→ Przejrzyj porównania i ryzyka</li>
+                        <li>→ Dołącz do Base Discord / builders channels</li>
+                    </ul>
+                    <a href="https://docs.base.org/base-chain/specs/upgrades/beryl/b20" target="_blank" 
+                       class="inline-block px-6 py-3 text-sm font-semibold rounded-2xl border border-slate-600 hover:bg-slate-800 transition-colors">Idź do dokumentacji →</a>
+                </div>
+
+                <!-- Path 2 -->
+                <div class="p-8 rounded-3xl bg-slate-900 border border-emerald-900/50">
+                    <div class="uppercase text-xs tracking-[2px] text-emerald-400 mb-3">ŚCIEŻKA 2</div>
+                    <h3 class="font-semibold text-2xl mb-4">Chcę wyemitować własny token B20</h3>
+                    <ul class="text-sm space-y-2 text-slate-400 mb-6">
+                        <li>1. Zainstaluj base-foundry</li>
+                        <li>2. Testuj na Sepolia / Vibes</li>
+                        <li>3. Przygotuj roles + policies</li>
+                        <li>4. Deploy przez createB20</li>
+                        <li>5. Dodaj płynność na Aerodrome</li>
+                    </ul>
+                    <a href="https://docs.base.org/get-started/launch-b20-token" target="_blank" 
+                       class="inline-block px-6 py-3 text-sm font-semibold rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white transition-colors">Otwórz Launch Guide →</a>
+                </div>
+
+                <!-- Path 3 -->
+                <div class="p-8 rounded-3xl bg-slate-900 border border-violet-900/50">
+                    <div class="uppercase text-xs tracking-[2px] text-violet-400 mb-3">ŚCIEŻKA 3</div>
+                    <h3 class="font-semibold text-2xl mb-4">Chcę zbudować produkt na B20</h3>
+                    <ul class="text-sm space-y-2 text-slate-400 mb-6">
+                        <li>→ Zacznij od tej strony jako research base</li>
+                        <li>→ Zbuduj launcher / mint panel (MVP)</li>
+                        <li>→ Dodaj indexer eventów B20</li>
+                        <li>→ Zintegruj Aerodrome LP bootstrap</li>
+                        <li>→ Dołącz do Base grants / builders</li>
+                    </ul>
+                    <a href="#architektura-mvp" 
+                       class="inline-block px-6 py-3 text-sm font-semibold rounded-2xl border border-violet-600 hover:bg-violet-950 transition-colors">Zobacz architekturę MVP →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 py-12 px-6 lg:px-8 text-xs text-slate-500">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between gap-y-4">
+                <div>
+                    B20 Standard Explorer &amp; Research • Na podstawie oficjalnej dokumentacji Base (Beryl upgrade)<br>
+                    <span class="text-slate-600">Stan na lipiec 2026 • Standard jest żywy i ewoluuje</span>
+                </div>
+                <div class="text-right">
+                    Nie jest to porada inwestycyjna ani finansowa.<br>
+                    Zawsze weryfikuj informacje w oficjalnych źródłach Base.
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-slate-800 text-[10px] text-slate-600">
+                Ta strona jest samodzielnym, statycznym zasobem edukacyjnym. Kod jest otwarty do forkowania i rozbudowy. 
+                Wszystkie linki zewnętrzne otwierają się w nowej karcie.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Tailwind script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#3b82f6');
+        }
+
+        // Theme Toggle
+        function initThemeToggle() {
+            const toggle = document.getElementById('theme-toggle');
+            const iconDark = document.getElementById('theme-icon-dark');
+            const iconLight = document.getElementById('theme-icon-light');
+            
+            // Default to dark
+            let currentTheme = localStorage.getItem('theme') || 'dark';
+            
+            function applyTheme(theme) {
+                if (theme === 'light') {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                    iconDark.classList.add('hidden');
+                    iconLight.classList.remove('hidden');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                    iconDark.classList.remove('hidden');
+                    iconLight.classList.add('hidden');
+                }
+                localStorage.setItem('theme', theme);
+            }
+            
+            applyTheme(currentTheme);
+            
+            toggle.addEventListener('click', () => {
+                currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                applyTheme(currentTheme);
+            });
+        }
+
+        // Mobile Menu
+        function initMobileMenu() {
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            
+            btn.addEventListener('click', () => {
+                menu.classList.toggle('hidden');
+            });
+            
+            // Close on link click
+            document.querySelectorAll('.mobile-nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    menu.classList.add('hidden');
+                });
+            });
+        }
+
+        // Smooth scroll + active nav
+        function initScrollSpy() {
+            const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-link');
+            const sections = document.querySelectorAll('section[id]');
+            
+            // Smooth scroll for all anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    const targetId = this.getAttribute('href').substring(1);
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        e.preventDefault();
+                        const navHeight = 64;
+                        const elementPosition = target.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+                        
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // Scrollspy
+            function updateActiveNav() {
+                let current = '';
+                const scrollY = window.scrollY + 120;
+                
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (scrollY >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('nav-active', 'text-blue-400');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('nav-active', 'text-blue-400');
+                    }
+                });
+            }
+            
+            window.addEventListener('scroll', updateActiveNav, { passive: true });
+            updateActiveNav(); // initial
+        }
+
+        // Navbar scroll effect
+        function initNavbarScroll() {
+            const nav = document.getElementById('nav');
+            
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) {
+                    nav.classList.add('nav-scrolled', 'bg-slate-950/98');
+                } else {
+                    nav.classList.remove('nav-scrolled', 'bg-slate-950/98');
+                }
+            }, { passive: true });
+        }
+
+        // Keyboard accessibility for details
+        function enhanceAccordions() {
+            document.querySelectorAll('details').forEach(details => {
+                details.addEventListener('toggle', () => {
+                    if (details.open) {
+                        // Close others if wanted (optional single open)
+                        // document.querySelectorAll('details').forEach(d => { if (d !== details) d.open = false; });
+                    }
+                });
+            });
+        }
+
+        // Copy to clipboard for code snippets (future proof)
+        function initCopyButtons() {
+            // Can be extended if more pre/code blocks added
+            console.log('%c[B20 Site] Static site initialized successfully. Ready for extension.', 'color:#64748b');
+        }
+
+        // Main init
+        function initializeSite() {
+            initializeTailwind();
+            initThemeToggle();
+            initMobileMenu();
+            initScrollSpy();
+            initNavbarScroll();
+            enhanceAccordions();
+            initCopyButtons();
+            
+            // Easter egg: console message
+            console.log('%c[B20] Strona gotowa. B20 to standard, nie token. Buduj odpowiedzialnie.', 'color:#3b82f6; font-size: 9px');
+        }
+
+        // Boot
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSite);
+        } else {
+            initializeSite();
+        }
+    </script>
+</body>
+</html>
