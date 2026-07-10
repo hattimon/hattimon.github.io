@@ -163,6 +163,36 @@
             box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.2),
                         0 4px 6px -4px rgb(15 23 42 / 0.2);
         }
+
+        /* Light mode styles */
+        html:not(.dark) body {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        
+        html:not(.dark) .bg-slate-950 {
+            background-color: #f8fafc !important;
+        }
+        
+        html:not(.dark) .bg-slate-900 {
+            background-color: #f1f5f9 !important;
+        }
+        
+        html:not(.dark) .text-slate-200 {
+            color: #0f172a !important;
+        }
+        
+        html:not(.dark) .text-slate-400 {
+            color: #475569 !important;
+        }
+        
+        html:not(.dark) .border-slate-800 {
+            border-color: #e2e8f0 !important;
+        }
+        
+        html:not(.dark) .bg-slate-950\/95 {
+            background-color: rgba(248, 250, 252, 0.95) !important;
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-200 antialiased">
@@ -1376,21 +1406,30 @@
             const iconLight = document.getElementById('theme-icon-light');
             
             // Default to dark
-            let currentTheme = localStorage.getItem('theme') || 'dark';
+            let currentTheme = 'dark';
+            try {
+                const saved = localStorage.getItem('theme');
+                if (saved) currentTheme = saved;
+            } catch (e) {}
             
             function applyTheme(theme) {
-                if (theme === 'light') {
-                    document.documentElement.classList.remove('dark');
-                    document.documentElement.classList.add('light');
-                    iconDark.classList.add('hidden');
-                    iconLight.classList.remove('hidden');
-                } else {
+                try {
+                    if (theme === 'light') {
+                        document.documentElement.classList.remove('dark');
+                        iconDark.classList.add('hidden');
+                        iconLight.classList.remove('hidden');
+                    } else {
+                        document.documentElement.classList.add('dark');
+                        iconDark.classList.remove('hidden');
+                        iconLight.classList.add('hidden');
+                    }
+                    localStorage.setItem('theme', theme);
+                } catch (e) {
+                    // Fallback for sandboxed environments
                     document.documentElement.classList.add('dark');
-                    document.documentElement.classList.remove('light');
                     iconDark.classList.remove('hidden');
                     iconLight.classList.add('hidden');
                 }
-                localStorage.setItem('theme', theme);
             }
             
             applyTheme(currentTheme);
