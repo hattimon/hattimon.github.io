@@ -164,7 +164,7 @@
                         0 4px 6px -4px rgb(15 23 42 / 0.2);
         }
 
-        /* Light mode styles - soft gray, good readability */
+        /* Light mode styles - soft gray, excellent contrast */
         html:not(.dark) body {
             background-color: #f8fafc;
             color: #1e2937;
@@ -181,12 +181,13 @@
         
         html:not(.dark) .bg-slate-950\/95,
         html:not(.dark) .bg-slate-900\/95 {
-            background-color: rgba(241, 245, 249, 0.95) !important;
+            background-color: rgba(241, 245, 249, 0.98) !important;
         }
         
         html:not(.dark) .text-slate-200,
         html:not(.dark) .text-slate-300,
-        html:not(.dark) .text-slate-100 {
+        html:not(.dark) .text-slate-100,
+        html:not(.dark) .text-slate-50 {
             color: #1e2937 !important;
         }
         
@@ -207,16 +208,26 @@
         html:not(.dark) .card,
         html:not(.dark) .p-5.rounded-3xl,
         html:not(.dark) .p-6.rounded-3xl,
-        html:not(.dark) .p-8.rounded-3xl {
+        html:not(.dark) .p-8.rounded-3xl,
+        html:not(.dark) .rounded-3xl {
             background-color: #f1f5f9 !important;
             border-color: #cbd5e1 !important;
+            color: #1e2937;
         }
         
         html:not(.dark) .callout {
             background-color: #f8fafc !important;
+            border-left-color: #64748b;
         }
         
-        html:not(.dark) .prose-custom {
+        html:not(.dark) .prose-custom,
+        html:not(.dark) .prose-custom strong {
+            color: #1e2937 !important;
+        }
+        
+        html:not(.dark) .section-header {
+            color: #0f172a;
+        }
             color: #334155;
         }
     </style>
